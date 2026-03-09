@@ -248,6 +248,12 @@ export default function TraitManager() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                       {items.map((t) => {
                         const gName = traitGroupName[t.id];
+                        const isAbility = t.category === "ability";
+                        const gradeLabel = isAbility ? (() => {
+                          const grades = ["G", "F", "E", "D", "C", "B", "A", "S"];
+                          const v = t.defaultValue ?? 0;
+                          return grades[Math.max(0, Math.min(Math.floor(v / 1000), grades.length - 1))];
+                        })() : null;
                         return (
                           <button
                             key={t.id}
@@ -265,6 +271,12 @@ export default function TraitManager() {
                             }}
                           >
                             {gName ? <><span style={{ color: "#888" }}>{gName} - </span>{t.name || t.id}</> : (t.name || t.id)}
+                            {isAbility && (
+                              <span style={{ color: "#888", marginLeft: "4px" }}>
+                                [{gradeLabel}]
+                                {t.decay && <span style={{ color: "#e89a19", marginLeft: "2px" }} title="有回落">&#x21E3;</span>}
+                              </span>
+                            )}
                             {t.source === "builtin" && (
                               <span
                                 style={{

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .character import apply_ability_decay
+
 
 def get_available_actions(
     game_state: Any, character_id: str, target_id: str | None = None
@@ -165,6 +167,16 @@ def _evaluate_leaf(
         if cond.get("mapId") and pos["mapId"] != cond["mapId"]:
             return False
         cell_ids = cond.get("cellIds", [])
+        cell_tags = cond.get("cellTags", [])
+        # Expand tags to cell IDs
+        if cell_tags:
+            map_data = game_state.maps.get(pos["mapId"])
+            if map_data:
+                for cell_data in map_data.get("cells", []):
+                    cell_t = cell_data.get("tags", [])
+                    if any(t in cell_t for t in cell_tags):
+                        if cell_data["id"] not in cell_ids:
+                            cell_ids = list(cell_ids) + [cell_data["id"]]
         if cell_ids and pos["cellId"] not in cell_ids:
             return False
         return True
@@ -211,6 +223,12 @@ def _evaluate_leaf(
     if ctype == "trait":
         key = cond.get("key", "")
         trait_id = cond.get("traitId", "")
+        # Use character_data for raw trait IDs (display state has resolved names)
+        check_char_id = char_id if cond.get("condTarget", "self") == "self" else (target_id or "")
+        raw_traits = game_state.character_data.get(check_char_id, {}).get("traits", {})
+        if isinstance(raw_traits, dict):
+            return trait_id in raw_traits.get(key, [])
+        # Fallback: list format (display state)
         for trait in check_char.get("traits", []):
             if trait["key"] == key:
                 return trait_id in trait.get("values", [])
@@ -219,6 +237,10 @@ def _evaluate_leaf(
     if ctype == "noTrait":
         key = cond.get("key", "")
         trait_id = cond.get("traitId", "")
+        check_char_id = char_id if cond.get("condTarget", "self") == "self" else (target_id or "")
+        raw_traits = game_state.character_data.get(check_char_id, {}).get("traits", {})
+        if isinstance(raw_traits, dict):
+            return trait_id not in raw_traits.get(key, [])
         for trait in check_char.get("traits", []):
             if trait["key"] == key:
                 return trait_id not in trait.get("values", [])
@@ -239,12 +261,17 @@ def _evaluate_leaf(
                     break
         else:
             fav_tid = raw_tid
-        fav_list = check_char.get("favorability", [])
+        fav_data = check_char.get("favorability", [])
         fav_value = 0
-        for fav in fav_list:
-            if fav["id"] == fav_tid:
-                fav_value = fav["value"]
-                break
+        if isinstance(fav_data, list):
+            # Display format: [{id, name, value}, ...]
+            for fav in fav_data:
+                if fav["id"] == fav_tid:
+                    fav_value = fav["value"]
+                    break
+        elif isinstance(fav_data, dict):
+            # Raw format: {npcId: value, ...}
+            fav_value = fav_data.get(fav_tid, 0)
         return _compare(fav_value, cond.get("op", ">="), cond.get("value", 0))
 
     if ctype == "hasItem":
@@ -341,6 +368,55 @@ def _check_costs(costs: list[dict], char: dict) -> tuple[bool, str]:
 # Template resolution
 # ========================
 
+def _select_output_template(
+    obj: dict, char: dict, game_state: Any,
+    char_id: str, target_id: str | None,
+) -> str:
+    """Select an output template from obj.outputTemplate / obj.outputTemplates.
+
+    If outputTemplates is a list of {text, conditions?, weight?}, evaluate
+    conditions and weighted-random among matching entries.
+    Falls back to the legacy outputTemplate string.
+    """
+    import random
+
+    templates = obj.get("outputTemplates")
+    if not templates or not isinstance(templates, list):
+        return obj.get("outputTemplate", "")
+
+    # Filter by conditions
+    matching: list[tuple[str, float]] = []
+    for entry in templates:
+        text = entry.get("text", "")
+        conds = entry.get("conditions", [])
+        if conds:
+            if not _evaluate_conditions(
+                conds, char, game_state,
+                target_id=target_id, char_id=char_id,
+            ):
+                continue
+        weight = entry.get("weight", 1)
+        if weight > 0:
+            matching.append((text, weight))
+
+    if not matching:
+        # No entry matched → fall back to legacy field
+        return obj.get("outputTemplate", "")
+
+    if len(matching) == 1:
+        return matching[0][0]
+
+    # Weighted random
+    total = sum(w for _, w in matching)
+    roll = random.random() * total
+    cumulative = 0.0
+    for text, w in matching:
+        cumulative += w
+        if roll < cumulative:
+            return text
+    return matching[-1][0]
+
+
 def _resolve_template(
     template: str, char: dict, target_char: dict | None,
     game_state: Any, outcome: dict | None, effects_summary: list[str]
@@ -352,9 +428,14 @@ def _resolve_template(
         return ""
 
     def _char_var(c: dict | None, path: str) -> str:
-        """Resolve a character variable path like 'resource.体力', 'clothing.上衣'."""
+        """Resolve a character variable path like 'name', 'resource.体力', 'clothing.上衣'."""
         if not c:
             return ""
+
+        # Single-part shorthand
+        if path == "name":
+            return str(c.get("basicInfo", {}).get("name", {}).get("value", ""))
+
         parts = path.split(".", 1)
         if len(parts) < 2:
             return ""
@@ -448,18 +529,56 @@ TICK_MINUTES = 5
 DISTANCE_PENALTY = 0.5  # desire reduction per minute of travel distance
 
 
-def simulate_npc_ticks(game_state: Any, elapsed_minutes: int, exclude_id: str = "") -> list[str]:
-    """Simulate NPC ticks for elapsed time. Returns activity log lines."""
+def simulate_npc_ticks(
+    game_state: Any, elapsed_minutes: int,
+    exclude_id: str = "", exclude_ids: list[str] | None = None,
+) -> list[dict]:
+    """Simulate NPC ticks for elapsed time.
+
+    Returns structured log entries: [{npcId, text, mapId, cellId}, ...].
+    Also appends all entries to game_state.npc_full_log for LLM use.
+    exclude_id: single ID to skip (typically the player).
+    exclude_ids: additional IDs to skip (e.g. action target NPC).
+    """
+    skip = {exclude_id} if exclude_id else set()
+    if exclude_ids:
+        skip.update(exclude_ids)
     ticks = max(1, elapsed_minutes // TICK_MINUTES)
-    log: list[str] = []
+    log: list[dict] = []
     for _ in range(ticks):
         for npc_id, npc in list(game_state.characters.items()):
-            if npc.get("isPlayer") or npc_id == exclude_id:
+            if npc.get("isPlayer") or npc_id in skip:
                 continue
             tick_log = _npc_tick(game_state, npc_id)
             if tick_log:
-                log.append(tick_log)
+                pos = npc.get("position", {})
+                entry = {
+                    "npcId": npc_id,
+                    "text": tick_log,
+                    "mapId": pos.get("mapId", ""),
+                    "cellId": pos.get("cellId", 0),
+                }
+                log.append(entry)
+    # Store all entries for LLM
+    game_state.npc_full_log.extend(log)
     return log
+
+
+def filter_visible_npc_log(
+    log: list[dict], player_pos: dict, game_state: Any, player_id: str
+) -> list[str]:
+    """Filter NPC log entries to only those visible to the player.
+
+    Visible if NPC is at the same cell, or player has a perception trait/ability
+    that grants extended visibility.
+    """
+    visible: list[str] = []
+    p_map = player_pos.get("mapId", "")
+    p_cell = player_pos.get("cellId", -1)
+    for entry in log:
+        if entry["mapId"] == p_map and entry["cellId"] == p_cell:
+            visible.append(entry["text"])
+    return visible
 
 
 def _npc_tick(game_state: Any, npc_id: str) -> str | None:
@@ -523,10 +642,11 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
         if npc_weight <= 0:
             continue
 
-        desire = npc_weight + _calc_modifier_bonus(
+        npc_add, npc_mul = _calc_modifier_bonus(
             action_def.get("npcWeightModifiers", []), npc,
             game_state, npc_id, None
         )
+        desire = (npc_weight + npc_add) * npc_mul
         if desire <= 0:
             continue
 
@@ -606,9 +726,18 @@ def _evaluate_action_viability(
 
     if location_cond:
         target_map = location_cond.get("mapId", "")
-        target_cells = location_cond.get("cellIds", [])
+        target_cells = list(location_cond.get("cellIds", []))
         if not target_map:
             return None
+        # Expand tags to cell IDs
+        cell_tags = location_cond.get("cellTags", [])
+        if cell_tags:
+            map_data = game_state.maps.get(target_map)
+            if map_data:
+                for cd in map_data.get("cells", []):
+                    if any(t in cd.get("tags", []) for t in cell_tags):
+                        if cd["id"] not in target_cells:
+                            target_cells.append(cd["id"])
         # Find closest matching cell
         best_dist = float("inf")
         best_pos = None
@@ -686,6 +815,14 @@ def _npc_start_action(
         game_state.npc_goals.pop(npc_id, None)
         return None
 
+    # Check and apply costs
+    costs = action_def.get("costs", [])
+    enabled, _ = _check_costs(costs, npc)
+    if not enabled:
+        game_state.npc_goals.pop(npc_id, None)
+        return None
+    _apply_costs(costs, npc)
+
     time_cost = action_def.get("timeCost", TICK_MINUTES)
     busy_ticks = max(1, time_cost // TICK_MINUTES)
 
@@ -701,7 +838,9 @@ def _npc_start_action(
     }
 
     # Set activity text (what NPC is currently doing)
-    action_tpl = action_def.get("outputTemplate", "")
+    action_tpl = _select_output_template(
+        action_def, npc, game_state, npc_id, target_npc_id
+    )
     target_char = game_state.characters.get(target_npc_id) if target_npc_id else None
     activity_text = _resolve_template(action_tpl, npc, target_char, game_state, None, [])
     game_state.npc_activities[npc_id] = activity_text or action_def["name"]
@@ -729,13 +868,28 @@ def _npc_complete_action(
     applied = _apply_effects(effects, npc, game_state, npc_id, target_npc_id)
 
     # Resolve templates for activity text
-    action_tpl = action_def.get("outputTemplate", "")
-    outcome_tpl = outcome.get("outputTemplate", "") if outcome else ""
+    action_tpl = _select_output_template(
+        action_def, npc, game_state, npc_id, target_npc_id
+    )
+    outcome_tpl = _select_output_template(
+        outcome, npc, game_state, npc_id, target_npc_id
+    ) if outcome else ""
     parts = [p for p in (action_tpl, outcome_tpl) if p]
     template = "\n".join(parts)
 
     target_char = game_state.characters.get(target_npc_id) if target_npc_id else None
     text = _resolve_template(template, npc, target_char, game_state, outcome, applied)
+
+    # Auto-append outcome label and effects summary
+    auto_parts: list[str] = []
+    if outcome:
+        auto_parts.append(f"[{outcome.get('label', '')}]")
+    if applied:
+        auto_parts.append(" ".join(applied))
+    if auto_parts:
+        auto_line = " ".join(auto_parts)
+        text = f"{text}\n{auto_line}" if text else auto_line
+
     game_state.npc_activities[npc_id] = text or action_def["name"]
 
     return text
@@ -797,15 +951,20 @@ def _execute_configured(
     # Apply costs
     _apply_costs(costs, char)
 
-    # Advance time
+    # If targeting an NPC, interrupt their current autonomous action
+    if target_id and target_id in game_state.npc_goals:
+        game_state.npc_goals.pop(target_id, None)
+
+    # Advance time — exclude target NPC from tick simulation
     time_cost = action_def.get("timeCost", 0)
-    npc_log: list[str] = []
+    npc_log_raw: list[dict] = []
     if time_cost > 0:
         game_state.time.advance(time_cost)
-        npc_log = simulate_npc_ticks(game_state, time_cost, character_id)
+        apply_ability_decay(game_state.characters, game_state.trait_defs, time_cost)
+        exclude = [target_id] if target_id else None
+        npc_log_raw = simulate_npc_ticks(game_state, time_cost, character_id, exclude_ids=exclude)
 
     # Roll outcome
-    target_id = action.get("targetId")
     outcomes = action_def.get("outcomes", [])
     outcome = _roll_outcome(outcomes, char, game_state, character_id, target_id) if outcomes else None
 
@@ -813,14 +972,28 @@ def _execute_configured(
     effects = outcome["effects"] if outcome else []
     applied = _apply_effects(effects, char, game_state, character_id, target_id)
 
-    # Build result text: action template + outcome template
-    action_tpl = action_def.get("outputTemplate", "")
-    outcome_tpl = outcome.get("outputTemplate", "") if outcome else ""
+    # Build result text: action template + outcome template + auto effects
+    action_tpl = _select_output_template(
+        action_def, char, game_state, character_id, target_id
+    )
+    outcome_tpl = _select_output_template(
+        outcome, char, game_state, character_id, target_id
+    ) if outcome else ""
     parts = [p for p in (action_tpl, outcome_tpl) if p]
     template = "\n".join(parts)
 
     target_char = game_state.characters.get(target_id) if target_id else None
     text = _resolve_template(template, char, target_char, game_state, outcome, applied)
+
+    # Auto-append outcome label and effects summary
+    auto_parts: list[str] = []
+    if outcome:
+        auto_parts.append(f"[{outcome.get('label', '')}]")
+    if applied:
+        auto_parts.append(" ".join(applied))
+    if auto_parts:
+        auto_line = " ".join(auto_parts)
+        text = f"{text}\n{auto_line}" if text else auto_line
 
     result: dict[str, Any] = {
         "success": True,
@@ -833,6 +1006,8 @@ def _execute_configured(
         result["outcomeLabel"] = outcome.get("label")
     if applied:
         result["effectsSummary"] = applied
+    # Filter NPC logs by visibility (same cell as player)
+    npc_log = filter_visible_npc_log(npc_log_raw, char["position"], game_state, character_id)
     if npc_log:
         result["npcLog"] = npc_log
 
@@ -842,29 +1017,43 @@ def _execute_configured(
 def _calc_modifier_bonus(
     modifiers: list[dict], char: dict,
     game_state: Any, char_id: str, target_id: str | None
-) -> int:
-    """Calculate total bonus from a list of modifiers (ability/trait/favorability)."""
-    total = 0
+) -> tuple[int, float]:
+    """Calculate additive and multiplicative bonuses from modifiers.
+
+    Returns (additive_total, multiplier_total) where multiplier_total is
+    the product of all (1 + bonus/100) for multiply-mode modifiers.
+    """
+    add_total = 0
+    mul_total = 1.0
     for mod in modifiers:
         mtype = mod.get("type")
+        bonus = mod.get("bonus", 0)
+        mode = mod.get("bonusMode", "add")
+        raw_bonus = 0
+
         if mtype == "ability":
             for ab in char.get("abilities", []):
                 if ab["key"] == mod["key"]:
                     per = mod.get("per", 1)
                     if per > 0:
-                        total += (ab["exp"] // per) * mod.get("bonus", 0)
+                        raw_bonus = (ab["exp"] // per) * bonus
+                    break
+        elif mtype == "experience":
+            for exp_entry in char.get("experiences", []):
+                if exp_entry["key"] == mod.get("key"):
+                    per = mod.get("per", 1)
+                    if per > 0:
+                        raw_bonus = (exp_entry["count"] // per) * bonus
                     break
         elif mtype == "trait":
-            # bonus if character has the specified trait value
             trait_key = mod.get("key", "")
             trait_value = mod.get("value", "")
             for t in char.get("traits", []):
                 if t["key"] == trait_key and trait_value in t.get("values", []):
-                    total += mod.get("bonus", 0)
+                    raw_bonus = bonus
                     break
         elif mtype == "favorability":
-            # Use NPC's favorability towards player (or player towards NPC)
-            fav_source = mod.get("source", "target")  # "target" = target's fav towards self
+            fav_source = mod.get("source", "target")
             if fav_source == "target" and target_id:
                 npc_data = game_state.character_data.get(target_id, {})
                 fav_val = npc_data.get("favorability", {}).get(char_id, 0)
@@ -873,8 +1062,13 @@ def _calc_modifier_bonus(
                 fav_val = own_data.get("favorability", {}).get(target_id or "", 0)
             per = mod.get("per", 1)
             if per > 0:
-                total += (fav_val // per) * mod.get("bonus", 0)
-    return total
+                raw_bonus = (fav_val // per) * bonus
+
+        if mode == "multiply":
+            mul_total *= (1 + raw_bonus / 100)
+        else:
+            add_total += raw_bonus
+    return add_total, mul_total
 
 
 def _roll_outcome(
@@ -887,10 +1081,11 @@ def _roll_outcome(
     weights = []
     for o in outcomes:
         w = o.get("weight", 1)
-        w += _calc_modifier_bonus(
+        w_add, w_mul = _calc_modifier_bonus(
             o.get("weightModifiers", []), char,
             game_state, char_id, target_id
         )
+        w = (w + w_add) * w_mul
         weights.append(max(0, w))
 
     total = sum(weights)
@@ -957,15 +1152,23 @@ def _apply_effects(
         if not target_char:
             continue
 
+        # Build target name prefix for summaries (empty for self)
+        target_prefix = ""
+        if target_char is not char:
+            t_name = target_char.get("basicInfo", {}).get("name", {})
+            if isinstance(t_name, dict):
+                t_name = t_name.get("value", "")
+            target_prefix = f"[{t_name}] " if t_name else ""
+
         # Apply valueModifiers to the effect value
-        value_mod_bonus = _calc_modifier_bonus(
+        value_mod_add, value_mod_mul = _calc_modifier_bonus(
             eff.get("valueModifiers", []), char,
             game_state, char_id, target_id
         )
 
         if etype == "resource":
             key = eff.get("key", "")
-            value = eff.get("value", 0) + value_mod_bonus
+            value = int((eff.get("value", 0) + value_mod_add) * value_mod_mul)
             is_pct = eff.get("valuePercent", False)
             res = target_char.get("resources", {}).get(key)
             if res:
@@ -973,16 +1176,16 @@ def _apply_effects(
                     delta = int(res["value"] * value / 100) if is_pct else value
                     res["value"] = min(res["max"], max(0, res["value"] + delta))
                     suffix = f"{'+' if value >= 0 else ''}{value}{'%' if is_pct else ''}"
-                    summaries.append(f"{res['label']} {suffix}")
+                    summaries.append(f"{target_prefix}{res['label']} {suffix}")
                 elif op == "set":
                     new_val = int(res["max"] * value / 100) if is_pct else value
                     res["value"] = min(res["max"], max(0, new_val))
                     suffix = f"{value}{'%' if is_pct else ''}"
-                    summaries.append(f"{res['label']} → {suffix}")
+                    summaries.append(f"{target_prefix}{res['label']} → {suffix}")
 
         elif etype == "ability":
             key = eff.get("key", "")
-            value = eff.get("value", 0) + value_mod_bonus
+            value = int((eff.get("value", 0) + value_mod_add) * value_mod_mul)
             is_pct = eff.get("valuePercent", False)
             for ab in target_char.get("abilities", []):
                 if ab["key"] == key:
@@ -990,19 +1193,19 @@ def _apply_effects(
                         delta = int(ab["exp"] * value / 100) if is_pct else value
                         ab["exp"] = max(0, ab["exp"] + delta)
                         suffix = f"{'+' if value >= 0 else ''}{value}{'%' if is_pct else ''}"
-                        summaries.append(f"{ab['label']} {suffix}")
+                        summaries.append(f"{target_prefix}{ab['label']} {suffix}")
                     elif op == "set":
                         new_val = int(ab["exp"] * value / 100) if is_pct else value
                         ab["exp"] = max(0, new_val)
                         suffix = f"{value}{'%' if is_pct else ''}"
-                        summaries.append(f"{ab['label']} → {suffix}")
+                        summaries.append(f"{target_prefix}{ab['label']} → {suffix}")
                     from .character import exp_to_grade
                     ab["grade"] = exp_to_grade(ab["exp"])
                     break
 
         elif etype == "basicInfo":
             key = eff.get("key", "")
-            value = eff.get("value", 0) + value_mod_bonus
+            value = int((eff.get("value", 0) + value_mod_add) * value_mod_mul)
             is_pct = eff.get("valuePercent", False)
             info = target_char.get("basicInfo", {}).get(key)
             if info and info.get("type") == "number":
@@ -1010,12 +1213,12 @@ def _apply_effects(
                     delta = int(info["value"] * value / 100) if is_pct else value
                     info["value"] += delta
                     suffix = f"{'+' if value >= 0 else ''}{value}{'%' if is_pct else ''}"
-                    summaries.append(f"{info['label']} {suffix}")
+                    summaries.append(f"{target_prefix}{info['label']} {suffix}")
                 elif op == "set":
                     new_val = int(info["value"] * value / 100) if is_pct else value
                     info["value"] = new_val
                     suffix = f"{value}{'%' if is_pct else ''}"
-                    summaries.append(f"{info['label']} → {suffix}")
+                    summaries.append(f"{target_prefix}{info['label']} → {suffix}")
 
         elif etype == "favorability":
             # Resolve favFrom (whose fav data) and favTo (towards whom)
@@ -1043,23 +1246,27 @@ def _apply_effects(
             if not fav_from_id or not fav_to_id:
                 continue
 
-            value = eff.get("value", 0) + value_mod_bonus
+            value = int((eff.get("value", 0) + value_mod_add) * value_mod_mul)
             is_pct = eff.get("valuePercent", False)
             # Update: fav_from's favorability towards fav_to
             from_data = game_state.character_data.get(fav_from_id, {})
             fav = from_data.setdefault("favorability", {})
+            # Build favorability summary with from→to names
+            from_name_data = game_state.character_data.get(fav_from_id, {}).get("basicInfo", {}).get("name", "")
+            to_name_data = game_state.character_data.get(fav_to_id, {}).get("basicInfo", {}).get("name", "")
+            fav_label = f"[{from_name_data}→{to_name_data}] 好感度" if from_name_data and to_name_data else "好感度"
             if op == "add":
                 old = fav.get(fav_to_id, 0)
                 delta = int(old * value / 100) if is_pct else value
                 fav[fav_to_id] = old + delta
                 suffix = f"{'+' if value >= 0 else ''}{value}{'%' if is_pct else ''}"
-                summaries.append(f"好感度 {suffix}")
+                summaries.append(f"{fav_label} {suffix}")
             elif op == "set":
                 old = fav.get(fav_to_id, 0)
                 new_val = int(old * value / 100) if is_pct else value
                 fav[fav_to_id] = new_val
                 suffix = f"{value}{'%' if is_pct else ''}"
-                summaries.append(f"好感度 → {suffix}")
+                summaries.append(f"{fav_label} → {suffix}")
 
         elif etype == "item":
             item_id = eff.get("itemId", "")
@@ -1080,7 +1287,7 @@ def _apply_effects(
                         "tags": item_def.get("tags", []),
                         "amount": amount,
                     })
-                summaries.append(f"获得 {item_id} x{amount}")
+                summaries.append(f"{target_prefix}获得 {item_id} x{amount}")
             elif op == "removeItem":
                 for inv in inventory:
                     if inv["itemId"] == item_id:
@@ -1088,7 +1295,7 @@ def _apply_effects(
                         if inv["amount"] <= 0:
                             inventory.remove(inv)
                         break
-                summaries.append(f"失去 {item_id} x{amount}")
+                summaries.append(f"{target_prefix}失去 {item_id} x{amount}")
 
         elif etype == "trait":
             key = eff.get("key", "")
@@ -1107,13 +1314,13 @@ def _apply_effects(
                 if trait_id not in vals:
                     vals.append(trait_id)
                     traits[key] = vals
-                summaries.append(f"获得特质 [{trait_id}]")
+                summaries.append(f"{target_prefix}获得特质 [{trait_id}]")
             elif op == "removeTrait":
                 vals = traits.get(key, [])
                 if trait_id in vals:
                     vals.remove(trait_id)
                     traits[key] = vals
-                summaries.append(f"失去特质 [{trait_id}]")
+                summaries.append(f"{target_prefix}失去特质 [{trait_id}]")
 
         elif etype == "clothing":
             slot = eff.get("slot", "")
@@ -1131,11 +1338,11 @@ def _apply_effects(
                 if new_state == "empty":
                     item_name = cl[slot].get("itemId", slot)
                     cl[slot] = {"itemId": None, "state": "none"}
-                    summaries.append(f"移除 [{item_name}]")
+                    summaries.append(f"{target_prefix}移除 [{item_name}]")
                 else:
                     cl[slot]["state"] = new_state
                     item_name = cl[slot].get("itemId", slot)
-                    summaries.append(f"[{item_name}] → {new_state}")
+                    summaries.append(f"{target_prefix}[{item_name}] → {new_state}")
 
         elif etype == "position":
             map_id = eff.get("mapId", "")
@@ -1163,7 +1370,55 @@ def _apply_effects(
                     cell_info = map_data.get("cell_index", {}).get(cell_id)
                     if cell_info:
                         cell_name = cell_info.get("name", f"#{cell_id}")
-                summaries.append(f"移动到 {cell_name or map_id}")
+                summaries.append(f"{target_prefix}移动到 {cell_name or map_id}")
+
+        elif etype == "experience":
+            key = eff.get("key", "")
+            amount = eff.get("value", 1)
+            for exp_entry in target_char.get("experiences", []):
+                if exp_entry["key"] != key:
+                    continue
+                old_count = exp_entry["count"]
+                exp_entry["count"] = max(0, old_count + amount)
+                # Record first occurrence info (overwrite placeholder if count was 0)
+                if old_count == 0 and exp_entry["count"] > 0:
+                    # Build location string
+                    pos = char.get("position", {})
+                    map_data = game_state.maps.get(pos.get("mapId", ""))
+                    loc_name = ""
+                    if map_data:
+                        cell_info = map_data.get("cell_index", {}).get(pos.get("cellId"))
+                        if cell_info:
+                            loc_name = cell_info.get("name", "")
+                        map_name = map_data.get("name", pos.get("mapId", ""))
+                        loc_name = f"{map_name}/{loc_name}" if loc_name else map_name
+                    # Build partner name: the "other person" from target_char's perspective
+                    # Figure out who target_char is
+                    eff_target = eff.get("target", "self")
+                    if eff_target == "self" or (not eff_target):
+                        # target_char is the actor → partner is the action target
+                        partner_id = target_id
+                    elif eff_target == "{{targetId}}":
+                        # target_char is the action target → partner is the actor
+                        partner_id = char_id
+                    else:
+                        # target_char is a specific NPC → partner is the actor
+                        partner_id = char_id
+                    partner_name = ""
+                    if partner_id:
+                        p_char_data = game_state.character_data.get(partner_id, {})
+                        partner_name = p_char_data.get("basicInfo", {}).get("name", partner_id)
+                    # Build time string
+                    t = game_state.time
+                    time_str = f"{t.year}年{t.season_name}{t.day}日{t.hour:02d}时"
+                    exp_entry["first"] = {
+                        "event": eff.get("eventLabel", key),
+                        "location": loc_name,
+                        "target": partner_name,
+                        "time": time_str,
+                    }
+                summaries.append(f"{target_prefix}{exp_entry['label']} +{amount}")
+                break
 
     return summaries
 
@@ -1224,13 +1479,16 @@ def _execute_move(
 
     # Advance time by travel time
     game_state.time.advance(travel_time)
-    npc_log = simulate_npc_ticks(game_state, travel_time, character_id)
+    apply_ability_decay(game_state.characters, game_state.trait_defs, travel_time)
+    npc_log_raw = simulate_npc_ticks(game_state, travel_time, character_id)
 
     result: dict[str, Any] = {
         "success": True,
         "message": f"移动到了 {cell_name}",
         "newPosition": char["position"],
     }
+    # Filter NPC logs: show only NPCs at player's new position
+    npc_log = filter_visible_npc_log(npc_log_raw, char["position"], game_state, character_id)
     if npc_log:
         result["npcLog"] = npc_log
     return result

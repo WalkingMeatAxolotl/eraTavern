@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { GameAction } from "../types/game";
 
 interface ActionMenuProps {
@@ -10,6 +10,8 @@ interface ActionMenuProps {
   selectedNpcId: string | null;
 }
 
+const ALL_TAB = "__all__";
+
 export default function ActionMenu({
   actions,
   onMove,
@@ -18,27 +20,41 @@ export default function ActionMenu({
   disabled,
   selectedNpcId,
 }: ActionMenuProps) {
-  // Separate built-in from configured actions; hide npc-targeted actions when no NPC selected
+  const [activeTab, setActiveTab] = useState(ALL_TAB);
+
   const moveAction = actions.find((a) => a.type === "move");
   const lookAction = actions.find((a) => a.type === "look");
   const configuredActions = actions.filter(
     (a) => a.type === "configured" && (a.targetType !== "npc" || selectedNpcId)
   );
 
-  // Group configured by category
-  const { catOrder, grouped } = useMemo(() => {
+  // Build category list and grouped actions
+  const { tabs, grouped } = useMemo(() => {
+    const builtinTabs: string[] = [];
+    if (moveAction) builtinTabs.push("移动");
+    if (lookAction) builtinTabs.push("查看");
+
     const g: Record<string, GameAction[]> = {};
-    const order: string[] = [];
+    const configTabs: string[] = [];
     for (const a of configuredActions) {
       const cat = a.category || "其他";
       if (!g[cat]) {
         g[cat] = [];
-        order.push(cat);
+        configTabs.push(cat);
       }
       g[cat].push(a);
     }
-    return { catOrder: order, grouped: g };
-  }, [configuredActions]);
+    return { tabs: [...builtinTabs, ...configTabs], grouped: g };
+  }, [moveAction, lookAction, configuredActions]);
+
+  // Whether a tab should show move/look
+  const showMove = activeTab === ALL_TAB || activeTab === "移动";
+  const showLook = activeTab === ALL_TAB || activeTab === "查看";
+
+  // Filter configured categories
+  const visibleCats = activeTab === ALL_TAB
+    ? Object.keys(grouped)
+    : grouped[activeTab] ? [activeTab] : [];
 
   const btnBase: React.CSSProperties = {
     display: "block",
@@ -50,6 +66,18 @@ export default function ActionMenu({
     fontFamily: "monospace",
     fontSize: "13px",
   };
+
+  const tabStyle = (tab: string): React.CSSProperties => ({
+    padding: "3px 8px",
+    backgroundColor: "transparent",
+    color: activeTab === tab ? "#e94560" : "#888",
+    border: "none",
+    borderBottom: activeTab === tab ? "2px solid #e94560" : "2px solid transparent",
+    cursor: "pointer",
+    fontFamily: "monospace",
+    fontSize: "12px",
+    fontWeight: activeTab === tab ? "bold" : "normal",
+  });
 
   return (
     <div
@@ -66,7 +94,7 @@ export default function ActionMenu({
         style={{
           color: "#e94560",
           borderBottom: "1px solid #333",
-          marginBottom: "8px",
+          marginBottom: "4px",
           paddingBottom: "2px",
           fontWeight: "bold",
         }}
@@ -74,10 +102,24 @@ export default function ActionMenu({
         == 行动 ==
       </div>
 
+      {/* Category tabs */}
+      {tabs.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", borderBottom: "1px solid #333", marginBottom: "8px" }}>
+          <button style={tabStyle(ALL_TAB)} onClick={() => setActiveTab(ALL_TAB)}>
+            [全部]
+          </button>
+          {tabs.map((tab) => (
+            <button key={tab} style={tabStyle(tab)} onClick={() => setActiveTab(tab)}>
+              [{tab}]
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Move */}
-      {moveAction && moveAction.targets && (
+      {showMove && moveAction && moveAction.targets && (
         <div style={{ marginBottom: "8px" }}>
-          <div style={{ color: "#aaa", marginBottom: "4px" }}>{moveAction.name}:</div>
+          {activeTab === ALL_TAB && <div style={{ color: "#aaa", marginBottom: "4px" }}>移动:</div>}
           {moveAction.targets.map((target, idx) => (
             <button
               key={`${target.targetMap || ""}-${target.targetCell}`}
@@ -100,9 +142,9 @@ export default function ActionMenu({
       )}
 
       {/* Look */}
-      {lookAction && lookAction.targets && (
+      {showLook && lookAction && lookAction.targets && (
         <div style={{ marginBottom: "8px" }}>
-          <div style={{ color: "#aaa", marginBottom: "4px" }}>{lookAction.name}:</div>
+          {activeTab === ALL_TAB && <div style={{ color: "#aaa", marginBottom: "4px" }}>查看:</div>}
           {lookAction.targets.map((target, idx) => (
             <button
               key={`look-${target.targetMap || ""}-${target.targetCell}`}
@@ -124,11 +166,11 @@ export default function ActionMenu({
       )}
 
       {/* Configured actions by category */}
-      {catOrder.map((cat) => {
+      {visibleCats.map((cat) => {
         const catActions = grouped[cat] || [];
         return (
           <div key={cat} style={{ marginBottom: "8px" }}>
-            <div style={{ color: "#aaa", marginBottom: "4px" }}>{cat}:</div>
+            {activeTab === ALL_TAB && <div style={{ color: "#aaa", marginBottom: "4px" }}>{cat}:</div>}
             {catActions.map((action) => {
               const needsNpc = action.targetType === "npc";
               const isDisabled = disabled || action.enabled === false || (needsNpc && !selectedNpcId);

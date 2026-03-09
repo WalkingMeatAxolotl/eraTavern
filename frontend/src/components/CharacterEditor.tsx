@@ -268,7 +268,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
       {/* Traits */}
       <Section title="初始素质/特征">
-        {template.traits.map((field) => {
+        {template.traits.filter((f) => f.key !== "ability" && f.key !== "experience").map((field) => {
           const ids = data.traits[field.key] ?? [];
           const catGroups = groupsByCategory[field.key] ?? [];
 
@@ -413,6 +413,44 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             );
           })}
         </div>
+      </Section>
+
+      {/* Experiences */}
+      <Section title="初始经验">
+        {(template.experiences ?? []).length > 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "4px 12px" }}>
+            {(template.experiences ?? []).map((field: { key: string; label: string }) => {
+              const expData = data.experiences?.[field.key];
+              const count = expData?.count ?? 0;
+              return (
+                <div key={field.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ minWidth: "80px" }}>{field.label}:</span>
+                  <input
+                    type="number"
+                    value={count}
+                    onChange={(e) => {
+                      const newCount = Math.max(0, Number(e.target.value));
+                      const newExps = { ...(data.experiences ?? {}) };
+                      const existing = newExps[field.key] ?? {};
+                      newExps[field.key] = {
+                        ...existing,
+                        count: newCount,
+                        // count > 0: set placeholder first; count = 0: clear first
+                        first: newCount > 0
+                          ? (existing.first ?? { event: "未知", location: "未知", target: "未知" })
+                          : undefined,
+                      };
+                      updateField("experiences", newExps);
+                    }}
+                    style={{ ...inputStyle(), width: "70px" }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ color: "#666", fontSize: "12px" }}>无经验定义 (在特质编辑中添加「经验」类别的特质)</div>
+        )}
       </Section>
 
       {/* Inventory */}

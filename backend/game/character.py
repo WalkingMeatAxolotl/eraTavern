@@ -335,6 +335,69 @@ def save_trait_groups_file(data_dir: Path, groups_list: list[dict]) -> None:
         json.dump(existing, f, ensure_ascii=False, indent=2)
 
 
+def get_ability_defs(trait_defs: dict[str, dict]) -> list[dict]:
+    """Extract ability-category traits as ability definitions, sorted by id."""
+    abilities = []
+    for td in trait_defs.values():
+        if td.get("category") == "ability":
+            abilities.append({
+                "key": td["id"],
+                "label": td["name"],
+                "defaultValue": td.get("defaultValue", 0),
+            })
+    # Stable ordering by key
+    abilities.sort(key=lambda a: a["key"])
+    return abilities
+
+
+def get_experience_defs(trait_defs: dict[str, dict]) -> list[dict]:
+    """Extract experience-category traits as experience definitions, sorted by id."""
+    exps = []
+    for td in trait_defs.values():
+        if td.get("category") == "experience":
+            exps.append({
+                "key": td["id"],
+                "label": td["name"],
+            })
+    exps.sort(key=lambda e: e["key"])
+    return exps
+
+
+def apply_ability_decay(
+    characters: dict[str, dict[str, Any]],
+    trait_defs: dict[str, dict],
+    minutes_elapsed: int,
+) -> None:
+    """Apply ability decay to all characters based on elapsed game-time minutes."""
+    for td in trait_defs.values():
+        if td.get("category") != "ability":
+            continue
+        decay = td.get("decay")
+        if not decay:
+            continue
+        interval = decay.get("intervalMinutes", 0)
+        if interval <= 0:
+            continue
+        intervals = minutes_elapsed // interval
+        if intervals <= 0:
+            continue
+        amount = decay.get("amount", 0)
+        decay_type = decay.get("type", "fixed")
+        ability_key = td["id"]
+
+        for char_state in characters.values():
+            for ab in char_state.get("abilities", []):
+                if ab["key"] != ability_key:
+                    continue
+                if decay_type == "percentage":
+                    factor = (1.0 - amount / 100.0) ** intervals
+                    ab["exp"] = max(0, int(ab["exp"] * factor))
+                else:
+                    ab["exp"] = max(0, ab["exp"] - int(amount * intervals))
+                ab["grade"] = exp_to_grade(ab["exp"])
+                break
+
+
 def build_character_state(
     char_data: dict,
     template: dict,
@@ -379,10 +442,12 @@ def build_character_state(
     )
     state["clothing"] = clothing_state
 
-    # Traits — resolve IDs to display names via trait_defs
+    # Traits — resolve IDs to display names via trait_defs (skip ability category)
     traits: list[dict] = []
     for field in template["traits"]:
         key = field["key"]
+        if key in ("ability", "experience"):
+            continue  # abilities and experiences displayed separately
         ids = char_data.get("traits", {}).get(key, [])
         if trait_defs:
             values = [trait_defs[tid]["name"] if tid in trait_defs else tid for tid in ids]
@@ -396,9 +461,10 @@ def build_character_state(
         })
     state["traits"] = traits
 
-    # Abilities
+    # Abilities — built from ability-category trait_defs (auto-apply to all characters)
+    ability_defs = get_ability_defs(trait_defs) if trait_defs else template.get("abilities", [])
     abilities: list[dict] = []
-    for field in template["abilities"]:
+    for field in ability_defs:
         key = field["key"]
         exp = char_data.get("abilities", {}).get(key, field["defaultValue"])
         abilities.append({
@@ -408,6 +474,23 @@ def build_character_state(
             "grade": exp_to_grade(exp),
         })
     state["abilities"] = abilities
+
+    # Experiences — built from experience-category trait_defs (auto-apply to all characters)
+    exp_defs = get_experience_defs(trait_defs) if trait_defs else []
+    experiences: list[dict] = []
+    char_exps = char_data.get("experiences", {})
+    for field in exp_defs:
+        key = field["key"]
+        exp_data = char_exps.get(key, {})
+        count = exp_data.get("count", 0) if isinstance(exp_data, dict) else 0
+        first = exp_data.get("first") if isinstance(exp_data, dict) else None
+        experiences.append({
+            "key": key,
+            "label": field["label"],
+            "count": count,
+            "first": first,
+        })
+    state["experiences"] = experiences
 
     # Inventory — flat list, resolve names from item_defs
     raw_inv = char_data.get("inventory", [])

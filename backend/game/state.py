@@ -17,6 +17,9 @@ from .character import (
     load_trait_groups,
     load_characters,
     build_character_state,
+    get_ability_defs,
+    get_experience_defs,
+    apply_ability_decay,
 )
 from .time_system import GameTime
 
@@ -73,6 +76,7 @@ class GameState:
         self.distance_matrix: dict = {}
         self.npc_goals: dict[str, dict] = {}
         self.npc_activities: dict[str, str] = {}
+        self.npc_full_log: list[dict] = []  # all NPC logs for LLM
         self.time = GameTime()
 
     def load(self, game_id: str) -> None:
@@ -113,8 +117,11 @@ class GameState:
                 self.item_defs,
             )
 
-        # Reset time
+        # Reset time and NPC state
         self.time = GameTime()
+        self.npc_goals = {}
+        self.npc_activities = {}
+        self.npc_full_log = []
 
     def reload_maps(self) -> None:
         """Reload map collection from disk."""
@@ -137,6 +144,19 @@ class GameState:
                     char_data["resources"][key] = {
                         "value": res["value"],
                         "max": res["max"],
+                    }
+                # Sync abilities (decay may have changed exp values)
+                for ab in self.characters[char_id].get("abilities", []):
+                    if "abilities" not in char_data:
+                        char_data["abilities"] = {}
+                    char_data["abilities"][ab["key"]] = ab["exp"]
+                # Sync experiences
+                for exp_entry in self.characters[char_id].get("experiences", []):
+                    if "experiences" not in char_data:
+                        char_data["experiences"] = {}
+                    char_data["experiences"][exp_entry["key"]] = {
+                        "count": exp_entry["count"],
+                        "first": exp_entry["first"],
                     }
                 # Sync inventory
                 char_data["inventory"] = self.characters[char_id].get("inventory", [])
@@ -188,12 +208,17 @@ class GameState:
         # Update cached characters so condition checks use fresh data
         self.characters = display_characters
 
+        # Inject abilities/experiences derived from trait categories into template
+        template_ext = {**self.template}
+        template_ext["abilities"] = get_ability_defs(self.trait_defs)
+        template_ext["experiences"] = get_experience_defs(self.trait_defs)
+
         return {
             "gameId": self.game_id,
             "time": self.time.to_dict(),
             "maps": maps_data,
             "characters": display_characters,
-            "template": self.template,
+            "template": template_ext,
         }
 
     def _build_char(self, char_id: str) -> dict[str, Any]:
@@ -214,7 +239,7 @@ class GameState:
         for map_id, map_data in self.maps.items():
             cells = []
             for cell in map_data.get("cells", []):
-                cells.append({"id": cell["id"], "name": cell.get("name")})
+                cells.append({"id": cell["id"], "name": cell.get("name"), "tags": cell.get("tags", [])})
             maps_summary[map_id] = {
                 "id": map_data["id"],
                 "name": map_data["name"],
@@ -230,8 +255,13 @@ class GameState:
                 "isPlayer": char_data.get("isPlayer", False),
             }
 
+        # Inject abilities/experiences derived from trait categories into template
+        template_ext = {**self.template}
+        template_ext["abilities"] = get_ability_defs(self.trait_defs)
+        template_ext["experiences"] = get_experience_defs(self.trait_defs)
+
         return {
-            "template": self.template,
+            "template": template_ext,
             "clothingDefs": self.clothing_defs,
             "itemDefs": self.item_defs,
             "traitDefs": self.trait_defs,

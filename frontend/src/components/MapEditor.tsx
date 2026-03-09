@@ -693,6 +693,37 @@ function CellEditor({
         />
       </div>
 
+      {/* Tags */}
+      <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontSize: "12px", color: "#888" }}>标签:</span>
+        {(cell.tags ?? []).map((tag, i) => (
+          <span key={i} style={{
+            display: "inline-flex", alignItems: "center", gap: "3px",
+            padding: "1px 6px", fontSize: "11px",
+            backgroundColor: "#1a3a2a", border: "1px solid #3a6a3a", borderRadius: "3px", color: "#8f8",
+          }}>
+            {tag}
+            <button onClick={() => {
+              const next = (cell.tags ?? []).filter((_, j) => j !== i);
+              onChange({ ...cell, tags: next });
+            }} style={{ background: "none", border: "none", color: "#f88", cursor: "pointer", padding: 0, fontSize: "11px" }}>×</button>
+          </span>
+        ))}
+        <input
+          placeholder="+ 标签"
+          style={{ ...inputStyle, width: "70px", fontSize: "11px" }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const val = (e.target as HTMLInputElement).value.trim();
+              if (val && !(cell.tags ?? []).includes(val)) {
+                onChange({ ...cell, tags: [...(cell.tags ?? []), val] });
+              }
+              (e.target as HTMLInputElement).value = "";
+            }
+          }}
+        />
+      </div>
+
       {/* Connections */}
       <div style={{ fontSize: "12px", color: "#888" }}>连接:</div>
       {cell.connections.map((conn, i) => {

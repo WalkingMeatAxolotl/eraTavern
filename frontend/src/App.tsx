@@ -391,7 +391,7 @@ export default function App() {
           </div>
 
           {/* Right: Compact Info + Actions (always visible) */}
-          <div style={{ flex: "1 1 40%", display: "flex", flexDirection: "column", gap: "8px", minWidth: 0, overflowY: "auto", maxHeight: "50vh" }}>
+          <div style={{ flex: "1 1 40%", display: "flex", flexDirection: "column", gap: "8px", minWidth: 0, overflowY: "auto" }}>
             <CompactCharacterInfo
               character={
                 selectedCharacterId && gameState.characters[selectedCharacterId]

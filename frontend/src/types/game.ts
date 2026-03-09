@@ -19,6 +19,7 @@ export interface MapCell {
   row: number;
   col: number;
   name?: string;
+  tags?: string[];
   backgroundImage?: string;
   connections: { targetCell: number; targetMap?: string; travelTime?: number }[];
 }
@@ -97,6 +98,18 @@ export interface Ability {
   grade: string;
 }
 
+export interface ExperienceEntry {
+  key: string;
+  label: string;
+  count: number;
+  first: {
+    event: string;
+    location: string;
+    target: string;
+    time?: string;
+  } | null;
+}
+
 export interface InventoryItem {
   itemId: string;
   name: string;
@@ -118,6 +131,7 @@ export interface CharacterState {
   clothing: ClothingSlot[];
   traits: Trait[];
   abilities: Ability[];
+  experiences: ExperienceEntry[];
   inventory: InventoryItem[];
   position: { mapId: string; cellId: number };
   portrait?: string;
@@ -133,12 +147,20 @@ export interface TraitEffect {
   value: number;
 }
 
+export interface AbilityDecay {
+  amount: number;
+  type: "fixed" | "percentage";
+  intervalMinutes: number;
+}
+
 export interface TraitDefinition {
   id: string;
   name: string;
   category: string;
   description?: string;
   effects: TraitEffect[];
+  defaultValue?: number;       // ability category: default exp value
+  decay?: AbilityDecay | null;  // ability category: auto-decay settings
   source: "builtin" | "game";
 }
 
@@ -179,6 +201,7 @@ export interface ActionCondition {
   condTarget?: "self" | "target";  // who to check: actor (default) or action target
   mapId?: string;
   cellIds?: number[];
+  cellTags?: string[];
   npcId?: string;
   key?: string;
   op?: string;
@@ -205,7 +228,7 @@ export interface ActionCost {
 }
 
 export interface ActionEffect {
-  type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position";
+  type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position" | "experience";
   key?: string;
   op: string;
   value?: number;
@@ -225,15 +248,22 @@ export interface ActionEffect {
 }
 
 export interface ValueModifier {
-  type: "ability" | "trait" | "favorability";
-  key?: string;       // ability key or trait category key
+  type: "ability" | "trait" | "favorability" | "experience";
+  key?: string;       // ability key, trait category key, or experience key
   value?: string;     // trait value to match
   source?: string;    // favorability: "target" (default) or "self"
-  per?: number;       // every `per` points → bonus (ability/favorability)
+  per?: number;       // every `per` points → bonus (ability/favorability/experience)
   bonus: number;
+  bonusMode?: "add" | "multiply";  // "add" (default): +bonus, "multiply": *bonus%
 }
 
 export type WeightModifier = ValueModifier;
+
+export interface OutputTemplateEntry {
+  text: string;
+  conditions?: ConditionItem[];
+  weight?: number;  // default 1, random among matching entries
+}
 
 export interface ActionOutcome {
   grade: string;
@@ -242,6 +272,7 @@ export interface ActionOutcome {
   weightModifiers?: WeightModifier[];
   effects: ActionEffect[];
   outputTemplate?: string;
+  outputTemplates?: OutputTemplateEntry[];
 }
 
 export interface ActionDefinition {
@@ -257,6 +288,7 @@ export interface ActionDefinition {
   costs: ActionCost[];
   outcomes: ActionOutcome[];
   outputTemplate?: string;
+  outputTemplates?: OutputTemplateEntry[];
   source: "builtin" | "game";
 }
 
@@ -273,6 +305,7 @@ export interface RawCharacterData {
   clothing: Record<string, { itemId: string; state: "worn" | "halfWorn" }>;
   traits: Record<string, string[]>;
   abilities: Record<string, number>;
+  experiences?: Record<string, { count: number; first?: { event: string; location: string; target: string } }>;
   inventory?: { itemId: string; amount: number }[];
   position: { mapId: string; cellId: number };
   restPosition?: { mapId: string; cellId: number };
@@ -282,7 +315,7 @@ export interface RawCharacterData {
 export interface MapSummary {
   id: string;
   name: string;
-  cells: { id: number; name?: string }[];
+  cells: { id: number; name?: string; tags?: string[] }[];
 }
 
 export interface GameDefinitions {
@@ -294,6 +327,7 @@ export interface GameDefinitions {
     clothingSlots: string[];
     traits: { key: string; label: string; multiple: boolean }[];
     abilities: { key: string; label: string; defaultValue: number }[];
+    experiences: { key: string; label: string }[];
     inventory: { key: string; label: string; maxSlots?: number }[];
   };
   clothingDefs: Record<string, ClothingDefinition>;

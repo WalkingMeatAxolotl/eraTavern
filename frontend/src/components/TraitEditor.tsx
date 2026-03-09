@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { GameDefinitions, TraitDefinition, TraitEffect } from "../types/game";
+import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from "../types/game";
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../api/client";
 
 interface TraitEditorProps {
@@ -72,6 +72,11 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
   const [category, setCategory] = useState(trait.category);
   const [description, setDescription] = useState(trait.description ?? "");
   const [effects, setEffects] = useState<TraitEffect[]>([...trait.effects]);
+  const [defaultValue, setDefaultValue] = useState<number>(trait.defaultValue ?? 0);
+  const [decayEnabled, setDecayEnabled] = useState<boolean>(!!trait.decay);
+  const [decay, setDecay] = useState<AbilityDecay>(
+    trait.decay ?? { amount: 0, type: "fixed", intervalMinutes: 60 }
+  );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -103,7 +108,11 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
     setSaving(true);
     setMessage("");
     try {
-      const data = { id, name, category, description, effects };
+      const data: Record<string, unknown> = { id, name, category, description, effects };
+      if (category === "ability") {
+        data.defaultValue = defaultValue;
+        data.decay = decayEnabled ? decay : null;
+      }
       const result = isNew
         ? await createTraitDef(data)
         : await saveTraitDef(id, data);
@@ -204,6 +213,96 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
           </div>
         </div>
       </div>
+
+      {/* Experience-specific hint */}
+      {category === "experience" && (
+        <div style={{ marginBottom: "16px", padding: "8px", backgroundColor: "#1a1a2e", borderRadius: "3px" }}>
+          <div style={{ ...labelStyle, marginBottom: "4px", fontSize: "12px", color: "#aaa" }}>经验设定</div>
+          <div style={{ color: "#888", fontSize: "12px", lineHeight: 1.5 }}>
+            经验类型的特质会自动作用于全部角色，记录事件发生的次数。
+            <br />
+            通过行动效果中的「经验」类型来增加次数，首次触发时自动记录事件/地点/对象。
+          </div>
+        </div>
+      )}
+
+      {/* Ability-specific fields */}
+      {category === "ability" && (
+        <div style={{ marginBottom: "16px", padding: "8px", backgroundColor: "#1a1a2e", borderRadius: "3px" }}>
+          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: "#aaa" }}>能力设定</div>
+          <div style={{ display: "flex", gap: "12px", marginBottom: "8px" }}>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>默认经验值</div>
+              <input
+                type="number"
+                style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                value={defaultValue}
+                onChange={(e) => setDefaultValue(Number(e.target.value))}
+                disabled={isBuiltin}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>等级预览</div>
+              <div style={{ ...inputStyle, backgroundColor: "transparent", border: "none", paddingTop: "6px" }}>
+                {(() => {
+                  const grades = ["G", "F", "E", "D", "C", "B", "A", "S"];
+                  const level = Math.min(Math.floor(defaultValue / 1000), grades.length - 1);
+                  return grades[Math.max(0, level)];
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Decay settings */}
+          <div style={{ marginTop: "8px" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={decayEnabled}
+                onChange={(e) => setDecayEnabled(e.target.checked)}
+                disabled={isBuiltin}
+              />
+              <span style={{ ...labelStyle, marginBottom: 0 }}>启用数值回落</span>
+            </label>
+            {decayEnabled && (
+              <div style={{ display: "flex", gap: "12px", marginTop: "6px" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={labelStyle}>每隔(游戏分钟)</div>
+                  <input
+                    type="number"
+                    style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                    value={decay.intervalMinutes}
+                    onChange={(e) => setDecay({ ...decay, intervalMinutes: Number(e.target.value) })}
+                    disabled={isBuiltin}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={labelStyle}>下降类型</div>
+                  <select
+                    style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                    value={decay.type}
+                    onChange={(e) => setDecay({ ...decay, type: e.target.value as "fixed" | "percentage" })}
+                    disabled={isBuiltin}
+                  >
+                    <option value="fixed">固定值</option>
+                    <option value="percentage">百分比</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={labelStyle}>下降量{decay.type === "percentage" ? "(%)" : ""}</div>
+                  <input
+                    type="number"
+                    style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                    value={decay.amount}
+                    onChange={(e) => setDecay({ ...decay, amount: Number(e.target.value) })}
+                    disabled={isBuiltin}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Effects */}
       <div style={{ marginBottom: "16px" }}>

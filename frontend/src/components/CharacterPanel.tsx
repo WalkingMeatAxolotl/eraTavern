@@ -1,6 +1,6 @@
 import type { CharacterState } from "../types/game";
 
-export type DetailTab = "basic" | "ability" | "inventory" | "social";
+export type DetailTab = "basic" | "ability" | "experience" | "inventory" | "social";
 
 interface CharacterPanelProps {
   character: CharacterState;
@@ -12,12 +12,13 @@ interface CharacterPanelProps {
 const TAB_ITEMS: { key: DetailTab; label: string }[] = [
   { key: "basic", label: "基本" },
   { key: "ability", label: "素质" },
+  { key: "experience", label: "经验" },
   { key: "inventory", label: "物品" },
   { key: "social", label: "社交" },
 ];
 
 export default function CharacterPanel({ character, activeTab, onTabChange, onClose }: CharacterPanelProps) {
-  const { basicInfo, resources, clothing, traits, abilities, inventory, favorability } = character;
+  const { basicInfo, resources, clothing, traits, abilities, experiences, inventory, favorability } = character;
 
   const tabStyle = (tab: DetailTab): React.CSSProperties => ({
     padding: "4px 10px",
@@ -156,6 +157,33 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
             </div>
           </Section>
         </>
+      )}
+
+      {activeTab === "experience" && (
+        <Section title="经验记录">
+          {experiences && experiences.length > 0 ? (
+            experiences.filter((exp) => exp.count > 0).length > 0 ? (
+              experiences.filter((exp) => exp.count > 0).map((exp) => (
+                <div key={exp.key} style={{ marginBottom: "6px" }}>
+                  <div>
+                    {exp.label}: <span style={{ color: "#e94560" }}>{exp.count}</span>回
+                  </div>
+                  {exp.first && (
+                    <div style={{ color: "#888", fontSize: "11px", paddingLeft: "12px" }}>
+                      第一次: {exp.first.time ?? ""}
+                      {exp.first.location && <>，在{exp.first.location}</>}
+                      {exp.first.target && <>，和 {exp.first.target}</>}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div style={{ color: "#666" }}>无经验记录</div>
+            )
+          ) : (
+            <div style={{ color: "#666" }}>无经验定义</div>
+          )}
+        </Section>
       )}
 
       {activeTab === "inventory" && (
