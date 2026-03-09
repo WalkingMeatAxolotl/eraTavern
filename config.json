@@ -1,0 +1,5 @@
+{
+  "backendPort": 18000,
+  "frontendPort": 15173,
+  "maxWidth": 1200
+}

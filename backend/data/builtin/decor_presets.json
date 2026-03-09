@@ -1,0 +1,12 @@
+{
+  "presets": [
+    { "text": "■", "color": "#FFFFFF" },
+    { "text": "■", "color": "#888888" },
+    { "text": "田", "color": "#4488CC" },
+    { "text": "―", "color": "#FFFFFF" },
+    { "text": "｜", "color": "#FFFFFF" },
+    { "text": "木", "color": "#228B22" },
+    { "text": "森", "color": "#006400" },
+    { "text": "林", "color": "#2E8B57" }
+  ]
+}

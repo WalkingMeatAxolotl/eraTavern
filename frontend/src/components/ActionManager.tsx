@@ -1,0 +1,196 @@
+import { useEffect, useState, useCallback, useMemo } from "react";
+import type { ActionDefinition, GameDefinitions } from "../types/game";
+import { fetchActionDefs, fetchDefinitions } from "../api/client";
+import ActionEditor from "./ActionEditor";
+
+export default function ActionManager() {
+  const [actions, setActions] = useState<ActionDefinition[]>([]);
+  const [defs, setDefs] = useState<GameDefinitions | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isNew, setIsNew] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const [actionList, definitions] = await Promise.all([fetchActionDefs(), fetchDefinitions()]);
+    setActions(actionList);
+    setDefs(definitions);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleEdit = (id: string) => {
+    setIsNew(false);
+    setEditingId(id);
+  };
+
+  const handleNew = () => {
+    setIsNew(true);
+    setEditingId("__new__");
+  };
+
+  const handleBack = () => {
+    setEditingId(null);
+    setIsNew(false);
+    loadData();
+  };
+
+  const toggleCollapse = (key: string) => {
+    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Group actions by category
+  const { catOrder, grouped } = useMemo(() => {
+    const g: Record<string, ActionDefinition[]> = {};
+    const order: string[] = [];
+    for (const action of actions) {
+      const cat = action.category || "__uncategorized__";
+      if (!g[cat]) {
+        g[cat] = [];
+        order.push(cat);
+      }
+      g[cat].push(action);
+    }
+    return { catOrder: order, grouped: g };
+  }, [actions]);
+
+  if (loading || !defs) {
+    return (
+      <div style={{ color: "#666", fontFamily: "monospace", padding: "20px", textAlign: "center" }}>
+        加载中...
+      </div>
+    );
+  }
+
+  // Editor view
+  if (editingId !== null) {
+    const existing = actions.find((a) => a.id === editingId);
+    const blank: ActionDefinition = {
+      id: "",
+      name: "",
+      category: "",
+      targetType: "none",
+      triggerLLM: false,
+      timeCost: 10,
+      conditions: [],
+      costs: [],
+      outcomes: [],
+      outputTemplate: "",
+      source: "game",
+    };
+
+    return (
+      <ActionEditor
+        action={isNew ? blank : (existing ?? blank)}
+        isNew={isNew}
+        definitions={defs}
+        onBack={handleBack}
+      />
+    );
+  }
+
+  return (
+    <div
+      style={{
+        fontFamily: "monospace",
+        fontSize: "13px",
+        color: "#ddd",
+        padding: "12px 0",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+          == 行动列表 ==
+        </span>
+        <button
+          onClick={handleNew}
+          style={{
+            padding: "4px 12px",
+            backgroundColor: "#16213e",
+            color: "#0f0",
+            border: "1px solid #333",
+            borderRadius: "3px",
+            cursor: "pointer",
+            fontFamily: "monospace",
+            fontSize: "13px",
+          }}
+        >
+          [+ 新建行动]
+        </button>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        {catOrder.map((cat) => {
+          const catActions = grouped[cat] || [];
+          const isCollapsed = collapsed[cat] ?? false;
+          const displayCat = cat === "__uncategorized__" ? "未分类" : cat;
+          return (
+            <div key={cat}>
+              <button
+                onClick={() => toggleCollapse(cat)}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "6px 12px",
+                  backgroundColor: "#16213e",
+                  color: "#aaa",
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "monospace",
+                  fontSize: "13px",
+                  borderRadius: "3px",
+                }}
+              >
+                {isCollapsed ? "\u25B6" : "\u25BC"} {displayCat} ({catActions.length})
+              </button>
+              {!isCollapsed && catActions.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
+                  {catActions.map((action) => (
+                    <button
+                      key={action.id}
+                      onClick={() => handleEdit(action.id)}
+                      style={{
+                        position: "relative",
+                        padding: "4px 10px",
+                        backgroundColor: "#1a1a2e",
+                        color: "#ddd",
+                        border: "1px solid #333",
+                        borderRadius: "3px",
+                        cursor: "pointer",
+                        fontFamily: "monospace",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {action.name || action.id}
+                      {action.source === "builtin" && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "-2px",
+                            right: "-2px",
+                            fontSize: "8px",
+                            color: "#888",
+                          }}
+                          title="内置行动"
+                        >
+                          &#x1F512;
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {actions.length === 0 && (
+          <div style={{ color: "#666", padding: "8px" }}>暂无行动</div>
+        )}
+      </div>
+    </div>
+  );
+}

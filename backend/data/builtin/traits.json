@@ -1,0 +1,9 @@
+{
+  "traits": [
+    { "id": "human", "name": "人类", "category": "race", "effects": [] },
+    { "id": "man", "name": "男人", "category": "bodyTrait", "effects": [] },
+    { "id": "woman", "name": "女人", "category": "bodyTrait", "effects": [] },
+    { "id": "virgin", "name": "童贞", "category": "sexTrait", "effects": [] }
+  ],
+  "traitGroups": []
+}
