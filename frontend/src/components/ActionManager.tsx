@@ -166,19 +166,8 @@ export default function ActionManager() {
                       }}
                     >
                       {action.name || action.id}
-                      {action.source === "builtin" && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            top: "-2px",
-                            right: "-2px",
-                            fontSize: "8px",
-                            color: "#888",
-                          }}
-                          title="内置行动"
-                        >
-                          &#x1F512;
-                        </span>
+                      {action.source && (
+                        <span style={{ color: "#888", fontSize: "11px" }}> [{action.source}]</span>
                       )}
                     </button>
                   ))}

@@ -26,11 +26,18 @@ function buildTargetOptions(defs: GameDefinitions) {
   return groups;
 }
 
+interface AddonCrud {
+  save: (id: string, data: unknown) => Promise<void>;
+  create: (data: unknown) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+}
+
 interface Props {
   clothing: ClothingDefinition;
   definitions: GameDefinitions;
   isNew: boolean;
   onBack: () => void;
+  addonCrud?: AddonCrud;
 }
 
 const SLOT_LABELS: Record<string, string> = {
@@ -64,7 +71,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: "2px",
 };
 
-export default function ClothingEditor({ clothing, definitions, isNew, onBack }: Props) {
+export default function ClothingEditor({ clothing, definitions, isNew, onBack, addonCrud }: Props) {
   const [id, setId] = useState(clothing.id);
   const [name, setName] = useState(clothing.name);
   const [slot, setSlot] = useState(clothing.slot);
@@ -73,7 +80,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const isBuiltin = clothing.source === "builtin";
+  const isReadOnly = false;  // all addon entities are editable
   const slots = [...new Set(definitions.template.clothingSlots.map((s) =>
     s.startsWith("accessory") ? "accessory" : s
   ))];
@@ -111,6 +118,10 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
     setMessage("");
     try {
       const data = { id, name, slot, occlusion, effects };
+      if (addonCrud) {
+        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(id, data); }
+        return;
+      }
       const result = isNew
         ? await createClothingDef(data)
         : await saveClothingDef(id, data);
@@ -129,6 +140,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
     if (!confirm(`确定要删除服装「${name || id}」吗？`)) return;
     setSaving(true);
     try {
+      if (addonCrud) { await addonCrud.delete(id); return; }
       const result = await deleteClothingDef(id);
       if (result.success) {
         onBack();
@@ -152,9 +164,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
         <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建服装" : "编辑服装"} ==
         </span>
-        {isBuiltin && (
+        {clothing.source && (
           <span style={{ color: "#e89a19", fontSize: "12px" }}>
-            内置服装不可编辑
+            来源: {clothing.source}
           </span>
         )}
       </div>
@@ -168,7 +180,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={id}
               onChange={(e) => setId(e.target.value)}
-              disabled={!isNew || isBuiltin}
+              disabled={!isNew || isReadOnly}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -177,7 +189,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
             />
           </div>
         </div>
@@ -191,7 +203,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
               // Remove self-slot from occlusion if it was there
               setOcclusion((prev) => prev.filter((s) => s !== e.target.value));
             }}
-            disabled={isBuiltin}
+            disabled={isReadOnly}
           >
             {slots.map((s) => (
               <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>
@@ -219,7 +231,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
               }}
             >
               {SLOT_LABELS[s] ?? s}
-              {!isBuiltin && (
+              {!isReadOnly && (
                 <button
                   onClick={() => setOcclusion((prev) => prev.filter((x) => x !== s))}
                   style={{
@@ -238,7 +250,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
               )}
             </span>
           ))}
-          {!isBuiltin && occlusionOptions.length > 0 && (
+          {!isReadOnly && occlusionOptions.length > 0 && (
             <select
               value=""
               onChange={(e) => {
@@ -277,7 +289,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
                 style={{ ...inputStyle, flex: "1 1 0" }}
                 value={eff.target}
                 onChange={(e) => updateEffect(idx, { target: e.target.value })}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               >
                 {targetGroups.map((g) => (
                   <optgroup key={g.label} label={g.label}>
@@ -291,7 +303,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
                 style={{ ...inputStyle, width: "70px" }}
                 value={eff.effect}
                 onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               >
                 <option value="increase">增加</option>
                 <option value="decrease">减少</option>
@@ -300,7 +312,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
                 style={{ ...inputStyle, width: "70px" }}
                 value={eff.magnitudeType}
                 onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               >
                 <option value="fixed">固定值</option>
                 <option value="percentage">百分比</option>
@@ -310,14 +322,14 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
                 style={{ ...inputStyle, width: "60px" }}
                 value={eff.value}
                 onChange={(e) => updateEffect(idx, { value: Number(e.target.value) })}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               />
               {eff.magnitudeType === "percentage" && (
                 <span style={{ color: "#666", fontSize: "11px", width: "50px", flexShrink: 0 }}>
                   {pctHint(eff.value, eff.effect)}
                 </span>
               )}
-              {!isBuiltin && (
+              {!isReadOnly && (
                 <button
                   onClick={() => removeEffect(idx)}
                   style={{
@@ -336,7 +348,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
             </div>
           ))}
         </div>
-        {!isBuiltin && (
+        {!isReadOnly && (
           <button
             onClick={addEffect}
             style={{
@@ -358,7 +370,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        {!isBuiltin && (
+        {!isReadOnly && (
           <button
             onClick={handleSave}
             disabled={saving}
@@ -376,7 +388,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack }:
             [保存]
           </button>
         )}
-        {!isBuiltin && !isNew && (
+        {!isReadOnly && !isNew && (
           <button
             onClick={handleDelete}
             disabled={saving}

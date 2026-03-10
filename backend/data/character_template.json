@@ -1,0 +1,37 @@
+{
+  "id": "era-touhou",
+  "name": "东方ERA角色模板",
+
+  "basicInfo": [
+    { "key": "name", "label": "名称", "type": "string", "defaultValue": "" },
+    { "key": "money", "label": "金钱", "type": "number", "defaultValue": 0 },
+    { "key": "libido", "label": "性欲", "type": "number", "defaultValue": 0 }
+  ],
+
+  "resources": [
+    { "key": "stamina", "label": "体力", "defaultMax": 2000, "defaultValue": 2000, "color": "#FFFF00" },
+    { "key": "energy", "label": "气力", "defaultMax": 2000, "defaultValue": 2000, "color": "#00FFFF" }
+  ],
+
+  "clothingSlots": [
+    "hat", "upperBody", "upperUnderwear",
+    "lowerBody", "lowerUnderwear",
+    "hands", "feet", "shoes",
+    "accessory1", "accessory2", "accessory3"
+  ],
+
+  "traits": [
+    { "key": "ability", "label": "能力", "multiple": true },
+    { "key": "experience", "label": "经验", "multiple": true },
+    { "key": "race", "label": "族群", "multiple": true },
+    { "key": "sexTrait", "label": "性的特征", "multiple": true },
+    { "key": "bodyTrait", "label": "身体的特征", "multiple": true },
+    { "key": "mentalTrait", "label": "精神的特征", "multiple": true },
+    { "key": "techTrait", "label": "技术的特征", "multiple": true },
+    { "key": "other", "label": "其他", "multiple": true }
+  ],
+
+  "inventory": [
+    { "key": "cooking", "label": "当前持有料理", "maxSlots": 1 }
+  ]
+}

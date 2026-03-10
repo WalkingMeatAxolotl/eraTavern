@@ -2,11 +2,18 @@ import { useState } from "react";
 import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from "../types/game";
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../api/client";
 
+interface AddonCrud {
+  save: (id: string, data: unknown) => Promise<void>;
+  create: (data: unknown) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+}
+
 interface TraitEditorProps {
   trait: TraitDefinition;
   definitions: GameDefinitions;
   isNew: boolean;
   onBack: () => void;
+  addonCrud?: AddonCrud;
 }
 
 /** Build effect target options grouped by type. */
@@ -66,7 +73,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: "2px",
 };
 
-export default function TraitEditor({ trait, definitions, isNew, onBack }: TraitEditorProps) {
+export default function TraitEditor({ trait, definitions, isNew, onBack, addonCrud }: TraitEditorProps) {
   const [id, setId] = useState(trait.id);
   const [name, setName] = useState(trait.name);
   const [category, setCategory] = useState(trait.category);
@@ -80,7 +87,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const isBuiltin = trait.source === "builtin";
+  const isReadOnly = false;  // all addon entities are editable
   const targetGroups = buildTargetOptions(definitions);
   const allTargets = targetGroups.flatMap((g) => g.options);
 
@@ -113,6 +120,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
         data.defaultValue = defaultValue;
         data.decay = decayEnabled ? decay : null;
       }
+      if (addonCrud) {
+        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(id, data); }
+        return;
+      }
       const result = isNew
         ? await createTraitDef(data)
         : await saveTraitDef(id, data);
@@ -132,6 +143,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
     if (!confirm(`确定要删除特质「${name || id}」吗？`)) return;
     setSaving(true);
     try {
+      if (addonCrud) { await addonCrud.delete(id); return; }
       const result = await deleteTraitDef(id);
       if (result.success) {
         onBack();
@@ -159,9 +171,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
         <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建特质" : "编辑特质"} ==
         </span>
-        {isBuiltin && (
+        {trait.source && (
           <span style={{ color: "#e89a19", fontSize: "12px" }}>
-            内置特质不可编辑
+            来源: {trait.source}
           </span>
         )}
       </div>
@@ -175,7 +187,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={id}
               onChange={(e) => setId(e.target.value)}
-              disabled={!isNew || isBuiltin}
+              disabled={!isNew || isReadOnly}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -184,7 +196,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
             />
           </div>
         </div>
@@ -195,7 +207,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
             >
               {definitions.template.traits.map((t) => (
                 <option key={t.key} value={t.key}>{t.label}</option>
@@ -208,7 +220,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
             />
           </div>
         </div>
@@ -238,7 +250,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                 style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
                 value={defaultValue}
                 onChange={(e) => setDefaultValue(Number(e.target.value))}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               />
             </div>
             <div style={{ flex: 1 }}>
@@ -260,7 +272,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                 type="checkbox"
                 checked={decayEnabled}
                 onChange={(e) => setDecayEnabled(e.target.checked)}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               />
               <span style={{ ...labelStyle, marginBottom: 0 }}>启用数值回落</span>
             </label>
@@ -273,7 +285,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                     style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
                     value={decay.intervalMinutes}
                     onChange={(e) => setDecay({ ...decay, intervalMinutes: Number(e.target.value) })}
-                    disabled={isBuiltin}
+                    disabled={isReadOnly}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -282,7 +294,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                     style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
                     value={decay.type}
                     onChange={(e) => setDecay({ ...decay, type: e.target.value as "fixed" | "percentage" })}
-                    disabled={isBuiltin}
+                    disabled={isReadOnly}
                   >
                     <option value="fixed">固定值</option>
                     <option value="percentage">百分比</option>
@@ -295,7 +307,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                     style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
                     value={decay.amount}
                     onChange={(e) => setDecay({ ...decay, amount: Number(e.target.value) })}
-                    disabled={isBuiltin}
+                    disabled={isReadOnly}
                   />
                 </div>
               </div>
@@ -325,7 +337,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                 style={{ ...inputStyle, flex: "1 1 0" }}
                 value={eff.target}
                 onChange={(e) => updateEffect(idx, { target: e.target.value })}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               >
                 {targetGroups.map((g) => (
                   <optgroup key={g.label} label={g.label}>
@@ -341,7 +353,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                 style={{ ...inputStyle, width: "70px" }}
                 value={eff.effect}
                 onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               >
                 <option value="increase">增加</option>
                 <option value="decrease">减少</option>
@@ -352,7 +364,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                 style={{ ...inputStyle, width: "70px" }}
                 value={eff.magnitudeType}
                 onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               >
                 <option value="fixed">固定值</option>
                 <option value="percentage">百分比</option>
@@ -364,7 +376,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
                 style={{ ...inputStyle, width: "60px" }}
                 value={eff.value}
                 onChange={(e) => updateEffect(idx, { value: Number(e.target.value) })}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               />
 
               {/* Multiplier hint for percentage */}
@@ -375,7 +387,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
               )}
 
               {/* Delete button */}
-              {!isBuiltin && (
+              {!isReadOnly && (
                 <button
                   onClick={() => removeEffect(idx)}
                   style={{
@@ -394,7 +406,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
             </div>
           ))}
         </div>
-        {!isBuiltin && (
+        {!isReadOnly && (
           <button
             onClick={addEffect}
             style={{
@@ -416,7 +428,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        {!isBuiltin && (
+        {!isReadOnly && (
           <button
             onClick={handleSave}
             disabled={saving}
@@ -434,7 +446,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack }: Trait
             [保存]
           </button>
         )}
-        {!isBuiltin && !isNew && (
+        {!isReadOnly && !isNew && (
           <button
             onClick={handleDelete}
             disabled={saving}

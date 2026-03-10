@@ -3,10 +3,12 @@ type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "map
 interface NavBarProps {
   navPage: NavPage | null;
   onNavChange: (page: NavPage | null) => void;
-  sidebarOpen: boolean;
-  onToggleSidebar: () => void;
-  gameName: string;
+  worldName: string;
   maxWidth: number;
+  leftOpen: boolean;
+  rightOpen: boolean;
+  onToggleLeft: () => void;
+  onToggleRight: () => void;
 }
 
 type NavItem = { key: NavPage; label: string };
@@ -24,10 +26,12 @@ const navItems: NavItem[] = [
 export default function NavBar({
   navPage,
   onNavChange,
-  sidebarOpen,
-  onToggleSidebar,
-  gameName,
+  worldName,
   maxWidth,
+  leftOpen,
+  rightOpen,
+  onToggleLeft,
+  onToggleRight,
 }: NavBarProps) {
   const btnStyle = (active: boolean): React.CSSProperties => ({
     padding: "4px 12px",
@@ -38,6 +42,16 @@ export default function NavBar({
     fontFamily: "monospace",
     fontSize: "13px",
     fontWeight: active ? "bold" : "normal",
+  });
+
+  const toggleStyle = (active: boolean): React.CSSProperties => ({
+    padding: "4px 8px",
+    backgroundColor: "transparent",
+    color: active ? "#e94560" : "#666",
+    border: "none",
+    cursor: "pointer",
+    fontFamily: "monospace",
+    fontSize: "14px",
   });
 
   return (
@@ -62,11 +76,16 @@ export default function NavBar({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 8px",
+          padding: "0 4px",
           boxSizing: "border-box",
         }}
       >
-        <div style={{ display: "flex", gap: "4px" }}>
+        {/* Left toggle + nav tabs */}
+        <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+          <button style={toggleStyle(leftOpen)} onClick={onToggleLeft} title="世界">
+            {leftOpen ? "[W]" : "[W]"}
+          </button>
+          <span style={{ color: "#333", margin: "0 2px" }}>|</span>
           {navItems.map((item) => (
             <button
               key={item.key}
@@ -79,7 +98,9 @@ export default function NavBar({
             </button>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+
+        {/* World name + right toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <span
             style={{
               color: "#666",
@@ -87,13 +108,11 @@ export default function NavBar({
               fontSize: "12px",
             }}
           >
-            {gameName}
+            {worldName || "空世界"}
           </span>
-          <button
-            style={btnStyle(sidebarOpen)}
-            onClick={onToggleSidebar}
-          >
-            [游戏卡]
+          <span style={{ color: "#333", margin: "0 2px" }}>|</span>
+          <button style={toggleStyle(rightOpen)} onClick={onToggleRight} title="Add-on">
+            [A]
           </button>
         </div>
       </div>

@@ -179,19 +179,8 @@ export default function ClothingManager() {
                       }}
                     >
                       {c.name || c.id}
-                      {c.source === "builtin" && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            top: "-2px",
-                            right: "-2px",
-                            fontSize: "8px",
-                            color: "#888",
-                          }}
-                          title="内置服装"
-                        >
-                          &#x1F512;
-                        </span>
+                      {c.source && (
+                        <span style={{ color: "#888", fontSize: "11px" }}> [{c.source}]</span>
                       )}
                     </button>
                   ))}
@@ -239,19 +228,8 @@ export default function ClothingManager() {
                     }}
                   >
                     {c.name || c.id}
-                    {c.source === "builtin" && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: "-2px",
-                          right: "-2px",
-                          fontSize: "8px",
-                          color: "#888",
-                        }}
-                        title="内置服装"
-                      >
-                        &#x1F512;
-                      </span>
+                    {c.source && (
+                      <span style={{ color: "#888", fontSize: "11px" }}> [{c.source}]</span>
                     )}
                   </button>
                 ))}

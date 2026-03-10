@@ -38,7 +38,7 @@ export interface GameMap {
 export interface DecorPreset {
   text: string;
   color: string;
-  source?: "builtin" | "game";
+  source?: string;
 }
 
 export type RawGridCell = string | [string, string];
@@ -52,12 +52,36 @@ export interface RawMapData {
   cells: MapCell[];
 }
 
-// --- Game package types ---
+// --- World / Addon types ---
 
-export interface GameInfo {
+export interface WorldInfo {
   id: string;
   name: string;
-  description: string;
+  addons?: { id: string; version: string }[];
+  writeTarget?: string;
+  playerCharacter?: string;
+}
+
+/** @deprecated Use WorldInfo */
+export type GameInfo = WorldInfo;
+
+export interface AddonInfo {
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
+  author?: string;
+  categories?: string[];
+  dependencies?: { id: string; version: string }[];
+}
+
+export interface SessionInfo {
+  worldId: string;
+  worldName: string;
+  addons: { id: string; version: string }[];
+  writeTarget: string;
+  playerCharacter: string;
+  dirty: boolean;
 }
 
 // --- Character types ---
@@ -161,7 +185,7 @@ export interface TraitDefinition {
   effects: TraitEffect[];
   defaultValue?: number;       // ability category: default exp value
   decay?: AbilityDecay | null;  // ability category: auto-decay settings
-  source: "builtin" | "game";
+  source: string;
 }
 
 export interface ClothingDefinition {
@@ -170,7 +194,7 @@ export interface ClothingDefinition {
   slot: string;
   occlusion: string[];
   effects?: TraitEffect[];
-  source: "builtin" | "game";
+  source: string;
 }
 
 export interface TraitGroup {
@@ -178,7 +202,7 @@ export interface TraitGroup {
   name: string;
   category: string;
   traits: string[];
-  source: "builtin" | "game";
+  source: string;
 }
 
 // --- Item definition types ---
@@ -191,7 +215,7 @@ export interface ItemDefinition {
   maxStack: number;
   sellable: boolean;
   price: number;
-  source: "builtin" | "game";
+  source: string;
 }
 
 // --- Action definition types ---
@@ -289,7 +313,7 @@ export interface ActionDefinition {
   outcomes: ActionOutcome[];
   outputTemplate?: string;
   outputTemplates?: OutputTemplateEntry[];
-  source: "builtin" | "game";
+  source: string;
 }
 
 // --- Raw character config (for editing) ---
@@ -381,11 +405,13 @@ export interface GameTime {
 // --- Game state ---
 
 export interface GameState {
-  gameId: string;
+  worldId: string;
+  gameId: string;  // legacy alias for worldId
   time: GameTime;
   maps: Record<string, GameMap>;
   characters: Record<string, CharacterState>;
   template: unknown;
+  dirty: boolean;
 }
 
 export interface ActionResult {

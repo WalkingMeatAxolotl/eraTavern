@@ -28,8 +28,12 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Game packages
-backend/data/games/
+# Game data - worlds (all user-created)
+backend/data/worlds/
+
+# Game data - addons (keep only base)
+addons/*
+!addons/base/
 
 # Claude Code
 .claude/

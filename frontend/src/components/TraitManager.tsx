@@ -235,10 +235,8 @@ export default function TraitManager() {
                       >
                         <span style={{ color: "#e94560" }}>{g.name}</span>
                         <span style={{ color: "#888" }}>: {memberNames.join(" | ")}</span>
-                        {g.source === "builtin" && (
-                          <span style={{ fontSize: "8px", color: "#888", marginLeft: "auto" }} title="内置">
-                            &#x1F512;
-                          </span>
+                        {g.source && (
+                          <span style={{ color: "#888", fontSize: "11px", marginLeft: "auto" }}>[{g.source}]</span>
                         )}
                       </button>
                     );
@@ -277,19 +275,8 @@ export default function TraitManager() {
                                 {t.decay && <span style={{ color: "#e89a19", marginLeft: "2px" }} title="有回落">&#x21E3;</span>}
                               </span>
                             )}
-                            {t.source === "builtin" && (
-                              <span
-                                style={{
-                                  position: "absolute",
-                                  top: "-2px",
-                                  right: "-2px",
-                                  fontSize: "8px",
-                                  color: "#888",
-                                }}
-                                title="内置特质"
-                              >
-                                &#x1F512;
-                              </span>
+                            {t.source && (
+                              <span style={{ color: "#888", fontSize: "11px" }}> [{t.source}]</span>
                             )}
                           </button>
                         );
@@ -342,19 +329,8 @@ export default function TraitManager() {
                       }}
                     >
                       {gName ? <><span style={{ color: "#888" }}>{gName} - </span>{t.name || t.id}</> : (t.name || t.id)}
-                      {t.source === "builtin" && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            top: "-2px",
-                            right: "-2px",
-                            fontSize: "8px",
-                            color: "#888",
-                          }}
-                          title="内置特质"
-                        >
-                          &#x1F512;
-                        </span>
+                      {t.source && (
+                        <span style={{ color: "#888", fontSize: "11px" }}> [{t.source}]</span>
                       )}
                     </button>
                   );

@@ -67,7 +67,7 @@ export default function ItemManager() {
     const g: Record<string, ItemDefinition[]> = {};
     const order: string[] = [];
     for (const item of items) {
-      const tag = item.tags[0] ?? "__untagged__";
+      const tag = (item.tags && item.tags[0]) ?? "__untagged__";
       if (!g[tag]) {
         g[tag] = [];
         order.push(tag);
@@ -81,7 +81,7 @@ export default function ItemManager() {
   const tagUsage = useMemo(() => {
     const usage: Record<string, number> = {};
     for (const item of items) {
-      for (const t of item.tags) {
+      for (const t of (item.tags ?? [])) {
         usage[t] = (usage[t] || 0) + 1;
       }
     }
@@ -294,19 +294,8 @@ export default function ItemManager() {
                       }}
                     >
                       {item.name || item.id}
-                      {item.source === "builtin" && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            top: "-2px",
-                            right: "-2px",
-                            fontSize: "8px",
-                            color: "#888",
-                          }}
-                          title="内置物品"
-                        >
-                          &#x1F512;
-                        </span>
+                      {item.source && (
+                        <span style={{ color: "#888", fontSize: "11px" }}> [{item.source}]</span>
                       )}
                     </button>
                   ))}

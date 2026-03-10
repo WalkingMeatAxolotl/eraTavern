@@ -6,11 +6,18 @@ import type {
 } from "../types/game";
 import { createActionDef, saveActionDef, deleteActionDef } from "../api/client";
 
+interface AddonCrud {
+  save: (id: string, data: unknown) => Promise<void>;
+  create: (data: unknown) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+}
+
 interface Props {
   action: ActionDefinition;
   isNew: boolean;
   definitions: GameDefinitions;
   onBack: () => void;
+  addonCrud?: AddonCrud;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -95,7 +102,7 @@ function isNotGroup(item: ConditionItem): item is { not: ConditionItem } {
 
 const MAX_UI_DEPTH = 4;
 
-export default function ActionEditor({ action, isNew, definitions, onBack }: Props) {
+export default function ActionEditor({ action, isNew, definitions, onBack, addonCrud }: Props) {
   const [id, setId] = useState(action.id);
   const [name, setName] = useState(action.name);
   const [category, setCategory] = useState(action.category);
@@ -115,7 +122,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
   const [message, setMessage] = useState("");
   const [showVarHelp, setShowVarHelp] = useState(false);
 
-  const isBuiltin = action.source === "builtin";
+  const isReadOnly = false;  // all addon entities are editable
 
   const { template, maps, traitDefs, itemDefs, clothingDefs, characters } = definitions;
   const resourceKeys = template.resources.map((r) => ({ key: r.key, label: r.label }));
@@ -176,6 +183,10 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
         conditions, costs: [], outcomes,
         outputTemplates: outputTemplates.length > 0 ? outputTemplates : undefined,
       };
+      if (addonCrud) {
+        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(id, data); }
+        return;
+      }
       const result = isNew
         ? await createActionDef(data)
         : await saveActionDef(id, data);
@@ -194,6 +205,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
     if (!confirm(`确定要删除行动「${name || id}」吗？`)) return;
     setSaving(true);
     try {
+      if (addonCrud) { await addonCrud.delete(id); return; }
       const result = await deleteActionDef(id);
       if (result.success) onBack();
       else setMessage(result.message);
@@ -211,7 +223,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
         <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建行动" : "编辑行动"} ==
         </span>
-        {isBuiltin && <span style={{ color: "#e89a19", fontSize: "12px" }}>内置行动不可编辑</span>}
+        {action.source && <span style={{ color: "#e89a19", fontSize: "12px" }}>来源: {action.source}</span>}
       </div>
 
       {/* Basic info */}
@@ -221,25 +233,25 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>ID</div>
             <input style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-              value={id} onChange={(e) => setId(e.target.value)} disabled={!isNew || isBuiltin} />
+              value={id} onChange={(e) => setId(e.target.value)} disabled={!isNew || isReadOnly} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>名称</div>
             <input style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-              value={name} onChange={(e) => setName(e.target.value)} disabled={isBuiltin} />
+              value={name} onChange={(e) => setName(e.target.value)} disabled={isReadOnly} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>分类</div>
             <select style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={categoryList.includes(category) ? category : "__custom__"}
               onChange={(e) => { if (e.target.value !== "__custom__") setCategory(e.target.value); }}
-              disabled={isBuiltin}>
+              disabled={isReadOnly}>
               {categoryList.map((c) => <option key={c} value={c}>{c}</option>)}
               <option value="__custom__">自定义...</option>
             </select>
             {!categoryList.includes(category) && (
               <input style={{ ...inputStyle, width: "100%", boxSizing: "border-box", marginTop: "2px" }}
-                value={category} onChange={(e) => setCategory(e.target.value)} disabled={isBuiltin}
+                value={category} onChange={(e) => setCategory(e.target.value)} disabled={isReadOnly}
                 placeholder="输入新分类" />
             )}
           </div>
@@ -248,7 +260,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
           <div>
             <div style={labelStyle}>目标类型</div>
             <select style={inputStyle} value={targetType}
-              onChange={(e) => setTargetType(e.target.value as ActionDefinition["targetType"])} disabled={isBuiltin}>
+              onChange={(e) => setTargetType(e.target.value as ActionDefinition["targetType"])} disabled={isReadOnly}>
               <option value="none">无目标</option>
               <option value="npc">NPC</option>
               <option value="self">自身</option>
@@ -257,10 +269,10 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
           <div>
             <div style={labelStyle}>时间消耗(分)</div>
             <input type="number" step={5} min={0} style={{ ...inputStyle, width: "80px" }}
-              value={timeCost} onChange={(e) => setTimeCost(Math.max(0, Math.round(Number(e.target.value) / 5) * 5))} disabled={isBuiltin} />
+              value={timeCost} onChange={(e) => setTimeCost(Math.max(0, Math.round(Number(e.target.value) / 5) * 5))} disabled={isReadOnly} />
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isBuiltin ? "default" : "pointer", paddingBottom: "4px" }}>
-            <input type="checkbox" checked={triggerLLM} onChange={(e) => setTriggerLLM(e.target.checked)} disabled={isBuiltin} />
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isReadOnly ? "default" : "pointer", paddingBottom: "4px" }}>
+            <input type="checkbox" checked={triggerLLM} onChange={(e) => setTriggerLLM(e.target.checked)} disabled={isReadOnly} />
             <span style={{ fontSize: "12px" }}>触发LLM</span>
           </label>
         </div>
@@ -273,7 +285,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
           <div>
             <div style={labelStyle}>基础权重</div>
             <input type="number" style={{ ...inputStyle, width: "80px" }}
-              value={npcWeight} onChange={(e) => setNpcWeight(Number(e.target.value))} disabled={isBuiltin} />
+              value={npcWeight} onChange={(e) => setNpcWeight(Number(e.target.value))} disabled={isReadOnly} />
             <div style={{ color: "#666", fontSize: "10px", marginTop: "2px" }}>0 = NPC不会执行此行动</div>
           </div>
           <div style={{
@@ -286,7 +298,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
             <ModifierListEditor
               modifiers={npcWeightModifiers}
               onChange={setNpcWeightModifiers}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
               abilityKeys={abilityKeys}
               experienceKeys={experienceKeys}
               traitCategories={traitCategories}
@@ -301,7 +313,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
       <div style={sectionStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
           <span style={{ color: "#e94560", fontSize: "12px", fontWeight: "bold" }}>显示条件 (AND)</span>
-          {!isBuiltin && (
+          {!isReadOnly && (
             <div style={{ display: "flex", gap: "4px" }}>
               <button onClick={addCondition} style={smallBtnStyle("#0f0")}>[+ 条件]</button>
               <button onClick={addOrGroup} style={smallBtnStyle("#0f0")}>[+ OR]</button>
@@ -316,7 +328,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
               item={item}
               onChange={(newItem) => updateCondition(idx, newItem)}
               onRemove={() => removeCondition(idx)}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
               depth={0}
               ctx={{
                 definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
@@ -331,12 +343,12 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
       <div style={sectionStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
           <span style={{ color: "#e94560", fontSize: "12px", fontWeight: "bold" }}>结果分级</span>
-          {!isBuiltin && <button onClick={addOutcome} style={smallBtnStyle("#0f0")}>[+ 结果]</button>}
+          {!isReadOnly && <button onClick={addOutcome} style={smallBtnStyle("#0f0")}>[+ 结果]</button>}
         </div>
         {outcomes.length === 0 && <div style={{ color: "#666", fontSize: "12px" }}>无结果（固定成功）</div>}
         {outcomes.map((outcome, idx) => (
           <OutcomeEditor key={idx} outcome={outcome} onChange={(o) => updateOutcome(idx, o)}
-            onRemove={() => removeOutcome(idx)} disabled={isBuiltin} definitions={definitions}
+            onRemove={() => removeOutcome(idx)} disabled={isReadOnly} definitions={definitions}
             resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
             traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} />
         ))}
@@ -354,7 +366,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
         <TemplateListEditor
           templates={outputTemplates}
           onChange={setOutputTemplates}
-          disabled={isBuiltin}
+          disabled={isReadOnly}
           ctx={{
             definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
             traitCategories, clothingSlots, mapList, traitList, itemList, npcList,
@@ -371,13 +383,13 @@ export default function ActionEditor({ action, isNew, definitions, onBack }: Pro
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        {!isBuiltin && (
+        {!isReadOnly && (
           <button onClick={handleSave} disabled={saving}
             style={{ ...smallBtnStyle("#0f0"), padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
             [保存]
           </button>
         )}
-        {!isBuiltin && !isNew && (
+        {!isReadOnly && !isNew && (
           <button onClick={handleDelete} disabled={saving}
             style={{ ...smallBtnStyle("#e94560"), padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
             [删除]

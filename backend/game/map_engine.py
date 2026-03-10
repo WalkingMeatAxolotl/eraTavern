@@ -6,27 +6,33 @@ import json
 from pathlib import Path
 from typing import Any
 
-def load_map_collection(data_dir: Path) -> dict:
-    """Load the map collection index and all referenced maps."""
-    collection_path = data_dir / "map_collection.json"
-    with open(collection_path, "r", encoding="utf-8") as f:
-        collection = json.load(f)
+def load_map_collection(data_dir_or_addons: "Path | AddonDirs") -> dict:
+    """Load maps from addon directories (or legacy single data_dir).
 
-    maps: dict[str, dict] = {}
-    for map_file in collection["maps"]:
-        map_path = data_dir / map_file
-        with open(map_path, "r", encoding="utf-8") as f:
-            map_data = json.load(f)
-        map_id = map_data["id"]
-        map_data["compiled_grid"] = compile_grid(map_data)
-        map_data["cell_index"] = {c["id"]: c for c in map_data["cells"]}
-        maps[map_id] = map_data
+    Returns {"maps": {map_id: map_data}} with all maps merged.
+    """
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    all_maps: dict[str, dict] = {}
 
-    return {
-        "id": collection["id"],
-        "name": collection["name"],
-        "maps": maps,
-    }
+    for addon_id, addon_path in addon_dirs:
+        collection_path = addon_path / "map_collection.json"
+        if not collection_path.exists():
+            continue
+        with open(collection_path, "r", encoding="utf-8") as f:
+            collection = json.load(f)
+        for map_file in collection.get("maps", []):
+            map_path = addon_path / map_file
+            if not map_path.exists():
+                continue
+            with open(map_path, "r", encoding="utf-8") as f:
+                map_data = json.load(f)
+            map_id = map_data["id"]
+            map_data["compiled_grid"] = compile_grid(map_data)
+            map_data["cell_index"] = {c["id"]: c for c in map_data["cells"]}
+            map_data["_source"] = addon_id
+            all_maps[map_id] = map_data
+
+    return {"maps": all_maps}
 
 
 def compile_grid(map_data: dict) -> list[list[dict]]:
@@ -211,43 +217,48 @@ def delete_map(data_dir: Path, map_id: str) -> bool:
     return True
 
 
-BUILTIN_DIR = Path(__file__).parent.parent / "data" / "builtin"
+BUILTIN_DIR = Path(__file__).parent.parent / "data" / "builtin"  # legacy, unused
+
+# Type alias for addon directories
+AddonDirs = list[tuple[str, Path]]
 
 
-def load_decor_presets(data_dir: Path) -> list[dict]:
-    """Load decor presets from builtin + game.json.decorPresets, tagged with source."""
+def _to_addon_dirs(data_dir_or_addons: "Path | AddonDirs") -> "AddonDirs":
+    """Convert legacy data_dir to addon_dirs format, or pass through."""
+    if isinstance(data_dir_or_addons, Path):
+        return [(data_dir_or_addons.name, data_dir_or_addons)]
+    return data_dir_or_addons
+
+
+def load_decor_presets(data_dir_or_addons: "Path | AddonDirs") -> list[dict]:
+    """Load decor presets from addon directories, tagged with source."""
     presets: list[dict] = []
-
-    # Load builtin presets
-    builtin_path = BUILTIN_DIR / "decor_presets.json"
-    if builtin_path.exists():
-        with open(builtin_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        for p in data.get("presets", []):
-            presets.append({**p, "source": "builtin"})
-
-    # Load game-specific presets
-    game_json_path = data_dir / "game.json"
-    if game_json_path.exists():
-        with open(game_json_path, "r", encoding="utf-8") as f:
-            game_data = json.load(f)
-        for p in game_data.get("decorPresets", []):
-            presets.append({**p, "source": "game"})
-
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        # Try decor_presets.json first (new format)
+        presets_path = addon_path / "decor_presets.json"
+        if presets_path.exists():
+            with open(presets_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            for p in data.get("presets", []):
+                presets.append({**p, "source": addon_id})
+            continue
+        # Fallback: game.json decorPresets (legacy)
+        game_json_path = addon_path / "game.json"
+        if game_json_path.exists():
+            with open(game_json_path, "r", encoding="utf-8") as f:
+                game_data = json.load(f)
+            for p in game_data.get("decorPresets", []):
+                presets.append({**p, "source": addon_id})
     return presets
 
 
-def save_decor_presets(data_dir: Path, presets: list[dict]) -> None:
-    """Save game-specific decor presets to game.json.decorPresets."""
-    game_json_path = data_dir / "game.json"
-    with open(game_json_path, "r", encoding="utf-8") as f:
-        game_data = json.load(f)
-    # Strip source field before saving
-    game_data["decorPresets"] = [
-        {"text": p["text"], "color": p["color"]} for p in presets
-    ]
-    with open(game_json_path, "w", encoding="utf-8") as f:
-        json.dump(game_data, f, ensure_ascii=False, indent=2)
+def save_decor_presets(addon_dir: Path, presets: list[dict]) -> None:
+    """Save decor presets to an addon's decor_presets.json."""
+    presets_path = addon_dir / "decor_presets.json"
+    clean = [{"text": p["text"], "color": p["color"]} for p in presets]
+    with open(presets_path, "w", encoding="utf-8") as f:
+        json.dump({"presets": clean}, f, ensure_ascii=False, indent=2)
 
 
 def get_connections(

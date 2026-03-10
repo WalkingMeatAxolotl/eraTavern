@@ -1,0 +1,7 @@
+{
+  "id": "base",
+  "name": "基础包",
+  "description": "系统基础定义（特质、服装、物品、行动）",
+  "version": "1.0.0",
+  "categories": ["traits", "clothing", "items", "actions"]
+}

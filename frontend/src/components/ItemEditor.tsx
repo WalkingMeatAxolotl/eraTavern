@@ -2,11 +2,18 @@ import { useState } from "react";
 import type { ItemDefinition } from "../types/game";
 import { createItemDef, saveItemDef, deleteItemDef } from "../api/client";
 
+interface AddonCrud {
+  save: (id: string, data: unknown) => Promise<void>;
+  create: (data: unknown) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+}
+
 interface Props {
   item: ItemDefinition;
   isNew: boolean;
-  allTags: string[];
+  allTags?: string[];
   onBack: () => void;
+  addonCrud?: AddonCrud;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -25,10 +32,10 @@ const labelStyle: React.CSSProperties = {
   marginBottom: "2px",
 };
 
-export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
+export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: Props) {
   const [id, setId] = useState(item.id);
   const [name, setName] = useState(item.name);
-  const [tags, setTags] = useState<string[]>([...item.tags]);
+  const [tags, setTags] = useState<string[]>([...(item.tags ?? [])]);
   const [tagInput, setTagInput] = useState("");
   const [description, setDescription] = useState(item.description);
   const [maxStack, setMaxStack] = useState(item.maxStack);
@@ -37,10 +44,10 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const isBuiltin = item.source === "builtin";
+  const isReadOnly = false;  // all addon entities are editable
 
   // Tags from pool that aren't already selected
-  const availableTags = allTags.filter((t) => !tags.includes(t));
+  const availableTags = (allTags ?? []).filter((t) => !tags.includes(t));
 
   const addTag = (t: string) => {
     const trimmed = t.trim();
@@ -59,6 +66,10 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
     setMessage("");
     try {
       const data = { id, name, tags, description, maxStack, sellable, price };
+      if (addonCrud) {
+        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(id, data); }
+        return;
+      }
       const result = isNew
         ? await createItemDef(data)
         : await saveItemDef(id, data);
@@ -77,6 +88,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
     if (!confirm(`确定要删除物品「${name || id}」吗？`)) return;
     setSaving(true);
     try {
+      if (addonCrud) { await addonCrud.delete(id); return; }
       const result = await deleteItemDef(id);
       if (result.success) {
         onBack();
@@ -97,9 +109,9 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
         <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建物品" : "编辑物品"} ==
         </span>
-        {isBuiltin && (
+        {item.source && (
           <span style={{ color: "#e89a19", fontSize: "12px" }}>
-            内置物品不可编辑
+            来源: {item.source}
           </span>
         )}
       </div>
@@ -113,7 +125,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={id}
               onChange={(e) => setId(e.target.value)}
-              disabled={!isNew || isBuiltin}
+              disabled={!isNew || isReadOnly}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -122,7 +134,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
             />
           </div>
         </div>
@@ -147,7 +159,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
                 }}
               >
                 {t}
-                {!isBuiltin && (
+                {!isReadOnly && (
                   <button
                     onClick={() => setTags(tags.filter((x) => x !== t))}
                     style={{
@@ -169,7 +181,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
             {tags.length === 0 && <span style={{ color: "#666" }}>无</span>}
           </div>
           {/* Available tags from pool (clickable) */}
-          {!isBuiltin && availableTags.length > 0 && (
+          {!isReadOnly && availableTags.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
               {availableTags.map((t) => (
                 <button
@@ -192,7 +204,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
             </div>
           )}
           {/* Free-form input for new tags */}
-          {!isBuiltin && (
+          {!isReadOnly && (
             <input
               style={{ ...inputStyle, width: "120px" }}
               value={tagInput}
@@ -218,7 +230,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
             }}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            disabled={isBuiltin}
+            disabled={isReadOnly}
           />
         </div>
 
@@ -231,17 +243,17 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
               value={maxStack}
               onChange={(e) => setMaxStack(Math.max(1, Number(e.target.value)))}
               min={1}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
             />
           </div>
           <div>
             <div style={labelStyle}>可出售</div>
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isBuiltin ? "default" : "pointer" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isReadOnly ? "default" : "pointer" }}>
               <input
                 type="checkbox"
                 checked={sellable}
                 onChange={(e) => setSellable(e.target.checked)}
-                disabled={isBuiltin}
+                disabled={isReadOnly}
               />
               <span style={{ fontSize: "12px" }}>{sellable ? "是" : "否"}</span>
             </label>
@@ -254,7 +266,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
               value={price}
               onChange={(e) => setPrice(Math.max(0, Number(e.target.value)))}
               min={0}
-              disabled={isBuiltin}
+              disabled={isReadOnly}
             />
           </div>
         </div>
@@ -262,7 +274,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        {!isBuiltin && (
+        {!isReadOnly && (
           <button
             onClick={handleSave}
             disabled={saving}
@@ -280,7 +292,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack }: Props) {
             [保存]
           </button>
         )}
-        {!isBuiltin && !isNew && (
+        {!isReadOnly && !isNew && (
           <button
             onClick={handleDelete}
             disabled={saving}

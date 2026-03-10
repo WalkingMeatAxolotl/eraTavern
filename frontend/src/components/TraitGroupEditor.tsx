@@ -2,19 +2,26 @@ import { useState, useMemo } from "react";
 import type { GameDefinitions, TraitGroup } from "../types/game";
 import { createTraitGroup, saveTraitGroup, deleteTraitGroup } from "../api/client";
 
+interface AddonCrud {
+  save: (id: string, data: unknown) => Promise<void>;
+  create: (data: unknown) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+}
+
 interface Props {
   group: TraitGroup;
   definitions: GameDefinitions;
   isNew: boolean;
   onBack: () => void;
+  addonCrud?: AddonCrud;
 }
 
-export default function TraitGroupEditor({ group, definitions, isNew, onBack }: Props) {
+export default function TraitGroupEditor({ group, definitions, isNew, onBack, addonCrud }: Props) {
   const [data, setData] = useState<TraitGroup>(() => structuredClone(group));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const isBuiltin = data.source === "builtin";
+  const isReadOnly = false;  // all addon entities are editable
   const categories = definitions.template.traits;
 
   // Traits in the same category as the group
@@ -33,6 +40,10 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack }: 
     setMessage(null);
     try {
       const payload = { id: data.id, name: data.name, category: data.category, traits: data.traits };
+      if (addonCrud) {
+        if (isNew) { await addonCrud.create(payload); } else { await addonCrud.save(data.id, payload); }
+        return;
+      }
       const result = isNew
         ? await createTraitGroup(payload)
         : await saveTraitGroup(data.id, payload);
@@ -51,6 +62,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack }: 
     if (!confirm(`确定删除特质组 "${data.name}" ？`)) return;
     setSaving(true);
     try {
+      if (addonCrud) { await addonCrud.delete(data.id); return; }
       await deleteTraitGroup(data.id);
       onBack();
     } catch (e: unknown) {
@@ -85,8 +97,8 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack }: 
         <input
           value={data.id}
           onChange={(e) => setData((prev) => ({ ...prev, id: e.target.value }))}
-          readOnly={!isNew || isBuiltin}
-          style={inputStyle(!isNew || isBuiltin ? "#555" : undefined)}
+          readOnly={!isNew || isReadOnly}
+          style={inputStyle(!isNew || isReadOnly ? "#555" : undefined)}
         />
       </Row>
 
@@ -95,8 +107,8 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack }: 
         <input
           value={data.name}
           onChange={(e) => setData((prev) => ({ ...prev, name: e.target.value }))}
-          readOnly={isBuiltin}
-          style={inputStyle(isBuiltin ? "#555" : undefined)}
+          readOnly={isReadOnly}
+          style={inputStyle(isReadOnly ? "#555" : undefined)}
         />
       </Row>
 
@@ -105,7 +117,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack }: 
         <select
           value={data.category}
           onChange={(e) => setData((prev) => ({ ...prev, category: e.target.value, traits: [] }))}
-          disabled={isBuiltin}
+          disabled={isReadOnly}
           style={selectStyle()}
         >
           {categories.map((cat) => (
@@ -134,7 +146,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack }: 
               }}
             >
               {def?.name ?? tid}
-              {!isBuiltin && (
+              {!isReadOnly && (
                 <button
                   onClick={() => setData((prev) => ({ ...prev, traits: prev.traits.filter((x) => x !== tid) }))}
                   style={{
@@ -154,7 +166,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack }: 
             </span>
           );
         })}
-        {!isBuiltin && (
+        {!isReadOnly && (
           <select
             value=""
             onChange={(e) => {
@@ -175,12 +187,12 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack }: 
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: "1px solid #333", paddingTop: "12px" }}>
-        {!isBuiltin && (
+        {!isReadOnly && (
           <button onClick={handleSave} disabled={saving} style={btnStyle("#0f0")}>
             [{saving ? "保存中..." : "保存"}]
           </button>
         )}
-        {!isBuiltin && !isNew && (
+        {!isReadOnly && !isNew && (
           <button onClick={handleDelete} disabled={saving} style={btnStyle("#e94560")}>
             [删除]
           </button>

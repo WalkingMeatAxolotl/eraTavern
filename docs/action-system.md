@@ -35,7 +35,7 @@
 
 ## 4. Action 定义格式 (actions.json)
 
-每个 game package 下的 `actions.json`：
+每个 addon 下的 `actions.json`：
 
 ```json
 {
@@ -272,70 +272,7 @@
 - 基础文本直接输出到 NarrativePanel
 - 如 triggerLLM=true，等待 LLM 返回后追加叙事文本
 
-## 11. 与编辑器系统联动
-
-### 11.1 Action Editor（行动编辑器）
-
-在 GameSidebar 中新增 tab，提供可视化编辑：
-
-- 基础信息：id, name, category, targetType, triggerLLM, timeCost
-- 条件编辑器：下拉框联动已有定义
-  - location → 从已有地图/方格中选择
-  - trait → 从已有特质中选择
-  - resource/ability → 从 character_template 中选择
-  - hasItem → 从 items.json 中选择
-- 消耗编辑器：同上联动
-- 结果/效果编辑器：可视化管理 outcomes 和 effects
-- 输出模板编辑器：文本框，支持变量插值
-
-### 11.2 definitions 端点扩展
-
-`GET /api/game/definitions` 需要额外返回：
-- `itemDefs` — 物品定义（供 hasItem 条件和 item 效果选择）
-- `actionDefs` — 行动定义（供编辑器列表）
-- 现有的 template, clothingDefs, traitDefs, maps 已涵盖其他需求
-
-## 12. 前置依赖：物品系统
-
-Action 系统的 `hasItem` 条件和 `item` 效果需要物品系统支撑。
-
-### 12.1 items.json
-
-```json
-{
-  "items": [
-    {
-      "id": "yakitori",
-      "name": "烤鸡",
-      "category": "cooking",
-      "description": "香喷喷的烤鸡。",
-      "stackable": true,
-      "maxStack": 5
-    }
-  ]
-}
-```
-
-### 12.2 角色 Inventory 运行时
-
-角色的 inventory 从空壳扩展为实际存储物品：
-
-```json
-// 角色 JSON 中
-"inventory": {
-  "cooking": [
-    { "itemId": "yakitori", "amount": 1 }
-  ]
-}
-```
-
-### 12.3 需要的 API
-
-- `GET /api/game/items` — 获取物品定义
-- `POST/PUT/DELETE /api/game/items/{item_id}` — CRUD
-- Item Editor 前端组件
-
-## 13. 完整示例：烹饪行动
+## 11. 完整示例：烹饪行动
 
 ```json
 {
@@ -391,37 +328,7 @@ Action 系统的 `hasItem` 条件和 `item` 效果需要物品系统支撑。
 }
 ```
 
-## 14. 实现顺序
-
-```
-Phase 1: 物品系统（Action 前置依赖）
-  ├─ items.json 格式定义 + 加载到 GameState
-  ├─ 角色 inventory 运行时管理（添加/移除/查询）
-  ├─ Item CRUD API
-  └─ Item Editor 前端
-
-Phase 2: Action 核心引擎
-  ├─ actions.json 加载
-  ├─ 条件引擎 (evaluate_conditions, 含 AND/OR)
-  ├─ 消耗引擎 (check_costs / apply_costs)
-  ├─ 结果引擎 (roll_outcome, 权重随机 + 修正)
-  ├─ 效果引擎 (apply_effects)
-  ├─ 重构 get_available_actions → 条件驱动
-  ├─ 重构 execute_action → 通用引擎
-  └─ ActionResult 生成 + 输出模板渲染
-
-Phase 3: Action 编辑器
-  ├─ Action CRUD API
-  ├─ Action Editor 前端（条件/消耗/结果可视化编辑）
-  └─ definitions 端点扩展
-
-Phase 4: LLM 集成
-  ├─ {{actionResult}} prompt 变量
-  ├─ NarrativePanel 显示增强
-  └─ triggerLLM 流程打通
-```
-
-## 15. 内置行动：移动
+## 12. 内置行动：移动
 
 移动行动保持内置，不走 actions.json，因为其交互逻辑（选择目标方格）与通用行动不同。
 

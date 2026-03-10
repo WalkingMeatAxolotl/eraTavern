@@ -1349,6 +1349,9 @@ def _apply_effects(
             cell_id = eff.get("cellId")
             if not map_id or cell_id is None:
                 continue
+            # Skip if target map doesn't exist (addon disabled)
+            if map_id not in game_state.maps:
+                continue
             # Resolve target character for position change
             pos_target = eff.get("target", "self")
             if pos_target == "{{targetId}}" and target_id:

@@ -8,7 +8,10 @@ from typing import Any
 
 GRADES = ["G", "F", "E", "D", "C", "B", "A", "S"]
 
-BUILTIN_DIR = Path(__file__).parent.parent / "data" / "builtin"
+BUILTIN_DIR = Path(__file__).parent.parent / "data" / "builtin"  # legacy, unused
+
+# Type alias for addon directories list: [(addon_id, addon_path), ...]
+AddonDirs = list[tuple[str, Path]]
 
 SLOT_LABELS = {
     "hat": "帽子",
@@ -31,9 +34,20 @@ def exp_to_grade(exp: int) -> str:
     return GRADES[max(0, level)]
 
 
-def load_template(data_dir: Path) -> dict:
-    """Load character attribute template."""
-    path = data_dir / "character_template.json"
+def load_template(data_dir_or_path: Path | None = None) -> dict:
+    """Load character attribute template.
+
+    If data_dir_or_path points to a directory, looks for character_template.json inside.
+    If it points to a file, loads that file directly.
+    If None, loads from the global template path.
+    """
+    if data_dir_or_path is None:
+        from .addon_loader import TEMPLATE_PATH
+        path = TEMPLATE_PATH
+    elif data_dir_or_path.is_file():
+        path = data_dir_or_path
+    else:
+        path = data_dir_or_path / "character_template.json"
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -46,42 +60,46 @@ def _load_json_safe(path: Path) -> dict:
         return json.load(f)
 
 
-def load_trait_defs(data_dir: Path) -> dict[str, dict]:
-    """Load trait definitions from builtin + game package, merged by id."""
+def _to_addon_dirs(data_dir_or_addons: Path | AddonDirs) -> AddonDirs:
+    """Convert legacy data_dir to addon_dirs format, or pass through."""
+    if isinstance(data_dir_or_addons, Path):
+        # Legacy: single data_dir — treat as a single addon with id from directory name
+        return [(data_dir_or_addons.name, data_dir_or_addons)]
+    return data_dir_or_addons
+
+
+def load_trait_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load trait definitions from addon directories (or legacy data_dir), merged by id."""
     result: dict[str, dict] = {}
-
-    # Load builtin traits
-    builtin = _load_json_safe(BUILTIN_DIR / "traits.json")
-    for t in builtin.get("traits", []):
-        result[t["id"]] = {**t, "source": "builtin"}
-
-    # Load game-specific traits (overrides builtin on same id)
-    game = _load_json_safe(data_dir / "traits.json")
-    for t in game.get("traits", []):
-        result[t["id"]] = {**t, "source": "game"}
-
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "traits.json")
+        for t in data.get("traits", []):
+            result[t["id"]] = {**t, "source": addon_id}
     return result
 
 
-def load_item_defs(data_dir: Path) -> dict[str, dict]:
-    """Load item definitions from builtin + game package, merged by id."""
+def load_item_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load item definitions from addon directories, merged by id."""
     result: dict[str, dict] = {}
-
-    builtin = _load_json_safe(BUILTIN_DIR / "items.json")
-    for item in builtin.get("items", []):
-        result[item["id"]] = {**item, "source": "builtin"}
-
-    game = _load_json_safe(data_dir / "items.json")
-    for item in game.get("items", []):
-        result[item["id"]] = {**item, "source": "game"}
-
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "items.json")
+        for item in data.get("items", []):
+            result[item["id"]] = {**item, "source": addon_id}
     return result
 
 
-def load_item_tags(data_dir: Path) -> list[str]:
-    """Load item tag pool from game-specific items.json."""
-    data = _load_json_safe(data_dir / "items.json")
-    return data.get("tags", [])
+def load_item_tags(data_dir_or_addons: Path | AddonDirs) -> list[str]:
+    """Load item tag pool from all addon directories (union)."""
+    tags: list[str] = []
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for _, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "items.json")
+        for tag in data.get("tags", []):
+            if tag not in tags:
+                tags.append(tag)
+    return tags
 
 
 def save_item_defs_file(data_dir: Path, items_list: list[dict]) -> None:
@@ -106,15 +124,14 @@ def save_item_tags_file(data_dir: Path, tags: list[str]) -> None:
         json.dump(existing, f, ensure_ascii=False, indent=2)
 
 
-def load_action_defs(data_dir: Path) -> dict[str, dict]:
-    """Load action definitions from builtin + game package, merged by id."""
+def load_action_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load action definitions from addon directories, merged by id."""
     result: dict[str, dict] = {}
-    builtin = _load_json_safe(BUILTIN_DIR / "actions.json")
-    for a in builtin.get("actions", []):
-        result[a["id"]] = {**a, "source": "builtin"}
-    game = _load_json_safe(data_dir / "actions.json")
-    for a in game.get("actions", []):
-        result[a["id"]] = {**a, "source": "game"}
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "actions.json")
+        for a in data.get("actions", []):
+            result[a["id"]] = {**a, "source": addon_id}
     return result
 
 
@@ -129,20 +146,14 @@ def save_action_defs_file(data_dir: Path, actions_list: list[dict]) -> None:
         json.dump({"actions": clean}, f, ensure_ascii=False, indent=2)
 
 
-def load_clothing_defs(data_dir: Path) -> dict[str, dict]:
-    """Load clothing definitions from builtin + game package, merged by id."""
+def load_clothing_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load clothing definitions from addon directories, merged by id."""
     result: dict[str, dict] = {}
-
-    # Load builtin clothing
-    builtin = _load_json_safe(BUILTIN_DIR / "clothing.json")
-    for c in builtin.get("clothing", []):
-        result[c["id"]] = {**c, "source": "builtin"}
-
-    # Load game-specific clothing (overrides builtin on same id)
-    game = _load_json_safe(data_dir / "clothing.json")
-    for c in game.get("clothing", []):
-        result[c["id"]] = {**c, "source": "game"}
-
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "clothing.json")
+        for c in data.get("clothing", []):
+            result[c["id"]] = {**c, "source": addon_id}
     return result
 
 
@@ -157,14 +168,19 @@ def save_clothing_defs_file(data_dir: Path, clothing_list: list[dict]) -> None:
         json.dump({"clothing": clean}, f, ensure_ascii=False, indent=2)
 
 
-def load_characters(data_dir: Path) -> dict[str, dict]:
-    """Load all character JSON files from data/characters/."""
-    chars_dir = data_dir / "characters"
+def load_characters(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load all character JSON files from addon directories."""
     characters: dict[str, dict] = {}
-    for f in chars_dir.glob("*.json"):
-        with open(f, "r", encoding="utf-8") as fh:
-            char = json.load(fh)
-        characters[char["id"]] = char
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        chars_dir = addon_path / "characters"
+        if not chars_dir.exists():
+            continue
+        for f in chars_dir.glob("*.json"):
+            with open(f, "r", encoding="utf-8") as fh:
+                char = json.load(fh)
+            char["_source"] = addon_id
+            characters[char["id"]] = char
     return characters
 
 
@@ -294,18 +310,14 @@ def _apply_computed_effect(
             return
 
 
-def load_trait_groups(data_dir: Path) -> dict[str, dict]:
-    """Load trait group definitions from builtin + game package, merged by id."""
+def load_trait_groups(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load trait group definitions from addon directories, merged by id."""
     result: dict[str, dict] = {}
-
-    builtin = _load_json_safe(BUILTIN_DIR / "traits.json")
-    for g in builtin.get("traitGroups", []):
-        result[g["id"]] = {**g, "source": "builtin"}
-
-    game = _load_json_safe(data_dir / "traits.json")
-    for g in game.get("traitGroups", []):
-        result[g["id"]] = {**g, "source": "game"}
-
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "traits.json")
+        for g in data.get("traitGroups", []):
+            result[g["id"]] = {**g, "source": addon_id}
     return result
 
 
