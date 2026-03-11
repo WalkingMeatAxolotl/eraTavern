@@ -18,7 +18,7 @@ const SLOT_LABELS: Record<string, string> = {
   accessory3: "装饰品3",
 };
 
-export default function ClothingManager() {
+export default function ClothingManager({ selectedAddon }: { selectedAddon: string | null }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [clothing, setClothing] = useState<ClothingDefinition[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,7 +75,7 @@ export default function ClothingManager() {
       slot: definitions.template.clothingSlots[0] ?? "",
       occlusion: [],
       effects: [],
-      source: "game",
+      source: selectedAddon ?? "",
     };
 
     return (
@@ -88,6 +88,9 @@ export default function ClothingManager() {
     );
   }
 
+  const readOnly = selectedAddon === null;
+  const filteredClothing = selectedAddon ? clothing.filter(c => c.source === selectedAddon) : clothing;
+
   // Group clothing by slot — deduplicate accessory1/2/3 into "accessory"
   const rawSlots = definitions.template.clothingSlots;
   const slots = [...new Set(rawSlots.map((s) =>
@@ -97,7 +100,7 @@ export default function ClothingManager() {
   for (const s of slots) {
     grouped[s] = [];
   }
-  for (const c of clothing) {
+  for (const c of filteredClothing) {
     const key = c.slot.startsWith("accessory") ? "accessory" : c.slot;
     if (grouped[key]) {
       grouped[key].push(c);
@@ -120,21 +123,23 @@ export default function ClothingManager() {
         <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
           == 服装列表 ==
         </span>
-        <button
-          onClick={handleNew}
-          style={{
-            padding: "4px 12px",
-            backgroundColor: "#16213e",
-            color: "#0f0",
-            border: "1px solid #333",
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontFamily: "monospace",
-            fontSize: "13px",
-          }}
-        >
-          [+ 新建服装]
-        </button>
+        {!readOnly && (
+          <button
+            onClick={handleNew}
+            style={{
+              padding: "4px 12px",
+              backgroundColor: "#16213e",
+              color: "#0f0",
+              border: "1px solid #333",
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "13px",
+            }}
+          >
+            [+ 新建服装]
+          </button>
+        )}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>

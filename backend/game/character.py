@@ -13,6 +13,63 @@ BUILTIN_DIR = Path(__file__).parent.parent / "data" / "builtin"  # legacy, unuse
 # Type alias for addon directories list: [(addon_id, addon_path), ...]
 AddonDirs = list[tuple[str, Path]]
 
+# Symbolic references in action conditions/effects — must NOT be namespaced
+SYMBOLIC_REFS = {"self", "{{targetId}}", "{{player}}", ""}
+
+
+# ---------------------------------------------------------------------------
+# ID namespace helpers
+# ---------------------------------------------------------------------------
+
+NS_SEP = "."  # namespace separator: addonId.localId
+
+
+def namespace_id(addon_id: str, local_id: str) -> str:
+    """Create a namespaced ID: 'addon_id.local_id'."""
+    if NS_SEP in local_id:
+        return local_id  # already namespaced
+    return f"{addon_id}{NS_SEP}{local_id}"
+
+
+def to_local_id(namespaced_id: str) -> str:
+    """Extract local ID from 'addon_id.local_id'."""
+    if NS_SEP in namespaced_id:
+        return namespaced_id.split(NS_SEP, 1)[1]
+    return namespaced_id
+
+
+def get_addon_from_id(namespaced_id: str) -> str:
+    """Extract addon ID from 'addon_id.local_id'. Returns '' if not namespaced."""
+    if NS_SEP in namespaced_id:
+        return namespaced_id.split(NS_SEP, 1)[0]
+    return ""
+
+
+def resolve_ref(ref_id: str, defs: dict, default_addon: str = "") -> str:
+    """Resolve a bare or namespaced entity reference against loaded defs.
+
+    - Already namespaced ('addon.id') → return as-is
+    - Bare ID → try default_addon first, then search all defs
+    """
+    if not ref_id or NS_SEP in ref_id:
+        return ref_id
+    # Try default addon first
+    if default_addon:
+        candidate = f"{default_addon}{NS_SEP}{ref_id}"
+        if candidate in defs:
+            return candidate
+    # Search all defs for matching local ID
+    for key in defs:
+        if key.split(NS_SEP, 1)[1] == ref_id:
+            return key
+    # Not found — use default addon prefix (will fail on lookup, which is OK)
+    return f"{default_addon}{NS_SEP}{ref_id}" if default_addon else ref_id
+
+
+def _strip_internal_fields(entry: dict) -> dict:
+    """Remove internal fields (_local_id, source) for file storage."""
+    return {k: v for k, v in entry.items() if k not in ("source", "_local_id")}
+
 SLOT_LABELS = {
     "hat": "帽子",
     "upperBody": "上半身",
@@ -69,13 +126,17 @@ def _to_addon_dirs(data_dir_or_addons: Path | AddonDirs) -> AddonDirs:
 
 
 def load_trait_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
-    """Load trait definitions from addon directories (or legacy data_dir), merged by id."""
+    """Load trait definitions from addon directories (or legacy data_dir), merged by id.
+
+    Keys and 'id' fields are namespaced as 'addon_id:local_id'.
+    """
     result: dict[str, dict] = {}
     addon_dirs = _to_addon_dirs(data_dir_or_addons)
     for addon_id, addon_path in addon_dirs:
         data = _load_json_safe(addon_path / "traits.json")
         for t in data.get("traits", []):
-            result[t["id"]] = {**t, "source": addon_id}
+            ns_id = namespace_id(addon_id, t["id"])
+            result[ns_id] = {**t, "id": ns_id, "_local_id": t["id"], "source": addon_id}
     return result
 
 
@@ -86,7 +147,8 @@ def load_item_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     for addon_id, addon_path in addon_dirs:
         data = _load_json_safe(addon_path / "items.json")
         for item in data.get("items", []):
-            result[item["id"]] = {**item, "source": addon_id}
+            ns_id = namespace_id(addon_id, item["id"])
+            result[ns_id] = {**item, "id": ns_id, "_local_id": item["id"], "source": addon_id}
     return result
 
 
@@ -103,10 +165,11 @@ def load_item_tags(data_dir_or_addons: Path | AddonDirs) -> list[str]:
 
 
 def save_item_defs_file(data_dir: Path, items_list: list[dict]) -> None:
-    """Write game-specific items.json (strips 'source' field), preserving tags."""
+    """Write game-specific items.json (strips internal fields), preserving tags."""
     clean = []
     for item in items_list:
-        entry = {k: v for k, v in item.items() if k != "source"}
+        entry = _strip_internal_fields(item)
+        entry["id"] = to_local_id(entry["id"])
         clean.append(entry)
     path = data_dir / "items.json"
     existing = _load_json_safe(path)
@@ -131,15 +194,18 @@ def load_action_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     for addon_id, addon_path in addon_dirs:
         data = _load_json_safe(addon_path / "actions.json")
         for a in data.get("actions", []):
-            result[a["id"]] = {**a, "source": addon_id}
+            ns_id = namespace_id(addon_id, a["id"])
+            result[ns_id] = {**a, "id": ns_id, "_local_id": a["id"], "source": addon_id}
     return result
 
 
-def save_action_defs_file(data_dir: Path, actions_list: list[dict]) -> None:
-    """Write game-specific actions.json (strips 'source' field)."""
+def save_action_defs_file(data_dir: Path, actions_list: list[dict], addon_id: str = "") -> None:
+    """Write game-specific actions.json (strips internal fields + de-namespaces refs)."""
     clean = []
     for a in actions_list:
-        entry = {k: v for k, v in a.items() if k != "source"}
+        entry = _strip_internal_fields(a)
+        entry["id"] = to_local_id(entry["id"])
+        _strip_action_refs(entry, addon_id)
         clean.append(entry)
     path = data_dir / "actions.json"
     with open(path, "w", encoding="utf-8") as f:
@@ -153,15 +219,17 @@ def load_clothing_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     for addon_id, addon_path in addon_dirs:
         data = _load_json_safe(addon_path / "clothing.json")
         for c in data.get("clothing", []):
-            result[c["id"]] = {**c, "source": addon_id}
+            ns_id = namespace_id(addon_id, c["id"])
+            result[ns_id] = {**c, "id": ns_id, "_local_id": c["id"], "source": addon_id}
     return result
 
 
 def save_clothing_defs_file(data_dir: Path, clothing_list: list[dict]) -> None:
-    """Write game-specific clothing.json (strips 'source' field)."""
+    """Write game-specific clothing.json (strips internal fields)."""
     clean = []
     for c in clothing_list:
-        entry = {k: v for k, v in c.items() if k != "source"}
+        entry = _strip_internal_fields(c)
+        entry["id"] = to_local_id(entry["id"])
         clean.append(entry)
     path = data_dir / "clothing.json"
     with open(path, "w", encoding="utf-8") as f:
@@ -169,7 +237,12 @@ def save_clothing_defs_file(data_dir: Path, clothing_list: list[dict]) -> None:
 
 
 def load_characters(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
-    """Load all character JSON files from addon directories."""
+    """Load all character JSON files from addon directories.
+
+    Character IDs are namespaced as 'addon_id:local_id'.
+    Cross-references (traits, items, etc.) are NOT resolved here —
+    call namespace_character_data() after all defs are loaded.
+    """
     characters: dict[str, dict] = {}
     addon_dirs = _to_addon_dirs(data_dir_or_addons)
     for addon_id, addon_path in addon_dirs:
@@ -179,23 +252,35 @@ def load_characters(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
         for f in chars_dir.glob("*.json"):
             with open(f, "r", encoding="utf-8") as fh:
                 char = json.load(fh)
+            local_id = char["id"]
+            ns_id = namespace_id(addon_id, local_id)
+            char["id"] = ns_id
+            char["_local_id"] = local_id
             char["_source"] = addon_id
-            characters[char["id"]] = char
+            characters[ns_id] = char
     return characters
 
 
 def save_character(data_dir: Path, char_data: dict) -> None:
-    """Save a character JSON file to data/characters/."""
+    """Save a character JSON file to data/characters/.
+
+    Strips namespace from character ID and cross-references for file storage.
+    """
     chars_dir = data_dir / "characters"
     chars_dir.mkdir(parents=True, exist_ok=True)
-    path = chars_dir / f"{char_data['id']}.json"
+    local_id = char_data.get("_local_id", to_local_id(char_data["id"]))
+    path = chars_dir / f"{local_id}.json"
+    clean = {k: v for k, v in char_data.items() if not k.startswith("_")}
+    clean["id"] = local_id
+    clean = strip_character_namespaces(clean)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(char_data, f, ensure_ascii=False, indent=2)
+        json.dump(clean, f, ensure_ascii=False, indent=2)
 
 
 def delete_character(data_dir: Path, char_id: str) -> bool:
     """Delete a character JSON file. Returns True if file existed."""
-    path = data_dir / "characters" / f"{char_id}.json"
+    local_id = to_local_id(char_id)
+    path = data_dir / "characters" / f"{local_id}.json"
     if path.exists():
         path.unlink()
         return True
@@ -317,15 +402,20 @@ def load_trait_groups(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     for addon_id, addon_path in addon_dirs:
         data = _load_json_safe(addon_path / "traits.json")
         for g in data.get("traitGroups", []):
-            result[g["id"]] = {**g, "source": addon_id}
+            ns_id = namespace_id(addon_id, g["id"])
+            # Also namespace trait references within the group
+            ns_traits = [namespace_id(addon_id, tid) for tid in g.get("traits", [])]
+            result[ns_id] = {**g, "id": ns_id, "_local_id": g["id"], "source": addon_id,
+                             "traits": ns_traits}
     return result
 
 
 def save_trait_defs_file(data_dir: Path, traits_list: list[dict]) -> None:
-    """Write game-specific traits.json (strips 'source' field), preserving traitGroups."""
+    """Write game-specific traits.json (strips internal fields), preserving traitGroups."""
     clean = []
     for t in traits_list:
-        entry = {k: v for k, v in t.items() if k != "source"}
+        entry = _strip_internal_fields(t)
+        entry["id"] = to_local_id(entry["id"])
         clean.append(entry)
     path = data_dir / "traits.json"
     existing = _load_json_safe(path)
@@ -335,10 +425,13 @@ def save_trait_defs_file(data_dir: Path, traits_list: list[dict]) -> None:
 
 
 def save_trait_groups_file(data_dir: Path, groups_list: list[dict]) -> None:
-    """Write game-specific traitGroups in traits.json (strips 'source'), preserving traits."""
+    """Write game-specific traitGroups in traits.json (strips internal fields), preserving traits."""
     clean = []
     for g in groups_list:
-        entry = {k: v for k, v in g.items() if k != "source"}
+        entry = _strip_internal_fields(g)
+        entry["id"] = to_local_id(entry["id"])
+        # Strip namespace from trait references in the group
+        entry["traits"] = [to_local_id(tid) for tid in entry.get("traits", [])]
         clean.append(entry)
     path = data_dir / "traits.json"
     existing = _load_json_safe(path)
@@ -462,9 +555,9 @@ def build_character_state(
             continue  # abilities and experiences displayed separately
         ids = char_data.get("traits", {}).get(key, [])
         if trait_defs:
-            values = [trait_defs[tid]["name"] if tid in trait_defs else tid for tid in ids]
+            values = [trait_defs[tid]["name"] if tid in trait_defs else to_local_id(tid) for tid in ids]
         else:
-            values = ids
+            values = [to_local_id(tid) for tid in ids]
         traits.append({
             "key": key,
             "label": field["label"],
@@ -513,7 +606,7 @@ def build_character_state(
         item_def = (item_defs or {}).get(item_id)
         inventory.append({
             "itemId": item_id,
-            "name": item_def["name"] if item_def else item_id,
+            "name": item_def["name"] if item_def else to_local_id(item_id),
             "tags": item_def.get("tags", []) if item_def else [],
             "amount": amount,
         })
@@ -552,7 +645,7 @@ def build_clothing_state(
             clothing_def = clothing_defs.get(item_id, {})
             slot_items[slot] = {
                 "itemId": item_id,
-                "name": clothing_def.get("name", item_id),
+                "name": clothing_def.get("name", to_local_id(item_id)),
                 "state": wear_state,
                 "occlusion": clothing_def.get("occlusion", []),
             }
@@ -583,3 +676,212 @@ def build_clothing_state(
         result.append(entry)
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Namespace resolution for character cross-references
+# ---------------------------------------------------------------------------
+
+def namespace_character_data(
+    char_data: dict,
+    trait_defs: dict[str, dict],
+    item_defs: dict[str, dict],
+    clothing_defs: dict[str, dict],
+    character_defs: dict[str, dict],
+    map_defs: dict[str, dict],
+) -> None:
+    """Namespace all cross-references in character data in-place.
+
+    Call this AFTER all entity defs are loaded with namespaced IDs.
+    Bare IDs are resolved against the loaded defs.
+    """
+    default_addon = char_data.get("_source", "")
+
+    # Traits: list of trait IDs per category
+    for key in list(char_data.get("traits", {}).keys()):
+        char_data["traits"][key] = [
+            resolve_ref(tid, trait_defs, default_addon)
+            for tid in char_data["traits"][key]
+        ]
+
+    # Clothing: itemId per slot
+    for slot, data in char_data.get("clothing", {}).items():
+        if isinstance(data, dict) and data.get("itemId"):
+            data["itemId"] = resolve_ref(data["itemId"], clothing_defs, default_addon)
+
+    # Inventory: itemId per entry
+    for inv in char_data.get("inventory", []):
+        if inv.get("itemId"):
+            inv["itemId"] = resolve_ref(inv["itemId"], item_defs, default_addon)
+
+    # Favorability: keys are character IDs
+    if isinstance(char_data.get("favorability"), dict):
+        new_fav: dict[str, Any] = {}
+        for target_id, value in char_data["favorability"].items():
+            ns_tid = resolve_ref(target_id, character_defs, default_addon)
+            new_fav[ns_tid] = value
+        char_data["favorability"] = new_fav
+
+    # Abilities: keys are trait IDs (ability category)
+    if isinstance(char_data.get("abilities"), dict):
+        new_abs: dict[str, Any] = {}
+        for key, value in char_data["abilities"].items():
+            ns_key = resolve_ref(key, trait_defs, default_addon)
+            new_abs[ns_key] = value
+        char_data["abilities"] = new_abs
+
+    # Experiences: keys are trait IDs (experience category)
+    if isinstance(char_data.get("experiences"), dict):
+        new_exps: dict[str, Any] = {}
+        for key, value in char_data["experiences"].items():
+            ns_key = resolve_ref(key, trait_defs, default_addon)
+            new_exps[ns_key] = value
+        char_data["experiences"] = new_exps
+
+    # Position mapId — resolve against map defs
+    if char_data.get("position", {}).get("mapId"):
+        char_data["position"]["mapId"] = resolve_ref(
+            char_data["position"]["mapId"], map_defs, default_addon
+        )
+    if char_data.get("restPosition", {}).get("mapId"):
+        char_data["restPosition"]["mapId"] = resolve_ref(
+            char_data["restPosition"]["mapId"], map_defs, default_addon
+        )
+
+
+def strip_character_namespaces(char_data: dict) -> dict:
+    """Strip namespace prefixes from character data for file storage."""
+    result = {**char_data}
+
+    # Traits
+    if "traits" in result:
+        result["traits"] = {
+            k: [to_local_id(tid) for tid in v]
+            for k, v in result["traits"].items()
+        }
+
+    # Clothing
+    if "clothing" in result:
+        new_cl: dict[str, Any] = {}
+        for slot, data in result["clothing"].items():
+            if isinstance(data, dict) and data.get("itemId"):
+                new_cl[slot] = {**data, "itemId": to_local_id(data["itemId"])}
+            else:
+                new_cl[slot] = data
+        result["clothing"] = new_cl
+
+    # Inventory
+    if "inventory" in result:
+        result["inventory"] = [
+            {**inv, "itemId": to_local_id(inv["itemId"])} if inv.get("itemId") else inv
+            for inv in result["inventory"]
+        ]
+
+    # Favorability
+    if isinstance(result.get("favorability"), dict):
+        result["favorability"] = {
+            to_local_id(k): v for k, v in result["favorability"].items()
+        }
+
+    # Abilities
+    if isinstance(result.get("abilities"), dict):
+        result["abilities"] = {
+            to_local_id(k): v for k, v in result["abilities"].items()
+        }
+
+    # Experiences
+    if isinstance(result.get("experiences"), dict):
+        result["experiences"] = {
+            to_local_id(k): v for k, v in result["experiences"].items()
+        }
+
+    # Position
+    if result.get("position", {}).get("mapId"):
+        result["position"] = {**result["position"], "mapId": to_local_id(result["position"]["mapId"])}
+    if result.get("restPosition", {}).get("mapId"):
+        result["restPosition"] = {**result["restPosition"], "mapId": to_local_id(result["restPosition"]["mapId"])}
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Namespace resolution for action cross-references
+# ---------------------------------------------------------------------------
+
+def namespace_action_refs(
+    action_defs: dict[str, dict],
+    trait_defs: dict[str, dict],
+    item_defs: dict[str, dict],
+    clothing_defs: dict[str, dict],
+    character_defs: dict[str, dict],
+    map_defs: dict[str, dict],
+) -> None:
+    """Namespace cross-references in action definitions in-place."""
+    for action in action_defs.values():
+        addon_id = action.get("source", "")
+        for cond in action.get("conditions", []):
+            _ns_cond(cond, trait_defs, item_defs, character_defs, addon_id)
+        for cost in action.get("costs", []):
+            if cost.get("itemId") and cost["itemId"] not in SYMBOLIC_REFS:
+                cost["itemId"] = resolve_ref(cost["itemId"], item_defs, addon_id)
+        for outcome in action.get("outcomes", []):
+            for eff in outcome.get("effects", []):
+                _ns_eff(eff, trait_defs, item_defs, character_defs, map_defs, addon_id)
+
+
+def _ns_cond(cond: dict, trait_defs: dict, item_defs: dict,
+             character_defs: dict, default_addon: str) -> None:
+    """Namespace references in a single action condition."""
+    if cond.get("traitId") and cond["traitId"] not in SYMBOLIC_REFS:
+        cond["traitId"] = resolve_ref(cond["traitId"], trait_defs, default_addon)
+    if cond.get("itemId") and cond["itemId"] not in SYMBOLIC_REFS:
+        cond["itemId"] = resolve_ref(cond["itemId"], item_defs, default_addon)
+    if cond.get("npcId") and cond["npcId"] not in SYMBOLIC_REFS:
+        cond["npcId"] = resolve_ref(cond["npcId"], character_defs, default_addon)
+    if cond.get("targetId") and cond["targetId"] not in SYMBOLIC_REFS:
+        cond["targetId"] = resolve_ref(cond["targetId"], character_defs, default_addon)
+
+
+def _ns_eff(eff: dict, trait_defs: dict, item_defs: dict,
+            character_defs: dict, map_defs: dict, default_addon: str) -> None:
+    """Namespace references in a single action effect."""
+    if eff.get("traitId") and eff["traitId"] not in SYMBOLIC_REFS:
+        eff["traitId"] = resolve_ref(eff["traitId"], trait_defs, default_addon)
+    if eff.get("itemId") and eff["itemId"] not in SYMBOLIC_REFS:
+        eff["itemId"] = resolve_ref(eff["itemId"], item_defs, default_addon)
+    target = eff.get("target", "")
+    if target and target not in SYMBOLIC_REFS:
+        eff["target"] = resolve_ref(target, character_defs, default_addon)
+    if eff.get("favFrom") and eff["favFrom"] not in SYMBOLIC_REFS:
+        eff["favFrom"] = resolve_ref(eff["favFrom"], character_defs, default_addon)
+    if eff.get("favTo") and eff["favTo"] not in SYMBOLIC_REFS:
+        eff["favTo"] = resolve_ref(eff["favTo"], character_defs, default_addon)
+    if eff.get("mapId") and eff["mapId"] not in SYMBOLIC_REFS:
+        eff["mapId"] = resolve_ref(eff["mapId"], map_defs, default_addon)
+
+
+def _strip_action_refs(action: dict, addon_id: str = "") -> None:
+    """Strip namespace prefixes from action cross-references for file storage.
+
+    Same-addon refs are stripped to bare IDs; cross-addon refs keep namespace.
+    """
+    def _strip(ref: str) -> str:
+        if not ref or ref in SYMBOLIC_REFS or NS_SEP not in ref:
+            return ref
+        prefix, local = ref.split(NS_SEP, 1)
+        if not addon_id or prefix == addon_id:
+            return local
+        return ref  # keep cross-addon namespace
+
+    for cond in action.get("conditions", []):
+        for field in ("traitId", "itemId", "npcId", "targetId"):
+            if cond.get(field):
+                cond[field] = _strip(cond[field])
+    for cost in action.get("costs", []):
+        if cost.get("itemId"):
+            cost["itemId"] = _strip(cost["itemId"])
+    for outcome in action.get("outcomes", []):
+        for eff in outcome.get("effects", []):
+            for field in ("traitId", "itemId", "target", "favFrom", "favTo", "mapId"):
+                if eff.get(field):
+                    eff[field] = _strip(eff[field])

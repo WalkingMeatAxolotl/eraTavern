@@ -22,7 +22,7 @@ import NarrativePanel from "./components/NarrativePanel";
 import NavBar from "./components/NavBar";
 import WorldSidebar from "./components/WorldSidebar";
 import AddonSidebar from "./components/AddonSidebar";
-import AddonEditorPage from "./components/AddonEditorPage";
+import AddonTabBar from "./components/AddonTabBar";
 import CharacterManager from "./components/CharacterManager";
 import TraitManager from "./components/TraitManager";
 import ClothingManager from "./components/ClothingManager";
@@ -59,8 +59,8 @@ export default function App() {
   const [sessionDirty, setSessionDirty] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
 
-  // Addon editor mode
-  const [editingAddon, setEditingAddon] = useState<{ id: string; version: string } | null>(null);
+  const [addonListKey, setAddonListKey] = useState(0);
+  const [selectedAddonTab, setSelectedAddonTab] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -218,7 +218,6 @@ export default function App() {
   // Called when world/addons change from sidebars
   const handleWorldChanged = useCallback(async () => {
     setMessages([]);
-    setEditingAddon(null);
     setSessionKey((k) => k + 1); // Force remount editor components
     // Directly fetch new state (don't rely solely on WebSocket)
     const [state, session] = await Promise.all([fetchGameState(), fetchSession()]);
@@ -233,11 +232,9 @@ export default function App() {
 
   const hasAddonChanges = (() => {
     if (stagedAddons.length !== currentAddons.length) return true;
-    const currentIds = new Set(currentAddons.map(a => a.id));
-    const stagedIds = new Set(stagedAddons.map(a => a.id));
-    if (currentIds.size !== stagedIds.size) return true;
-    for (const id of currentIds) {
-      if (!stagedIds.has(id)) return true;
+    const currentMap = new Map(currentAddons.map(a => [a.id, a.version]));
+    for (const staged of stagedAddons) {
+      if (currentMap.get(staged.id) !== staged.version) return true;
     }
     return false;
   })();
@@ -266,12 +263,20 @@ export default function App() {
   };
 
   const renderNavPage = () => {
-    if (navPage === "characters") return <CharacterManager key={sessionKey} />;
-    if (navPage === "traits") return <TraitManager key={sessionKey} />;
-    if (navPage === "clothing") return <ClothingManager key={sessionKey} />;
-    if (navPage === "items") return <ItemManager key={sessionKey} />;
-    if (navPage === "actions") return <ActionManager key={sessionKey} />;
-    if (navPage === "maps") return <MapManager key={sessionKey} />;
+    const addonTab = currentWorldId ? (
+      <AddonTabBar
+        addons={stagedAddons}
+        selectedAddon={selectedAddonTab}
+        onSelect={setSelectedAddonTab}
+      />
+    ) : null;
+
+    if (navPage === "characters") return <>{addonTab}<CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
+    if (navPage === "traits") return <>{addonTab}<TraitManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
+    if (navPage === "clothing") return <>{addonTab}<ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
+    if (navPage === "items") return <>{addonTab}<ItemManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
+    if (navPage === "actions") return <>{addonTab}<ActionManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
+    if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
     if (navPage === "settings") {
       return <SettingsPage
         worldId={currentWorldId}
@@ -291,18 +296,6 @@ export default function App() {
   };
 
   const renderCenter = () => {
-    // Addon editor mode
-    if (editingAddon) {
-      return (
-        <AddonEditorPage
-          addonId={editingAddon.id}
-          addonVersion={editingAddon.version}
-          maxWidth={config.maxWidth}
-          onBack={() => setEditingAddon(null)}
-        />
-      );
-    }
-
     // Nav page (editors)
     if (navPage !== null) return renderNavPage();
 
@@ -436,7 +429,7 @@ export default function App() {
     >
       <NavBar
         navPage={navPage}
-        onNavChange={(p) => { setNavPage(p); setEditingAddon(null); }}
+        onNavChange={(p) => setNavPage(p)}
         worldName={currentWorldId ? gameState.worldId : ""}
         maxWidth={config.maxWidth}
         leftOpen={leftOpen}
@@ -482,13 +475,10 @@ export default function App() {
       {rightOpen ? (
         <div style={{ flex: 1, minWidth: 0 }}>
           <AddonSidebar
+            key={addonListKey}
             enabledAddons={currentAddons}
             stagedAddons={stagedAddons}
             onStagedChange={setStagedAddons}
-            onEditAddon={(id, version) => {
-              setEditingAddon({ id, version });
-              setNavPage(null);
-            }}
             worldId={currentWorldId}
           />
         </div>
@@ -503,6 +493,7 @@ export default function App() {
         stagedAddons={stagedAddons}
         worldId={currentWorldId}
         onApplied={handleWorldChanged}
+        onRevert={() => setStagedAddons(currentAddons)}
       />
     </div>
   );

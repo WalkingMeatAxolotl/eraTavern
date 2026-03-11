@@ -4,7 +4,7 @@ import { fetchDefinitions, fetchTraitDefs, fetchTraitGroups } from "../api/clien
 import TraitEditor from "./TraitEditor";
 import TraitGroupEditor from "./TraitGroupEditor";
 
-export default function TraitManager() {
+export default function TraitManager({ selectedAddon }: { selectedAddon: string | null }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [traits, setTraits] = useState<TraitDefinition[]>([]);
   const [traitGroups, setTraitGroups] = useState<TraitGroup[]>([]);
@@ -75,7 +75,7 @@ export default function TraitManager() {
       name: "",
       category: definitions.template.traits[0]?.key ?? "",
       traits: [],
-      source: "game",
+      source: selectedAddon ?? "",
     };
 
     return (
@@ -97,7 +97,7 @@ export default function TraitManager() {
       category: definitions.template.traits[0]?.key ?? "",
       description: "",
       effects: [],
-      source: "game",
+      source: selectedAddon ?? "",
     };
 
     return (
@@ -110,10 +110,14 @@ export default function TraitManager() {
     );
   }
 
+  const readOnly = selectedAddon === null;
+  const filteredTraits = selectedAddon ? traits.filter(t => t.source === selectedAddon) : traits;
+  const filteredGroups = selectedAddon ? traitGroups.filter(g => g.source === selectedAddon) : traitGroups;
+
   // Build traitId -> groupName lookup + groups by category
   const traitGroupName: Record<string, string> = {};
   const groupsByCategory: Record<string, TraitGroup[]> = {};
-  for (const g of traitGroups) {
+  for (const g of filteredGroups) {
     for (const tid of g.traits) {
       traitGroupName[tid] = g.name;
     }
@@ -128,7 +132,7 @@ export default function TraitManager() {
     grouped[cat.key] = [];
   }
   // Add an "uncategorized" bucket
-  for (const t of traits) {
+  for (const t of filteredTraits) {
     if (grouped[t.category]) {
       grouped[t.category].push(t);
     } else {
@@ -150,38 +154,40 @@ export default function TraitManager() {
         <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
           == 特质列表 ==
         </span>
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            onClick={handleNewGroup}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "13px",
-            }}
-          >
-            [+ 新建特质组]
-          </button>
-          <button
-            onClick={handleNew}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "13px",
-            }}
-          >
-            [+ 新建特质]
-          </button>
-        </div>
+        {!readOnly && (
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              onClick={handleNewGroup}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: "#16213e",
+                color: "#0f0",
+                border: "1px solid #333",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "13px",
+              }}
+            >
+              [+ 新建特质组]
+            </button>
+            <button
+              onClick={handleNew}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: "#16213e",
+                color: "#0f0",
+                border: "1px solid #333",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "13px",
+              }}
+            >
+              [+ 新建特质]
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>

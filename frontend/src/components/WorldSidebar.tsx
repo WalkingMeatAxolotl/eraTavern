@@ -68,7 +68,8 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
     setSaving(true);
     setError("");
     try {
-      const result = await createWorld(newId.trim(), newName.trim(), currentAddons);
+      // New world starts with no addons — user enables them via the addon sidebar
+      const result = await createWorld(newId.trim(), newName.trim(), []);
       if (result.success) {
         setShowCreateForm(false);
         setNewName("");
@@ -332,9 +333,6 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
                         <div style={{ color: "#666" }}>
                           Addons: {w.addons.map(a => `${a.id}@${a.version}`).join(", ")}
                         </div>
-                      )}
-                      {w.writeTarget && (
-                        <div style={{ color: "#666" }}>writeTarget: {w.writeTarget}</div>
                       )}
                       <div style={{ display: "flex", gap: "6px", marginTop: "4px", flexWrap: "wrap" }}>
                         {!active && (

@@ -1,4 +1,4 @@
-import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, DecorPreset, RawMapData, AddonInfo, SessionInfo } from "../types/game";
+import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, DecorPreset, RawMapData, SessionInfo } from "../types/game";
 
 const API_BASE = "/api/game";
 
@@ -74,23 +74,16 @@ export async function updateWorld(worldId: string): Promise<{ success: boolean; 
   return res.json();
 }
 
-export async function rebuildSession(
+export async function saveSession(
   addons?: { id: string; version: string }[],
-  writeTarget?: string,
 ): Promise<{ success: boolean; message: string }> {
   const body: Record<string, unknown> = {};
   if (addons !== undefined) body.addons = addons;
-  if (writeTarget !== undefined) body.writeTarget = writeTarget;
-  const res = await fetch("/api/session/rebuild", {
+  const res = await fetch("/api/session/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  return res.json();
-}
-
-export async function saveSession(): Promise<{ success: boolean; message: string }> {
-  const res = await fetch("/api/session/save", { method: "POST" });
   return res.json();
 }
 
@@ -126,20 +119,13 @@ export async function updateAddonMeta(addonId: string, version: string, data: { 
   return res.json();
 }
 
-export async function applyChanges(
-  addons?: { id: string; version: string }[],
-  writeTarget?: string,
-): Promise<{ success: boolean; message: string }> {
-  const body: Record<string, unknown> = {};
-  if (addons !== undefined) body.addons = addons;
-  if (writeTarget !== undefined) body.writeTarget = writeTarget;
-  const res = await fetch("/api/session/apply-changes", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+export async function deleteAddon(addonId: string, version: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/${encodeURIComponent(version)}`, {
+    method: "DELETE",
   });
   return res.json();
 }
+
 
 export async function fetchBackups(): Promise<string[]> {
   const res = await fetch("/api/session/backups");
@@ -542,70 +528,23 @@ export async function uploadAsset(file: File, folder: "characters" | "background
   return res.json();
 }
 
-// --- Addon Editor API ---
+// --- Addon version management ---
 
-export interface AddonEntityData {
-  meta: AddonInfo;
-  traits: { own: TraitDefinition[]; deps: TraitDefinition[]; overrides: string[] };
-  clothing: { own: ClothingDefinition[]; deps: ClothingDefinition[]; overrides: string[] };
-  items: { own: ItemDefinition[]; deps: ItemDefinition[]; overrides: string[] };
-  actions: { own: ActionDefinition[]; deps: ActionDefinition[]; overrides: string[] };
-  traitGroups: { own: TraitGroup[]; deps: TraitGroup[]; overrides: string[] };
-  characters: { own: RawCharacterData[]; deps: RawCharacterData[]; overrides: string[] };
-  maps: { own: RawMapData[]; deps: RawMapData[]; overrides: string[] };
-  itemTags: string[];
-}
-
-export async function fetchAddonData(addonId: string, version: string): Promise<AddonEntityData> {
-  const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/${encodeURIComponent(version)}/data`);
-  if (!res.ok) throw new Error(`Failed to fetch addon data: ${res.status}`);
-  return res.json();
-}
-
-// Generic addon CRUD helper
-async function addonCrud(
-  method: string,
-  addonId: string,
-  version: string,
-  category: string,
-  entityId?: string,
-  body?: unknown,
-): Promise<{ success: boolean; message: string }> {
-  const path = entityId
-    ? `/api/addon/${encodeURIComponent(addonId)}/${encodeURIComponent(version)}/${category}/${encodeURIComponent(entityId)}`
-    : `/api/addon/${encodeURIComponent(addonId)}/${encodeURIComponent(version)}/${category}`;
-  const res = await fetch(path, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+export async function forkAddon(addonId: string, baseVersion: string, worldId: string): Promise<{ success: boolean; newVersion?: string; message?: string }> {
+  const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/fork`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ baseVersion, worldId }),
   });
-  if (!res.ok) throw new Error(`Addon CRUD failed: ${res.status}`);
   return res.json();
 }
 
-export const addonCreateTrait = (a: string, v: string, data: unknown) => addonCrud("POST", a, v, "traits", undefined, data);
-export const addonUpdateTrait = (a: string, v: string, id: string, data: unknown) => addonCrud("PUT", a, v, "traits", id, data);
-export const addonDeleteTrait = (a: string, v: string, id: string) => addonCrud("DELETE", a, v, "traits", id);
-
-export const addonCreateTraitGroup = (a: string, v: string, data: unknown) => addonCrud("POST", a, v, "trait-groups", undefined, data);
-export const addonUpdateTraitGroup = (a: string, v: string, id: string, data: unknown) => addonCrud("PUT", a, v, "trait-groups", id, data);
-export const addonDeleteTraitGroup = (a: string, v: string, id: string) => addonCrud("DELETE", a, v, "trait-groups", id);
-
-export const addonCreateClothing = (a: string, v: string, data: unknown) => addonCrud("POST", a, v, "clothing", undefined, data);
-export const addonUpdateClothing = (a: string, v: string, id: string, data: unknown) => addonCrud("PUT", a, v, "clothing", id, data);
-export const addonDeleteClothing = (a: string, v: string, id: string) => addonCrud("DELETE", a, v, "clothing", id);
-
-export const addonCreateItem = (a: string, v: string, data: unknown) => addonCrud("POST", a, v, "items", undefined, data);
-export const addonUpdateItem = (a: string, v: string, id: string, data: unknown) => addonCrud("PUT", a, v, "items", id, data);
-export const addonDeleteItem = (a: string, v: string, id: string) => addonCrud("DELETE", a, v, "items", id);
-
-export const addonCreateAction = (a: string, v: string, data: unknown) => addonCrud("POST", a, v, "actions", undefined, data);
-export const addonUpdateAction = (a: string, v: string, id: string, data: unknown) => addonCrud("PUT", a, v, "actions", id, data);
-export const addonDeleteAction = (a: string, v: string, id: string) => addonCrud("DELETE", a, v, "actions", id);
-
-export const addonCreateCharacter = (a: string, v: string, data: unknown) => addonCrud("POST", a, v, "characters", undefined, data);
-export const addonUpdateCharacter = (a: string, v: string, id: string, data: unknown) => addonCrud("PUT", a, v, "characters", id, data);
-export const addonDeleteCharacter = (a: string, v: string, id: string) => addonCrud("DELETE", a, v, "characters", id);
+export async function fetchAddonVersions(addonId: string): Promise<string[]> {
+  const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/versions`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.versions ?? [];
+}
 
 // WebSocket connection
 export function connectWebSocket(

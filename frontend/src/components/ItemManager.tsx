@@ -3,7 +3,7 @@ import type { ItemDefinition } from "../types/game";
 import { fetchItemDefs, fetchItemTags, createItemTag, deleteItemTag } from "../api/client";
 import ItemEditor from "./ItemEditor";
 
-export default function ItemManager() {
+export default function ItemManager({ selectedAddon }: { selectedAddon: string | null }) {
   const [items, setItems] = useState<ItemDefinition[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,11 +62,14 @@ export default function ItemManager() {
     }
   };
 
+  const readOnly = selectedAddon === null;
+  const filteredItems = selectedAddon ? items.filter(i => i.source === selectedAddon) : items;
+
   // Group items by first tag (or "未分类")
   const { tagOrder, grouped } = useMemo(() => {
     const g: Record<string, ItemDefinition[]> = {};
     const order: string[] = [];
-    for (const item of items) {
+    for (const item of filteredItems) {
       const tag = (item.tags && item.tags[0]) ?? "__untagged__";
       if (!g[tag]) {
         g[tag] = [];
@@ -75,7 +78,7 @@ export default function ItemManager() {
       g[tag].push(item);
     }
     return { tagOrder: order, grouped: g };
-  }, [items]);
+  }, [filteredItems]);
 
   // Count how many items use each tag (for delete safety hint)
   const tagUsage = useMemo(() => {
@@ -107,7 +110,7 @@ export default function ItemManager() {
       maxStack: 1,
       sellable: true,
       price: 0,
-      source: "game",
+      source: selectedAddon ?? "",
     };
 
     return (
@@ -134,36 +137,40 @@ export default function ItemManager() {
           == 物品列表 ==
         </span>
         <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            onClick={() => setShowTagManager((v) => !v)}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: "#16213e",
-              color: showTagManager ? "#e94560" : "#888",
-              border: "1px solid #333",
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "13px",
-            }}
-          >
-            [标签管理]
-          </button>
-          <button
-            onClick={handleNew}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "13px",
-            }}
-          >
-            [+ 新建物品]
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => setShowTagManager((v) => !v)}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: "#16213e",
+                color: showTagManager ? "#e94560" : "#888",
+                border: "1px solid #333",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "13px",
+              }}
+            >
+              [标签管理]
+            </button>
+          )}
+          {!readOnly && (
+            <button
+              onClick={handleNew}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: "#16213e",
+                color: "#0f0",
+                border: "1px solid #333",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "13px",
+              }}
+            >
+              [+ 新建物品]
+            </button>
+          )}
         </div>
       </div>
 

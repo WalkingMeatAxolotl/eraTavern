@@ -3,7 +3,7 @@ import type { ActionDefinition, GameDefinitions } from "../types/game";
 import { fetchActionDefs, fetchDefinitions } from "../api/client";
 import ActionEditor from "./ActionEditor";
 
-export default function ActionManager() {
+export default function ActionManager({ selectedAddon }: { selectedAddon: string | null }) {
   const [actions, setActions] = useState<ActionDefinition[]>([]);
   const [defs, setDefs] = useState<GameDefinitions | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,11 +43,14 @@ export default function ActionManager() {
     setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const readOnly = selectedAddon === null;
+  const filteredActions = selectedAddon ? actions.filter(a => a.source === selectedAddon) : actions;
+
   // Group actions by category
   const { catOrder, grouped } = useMemo(() => {
     const g: Record<string, ActionDefinition[]> = {};
     const order: string[] = [];
-    for (const action of actions) {
+    for (const action of filteredActions) {
       const cat = action.category || "__uncategorized__";
       if (!g[cat]) {
         g[cat] = [];
@@ -56,7 +59,7 @@ export default function ActionManager() {
       g[cat].push(action);
     }
     return { catOrder: order, grouped: g };
-  }, [actions]);
+  }, [filteredActions]);
 
   if (loading || !defs) {
     return (
@@ -80,7 +83,7 @@ export default function ActionManager() {
       costs: [],
       outcomes: [],
       outputTemplate: "",
-      source: "game",
+      source: selectedAddon ?? "",
     };
 
     return (
@@ -106,21 +109,23 @@ export default function ActionManager() {
         <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
           == 行动列表 ==
         </span>
-        <button
-          onClick={handleNew}
-          style={{
-            padding: "4px 12px",
-            backgroundColor: "#16213e",
-            color: "#0f0",
-            border: "1px solid #333",
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontFamily: "monospace",
-            fontSize: "13px",
-          }}
-        >
-          [+ 新建行动]
-        </button>
+        {!readOnly && (
+          <button
+            onClick={handleNew}
+            style={{
+              padding: "4px 12px",
+              backgroundColor: "#16213e",
+              color: "#0f0",
+              border: "1px solid #333",
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "13px",
+            }}
+          >
+            [+ 新建行动]
+          </button>
+        )}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>

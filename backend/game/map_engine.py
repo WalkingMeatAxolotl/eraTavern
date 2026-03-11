@@ -14,6 +14,7 @@ def load_map_collection(data_dir_or_addons: "Path | AddonDirs") -> dict:
     addon_dirs = _to_addon_dirs(data_dir_or_addons)
     all_maps: dict[str, dict] = {}
 
+    from .character import namespace_id
     for addon_id, addon_path in addon_dirs:
         collection_path = addon_path / "map_collection.json"
         if not collection_path.exists():
@@ -26,11 +27,14 @@ def load_map_collection(data_dir_or_addons: "Path | AddonDirs") -> dict:
                 continue
             with open(map_path, "r", encoding="utf-8") as f:
                 map_data = json.load(f)
-            map_id = map_data["id"]
+            local_id = map_data["id"]
+            ns_id = namespace_id(addon_id, local_id)
+            map_data["id"] = ns_id
+            map_data["_local_id"] = local_id
             map_data["compiled_grid"] = compile_grid(map_data)
             map_data["cell_index"] = {c["id"]: c for c in map_data["cells"]}
             map_data["_source"] = addon_id
-            all_maps[map_id] = map_data
+            all_maps[ns_id] = map_data
 
     return {"maps": all_maps}
 
@@ -152,9 +156,13 @@ def build_distance_matrix(maps: dict[str, dict]) -> dict[tuple, dict[tuple, tupl
 
 
 def save_map_file(data_dir: Path, map_id: str, map_data: dict) -> None:
-    """Save map JSON to file. Strips compiled_grid/cell_index before writing."""
-    clean = {k: v for k, v in map_data.items() if k not in ("compiled_grid", "cell_index")}
-    map_path = data_dir / "maps" / f"{map_id.replace('-', '_')}.json"
+    """Save map JSON to file. Strips compiled_grid/cell_index/_source/_local_id before writing."""
+    from .character import to_local_id
+    local_id = map_data.get("_local_id", to_local_id(map_id))
+    clean = {k: v for k, v in map_data.items()
+             if k not in ("compiled_grid", "cell_index", "_source", "_local_id")}
+    clean["id"] = local_id
+    map_path = data_dir / "maps" / f"{local_id.replace('-', '_')}.json"
     with open(map_path, "w", encoding="utf-8") as f:
         json.dump(clean, f, ensure_ascii=False, indent=2)
 

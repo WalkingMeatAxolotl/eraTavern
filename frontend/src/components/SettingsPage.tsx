@@ -70,9 +70,9 @@ export default function SettingsPage({ worldId, onRestart, onWorldChanged, setti
             -- 备份与回滚 --
           </div>
           <div style={{ color: "#888", fontSize: "12px", lineHeight: "1.6" }}>
-            每次 [应用设置更改] 时自动创建备份（保留最近 5 份）。
+            每次 [保存变更] 时自动创建备份（保留最近 5 份）。
             <br />
-            回滚将恢复世界设置（addon 列表、writeTarget、实体定义）到备份时的状态。
+            回滚将恢复世界设置（addon 列表、实体定义）到备份时的状态。
             <br />
             <span style={{ color: "#666" }}>注意：回滚不影响运行时存档数据（位置、库存等）。</span>
           </div>

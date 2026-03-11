@@ -20,10 +20,15 @@ from .character import (
     get_ability_defs,
     get_experience_defs,
     apply_ability_decay,
+    namespace_character_data,
+    namespace_action_refs,
+    namespace_id,
+    to_local_id,
+    resolve_ref,
+    get_addon_from_id,
 )
 from .addon_loader import (
     ADDONS_DIR,
-    OVERLAY_SOURCE,
     list_addons as _list_addons,
     list_worlds as _list_worlds,
     load_world_config,
@@ -32,9 +37,8 @@ from .addon_loader import (
     load_template as _load_global_template,
     get_addon_dir,
     get_world_dir,
-    create_custom_addon,
-    get_write_target_dir,
-    migrate_world_overlay_to_addon,
+    fork_addon_version,
+    is_world_fork,
 )
 from .time_system import GameTime
 
@@ -48,7 +52,6 @@ def list_available_worlds() -> list[dict[str, Any]]:
             "id": w["id"],
             "name": w["name"],
             "addons": w.get("addons", []),
-            "writeTarget": w.get("writeTarget", ""),
             "playerCharacter": w.get("playerCharacter", ""),
         })
     return result
@@ -84,15 +87,8 @@ class GameState:
         self.world_name: str = ""
         self.addon_refs: list[dict[str, str]] = []
         self.addon_dirs: list[tuple[str, Path]] = []
-        self.overlay_dir: Path = Path()  # world overlay directory
-        self.write_target_id: str = ""  # addon ID for CRUD writes
-        self.write_target_dir: Path = Path()  # resolved directory for write target
         self.player_character: str = ""  # player character ID from world config
         self.dirty: bool = False  # True when in-memory state has unsaved changes
-        # Legacy aliases
-        self.game_id: str = ""
-        self.game_name: str = ""
-        self.data_dir: Path = Path()  # points to write_target_dir
         self.maps: dict[str, dict] = {}
         self.template: dict = {}
         self.clothing_defs: dict[str, dict] = {}
@@ -116,14 +112,8 @@ class GameState:
         self.world_name = ""
         self.addon_refs = []
         self.addon_dirs = []
-        self.overlay_dir = Path()
-        self.write_target_id = ""
-        self.write_target_dir = Path()
         self.player_character = ""
         self.dirty = False
-        self.game_id = ""
-        self.game_name = ""
-        self.data_dir = Path()
         self.maps = {}
         self.template = _load_global_template()
         self.clothing_defs = {}
@@ -141,20 +131,29 @@ class GameState:
         self.npc_full_log = []
         self.time = GameTime()
 
+    def _resolve_namespaces(self) -> None:
+        """Resolve bare ID cross-references in character data and action defs.
+
+        Must be called AFTER all entity defs are loaded with namespaced IDs.
+        """
+        for char_data in self.character_data.values():
+            namespace_character_data(
+                char_data, self.trait_defs, self.item_defs,
+                self.clothing_defs, self.character_data, self.maps,
+            )
+        namespace_action_refs(
+            self.action_defs, self.trait_defs, self.item_defs,
+            self.clothing_defs, self.character_data, self.maps,
+        )
+
     def load_session_addons(self, addon_refs: list[dict[str, str]]) -> None:
         """Load addons into session without a world. No overlay layer."""
         self.world_id = ""
         self.world_name = ""
         self.addon_refs = addon_refs
         self.addon_dirs = build_addon_dirs(addon_refs)
-        self.overlay_dir = Path()
-        self.write_target_id = ""
-        self.write_target_dir = Path()
         self.player_character = ""
         self.dirty = False
-        self.game_id = ""
-        self.game_name = ""
-        self.data_dir = Path()
 
         # Load from addons
         from .map_engine import build_distance_matrix
@@ -170,6 +169,9 @@ class GameState:
         self.action_defs = load_action_defs(self.addon_dirs)
         self.trait_groups = load_trait_groups(self.addon_dirs)
         self.character_data = load_characters(self.addon_dirs)
+
+        # Resolve bare ID cross-references
+        self._resolve_namespaces()
 
         self.characters = {}
         for char_id, char_data in self.character_data.items():
@@ -195,41 +197,10 @@ class GameState:
         self.addon_refs = world_config.get("addons", [])
         self.player_character = world_config.get("playerCharacter", "")
 
-        # Auto-create custom addon if writeTarget not set (migration)
-        write_target = world_config.get("writeTarget", "")
-        if not write_target:
-            custom_id = create_custom_addon(world_id, self.addon_refs)
-            custom_ref = {"id": custom_id, "version": "1.0.0"}
-            # Migrate overlay entity files to custom addon
-            migrate_world_overlay_to_addon(world_id, custom_id)
-            # Add custom addon to refs if not already present
-            if not any(r.get("id") == custom_id for r in self.addon_refs):
-                self.addon_refs.append(custom_ref)
-            write_target = custom_id
-            # Migrate playerCharacter from initialState if present
-            initial_state = world_config.get("initialState", {})
-            if initial_state.get("playerCharacter"):
-                world_config["playerCharacter"] = initial_state["playerCharacter"]
-            # Persist the updated config
-            world_config["addons"] = self.addon_refs
-            world_config["writeTarget"] = write_target
-            world_config.pop("initialState", None)
-            save_world_config(world_id, world_config)
-            # Re-read playerCharacter after migration
-            self.player_character = world_config.get("playerCharacter", "")
+        # No auto-fork: addons stay at whichever version world.json specifies.
+        # Forking is triggered explicitly by the user via POST /api/addon/{id}/fork.
 
-        self.write_target_id = write_target
         self.addon_dirs = build_addon_dirs(self.addon_refs)
-        self.overlay_dir = get_world_dir(world_id)
-
-        # Resolve write target directory
-        wt_dir = get_write_target_dir(self.write_target_id, self.addon_dirs)
-        self.write_target_dir = wt_dir if wt_dir else self.overlay_dir
-
-        # Legacy aliases
-        self.game_id = self.world_id
-        self.game_name = self.world_name
-        self.data_dir = self.write_target_dir
 
         # Load maps from all addons
         collection = load_map_collection(self.addon_dirs)
@@ -252,6 +223,16 @@ class GameState:
         self.trait_groups = load_trait_groups(self.addon_dirs)
         self.character_data = load_characters(self.addon_dirs)
 
+        # Resolve bare ID cross-references
+        self._resolve_namespaces()
+
+        # Namespace player_character reference
+        from .character import NS_SEP
+        if self.player_character and NS_SEP not in self.player_character:
+            self.player_character = resolve_ref(
+                self.player_character, self.character_data, ""
+            )
+
         # Build character states
         self.characters = {}
         for char_id, char_data in self.character_data.items():
@@ -268,119 +249,116 @@ class GameState:
         self.dirty = False
 
     def _persist_entity_files(self) -> None:
-        """Write entities belonging to writeTarget addon to disk (no dirty clear)."""
-        if not self.write_target_dir or not str(self.write_target_dir):
-            return
-
-        target_source = self.write_target_id
-        if not target_source:
-            return
-
+        """Write all entities to their respective addon directories (by source)."""
         from .character import (
             save_clothing_defs_file, save_item_defs_file, save_item_tags_file,
             save_trait_defs_file, save_action_defs_file, save_trait_groups_file,
+            save_character,
         )
         from .map_engine import save_map_file, save_decor_presets as _save_decor_presets
 
-        target_dir = self.write_target_dir
-        target_dir.mkdir(parents=True, exist_ok=True)
+        # Build addon_id → path lookup
+        addon_dir_map: dict[str, Path] = {aid: apath for aid, apath in self.addon_dirs}
 
-        # Save items belonging to write target
-        target_items = [
-            {k: v for k, v in d.items() if k != "source"}
-            for d in self.item_defs.values()
-            if d.get("source") == target_source
-        ]
-        if target_items:
-            save_item_defs_file(target_dir, target_items)
+        # Collect all source addon IDs that have entities
+        sources: set[str] = set()
+        for d in self.trait_defs.values():
+            sources.add(d.get("source", ""))
+        for d in self.clothing_defs.values():
+            sources.add(d.get("source", ""))
+        for d in self.item_defs.values():
+            sources.add(d.get("source", ""))
+        for d in self.action_defs.values():
+            sources.add(d.get("source", ""))
+        for d in self.trait_groups.values():
+            sources.add(d.get("source", ""))
+        for d in self.character_data.values():
+            sources.add(d.get("_source", ""))
+        for d in self.maps.values():
+            sources.add(d.get("_source", ""))
 
-        # Save traits belonging to write target
-        target_traits = [
-            {k: v for k, v in d.items() if k != "source"}
-            for d in self.trait_defs.values()
-            if d.get("source") == target_source
-        ]
-        if target_traits:
-            save_trait_defs_file(target_dir, target_traits)
+        for source in sources:
+            target_dir = addon_dir_map.get(source)
+            if not target_dir:
+                continue
+            target_dir.mkdir(parents=True, exist_ok=True)
 
-        # Save clothing belonging to write target
-        target_clothing = [
-            {k: v for k, v in d.items() if k != "source"}
-            for d in self.clothing_defs.values()
-            if d.get("source") == target_source
-        ]
-        if target_clothing:
-            save_clothing_defs_file(target_dir, target_clothing)
-
-        # Save actions belonging to write target
-        target_actions = [
-            {k: v for k, v in d.items() if k != "source"}
-            for d in self.action_defs.values()
-            if d.get("source") == target_source
-        ]
-        if target_actions:
-            save_action_defs_file(target_dir, target_actions)
-
-        # Save trait groups belonging to write target
-        target_groups = [
-            {k: v for k, v in d.items() if k != "source"}
-            for d in self.trait_groups.values()
-            if d.get("source") == target_source
-        ]
-        if target_groups:
-            save_trait_groups_file(target_dir, target_groups)
-
-        # Save item tags (always save to write target)
-        if self.item_tags:
-            save_item_tags_file(target_dir, self.item_tags)
-
-        # Save characters belonging to write target
-        target_chars = {
-            cid: cdata for cid, cdata in self.character_data.items()
-            if cdata.get("_source") == target_source
-        }
-        if target_chars:
-            chars_dir = target_dir / "characters"
-            chars_dir.mkdir(parents=True, exist_ok=True)
-            for cid, cdata in target_chars.items():
-                char_path = chars_dir / f"{cid}.json"
-                clean = {k: v for k, v in cdata.items() if not k.startswith("_")}
-                with open(char_path, "w", encoding="utf-8") as f:
-                    json.dump(clean, f, ensure_ascii=False, indent=2)
-
-        # Save maps belonging to write target
-        target_maps = {
-            mid: mdata for mid, mdata in self.maps.items()
-            if mdata.get("_source") == target_source
-        }
-        if target_maps:
-            maps_dir = target_dir / "maps"
-            maps_dir.mkdir(parents=True, exist_ok=True)
-            for mid, mdata in target_maps.items():
-                save_map_file(target_dir, mid, mdata)
-            # Update map_collection.json
-            collection_path = target_dir / "map_collection.json"
-            map_entries = [f"maps/{mid.replace('-', '_')}.json" for mid in target_maps]
-            # Merge with existing collection if present
-            existing_collection: list[str] = []
-            if collection_path.exists():
-                with open(collection_path, "r", encoding="utf-8") as f:
-                    existing_collection = json.load(f).get("maps", [])
-            # Add new entries, avoid duplicates
-            for entry in map_entries:
-                if entry not in existing_collection:
-                    existing_collection.append(entry)
-            # Remove entries for maps no longer in overlay
-            overlay_filenames = set(map_entries)
-            existing_collection = [
-                e for e in existing_collection
-                if e in overlay_filenames
+            # Traits
+            src_traits = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.trait_defs.values()
+                if d.get("source") == source
             ]
-            with open(collection_path, "w", encoding="utf-8") as f:
-                json.dump({"maps": existing_collection}, f, ensure_ascii=False, indent=2)
+            if src_traits:
+                save_trait_defs_file(target_dir, src_traits)
 
-        # Save decor presets to write target
-        _save_decor_presets(target_dir, self.decor_presets)
+            # Clothing
+            src_clothing = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.clothing_defs.values()
+                if d.get("source") == source
+            ]
+            if src_clothing:
+                save_clothing_defs_file(target_dir, src_clothing)
+
+            # Items
+            src_items = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.item_defs.values()
+                if d.get("source") == source
+            ]
+            if src_items:
+                save_item_defs_file(target_dir, src_items)
+
+            # Actions
+            src_actions = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.action_defs.values()
+                if d.get("source") == source
+            ]
+            if src_actions:
+                save_action_defs_file(target_dir, src_actions)
+
+            # Trait groups
+            src_groups = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.trait_groups.values()
+                if d.get("source") == source
+            ]
+            if src_groups:
+                save_trait_groups_file(target_dir, src_groups)
+
+            # Characters
+            for cid, cdata in self.character_data.items():
+                if cdata.get("_source") == source:
+                    save_character(target_dir, cdata)
+
+            # Maps
+            src_maps = {
+                mid: mdata for mid, mdata in self.maps.items()
+                if mdata.get("_source") == source
+            }
+            if src_maps:
+                maps_dir = target_dir / "maps"
+                maps_dir.mkdir(parents=True, exist_ok=True)
+                for mid, mdata in src_maps.items():
+                    save_map_file(target_dir, mid, mdata)
+                # Update map_collection.json
+                collection_path = target_dir / "map_collection.json"
+                map_entries = [
+                    f"maps/{mdata.get('_local_id', to_local_id(mid)).replace('-', '_')}.json"
+                    for mid, mdata in src_maps.items()
+                ]
+                with open(collection_path, "w", encoding="utf-8") as f:
+                    json.dump({"maps": map_entries}, f, ensure_ascii=False, indent=2)
+
+        # Save item tags to first addon dir (global pool)
+        if self.item_tags and self.addon_dirs:
+            save_item_tags_file(self.addon_dirs[0][1], self.item_tags)
+
+        # Save decor presets to first addon dir
+        if self.decor_presets and self.addon_dirs:
+            _save_decor_presets(self.addon_dirs[0][1], self.decor_presets)
 
     def _snapshot_runtime(self) -> dict[str, Any]:
         """Snapshot runtime state (positions, resources, inventory, etc.)."""
@@ -437,8 +415,7 @@ class GameState:
             )
         self.time = snapshot["time"]
 
-    def rebuild(self, new_addon_refs: Optional[list[dict[str, str]]] = None,
-                new_write_target: Optional[str] = None) -> None:
+    def rebuild(self, new_addon_refs: Optional[list[dict[str, str]]] = None) -> None:
         """Rebuild game state from current in-memory definitions.
 
         If addon list changed, flush edits to disk first, then reload defs
@@ -454,8 +431,6 @@ class GameState:
         if new_addon_refs is not None:
             addon_list_changed = (new_addon_refs != self.addon_refs)
             self.addon_refs = new_addon_refs
-        if new_write_target is not None:
-            self.write_target_id = new_write_target
 
         if addon_list_changed:
             # Flush current in-memory edits before reloading from new addon stack
@@ -463,9 +438,6 @@ class GameState:
 
             # Reload all definitions from disk with new addon composition
             self.addon_dirs = build_addon_dirs(self.addon_refs)
-            wt_dir = get_write_target_dir(self.write_target_id, self.addon_dirs)
-            self.write_target_dir = wt_dir if wt_dir else self.overlay_dir
-            self.data_dir = self.write_target_dir
 
             collection = load_map_collection(self.addon_dirs)
             self.maps = collection["maps"]
@@ -480,33 +452,33 @@ class GameState:
             self.action_defs = load_action_defs(self.addon_dirs)
             self.trait_groups = load_trait_groups(self.addon_dirs)
             self.character_data = load_characters(self.addon_dirs)
+            self._resolve_namespaces()
 
         # Rebuild characters from current in-memory definitions
         self._rebuild_characters(snapshot)
 
-    def save_to_write_target(self) -> None:
-        """Rebuild + persist all changes to disk + clear dirty."""
-        self.rebuild()
+    def save_all(self, new_addon_refs: Optional[list[dict[str, str]]] = None) -> None:
+        """Rebuild + persist all entity files to their addon dirs + update world.json + clear dirty."""
+        self.rebuild(new_addon_refs)
         self._persist_entity_files()
 
-        # Persist world config (addon list, writeTarget, etc.)
+        # Persist world config
         if self.world_id:
             world_config = load_world_config(self.world_id)
             world_config["addons"] = self.addon_refs
-            world_config["writeTarget"] = self.write_target_id
-            world_config["playerCharacter"] = self.player_character
+            world_config.pop("writeTarget", None)  # remove legacy field
+            # Save playerCharacter as local ID in config
+            world_config["playerCharacter"] = to_local_id(self.player_character)
             save_world_config(self.world_id, world_config)
 
         self.dirty = False
 
-    def save_overlay(self) -> None:
-        """Legacy: persist data to write target addon (renamed from overlay)."""
-        self.save_to_write_target()
+    # Legacy aliases
+    def save_to_write_target(self) -> None:
+        self.save_all()
 
-    def apply_changes(self, new_addon_refs: Optional[list[dict[str, str]]] = None,
-                      new_write_target: Optional[str] = None) -> None:
-        """Legacy wrapper: calls rebuild()."""
-        self.rebuild(new_addon_refs, new_write_target)
+    def save_overlay(self) -> None:
+        self.save_all()
 
     def reload_maps(self) -> None:
         """Reload map collection from disk."""
@@ -516,17 +488,14 @@ class GameState:
         self.distance_matrix = build_distance_matrix(self.maps)
 
     def get_addon_dir_for_source(self, source: str) -> Path:
-        """Get the addon directory path for a given source/addon ID.
-
-        Falls back to write_target_dir, then overlay_dir.
-        """
+        """Get the addon directory path for a given source/addon ID."""
         for addon_id, addon_path in self.addon_dirs:
             if addon_id == source:
                 return addon_path
-        # Fallback to write target or overlay dir
-        if self.write_target_dir and str(self.write_target_dir):
-            return self.write_target_dir
-        return self.overlay_dir
+        # Fallback to last addon dir
+        if self.addon_dirs:
+            return self.addon_dirs[-1][1]
+        return Path()
 
     def get_full_state(self) -> dict[str, Any]:
         """Get the complete game state for frontend rendering."""
@@ -576,7 +545,7 @@ class GameState:
             portrait = char_data.get("portrait")
             if portrait:
                 source = char_data.get("_source", "")
-                if source and source != OVERLAY_SOURCE:
+                if source:
                     display_characters[char_id]["portrait"] = f"{source}/characters/{portrait}"
                 else:
                     display_characters[char_id]["portrait"] = portrait
@@ -602,7 +571,7 @@ class GameState:
             bg_image = map_data.get("defaultBackgroundImage")
             if bg_image:
                 source = map_data.get("_source", "")
-                if source and source != OVERLAY_SOURCE:
+                if source:
                     bg_image = f"{source}/backgrounds/{bg_image}"
 
             maps_data[map_id] = {
@@ -623,7 +592,7 @@ class GameState:
         template_ext["experiences"] = get_experience_defs(self.trait_defs)
 
         return {
-            "gameId": self.game_id,
+            "gameId": self.world_id,
             "worldId": self.world_id,
             "time": self.time.to_dict(),
             "maps": maps_data,
@@ -642,7 +611,7 @@ class GameState:
         portrait = char_data.get("portrait")
         if portrait:
             source = char_data.get("_source", "")
-            if source and source != OVERLAY_SOURCE:
+            if source:
                 state["portrait"] = f"{source}/characters/{portrait}"
             else:
                 state["portrait"] = portrait

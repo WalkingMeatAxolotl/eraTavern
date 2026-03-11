@@ -1,7 +1,6 @@
 """Add-on and World loading utilities.
 
 Supports versioned addon directories: addons/<addon_id>/<version>/
-and writeTarget addon for CRUD writes.
 """
 
 from __future__ import annotations
@@ -12,15 +11,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# Directory constants
-_BACKEND_DIR = Path(__file__).parent.parent
+# Directory constants — use resolve() to avoid relative path issues
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
 ADDONS_DIR = _BACKEND_DIR.parent / "addons"
 DATA_DIR = _BACKEND_DIR / "data"
 WORLDS_DIR = DATA_DIR / "worlds"
 TEMPLATE_PATH = DATA_DIR / "character_template.json"
-
-# Source tag for world overlay entities
-OVERLAY_SOURCE = "_overlay"
 
 
 def _load_json_safe(path: Path) -> dict:
@@ -105,13 +101,11 @@ def get_world_dir(world_id: str) -> Path:
 
 def build_addon_dirs(
     addon_refs: list[dict[str, str]] | list[str],
-    world_id: str | None = None,
 ) -> list[tuple[str, Path]]:
     """Build ordered list of (addon_id, addon_path) from addon references.
 
     Args:
         addon_refs: List of {"id": str, "version": str} dicts, or legacy string list.
-        world_id: Deprecated, ignored. Overlay is no longer appended.
 
     Returns:
         Ordered list of (source_tag, directory_path) tuples.
@@ -148,6 +142,60 @@ def _find_latest_version(addon_id: str) -> str | None:
     return versions[0] if versions else None
 
 
+def fork_addon_version(addon_id: str, base_version: str, world_id: str) -> str:
+    """Create a world-specific fork of an addon version.
+
+    Copies addons/{addon_id}/{base_version}/ → addons/{addon_id}/{base_version}-{world_id}/
+    Updates addon.json version field in the fork.
+    Returns the fork version string. Idempotent (returns existing fork if present).
+    """
+    fork_version = f"{base_version}-{world_id}"
+    src = ADDONS_DIR / addon_id / base_version
+    dst = ADDONS_DIR / addon_id / fork_version
+    if dst.exists():
+        return fork_version  # already forked
+    if not src.exists():
+        raise FileNotFoundError(f"Addon {addon_id}@{base_version} not found")
+    shutil.copytree(str(src), str(dst))
+    # Update version in forked addon.json
+    meta_path = dst / "addon.json"
+    if meta_path.exists():
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+        meta["version"] = fork_version
+        meta["_forkedFrom"] = base_version
+        meta["_worldId"] = world_id
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(meta, f, ensure_ascii=False, indent=2)
+    return fork_version
+
+
+def is_world_fork(version: str, world_id: str) -> bool:
+    """Check if a version string is a fork for the given world."""
+    return version.endswith(f"-{world_id}")
+
+
+def get_base_version(version: str) -> str:
+    """Extract the base version from a fork version string.
+
+    '1.0.0-myworld' → '1.0.0', '1.0.0' → '1.0.0'
+    """
+    # Find the last '-' that separates version from world_id
+    # Version format: X.Y.Z or X.Y.Z-worldId
+    parts = version.rsplit("-", 1)
+    if len(parts) == 2 and "." in parts[0]:
+        return parts[0]
+    return version
+
+
+def list_addon_versions(addon_id: str) -> list[str]:
+    """List all version directories for an addon."""
+    addon_base = ADDONS_DIR / addon_id
+    if not addon_base.exists():
+        return []
+    return sorted(d.name for d in addon_base.iterdir() if d.is_dir())
+
+
 def load_template() -> dict:
     """Load the global character template."""
     with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
@@ -173,92 +221,6 @@ def find_addon_for_asset(
         candidate = addon_path / "assets" / subfolder / filename
         if candidate.exists():
             return addon_id
-    return None
-
-
-def create_custom_addon(
-    world_id: str,
-    addon_refs: list[dict[str, str]],
-    version: str = "1.0.0",
-) -> str:
-    """Create a world-custom addon. Returns the addon ID.
-
-    The custom addon depends on all addons currently in the world.
-    """
-    addon_id = f"{world_id}-custom"
-    addon_path = ADDONS_DIR / addon_id / version
-    addon_path.mkdir(parents=True, exist_ok=True)
-
-    meta = {
-        "id": addon_id,
-        "name": f"{world_id} custom",
-        "version": version,
-        "description": "Auto-created addon for world-specific edits",
-        "categories": [],
-        "dependencies": [
-            {"id": ref["id"], "version": ref["version"]}
-            for ref in addon_refs
-            if isinstance(ref, dict)
-        ],
-    }
-    meta_path = addon_path / "addon.json"
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
-
-    return addon_id
-
-
-def migrate_world_overlay_to_addon(world_id: str, addon_id: str, version: str = "1.0.0") -> bool:
-    """Migrate overlay entity files from world directory to custom addon.
-
-    Moves: characters/, items.json, traits.json, clothing.json, actions.json,
-           trait_groups.json, item_tags.json, map_collection.json, maps/,
-           decor_presets.json, assets/
-    Keeps in world dir: world.json, save/
-    Returns True if any files were migrated.
-    """
-    world_dir = WORLDS_DIR / world_id
-    addon_dir = ADDONS_DIR / addon_id / version
-    addon_dir.mkdir(parents=True, exist_ok=True)
-
-    migrated = False
-    # Files to move
-    entity_files = [
-        "items.json", "traits.json", "clothing.json", "actions.json",
-        "trait_groups.json", "item_tags.json", "map_collection.json",
-        "decor_presets.json",
-    ]
-    for fname in entity_files:
-        src = world_dir / fname
-        if src.exists():
-            dst = addon_dir / fname
-            shutil.copy2(str(src), str(dst))
-            src.unlink()
-            migrated = True
-
-    # Directories to move
-    entity_dirs = ["characters", "maps", "assets"]
-    for dname in entity_dirs:
-        src = world_dir / dname
-        if src.exists() and src.is_dir():
-            dst = addon_dir / dname
-            if dst.exists():
-                shutil.rmtree(str(dst))
-            shutil.copytree(str(src), str(dst))
-            shutil.rmtree(str(src))
-            migrated = True
-
-    return migrated
-
-
-def get_write_target_dir(
-    write_target_id: str,
-    addon_dirs: list[tuple[str, Path]],
-) -> Path | None:
-    """Resolve the write target addon directory from addon_dirs."""
-    for addon_id, addon_path in addon_dirs:
-        if addon_id == write_target_id:
-            return addon_path
     return None
 
 

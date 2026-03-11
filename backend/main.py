@@ -15,8 +15,9 @@ from pydantic import BaseModel
 from game.state import GameState, list_available_worlds, list_available_addons, list_available_games
 from game.action import get_available_actions, execute_action
 from game.map_engine import compile_grid
+from game.character import namespace_id, to_local_id, get_addon_from_id
 from game.addon_loader import (
-    ADDONS_DIR, OVERLAY_SOURCE, get_addon_dir, create_custom_addon,
+    ADDONS_DIR, get_addon_dir, fork_addon_version, list_addon_versions,
     build_addon_dirs, list_backups as _list_backups, restore_backup as _restore_backup,
 )
 
@@ -60,9 +61,14 @@ manager = ConnectionManager()
 game_state: Optional[GameState] = None
 
 
-def _write_source() -> str:
-    """Get the current source tag for CRUD writes."""
-    return game_state.write_target_id or OVERLAY_SOURCE
+def _ensure_ns(entity_id: str, source: str = "") -> str:
+    """Ensure an entity ID is namespaced. Auto-prefix with source if bare."""
+    from game.character import NS_SEP
+    if not entity_id or NS_SEP in entity_id:
+        return entity_id
+    if not source:
+        return entity_id  # cannot namespace without a source
+    return namespace_id(source, entity_id)
 
 
 async def _mark_dirty() -> None:
@@ -87,16 +93,12 @@ async def lifespan(app: FastAPI):
         print(f"Resumed last world: {game_state.world_name}")
     elif not worlds:
         # No worlds exist at all — auto-create a default world
-        from game.addon_loader import create_custom_addon
         default_id = "default"
         default_name = "默认世界"
-        custom_id = create_custom_addon(default_id, [])
-        custom_ref = {"id": custom_id, "version": "1.0.0"}
         default_config = {
             "id": default_id,
             "name": default_name,
-            "addons": [custom_ref],
-            "writeTarget": custom_id,
+            "addons": [],
             "playerCharacter": "",
         }
         save_world_config(default_id, default_config)
@@ -206,7 +208,6 @@ async def get_session():
         "worldId": game_state.world_id,
         "worldName": game_state.world_name,
         "addons": game_state.addon_refs,
-        "writeTarget": game_state.write_target_id,
         "playerCharacter": game_state.player_character,
         "dirty": game_state.dirty,
     }
@@ -220,24 +221,16 @@ class CreateWorldRequest(BaseModel):
 
 @app.post("/api/worlds")
 async def create_world(req: CreateWorldRequest):
-    """Create a new world with auto-created custom addon."""
+    """Create a new world. Addon versions will be forked on first load."""
     from game.addon_loader import save_world_config, WORLDS_DIR
     world_dir = WORLDS_DIR / req.id
     if world_dir.exists():
         return {"success": False, "message": f"World '{req.id}' already exists"}
 
-    # Auto-create custom addon
-    custom_id = create_custom_addon(req.id, req.addons)
-    custom_ref = {"id": custom_id, "version": "1.0.0"}
-    addon_list = list(req.addons)
-    if not any(r.get("id") == custom_id for r in addon_list if isinstance(r, dict)):
-        addon_list.append(custom_ref)
-
     config = {
         "id": req.id,
         "name": req.name,
-        "addons": addon_list,
-        "writeTarget": custom_id,
+        "addons": list(req.addons),
         "playerCharacter": "",
     }
     save_world_config(req.id, config)
@@ -302,6 +295,49 @@ async def update_addon_meta(addon_id: str, version: str, body: dict = Body(...))
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
     return {"success": True, "message": "Addon metadata updated"}
+
+
+@app.post("/api/addon/{addon_id}/fork")
+async def fork_addon(addon_id: str, body: dict = Body(...)):
+    """Fork an addon version for a specific world."""
+    base_version = body.get("baseVersion", "")
+    world_id = body.get("worldId", "")
+    if not base_version or not world_id:
+        return {"success": False, "message": "Missing baseVersion or worldId"}
+    try:
+        new_version = fork_addon_version(addon_id, base_version, world_id)
+    except FileNotFoundError as e:
+        return {"success": False, "message": str(e)}
+    return {"success": True, "newVersion": new_version}
+
+
+@app.get("/api/addon/{addon_id}/versions")
+async def get_addon_versions(addon_id: str):
+    """List all versions of an addon."""
+    return {"versions": list_addon_versions(addon_id)}
+
+
+@app.delete("/api/addon/{addon_id}/{version}")
+async def delete_addon(addon_id: str, version: str):
+    """Delete an addon version from disk."""
+    from game.addon_loader import ADDONS_DIR
+    version_dir = ADDONS_DIR / addon_id / version
+    if not version_dir.exists():
+        return {"success": False, "message": f"Addon '{addon_id}@{version}' not found"}
+
+    # Don't allow deleting if it's currently loaded
+    if any(ref.get("id") == addon_id and ref.get("version") == version
+           for ref in game_state.addon_refs):
+        return {"success": False, "message": "不能删除当前世界正在使用的 addon 版本"}
+
+    shutil.rmtree(version_dir)
+
+    # Clean up parent dir if no more versions
+    addon_dir = ADDONS_DIR / addon_id
+    if addon_dir.exists() and not any(addon_dir.iterdir()):
+        addon_dir.rmdir()
+
+    return {"success": True, "message": f"Addon '{addon_id}@{version}' deleted"}
 
 
 # Legacy game endpoints (redirect to world endpoints)
@@ -379,8 +415,10 @@ async def upload_asset(
     # Determine target addon directory
     if addonId:
         target_base = get_addon_dir(addonId)
+    elif game_state.addon_dirs:
+        target_base = game_state.addon_dirs[-1][1]  # last addon
     else:
-        target_base = game_state.data_dir  # legacy: last addon
+        return {"success": False, "message": "No addon available for upload"}
 
     target_dir = target_base / "assets" / folder
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -407,9 +445,12 @@ class ActionRequest(BaseModel):
     targetId: Optional[str] = None
 
 
-@app.get("/api/game/available-actions/{character_id}")
+@app.get("/api/game/available-actions/{character_id:path}")
 async def get_actions(character_id: str, target_id: Optional[str] = None):
     """Get available actions for a character."""
+    character_id = _ensure_ns(character_id)
+    if target_id:
+        target_id = _ensure_ns(target_id)
     actions = get_available_actions(game_state, character_id, target_id)
     return {"actions": actions}
 
@@ -419,12 +460,12 @@ async def perform_action(req: ActionRequest):
     """Execute a game action."""
     action_data = {
         "type": req.type,
-        "actionId": req.actionId,
+        "actionId": _ensure_ns(req.actionId) if req.actionId else req.actionId,
         "targetCell": req.targetCell,
-        "targetMap": req.targetMap,
-        "targetId": req.targetId,
+        "targetMap": _ensure_ns(req.targetMap) if req.targetMap else req.targetMap,
+        "targetId": _ensure_ns(req.targetId) if req.targetId else req.targetId,
     }
-    result = execute_action(game_state, req.characterId, action_data)
+    result = execute_action(game_state, _ensure_ns(req.characterId), action_data)
 
     if result.get("success"):
         # Broadcast updated state to all WebSocket clients
@@ -449,22 +490,26 @@ async def get_character_configs():
     return {"characters": list(game_state.character_data.values())}
 
 
-@app.get("/api/game/characters/config/{character_id}")
+@app.get("/api/game/characters/config/{character_id:path}")
 async def get_character_config(character_id: str):
     """Get a single character raw JSON config."""
+    character_id = _ensure_ns(character_id)
     char = game_state.character_data.get(character_id)
     if not char:
         return {"error": f"Character '{character_id}' not found"}
     return char
 
 
-@app.put("/api/game/characters/config/{character_id}")
+@app.put("/api/game/characters/config/{character_id:path}")
 async def update_character_config(character_id: str, body: dict = Body(...)):
     """Update a character config (in memory). Rebuilds runtime state."""
+    character_id = _ensure_ns(character_id)
     if character_id not in game_state.character_data:
         return {"success": False, "message": f"Character '{character_id}' not found"}
+    source = game_state.character_data[character_id].get("_source", "")
     body["id"] = character_id
-    body["_source"] = _write_source()
+    body["_local_id"] = to_local_id(character_id)
+    body["_source"] = source
     game_state.character_data[character_id] = body
     # Rebuild runtime character state from new data
     game_state.characters[character_id] = game_state._build_char(character_id)
@@ -475,21 +520,26 @@ async def update_character_config(character_id: str, body: dict = Body(...)):
 @app.post("/api/game/characters/config")
 async def create_character_config(body: dict = Body(...)):
     """Create a new character (in memory). Builds runtime state."""
-    char_id = body.get("id")
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    char_id = _ensure_ns(raw_id, source)
     if not char_id:
         return {"success": False, "message": "Missing character id"}
     if char_id in game_state.character_data:
         return {"success": False, "message": f"Character '{char_id}' already exists"}
-    body["_source"] = _write_source()
+    body["id"] = char_id
+    body["_local_id"] = to_local_id(char_id)
+    body["_source"] = source
     game_state.character_data[char_id] = body
     game_state.characters[char_id] = game_state._build_char(char_id)
     await _mark_dirty()
     return {"success": True, "message": f"Character '{char_id}' created"}
 
 
-@app.patch("/api/game/characters/config/{character_id}")
+@app.patch("/api/game/characters/config/{character_id:path}")
 async def patch_character_config(character_id: str, body: dict = Body(...)):
     """Partial update: toggle isPlayer, active, etc. (in memory)."""
+    character_id = _ensure_ns(character_id)
     if character_id not in game_state.character_data:
         return {"success": False, "message": f"Character '{character_id}' not found"}
     char = game_state.character_data[character_id]
@@ -499,13 +549,11 @@ async def patch_character_config(character_id: str, body: dict = Body(...)):
         for cid, cd in game_state.character_data.items():
             if cd.get("isPlayer"):
                 cd["isPlayer"] = False
-                cd["_source"] = _write_source()
 
     for key in ("isPlayer", "active"):
         if key in body:
             char[key] = body[key]
 
-    char["_source"] = _write_source()
     # Rebuild runtime for all affected characters
     for cid in game_state.character_data:
         game_state.characters[cid] = game_state._build_char(cid)
@@ -513,14 +561,12 @@ async def patch_character_config(character_id: str, body: dict = Body(...)):
     return {"success": True, "message": f"Character '{character_id}' updated"}
 
 
-@app.delete("/api/game/characters/config/{character_id}")
+@app.delete("/api/game/characters/config/{character_id:path}")
 async def delete_character_config(character_id: str):
     """Delete a character (in memory)."""
+    character_id = _ensure_ns(character_id)
     if character_id not in game_state.character_data:
         return {"success": False, "message": f"Character '{character_id}' not found"}
-    source = game_state.character_data[character_id].get("_source", "")
-    if source != _write_source():
-        return {"success": False, "message": f"Cannot delete addon entity '{character_id}' (source: {source}). Use addon editor."}
     del game_state.character_data[character_id]
     game_state.characters.pop(character_id, None)
     # Clean up references from other characters
@@ -544,41 +590,46 @@ async def get_traits():
 @app.post("/api/game/traits")
 async def create_trait(body: dict = Body(...)):
     """Create a new game trait (in memory)."""
-    trait_id = body.get("id")
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    trait_id = _ensure_ns(raw_id, source)
     if not trait_id:
         return {"success": False, "message": "Missing trait id"}
     if trait_id in game_state.trait_defs:
         return {"success": False, "message": f"Trait '{trait_id}' already exists"}
     entry = {k: v for k, v in body.items() if k != "source"}
-    entry["source"] = _write_source()
+    entry["id"] = trait_id
+    entry["_local_id"] = to_local_id(trait_id)
+    entry["source"] = source
     game_state.trait_defs[trait_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Trait '{trait_id}' created"}
 
 
-@app.put("/api/game/traits/{trait_id}")
+@app.put("/api/game/traits/{trait_id:path}")
 async def update_trait(trait_id: str, body: dict = Body(...)):
     """Update a game trait (in memory)."""
+    trait_id = _ensure_ns(trait_id)
     td = game_state.trait_defs.get(trait_id)
     if not td:
         return {"success": False, "message": f"Trait '{trait_id}' not found"}
+    source = td.get("source", "")
     entry = {k: v for k, v in body.items() if k != "source"}
     entry["id"] = trait_id
-    entry["source"] = _write_source()
+    entry["_local_id"] = to_local_id(trait_id)
+    entry["source"] = source
     game_state.trait_defs[trait_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Trait '{trait_id}' updated"}
 
 
-@app.delete("/api/game/traits/{trait_id}")
+@app.delete("/api/game/traits/{trait_id:path}")
 async def delete_trait(trait_id: str):
     """Delete a game trait (in memory)."""
+    trait_id = _ensure_ns(trait_id)
     td = game_state.trait_defs.get(trait_id)
     if not td:
         return {"success": False, "message": f"Trait '{trait_id}' not found"}
-    source = td.get("source", "")
-    if source != _write_source():
-        return {"success": False, "message": f"Cannot delete addon entity '{trait_id}' (source: {source}). Use addon editor."}
     del game_state.trait_defs[trait_id]
     await _mark_dirty()
     return {"success": True, "message": f"Trait '{trait_id}' deleted"}
@@ -596,41 +647,46 @@ async def get_clothing():
 @app.post("/api/game/clothing")
 async def create_clothing(body: dict = Body(...)):
     """Create a new game clothing item (in memory)."""
-    item_id = body.get("id")
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    item_id = _ensure_ns(raw_id, source)
     if not item_id:
         return {"success": False, "message": "Missing clothing id"}
     if item_id in game_state.clothing_defs:
         return {"success": False, "message": f"Clothing '{item_id}' already exists"}
     entry = {k: v for k, v in body.items() if k != "source"}
-    entry["source"] = _write_source()
+    entry["id"] = item_id
+    entry["_local_id"] = to_local_id(item_id)
+    entry["source"] = source
     game_state.clothing_defs[item_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Clothing '{item_id}' created"}
 
 
-@app.put("/api/game/clothing/{item_id}")
+@app.put("/api/game/clothing/{item_id:path}")
 async def update_clothing(item_id: str, body: dict = Body(...)):
     """Update a game clothing item (in memory)."""
+    item_id = _ensure_ns(item_id)
     cd = game_state.clothing_defs.get(item_id)
     if not cd:
         return {"success": False, "message": f"Clothing '{item_id}' not found"}
+    source = cd.get("source", "")
     entry = {k: v for k, v in body.items() if k != "source"}
     entry["id"] = item_id
-    entry["source"] = _write_source()
+    entry["_local_id"] = to_local_id(item_id)
+    entry["source"] = source
     game_state.clothing_defs[item_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Clothing '{item_id}' updated"}
 
 
-@app.delete("/api/game/clothing/{item_id}")
+@app.delete("/api/game/clothing/{item_id:path}")
 async def delete_clothing(item_id: str):
     """Delete a game clothing item (in memory)."""
+    item_id = _ensure_ns(item_id)
     cd = game_state.clothing_defs.get(item_id)
     if not cd:
         return {"success": False, "message": f"Clothing '{item_id}' not found"}
-    source = cd.get("source", "")
-    if source != _write_source():
-        return {"success": False, "message": f"Cannot delete addon entity '{item_id}' (source: {source}). Use addon editor."}
     del game_state.clothing_defs[item_id]
     await _mark_dirty()
     return {"success": True, "message": f"Clothing '{item_id}' deleted"}
@@ -657,41 +713,46 @@ async def get_items():
 @app.post("/api/game/items")
 async def create_item(body: dict = Body(...)):
     """Create a new game item (in memory)."""
-    item_id = body.get("id")
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    item_id = _ensure_ns(raw_id, source)
     if not item_id:
         return {"success": False, "message": "Missing item id"}
     if item_id in game_state.item_defs:
         return {"success": False, "message": f"Item '{item_id}' already exists"}
     entry = {k: v for k, v in body.items() if k != "source"}
-    entry["source"] = _write_source()
+    entry["id"] = item_id
+    entry["_local_id"] = to_local_id(item_id)
+    entry["source"] = source
     game_state.item_defs[item_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Item '{item_id}' created"}
 
 
-@app.put("/api/game/items/{item_id}")
+@app.put("/api/game/items/{item_id:path}")
 async def update_item(item_id: str, body: dict = Body(...)):
     """Update a game item (in memory)."""
+    item_id = _ensure_ns(item_id)
     item_def = game_state.item_defs.get(item_id)
     if not item_def:
         return {"success": False, "message": f"Item '{item_id}' not found"}
+    source = item_def.get("source", "")
     entry = {k: v for k, v in body.items() if k != "source"}
     entry["id"] = item_id
-    entry["source"] = _write_source()
+    entry["_local_id"] = to_local_id(item_id)
+    entry["source"] = source
     game_state.item_defs[item_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Item '{item_id}' updated"}
 
 
-@app.delete("/api/game/items/{item_id}")
+@app.delete("/api/game/items/{item_id:path}")
 async def delete_item(item_id: str):
     """Delete a game item (in memory)."""
+    item_id = _ensure_ns(item_id)
     item_def = game_state.item_defs.get(item_id)
     if not item_def:
         return {"success": False, "message": f"Item '{item_id}' not found"}
-    source = item_def.get("source", "")
-    if source != _write_source():
-        return {"success": False, "message": f"Cannot delete addon entity '{item_id}' (source: {source}). Use addon editor."}
     del game_state.item_defs[item_id]
     await _mark_dirty()
     return {"success": True, "message": f"Item '{item_id}' deleted"}
@@ -741,41 +802,46 @@ async def get_actions_defs():
 @app.post("/api/game/actions")
 async def create_action_def(body: dict = Body(...)):
     """Create a new game action (in memory)."""
-    action_id = body.get("id")
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    action_id = _ensure_ns(raw_id, source)
     if not action_id:
         return {"success": False, "message": "Missing action id"}
     if action_id in game_state.action_defs:
         return {"success": False, "message": f"Action '{action_id}' already exists"}
     entry = {k: v for k, v in body.items() if k != "source"}
-    entry["source"] = _write_source()
+    entry["id"] = action_id
+    entry["_local_id"] = to_local_id(action_id)
+    entry["source"] = source
     game_state.action_defs[action_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Action '{action_id}' created"}
 
 
-@app.put("/api/game/actions/{action_id}")
+@app.put("/api/game/actions/{action_id:path}")
 async def update_action_def(action_id: str, body: dict = Body(...)):
     """Update a game action (in memory)."""
+    action_id = _ensure_ns(action_id)
     action_def = game_state.action_defs.get(action_id)
     if not action_def:
         return {"success": False, "message": f"Action '{action_id}' not found"}
+    source = action_def.get("source", "")
     entry = {k: v for k, v in body.items() if k != "source"}
     entry["id"] = action_id
-    entry["source"] = _write_source()
+    entry["_local_id"] = to_local_id(action_id)
+    entry["source"] = source
     game_state.action_defs[action_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Action '{action_id}' updated"}
 
 
-@app.delete("/api/game/actions/{action_id}")
+@app.delete("/api/game/actions/{action_id:path}")
 async def delete_action_def(action_id: str):
     """Delete a game action (in memory)."""
+    action_id = _ensure_ns(action_id)
     action_def = game_state.action_defs.get(action_id)
     if not action_def:
         return {"success": False, "message": f"Action '{action_id}' not found"}
-    source = action_def.get("source", "")
-    if source != _write_source():
-        return {"success": False, "message": f"Cannot delete addon entity '{action_id}' (source: {source}). Use addon editor."}
     del game_state.action_defs[action_id]
     await _mark_dirty()
     return {"success": True, "message": f"Action '{action_id}' deleted"}
@@ -793,41 +859,46 @@ async def get_trait_groups():
 @app.post("/api/game/trait-groups")
 async def create_trait_group(body: dict = Body(...)):
     """Create a new game trait group (in memory)."""
-    group_id = body.get("id")
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    group_id = _ensure_ns(raw_id, source)
     if not group_id:
         return {"success": False, "message": "Missing group id"}
     if group_id in game_state.trait_groups:
         return {"success": False, "message": f"Trait group '{group_id}' already exists"}
     entry = {k: v for k, v in body.items() if k != "source"}
-    entry["source"] = _write_source()
+    entry["id"] = group_id
+    entry["_local_id"] = to_local_id(group_id)
+    entry["source"] = source
     game_state.trait_groups[group_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Trait group '{group_id}' created"}
 
 
-@app.put("/api/game/trait-groups/{group_id}")
+@app.put("/api/game/trait-groups/{group_id:path}")
 async def update_trait_group(group_id: str, body: dict = Body(...)):
     """Update a game trait group (in memory)."""
+    group_id = _ensure_ns(group_id)
     tg = game_state.trait_groups.get(group_id)
     if not tg:
         return {"success": False, "message": f"Trait group '{group_id}' not found"}
+    source = tg.get("source", "")
     entry = {k: v for k, v in body.items() if k != "source"}
     entry["id"] = group_id
-    entry["source"] = _write_source()
+    entry["_local_id"] = to_local_id(group_id)
+    entry["source"] = source
     game_state.trait_groups[group_id] = entry
     await _mark_dirty()
     return {"success": True, "message": f"Trait group '{group_id}' updated"}
 
 
-@app.delete("/api/game/trait-groups/{group_id}")
+@app.delete("/api/game/trait-groups/{group_id:path}")
 async def delete_trait_group(group_id: str):
     """Delete a game trait group (in memory)."""
+    group_id = _ensure_ns(group_id)
     tg = game_state.trait_groups.get(group_id)
     if not tg:
         return {"success": False, "message": f"Trait group '{group_id}' not found"}
-    source = tg.get("source", "")
-    if source != _write_source():
-        return {"success": False, "message": f"Cannot delete addon entity '{group_id}' (source: {source}). Use addon editor."}
     del game_state.trait_groups[group_id]
     await _mark_dirty()
     return {"success": True, "message": f"Trait group '{group_id}' deleted"}
@@ -841,13 +912,14 @@ async def get_maps_raw():
     """Get list of all maps (id + name only)."""
     result = []
     for map_id, map_data in game_state.maps.items():
-        result.append({"id": map_data["id"], "name": map_data["name"]})
+        result.append({"id": map_data["id"], "name": map_data["name"], "source": map_data.get("_source", "")})
     return {"maps": result}
 
 
-@app.get("/api/game/maps/raw/{map_id}")
+@app.get("/api/game/maps/raw/{map_id:path}")
 async def get_map_raw(map_id: str):
     """Get full raw map data (grid + cells + metadata) without compiled fields."""
+    map_id = _ensure_ns(map_id)
     map_data = game_state.maps.get(map_id)
     if not map_data:
         return {"error": f"Map '{map_id}' not found"}
@@ -864,33 +936,39 @@ class CreateMapRequest(BaseModel):
 @app.post("/api/game/maps")
 async def create_map_endpoint(req: CreateMapRequest):
     """Create a new empty map (in memory)."""
-    if req.id in game_state.maps:
-        return {"success": False, "message": f"Map '{req.id}' already exists"}
+    source = get_addon_from_id(req.id) or ""
+    map_id = _ensure_ns(req.id, source)
+    if map_id in game_state.maps:
+        return {"success": False, "message": f"Map '{map_id}' already exists"}
     grid = [["" for _ in range(req.cols)] for _ in range(req.rows)]
     map_data = {
-        "id": req.id,
+        "id": map_id,
+        "_local_id": to_local_id(map_id),
         "name": req.name,
         "defaultColor": "#FFFFFF",
         "grid": grid,
         "cells": [],
-        "_source": _write_source(),
+        "_source": source,
     }
     map_data["compiled_grid"] = compile_grid(map_data)
     map_data["cell_index"] = {c["id"]: c for c in map_data["cells"]}
-    game_state.maps[req.id] = map_data
+    game_state.maps[map_id] = map_data
     from game.map_engine import build_distance_matrix
     game_state.distance_matrix = build_distance_matrix(game_state.maps)
     await _mark_dirty()
-    return {"success": True, "message": f"Map '{req.id}' created"}
+    return {"success": True, "message": f"Map '{map_id}' created"}
 
 
-@app.put("/api/game/maps/raw/{map_id}")
+@app.put("/api/game/maps/raw/{map_id:path}")
 async def update_map_raw(map_id: str, body: dict = Body(...)):
     """Save entire map data (in memory)."""
+    map_id = _ensure_ns(map_id)
     if map_id not in game_state.maps:
         return {"success": False, "message": f"Map '{map_id}' not found"}
+    source = game_state.maps[map_id].get("_source", "")
     body["id"] = map_id
-    body["_source"] = _write_source()
+    body["_local_id"] = to_local_id(map_id)
+    body["_source"] = source
     body["compiled_grid"] = compile_grid(body)
     body["cell_index"] = {c["id"]: c for c in body.get("cells", [])}
     game_state.maps[map_id] = body
@@ -902,14 +980,12 @@ async def update_map_raw(map_id: str, body: dict = Body(...)):
     return {"success": True, "message": f"Map '{map_id}' saved"}
 
 
-@app.delete("/api/game/maps/{map_id}")
+@app.delete("/api/game/maps/{map_id:path}")
 async def delete_map_endpoint(map_id: str):
     """Delete a map (in memory)."""
+    map_id = _ensure_ns(map_id)
     if map_id not in game_state.maps:
         return {"success": False, "message": f"Map '{map_id}' not found"}
-    source = game_state.maps[map_id].get("_source", "")
-    if source != _write_source():
-        return {"success": False, "message": f"Cannot delete addon entity '{map_id}' (source: {source}). Use addon editor."}
     del game_state.maps[map_id]
     from game.map_engine import build_distance_matrix
     game_state.distance_matrix = build_distance_matrix(game_state.maps)
@@ -934,38 +1010,25 @@ async def update_decor_presets(body: dict = Body(...)):
     return {"success": True, "message": "Decor presets saved"}
 
 
-@app.post("/api/session/rebuild")
-async def rebuild_session(body: dict = Body({})):
-    """Rebuild game state from current in-memory definitions.
+@app.post("/api/session/save")
+async def save_session(body: dict = Body({})):
+    """Save all changes: rebuild + persist to all addon dirs + clear dirty.
 
-    If addon list changed, loads new addon files then rebuilds.
-    Does NOT write to disk; dirty stays true.
+    Optional body: { addons: [...] } to update addon list before saving.
     """
     if not game_state.world_id:
-        return {"success": False, "message": "No world loaded"}
-    new_addons = body.get("addons")
-    new_wt = body.get("writeTarget")
-    game_state.rebuild(new_addon_refs=new_addons, new_write_target=new_wt)
-    state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
-    return {"success": True, "message": "已应用世界变更"}
-
-
-@app.post("/api/session/save")
-async def save_session():
-    """Rebuild + persist all changes to disk."""
-    if not game_state.world_id:
         return {"success": False, "message": "No world loaded. Save as new world first."}
-    game_state.save_to_write_target()
+    new_addons = body.get("addons")
+    game_state.save_all(new_addon_refs=new_addons)
     state = game_state.get_full_state()
     await manager.broadcast({"type": "game_changed", "data": state})
-    return {"success": True, "message": "已应用并保存世界变更"}
+    return {"success": True, "message": "已保存变更"}
 
 
 @app.post("/api/session/save-as")
 async def save_session_as(body: dict = Body(...)):
-    """Create a new world from current in-memory state and save to it."""
-    from game.addon_loader import save_world_config, get_world_dir, get_write_target_dir, WORLDS_DIR
+    """Create a new world from current in-memory state, fork addons, and save."""
+    from game.addon_loader import save_world_config, WORLDS_DIR
     world_id = body.get("id", "").strip()
     world_name = body.get("name", "").strip()
     if not world_id or not world_name:
@@ -974,68 +1037,30 @@ async def save_session_as(body: dict = Body(...)):
     if world_dir.exists():
         return {"success": False, "message": f"World '{world_id}' already exists"}
 
-    # Auto-create custom addon for this world
-    custom_id = create_custom_addon(world_id, game_state.addon_refs)
-    custom_ref = {"id": custom_id, "version": "1.0.0"}
-    addon_refs = list(game_state.addon_refs)
-    if not any(r.get("id") == custom_id for r in addon_refs):
-        addon_refs.append(custom_ref)
+    # Fork addon versions for the new world
+    new_addon_refs = []
+    for ref in game_state.addon_refs:
+        if isinstance(ref, dict):
+            from game.addon_loader import get_base_version, is_world_fork
+            base_ver = get_base_version(ref["version"]) if is_world_fork(ref["version"], game_state.world_id) else ref["version"]
+            fork_ver = fork_addon_version(ref["id"], base_ver, world_id)
+            new_addon_refs.append({"id": ref["id"], "version": fork_ver})
+        else:
+            new_addon_refs.append(ref)
 
     # Create world config
     config = {
         "id": world_id,
         "name": world_name,
-        "addons": addon_refs,
-        "writeTarget": custom_id,
-        "playerCharacter": game_state.player_character,
+        "addons": new_addon_refs,
+        "playerCharacter": to_local_id(game_state.player_character),
     }
     save_world_config(world_id, config)
 
-    # Update game state
-    game_state.world_id = world_id
-    game_state.world_name = world_name
-    game_state.game_id = world_id
-    game_state.game_name = world_name
-    game_state.addon_refs = addon_refs
-    game_state.overlay_dir = get_world_dir(world_id)
-    game_state.write_target_id = custom_id
-    game_state.addon_dirs = build_addon_dirs(addon_refs)
-    wt_dir = get_write_target_dir(custom_id, game_state.addon_dirs)
-    game_state.write_target_dir = wt_dir if wt_dir else game_state.overlay_dir
-    game_state.data_dir = game_state.write_target_dir
-
-    # Re-tag all in-memory entities from old writeTarget (or OVERLAY_SOURCE) to new custom addon
-    old_wt = game_state.write_target_id  # previous writeTarget before switching
-    _retag_sources = {OVERLAY_SOURCE}
-    if old_wt:
-        _retag_sources.add(old_wt)
-    _new_source = custom_id
-    for d in game_state.item_defs.values():
-        if d.get("source") in _retag_sources:
-            d["source"] = _new_source
-    for d in game_state.trait_defs.values():
-        if d.get("source") in _retag_sources:
-            d["source"] = _new_source
-    for d in game_state.clothing_defs.values():
-        if d.get("source") in _retag_sources:
-            d["source"] = _new_source
-    for d in game_state.action_defs.values():
-        if d.get("source") in _retag_sources:
-            d["source"] = _new_source
-    for d in game_state.trait_groups.values():
-        if d.get("source") in _retag_sources:
-            d["source"] = _new_source
-    for cdata in game_state.character_data.values():
-        if cdata.get("_source") in _retag_sources:
-            cdata["_source"] = _new_source
-    for mdata in game_state.maps.values():
-        if mdata.get("_source") in _retag_sources:
-            mdata["_source"] = _new_source
-
-    game_state.save_to_write_target()
+    # Switch to new world
+    game_state.load_world(world_id)
     _save_last_world(world_id)
 
-    # Broadcast updated state
     state = game_state.get_full_state()
     await manager.broadcast({"type": "game_changed", "data": state})
 
@@ -1053,26 +1078,8 @@ async def _broadcast_state():
 
 @app.post("/api/session/apply-changes")
 async def apply_changes(body: dict = Body({})):
-    """Apply all staged changes: reload definitions while preserving runtime state.
-
-    Optional body fields:
-    - addons: new addon list (if changed)
-    - writeTarget: new write target addon ID
-    """
-    if not game_state.world_id:
-        return {"success": False, "message": "No world loaded"}
-
-    new_addons = body.get("addons")
-    new_wt = body.get("writeTarget")
-
-    game_state.apply_changes(
-        new_addon_refs=new_addons,
-        new_write_target=new_wt,
-    )
-
-    state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
-    return {"success": True, "message": "Changes applied"}
+    """Legacy: redirects to save."""
+    return await save_session(body)
 
 
 @app.get("/api/session/backups")
@@ -1122,478 +1129,11 @@ async def websocket_endpoint(ws: WebSocket):
         manager.disconnect(ws)
 
 
-# --- Addon Editor API ---
-
-
-def _load_addon_entities(addon_id: str, version: str):
-    """Load all entities from an addon + its dependencies.
-
-    Returns dict with all entity categories, each entry tagged with source.
-    Also includes which IDs are overrides (same ID exists in a dependency).
-    """
-    from game.addon_loader import get_addon_version_dir, _load_json_safe
-    from game.character import (
-        load_trait_defs, load_clothing_defs, load_item_defs,
-        load_item_tags, load_action_defs, load_trait_groups, load_characters,
-    )
-    from game.map_engine import load_map_collection
-
-    addon_dir = get_addon_version_dir(addon_id, version)
-    if not addon_dir.exists():
-        return None
-
-    # Load addon.json metadata
-    meta = _load_json_safe(addon_dir / "addon.json")
-    deps = meta.get("dependencies", [])
-
-    # Build addon_dirs for dependencies only (for read-only context)
-    dep_dirs = build_addon_dirs(deps)
-
-    # Load dependency entities
-    dep_traits = load_trait_defs(dep_dirs) if dep_dirs else {}
-    dep_clothing = load_clothing_defs(dep_dirs) if dep_dirs else {}
-    dep_items = load_item_defs(dep_dirs) if dep_dirs else {}
-    dep_actions = load_action_defs(dep_dirs) if dep_dirs else {}
-    dep_groups = load_trait_groups(dep_dirs) if dep_dirs else {}
-    dep_characters = load_characters(dep_dirs) if dep_dirs else {}
-    dep_maps_data = load_map_collection(dep_dirs) if dep_dirs else {"maps": {}}
-
-    # Load this addon's own entities (single addon dir)
-    own_dirs = [(addon_id, addon_dir)]
-    own_traits = load_trait_defs(own_dirs)
-    own_clothing = load_clothing_defs(own_dirs)
-    own_items = load_item_defs(own_dirs)
-    own_actions = load_action_defs(own_dirs)
-    own_groups = load_trait_groups(own_dirs)
-    own_characters = load_characters(own_dirs)
-    own_maps_data = load_map_collection(own_dirs)
-    own_item_tags = load_item_tags(own_dirs)
-
-    # Detect overrides: own IDs that also exist in dependencies
-    def find_overrides(own: dict, deps: dict) -> list[str]:
-        return [eid for eid in own if eid in deps]
-
-    return {
-        "meta": meta,
-        "traits": {
-            "own": list(own_traits.values()),
-            "deps": list(dep_traits.values()),
-            "overrides": find_overrides(own_traits, dep_traits),
-        },
-        "clothing": {
-            "own": list(own_clothing.values()),
-            "deps": list(dep_clothing.values()),
-            "overrides": find_overrides(own_clothing, dep_clothing),
-        },
-        "items": {
-            "own": list(own_items.values()),
-            "deps": list(dep_items.values()),
-            "overrides": find_overrides(own_items, dep_items),
-        },
-        "actions": {
-            "own": list(own_actions.values()),
-            "deps": list(dep_actions.values()),
-            "overrides": find_overrides(own_actions, dep_actions),
-        },
-        "traitGroups": {
-            "own": list(own_groups.values()),
-            "deps": list(dep_groups.values()),
-            "overrides": find_overrides(own_groups, dep_groups),
-        },
-        "characters": {
-            "own": list(own_characters.values()),
-            "deps": list(dep_characters.values()),
-            "overrides": find_overrides(own_characters, dep_characters),
-        },
-        "maps": {
-            "own": [
-                {k: v for k, v in m.items() if k not in ("compiled_grid", "cell_index")}
-                for m in own_maps_data["maps"].values()
-            ],
-            "deps": [
-                {k: v for k, v in m.items() if k not in ("compiled_grid", "cell_index")}
-                for m in dep_maps_data["maps"].values()
-            ],
-            "overrides": find_overrides(own_maps_data["maps"], dep_maps_data["maps"]),
-        },
-        "itemTags": own_item_tags,
-    }
-
-
-@app.get("/api/addon/{addon_id}/{version}/data")
-async def get_addon_data(addon_id: str, version: str):
-    """Load all entities from an addon + its dependency context."""
-    data = _load_addon_entities(addon_id, version)
-    if data is None:
-        return {"error": f"Addon '{addon_id}@{version}' not found"}
-    return data
-
-
 def _get_addon_dir_or_404(addon_id: str, version: str):
     """Get addon directory, return None if not found."""
     from game.addon_loader import get_addon_version_dir
     d = get_addon_version_dir(addon_id, version)
     return d if d.exists() else None
-
-
-# --- Addon Trait CRUD ---
-
-@app.post("/api/addon/{addon_id}/{version}/traits")
-async def addon_create_trait(addon_id: str, version: str, body: dict = Body(...)):
-    """Create a trait in an addon (writes directly to file)."""
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    trait_id = body.get("id")
-    if not trait_id:
-        return {"success": False, "message": "Missing trait id"}
-    from game.character import load_trait_defs, save_trait_defs_file
-    existing = load_trait_defs([(addon_id, addon_dir)])
-    if trait_id in existing:
-        return {"success": False, "message": f"Trait '{trait_id}' already exists in this addon"}
-    entry = {k: v for k, v in body.items() if k != "source"}
-    all_traits = [
-        {k: v for k, v in t.items() if k != "source"}
-        for t in existing.values()
-    ]
-    all_traits.append(entry)
-    save_trait_defs_file(addon_dir, all_traits)
-    await _mark_dirty()
-    return {"success": True, "message": f"Trait '{trait_id}' created"}
-
-
-@app.put("/api/addon/{addon_id}/{version}/traits/{trait_id}")
-async def addon_update_trait(addon_id: str, version: str, trait_id: str, body: dict = Body(...)):
-    """Update a trait in an addon (writes directly to file)."""
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_trait_defs, save_trait_defs_file
-    existing = load_trait_defs([(addon_id, addon_dir)])
-    entry = {k: v for k, v in body.items() if k != "source"}
-    entry["id"] = trait_id
-    all_traits = []
-    for t in existing.values():
-        clean = {k: v for k, v in t.items() if k != "source"}
-        if clean["id"] == trait_id:
-            all_traits.append(entry)
-        else:
-            all_traits.append(clean)
-    if trait_id not in existing:
-        all_traits.append(entry)
-    save_trait_defs_file(addon_dir, all_traits)
-    await _mark_dirty()
-    return {"success": True, "message": f"Trait '{trait_id}' updated"}
-
-
-@app.delete("/api/addon/{addon_id}/{version}/traits/{trait_id}")
-async def addon_delete_trait(addon_id: str, version: str, trait_id: str):
-    """Delete a trait from an addon (writes directly to file)."""
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_trait_defs, save_trait_defs_file
-    existing = load_trait_defs([(addon_id, addon_dir)])
-    if trait_id not in existing:
-        return {"success": False, "message": f"Trait '{trait_id}' not found"}
-    all_traits = [
-        {k: v for k, v in t.items() if k != "source"}
-        for t in existing.values() if t["id"] != trait_id
-    ]
-    save_trait_defs_file(addon_dir, all_traits)
-    await _mark_dirty()
-    return {"success": True, "message": f"Trait '{trait_id}' deleted"}
-
-
-# --- Addon Trait Group CRUD ---
-
-@app.post("/api/addon/{addon_id}/{version}/trait-groups")
-async def addon_create_trait_group(addon_id: str, version: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    group_id = body.get("id")
-    if not group_id:
-        return {"success": False, "message": "Missing group id"}
-    from game.character import load_trait_groups, save_trait_groups_file
-    existing = load_trait_groups([(addon_id, addon_dir)])
-    if group_id in existing:
-        return {"success": False, "message": f"Trait group '{group_id}' already exists"}
-    entry = {k: v for k, v in body.items() if k != "source"}
-    all_groups = [{k: v for k, v in g.items() if k != "source"} for g in existing.values()]
-    all_groups.append(entry)
-    save_trait_groups_file(addon_dir, all_groups)
-    await _mark_dirty()
-    return {"success": True, "message": f"Trait group '{group_id}' created"}
-
-
-@app.put("/api/addon/{addon_id}/{version}/trait-groups/{group_id}")
-async def addon_update_trait_group(addon_id: str, version: str, group_id: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_trait_groups, save_trait_groups_file
-    existing = load_trait_groups([(addon_id, addon_dir)])
-    entry = {k: v for k, v in body.items() if k != "source"}
-    entry["id"] = group_id
-    all_groups = []
-    for g in existing.values():
-        clean = {k: v for k, v in g.items() if k != "source"}
-        if clean["id"] == group_id:
-            all_groups.append(entry)
-        else:
-            all_groups.append(clean)
-    if group_id not in existing:
-        all_groups.append(entry)
-    save_trait_groups_file(addon_dir, all_groups)
-    await _mark_dirty()
-    return {"success": True, "message": f"Trait group '{group_id}' updated"}
-
-
-@app.delete("/api/addon/{addon_id}/{version}/trait-groups/{group_id}")
-async def addon_delete_trait_group(addon_id: str, version: str, group_id: str):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_trait_groups, save_trait_groups_file
-    existing = load_trait_groups([(addon_id, addon_dir)])
-    if group_id not in existing:
-        return {"success": False, "message": f"Trait group '{group_id}' not found"}
-    all_groups = [{k: v for k, v in g.items() if k != "source"} for g in existing.values() if g["id"] != group_id]
-    save_trait_groups_file(addon_dir, all_groups)
-    await _mark_dirty()
-    return {"success": True, "message": f"Trait group '{group_id}' deleted"}
-
-
-# --- Addon Clothing CRUD ---
-
-@app.post("/api/addon/{addon_id}/{version}/clothing")
-async def addon_create_clothing(addon_id: str, version: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    item_id = body.get("id")
-    if not item_id:
-        return {"success": False, "message": "Missing clothing id"}
-    from game.character import load_clothing_defs, save_clothing_defs_file
-    existing = load_clothing_defs([(addon_id, addon_dir)])
-    if item_id in existing:
-        return {"success": False, "message": f"Clothing '{item_id}' already exists"}
-    entry = {k: v for k, v in body.items() if k != "source"}
-    all_items = [{k: v for k, v in c.items() if k != "source"} for c in existing.values()]
-    all_items.append(entry)
-    save_clothing_defs_file(addon_dir, all_items)
-    await _mark_dirty()
-    return {"success": True, "message": f"Clothing '{item_id}' created"}
-
-
-@app.put("/api/addon/{addon_id}/{version}/clothing/{item_id}")
-async def addon_update_clothing(addon_id: str, version: str, item_id: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_clothing_defs, save_clothing_defs_file
-    existing = load_clothing_defs([(addon_id, addon_dir)])
-    entry = {k: v for k, v in body.items() if k != "source"}
-    entry["id"] = item_id
-    all_items = []
-    for c in existing.values():
-        clean = {k: v for k, v in c.items() if k != "source"}
-        if clean["id"] == item_id:
-            all_items.append(entry)
-        else:
-            all_items.append(clean)
-    if item_id not in existing:
-        all_items.append(entry)
-    save_clothing_defs_file(addon_dir, all_items)
-    await _mark_dirty()
-    return {"success": True, "message": f"Clothing '{item_id}' updated"}
-
-
-@app.delete("/api/addon/{addon_id}/{version}/clothing/{item_id}")
-async def addon_delete_clothing(addon_id: str, version: str, item_id: str):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_clothing_defs, save_clothing_defs_file
-    existing = load_clothing_defs([(addon_id, addon_dir)])
-    if item_id not in existing:
-        return {"success": False, "message": f"Clothing '{item_id}' not found"}
-    all_items = [{k: v for k, v in c.items() if k != "source"} for c in existing.values() if c["id"] != item_id]
-    save_clothing_defs_file(addon_dir, all_items)
-    await _mark_dirty()
-    return {"success": True, "message": f"Clothing '{item_id}' deleted"}
-
-
-# --- Addon Item CRUD ---
-
-@app.post("/api/addon/{addon_id}/{version}/items")
-async def addon_create_item(addon_id: str, version: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    item_id = body.get("id")
-    if not item_id:
-        return {"success": False, "message": "Missing item id"}
-    from game.character import load_item_defs, save_item_defs_file
-    existing = load_item_defs([(addon_id, addon_dir)])
-    if item_id in existing:
-        return {"success": False, "message": f"Item '{item_id}' already exists"}
-    entry = {k: v for k, v in body.items() if k != "source"}
-    all_items = [{k: v for k, v in d.items() if k != "source"} for d in existing.values()]
-    all_items.append(entry)
-    save_item_defs_file(addon_dir, all_items)
-    await _mark_dirty()
-    return {"success": True, "message": f"Item '{item_id}' created"}
-
-
-@app.put("/api/addon/{addon_id}/{version}/items/{item_id}")
-async def addon_update_item(addon_id: str, version: str, item_id: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_item_defs, save_item_defs_file
-    existing = load_item_defs([(addon_id, addon_dir)])
-    entry = {k: v for k, v in body.items() if k != "source"}
-    entry["id"] = item_id
-    all_items = []
-    for d in existing.values():
-        clean = {k: v for k, v in d.items() if k != "source"}
-        if clean["id"] == item_id:
-            all_items.append(entry)
-        else:
-            all_items.append(clean)
-    if item_id not in existing:
-        all_items.append(entry)
-    save_item_defs_file(addon_dir, all_items)
-    await _mark_dirty()
-    return {"success": True, "message": f"Item '{item_id}' updated"}
-
-
-@app.delete("/api/addon/{addon_id}/{version}/items/{item_id}")
-async def addon_delete_item(addon_id: str, version: str, item_id: str):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_item_defs, save_item_defs_file
-    existing = load_item_defs([(addon_id, addon_dir)])
-    if item_id not in existing:
-        return {"success": False, "message": f"Item '{item_id}' not found"}
-    all_items = [{k: v for k, v in d.items() if k != "source"} for d in existing.values() if d["id"] != item_id]
-    save_item_defs_file(addon_dir, all_items)
-    await _mark_dirty()
-    return {"success": True, "message": f"Item '{item_id}' deleted"}
-
-
-# --- Addon Action CRUD ---
-
-@app.post("/api/addon/{addon_id}/{version}/actions")
-async def addon_create_action(addon_id: str, version: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    action_id = body.get("id")
-    if not action_id:
-        return {"success": False, "message": "Missing action id"}
-    from game.character import load_action_defs, save_action_defs_file
-    existing = load_action_defs([(addon_id, addon_dir)])
-    if action_id in existing:
-        return {"success": False, "message": f"Action '{action_id}' already exists"}
-    entry = {k: v for k, v in body.items() if k != "source"}
-    all_actions = [{k: v for k, v in a.items() if k != "source"} for a in existing.values()]
-    all_actions.append(entry)
-    save_action_defs_file(addon_dir, all_actions)
-    await _mark_dirty()
-    return {"success": True, "message": f"Action '{action_id}' created"}
-
-
-@app.put("/api/addon/{addon_id}/{version}/actions/{action_id}")
-async def addon_update_action(addon_id: str, version: str, action_id: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_action_defs, save_action_defs_file
-    existing = load_action_defs([(addon_id, addon_dir)])
-    entry = {k: v for k, v in body.items() if k != "source"}
-    entry["id"] = action_id
-    all_actions = []
-    for a in existing.values():
-        clean = {k: v for k, v in a.items() if k != "source"}
-        if clean["id"] == action_id:
-            all_actions.append(entry)
-        else:
-            all_actions.append(clean)
-    if action_id not in existing:
-        all_actions.append(entry)
-    save_action_defs_file(addon_dir, all_actions)
-    await _mark_dirty()
-    return {"success": True, "message": f"Action '{action_id}' updated"}
-
-
-@app.delete("/api/addon/{addon_id}/{version}/actions/{action_id}")
-async def addon_delete_action(addon_id: str, version: str, action_id: str):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    from game.character import load_action_defs, save_action_defs_file
-    existing = load_action_defs([(addon_id, addon_dir)])
-    if action_id not in existing:
-        return {"success": False, "message": f"Action '{action_id}' not found"}
-    all_actions = [{k: v for k, v in a.items() if k != "source"} for a in existing.values() if a["id"] != action_id]
-    save_action_defs_file(addon_dir, all_actions)
-    await _mark_dirty()
-    return {"success": True, "message": f"Action '{action_id}' deleted"}
-
-
-# --- Addon Character CRUD ---
-
-@app.post("/api/addon/{addon_id}/{version}/characters")
-async def addon_create_character(addon_id: str, version: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    char_id = body.get("id")
-    if not char_id:
-        return {"success": False, "message": "Missing character id"}
-    chars_dir = addon_dir / "characters"
-    char_path = chars_dir / f"{char_id}.json"
-    if char_path.exists():
-        return {"success": False, "message": f"Character '{char_id}' already exists"}
-    chars_dir.mkdir(parents=True, exist_ok=True)
-    clean = {k: v for k, v in body.items() if not k.startswith("_")}
-    with open(char_path, "w", encoding="utf-8") as f:
-        json.dump(clean, f, ensure_ascii=False, indent=2)
-    await _mark_dirty()
-    return {"success": True, "message": f"Character '{char_id}' created"}
-
-
-@app.put("/api/addon/{addon_id}/{version}/characters/{char_id}")
-async def addon_update_character(addon_id: str, version: str, char_id: str, body: dict = Body(...)):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    chars_dir = addon_dir / "characters"
-    chars_dir.mkdir(parents=True, exist_ok=True)
-    body["id"] = char_id
-    clean = {k: v for k, v in body.items() if not k.startswith("_")}
-    char_path = chars_dir / f"{char_id}.json"
-    with open(char_path, "w", encoding="utf-8") as f:
-        json.dump(clean, f, ensure_ascii=False, indent=2)
-    await _mark_dirty()
-    return {"success": True, "message": f"Character '{char_id}' updated"}
-
-
-@app.delete("/api/addon/{addon_id}/{version}/characters/{char_id}")
-async def addon_delete_character(addon_id: str, version: str, char_id: str):
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
-        return {"success": False, "message": "Addon not found"}
-    char_path = addon_dir / "characters" / f"{char_id}.json"
-    if not char_path.exists():
-        return {"success": False, "message": f"Character '{char_id}' not found"}
-    char_path.unlink()
-    await _mark_dirty()
-    return {"success": True, "message": f"Character '{char_id}' deleted"}
 
 
 if __name__ == "__main__":

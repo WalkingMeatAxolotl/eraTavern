@@ -58,7 +58,6 @@ export interface WorldInfo {
   id: string;
   name: string;
   addons?: { id: string; version: string }[];
-  writeTarget?: string;
   playerCharacter?: string;
 }
 
@@ -79,7 +78,6 @@ export interface SessionInfo {
   worldId: string;
   worldName: string;
   addons: { id: string; version: string }[];
-  writeTarget: string;
   playerCharacter: string;
   dirty: boolean;
 }

@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { fetchMapsRaw, createMap } from "../api/client";
 import MapEditor from "./MapEditor";
 
-export default function MapManager() {
-  const [maps, setMaps] = useState<{ id: string; name: string }[]>([]);
+export default function MapManager({ selectedAddon }: { selectedAddon: string | null }) {
+  const [maps, setMaps] = useState<{ id: string; name: string; source?: string }[]>([]);
   const [editingMapId, setEditingMapId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newId, setNewId] = useState("");
@@ -34,6 +34,9 @@ export default function MapManager() {
     }
   };
 
+  const readOnly = selectedAddon === null;
+  const filteredMaps = selectedAddon ? maps.filter(m => m.source === selectedAddon) : maps;
+
   if (editingMapId) {
     return (
       <MapEditor
@@ -62,7 +65,7 @@ export default function MapManager() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        {maps.map((m) => (
+        {filteredMaps.map((m) => (
           <button
             key={m.id}
             onClick={() => setEditingMapId(m.id)}
@@ -80,20 +83,22 @@ export default function MapManager() {
             <span style={{ color: "#666", marginLeft: "6px" }}>({m.id})</span>
           </button>
         ))}
-        <button
-          onClick={() => setCreating(true)}
-          style={{
-            background: "#0a3d0a",
-            border: "1px solid #2a6a2a",
-            color: "#8f8",
-            padding: "8px 16px",
-            fontFamily: "monospace",
-            fontSize: "13px",
-            cursor: "pointer",
-          }}
-        >
-          [+ 新建地图]
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => setCreating(true)}
+            style={{
+              background: "#0a3d0a",
+              border: "1px solid #2a6a2a",
+              color: "#8f8",
+              padding: "8px 16px",
+              fontFamily: "monospace",
+              fontSize: "13px",
+              cursor: "pointer",
+            }}
+          >
+            [+ 新建地图]
+          </button>
+        )}
       </div>
 
       {creating && (

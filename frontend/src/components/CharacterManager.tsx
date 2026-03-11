@@ -3,7 +3,7 @@ import type { GameDefinitions, RawCharacterData } from "../types/game";
 import { fetchDefinitions, fetchCharacterConfigs, patchCharacter } from "../api/client";
 import CharacterEditor from "./CharacterEditor";
 
-export default function CharacterManager() {
+export default function CharacterManager({ selectedAddon }: { selectedAddon: string | null }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [characters, setCharacters] = useState<RawCharacterData[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -104,6 +104,11 @@ export default function CharacterManager() {
     );
   }
 
+  const readOnly = selectedAddon === null;
+  const filteredCharacters = selectedAddon
+    ? characters.filter(c => (c as Record<string, unknown>)._source === selectedAddon)
+    : characters;
+
   // List view
   return (
     <div
@@ -118,25 +123,27 @@ export default function CharacterManager() {
         <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
           == 角色列表 ==
         </span>
-        <button
-          onClick={handleNew}
-          style={{
-            padding: "4px 12px",
-            backgroundColor: "#16213e",
-            color: "#0f0",
-            border: "1px solid #333",
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontFamily: "monospace",
-            fontSize: "13px",
-          }}
-        >
-          [+ 新建角色]
-        </button>
+        {!readOnly && (
+          <button
+            onClick={handleNew}
+            style={{
+              padding: "4px 12px",
+              backgroundColor: "#16213e",
+              color: "#0f0",
+              border: "1px solid #333",
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "13px",
+            }}
+          >
+            [+ 新建角色]
+          </button>
+        )}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {characters.map((char) => {
+        {filteredCharacters.map((char) => {
           const isActive = char.active !== false;
           return (
             <div

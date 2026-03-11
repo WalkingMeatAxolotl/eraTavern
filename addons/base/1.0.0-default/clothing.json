@@ -35,7 +35,14 @@
       "occlusion": [
         "upperUnderwear"
       ],
-      "effects": []
+      "effects": [
+        {
+          "target": "stamina",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 0
+        }
+      ]
     },
     {
       "id": "leather-armor",
