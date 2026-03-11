@@ -800,6 +800,24 @@ function CellEditor({
               style={{ ...inputStyle, width: "50px" }}
             />
             <span style={{ color: "#666", fontSize: "10px" }}>分</span>
+            <label style={{ display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" }} title="感知阻断：勾选后NPC无法通过此连接感知对面的角色">
+              <input
+                type="checkbox"
+                checked={!!conn.senseBlocked}
+                onChange={(e) => {
+                  const newConns = [...cell.connections];
+                  if (e.target.checked) {
+                    newConns[i] = { ...newConns[i], senseBlocked: true };
+                  } else {
+                    const { senseBlocked: _, ...rest } = newConns[i];
+                    newConns[i] = rest;
+                  }
+                  onChange({ ...cell, connections: newConns });
+                }}
+                style={{ margin: 0 }}
+              />
+              <span style={{ color: "#e9a045", fontSize: "10px", whiteSpace: "nowrap" }}>隔感知</span>
+            </label>
             <button
               onClick={() => {
                 const newConns = cell.connections.filter((_, j) => j !== i);

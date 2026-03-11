@@ -155,6 +155,65 @@ def build_distance_matrix(maps: dict[str, dict]) -> dict[tuple, dict[tuple, tupl
     return matrix
 
 
+MAX_SENSE_DISTANCE = 60  # minutes, hard cutoff for sense range
+
+
+def build_sense_matrix(maps: dict[str, dict]) -> dict[tuple, dict[tuple, tuple]]:
+    """Pre-compute sense ranges between cells, respecting senseBlocked connections.
+
+    Like build_distance_matrix but:
+    - Skips connections where senseBlocked=true
+    - Enforces MAX_SENSE_DISTANCE cutoff
+    - Backward-compatible: no senseBlocked fields = identical to distance_matrix (up to cutoff)
+
+    Returns same format: { (mapId, cellId): { (mapId, cellId): (distance, next_hop_map, next_hop_cell) } }
+    """
+    import heapq
+
+    all_nodes: list[tuple[str, int]] = []
+    adjacency: dict[tuple[str, int], list[tuple[tuple[str, int], int]]] = {}
+    for map_id, map_data in maps.items():
+        for cell_id, cell_data in map_data["cell_index"].items():
+            node = (map_id, cell_id)
+            all_nodes.append(node)
+            neighbors: list[tuple[tuple[str, int], int]] = []
+            for conn in cell_data.get("connections", []):
+                if conn.get("senseBlocked"):
+                    continue  # skip sense-blocked connections
+                target_map = conn.get("targetMap", map_id)
+                target_cell = conn["targetCell"]
+                travel_time = conn.get("travelTime", 10)
+                target_map_data = maps.get(target_map)
+                if target_map_data and target_cell in target_map_data["cell_index"]:
+                    neighbors.append(((target_map, target_cell), travel_time))
+            adjacency[node] = neighbors
+
+    matrix: dict[tuple, dict[tuple, tuple]] = {}
+    for start in all_nodes:
+        dist: dict[tuple[str, int], int] = {start: 0}
+        next_hop: dict[tuple[str, int], tuple[str, int]] = {start: start}
+        heap: list[tuple[int, tuple[str, int]]] = [(0, start)]
+        while heap:
+            d, current = heapq.heappop(heap)
+            if d > dist.get(current, float("inf")):
+                continue
+            for neighbor, weight in adjacency.get(current, []):
+                nd = d + weight
+                if nd > MAX_SENSE_DISTANCE:
+                    continue  # beyond sense range
+                if nd < dist.get(neighbor, float("inf")):
+                    dist[neighbor] = nd
+                    next_hop[neighbor] = next_hop[current] if current != start else neighbor
+                    heapq.heappush(heap, (nd, neighbor))
+        row: dict[tuple, tuple] = {}
+        for node in dist:
+            nh = next_hop[node]
+            row[node] = (dist[node], nh[0], nh[1])
+        matrix[start] = row
+
+    return matrix
+
+
 def save_map_file(data_dir: Path, map_id: str, map_data: dict) -> None:
     """Save map JSON to file. Strips compiled_grid/cell_index/_source/_local_id before writing."""
     from .character import to_local_id

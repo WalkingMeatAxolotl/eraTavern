@@ -21,7 +21,7 @@ export interface MapCell {
   name?: string;
   tags?: string[];
   backgroundImage?: string;
-  connections: { targetCell: number; targetMap?: string; travelTime?: number }[];
+  connections: { targetCell: number; targetMap?: string; travelTime?: number; senseBlocked?: boolean }[];
 }
 
 export interface GameMap {
@@ -216,10 +216,33 @@ export interface ItemDefinition {
   source: string;
 }
 
+// --- Derived variable types ---
+
+export interface VariableStep {
+  type: "ability" | "resource" | "basicInfo" | "traitCount" | "hasTrait" | "constant" | "variable";
+  op?: "add" | "subtract" | "multiply" | "divide" | "min" | "max" | "clamp_min" | "clamp_max";
+  key?: string;
+  field?: "value" | "max";
+  traitGroup?: string;
+  traitId?: string;
+  value?: number;
+  varId?: string;
+  label?: string;
+}
+
+export interface VariableDefinition {
+  id: string;
+  name: string;
+  description?: string;
+  tags?: string[];
+  steps: VariableStep[];
+  source: string;
+}
+
 // --- Action definition types ---
 
 export interface ActionCondition {
-  type: "location" | "npcPresent" | "npcAbsent" | "resource" | "ability" | "trait" | "noTrait" | "favorability" | "hasItem" | "clothing" | "time" | "basicInfo";
+  type: "location" | "npcPresent" | "npcAbsent" | "resource" | "ability" | "trait" | "noTrait" | "favorability" | "hasItem" | "clothing" | "time" | "basicInfo" | "variable";
   condTarget?: "self" | "target";  // who to check: actor (default) or action target
   mapId?: string;
   cellIds?: number[];
@@ -238,6 +261,7 @@ export interface ActionCondition {
   dayOfWeek?: string;
   season?: string;
   targetId?: string;
+  varId?: string;
 }
 
 export type ConditionItem = ActionCondition | { and: ConditionItem[] } | { or: ConditionItem[] } | { not: ConditionItem };
@@ -253,7 +277,7 @@ export interface ActionEffect {
   type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position" | "experience";
   key?: string;
   op: string;
-  value?: number;
+  value?: number | { varId: string; multiply?: number };
   valuePercent?: boolean;
   valueModifiers?: ValueModifier[];
   amount?: number;
@@ -270,13 +294,14 @@ export interface ActionEffect {
 }
 
 export interface ValueModifier {
-  type: "ability" | "trait" | "favorability" | "experience";
+  type: "ability" | "trait" | "favorability" | "experience" | "variable";
   key?: string;       // ability key, trait category key, or experience key
   value?: string;     // trait value to match
   source?: string;    // favorability: "target" (default) or "self"
   per?: number;       // every `per` points → bonus (ability/favorability/experience)
   bonus: number;
   bonusMode?: "add" | "multiply";  // "add" (default): +bonus, "multiply": *bonus%
+  varId?: string;     // variable: derived variable ID
 }
 
 export type WeightModifier = ValueModifier;
@@ -287,12 +312,20 @@ export interface OutputTemplateEntry {
   weight?: number;  // default 1, random among matching entries
 }
 
+export interface SuggestNext {
+  actionId?: string;
+  category?: string;
+  bonus: number;
+  decay: number;
+}
+
 export interface ActionOutcome {
   grade: string;
   label: string;
   weight: number;
   weightModifiers?: WeightModifier[];
   effects: ActionEffect[];
+  suggestNext?: SuggestNext[];
   outputTemplate?: string;
   outputTemplates?: OutputTemplateEntry[];
 }
@@ -357,6 +390,7 @@ export interface GameDefinitions {
   traitDefs: Record<string, TraitDefinition>;
   traitGroups: Record<string, TraitGroup>;
   actionDefs: Record<string, ActionDefinition>;
+  variableDefs: Record<string, VariableDefinition>;
   maps: Record<string, MapSummary>;
   characters: Record<string, { id: string; name: string; isPlayer: boolean }>;
 }

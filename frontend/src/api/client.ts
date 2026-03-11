@@ -1,4 +1,4 @@
-import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, DecorPreset, RawMapData, SessionInfo } from "../types/game";
+import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, DecorPreset, RawMapData, SessionInfo } from "../types/game";
 
 const API_BASE = "/api/game";
 
@@ -415,6 +415,80 @@ export async function deleteActionDef(id: string): Promise<{ success: boolean; m
     method: "DELETE",
   });
   if (!res.ok) throw new Error(`Failed to delete action: ${res.status}`);
+  return res.json();
+}
+
+// --- Variable CRUD ---
+
+export async function fetchVariableDefs(): Promise<VariableDefinition[]> {
+  const res = await fetch(`${API_BASE}/variables`);
+  if (!res.ok) throw new Error(`Failed to fetch variables: ${res.status}`);
+  const data = await res.json();
+  return data.variables;
+}
+
+export async function createVariableDef(data: Omit<VariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/variables`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to create variable: ${res.status}`);
+  return res.json();
+}
+
+export async function saveVariableDef(id: string, data: Omit<VariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/variables/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to save variable: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteVariableDef(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/variables/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Failed to delete variable: ${res.status}`);
+  return res.json();
+}
+
+export async function evaluateVariable(id: string, characterId: string): Promise<{ success: boolean; result?: number; steps?: Array<{ index: number; label: string; op: string; type: string; stepValue: number; accumulated: number }>; message?: string }> {
+  const res = await fetch(`${API_BASE}/variables/${id}/evaluate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ characterId }),
+  });
+  if (!res.ok) throw new Error(`Failed to evaluate variable: ${res.status}`);
+  return res.json();
+}
+
+// --- Variable Tag pool ---
+
+export async function fetchVariableTags(): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/variable-tags`);
+  if (!res.ok) throw new Error(`Failed to fetch variable tags: ${res.status}`);
+  const data = await res.json();
+  return data.tags;
+}
+
+export async function createVariableTag(tag: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/variable-tags`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tag }),
+  });
+  if (!res.ok) throw new Error(`Failed to create variable tag: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteVariableTag(tag: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/variable-tags/${encodeURIComponent(tag)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Failed to delete variable tag: ${res.status}`);
   return res.json();
 }
 

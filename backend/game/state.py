@@ -15,6 +15,8 @@ from .character import (
     load_action_defs,
     load_trait_defs,
     load_trait_groups,
+    load_variable_defs,
+    load_variable_tags,
     load_characters,
     build_character_state,
     get_ability_defs,
@@ -97,13 +99,19 @@ class GameState:
         self.trait_defs: dict[str, dict] = {}
         self.action_defs: dict[str, dict] = {}
         self.trait_groups: dict[str, dict] = {}
+        self.variable_defs: dict[str, dict] = {}
+        self.variable_tags: list[str] = []
         self.character_data: dict[str, dict] = {}
         self.characters: dict[str, dict[str, Any]] = {}
         self.decor_presets: list[dict] = []
         self.distance_matrix: dict = {}
+        self.sense_matrix: dict = {}
         self.npc_goals: dict[str, dict] = {}
         self.npc_activities: dict[str, str] = {}
         self.npc_full_log: list[dict] = []
+        self.npc_action_history: dict[str, list[dict]] = {}
+        self.cell_action_index: dict[tuple, list[dict]] = {}
+        self.no_location_actions: list[dict] = []
         self.time = GameTime()
 
     def load_empty(self) -> None:
@@ -122,13 +130,19 @@ class GameState:
         self.trait_defs = {}
         self.action_defs = {}
         self.trait_groups = {}
+        self.variable_defs = {}
+        self.variable_tags = []
         self.character_data = {}
         self.characters = {}
         self.decor_presets = []
         self.distance_matrix = {}
+        self.sense_matrix = {}
         self.npc_goals = {}
         self.npc_activities = {}
         self.npc_full_log = []
+        self.npc_action_history = {}
+        self.cell_action_index = {}
+        self.no_location_actions = []
         self.time = GameTime()
 
     def _resolve_namespaces(self) -> None:
@@ -156,10 +170,11 @@ class GameState:
         self.dirty = False
 
         # Load from addons
-        from .map_engine import build_distance_matrix
+        from .map_engine import build_distance_matrix, build_sense_matrix
         collection = load_map_collection(self.addon_dirs)
         self.maps = collection["maps"]
         self.distance_matrix = build_distance_matrix(self.maps)
+        self.sense_matrix = build_sense_matrix(self.maps)
         self.decor_presets = load_decor_presets(self.addon_dirs)
         self.template = _load_global_template()
         self.clothing_defs = load_clothing_defs(self.addon_dirs)
@@ -168,6 +183,8 @@ class GameState:
         self.trait_defs = load_trait_defs(self.addon_dirs)
         self.action_defs = load_action_defs(self.addon_dirs)
         self.trait_groups = load_trait_groups(self.addon_dirs)
+        self.variable_defs = load_variable_defs(self.addon_dirs)
+        self.variable_tags = load_variable_tags(self.addon_dirs)
         self.character_data = load_characters(self.addon_dirs)
 
         # Resolve bare ID cross-references
@@ -180,10 +197,17 @@ class GameState:
                 self.item_defs,
             )
 
+        # Build cell->action inverted index for NPC decision-making
+        from .action import build_cell_action_index
+        self.cell_action_index, self.no_location_actions = build_cell_action_index(
+            self.action_defs, self.maps
+        )
+
         self.time = GameTime()
         self.npc_goals = {}
         self.npc_activities = {}
         self.npc_full_log = []
+        self.npc_action_history = {}
 
     def load(self, game_id: str) -> None:
         """Legacy load method — loads a world by ID."""
@@ -206,9 +230,10 @@ class GameState:
         collection = load_map_collection(self.addon_dirs)
         self.maps = collection["maps"]
 
-        # Pre-compute distance matrix for NPC pathfinding
-        from .map_engine import build_distance_matrix
+        # Pre-compute distance matrix and sense matrix for NPC pathfinding
+        from .map_engine import build_distance_matrix, build_sense_matrix
         self.distance_matrix = build_distance_matrix(self.maps)
+        self.sense_matrix = build_sense_matrix(self.maps)
 
         # Load decor presets from all addons
         self.decor_presets = load_decor_presets(self.addon_dirs)
@@ -221,6 +246,8 @@ class GameState:
         self.trait_defs = load_trait_defs(self.addon_dirs)
         self.action_defs = load_action_defs(self.addon_dirs)
         self.trait_groups = load_trait_groups(self.addon_dirs)
+        self.variable_defs = load_variable_defs(self.addon_dirs)
+        self.variable_tags = load_variable_tags(self.addon_dirs)
         self.character_data = load_characters(self.addon_dirs)
 
         # Resolve bare ID cross-references
@@ -241,11 +268,18 @@ class GameState:
                 self.item_defs,
             )
 
+        # Build cell->action inverted index for NPC decision-making
+        from .action import build_cell_action_index
+        self.cell_action_index, self.no_location_actions = build_cell_action_index(
+            self.action_defs, self.maps
+        )
+
         # Reset time and NPC state
         self.time = GameTime()
         self.npc_goals = {}
         self.npc_activities = {}
         self.npc_full_log = []
+        self.npc_action_history = {}
         self.dirty = False
 
     def _persist_entity_files(self) -> None:
@@ -253,6 +287,7 @@ class GameState:
         from .character import (
             save_clothing_defs_file, save_item_defs_file, save_item_tags_file,
             save_trait_defs_file, save_action_defs_file, save_trait_groups_file,
+            save_variable_defs_file, save_variable_tags_file,
             save_character,
         )
         from .map_engine import save_map_file, save_decor_presets as _save_decor_presets
@@ -271,6 +306,8 @@ class GameState:
         for d in self.action_defs.values():
             sources.add(d.get("source", ""))
         for d in self.trait_groups.values():
+            sources.add(d.get("source", ""))
+        for d in self.variable_defs.values():
             sources.add(d.get("source", ""))
         for d in self.character_data.values():
             sources.add(d.get("_source", ""))
@@ -328,6 +365,15 @@ class GameState:
             if src_groups:
                 save_trait_groups_file(target_dir, src_groups)
 
+            # Variables
+            src_variables = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.variable_defs.values()
+                if d.get("source") == source
+            ]
+            if src_variables:
+                save_variable_defs_file(target_dir, src_variables)
+
             # Characters
             for cid, cdata in self.character_data.items():
                 if cdata.get("_source") == source:
@@ -355,6 +401,10 @@ class GameState:
         # Save item tags to first addon dir (global pool)
         if self.item_tags and self.addon_dirs:
             save_item_tags_file(self.addon_dirs[0][1], self.item_tags)
+
+        # Save variable tags to first addon dir (global pool)
+        if self.variable_tags and self.addon_dirs:
+            save_variable_tags_file(self.addon_dirs[0][1], self.variable_tags)
 
         # Save decor presets to first addon dir
         if self.decor_presets and self.addon_dirs:
@@ -441,8 +491,9 @@ class GameState:
 
             collection = load_map_collection(self.addon_dirs)
             self.maps = collection["maps"]
-            from .map_engine import build_distance_matrix
+            from .map_engine import build_distance_matrix, build_sense_matrix
             self.distance_matrix = build_distance_matrix(self.maps)
+            self.sense_matrix = build_sense_matrix(self.maps)
             self.decor_presets = load_decor_presets(self.addon_dirs)
             self.template = _load_global_template()
             self.clothing_defs = load_clothing_defs(self.addon_dirs)
@@ -451,8 +502,16 @@ class GameState:
             self.trait_defs = load_trait_defs(self.addon_dirs)
             self.action_defs = load_action_defs(self.addon_dirs)
             self.trait_groups = load_trait_groups(self.addon_dirs)
+            self.variable_defs = load_variable_defs(self.addon_dirs)
+            self.variable_tags = load_variable_tags(self.addon_dirs)
             self.character_data = load_characters(self.addon_dirs)
             self._resolve_namespaces()
+
+        # Always rebuild cell->action index (action defs may have been edited)
+        from .action import build_cell_action_index
+        self.cell_action_index, self.no_location_actions = build_cell_action_index(
+            self.action_defs, self.maps
+        )
 
         # Rebuild characters from current in-memory definitions
         self._rebuild_characters(snapshot)
@@ -484,8 +543,9 @@ class GameState:
         """Reload map collection from disk."""
         collection = load_map_collection(self.addon_dirs)
         self.maps = collection["maps"]
-        from .map_engine import build_distance_matrix
+        from .map_engine import build_distance_matrix, build_sense_matrix
         self.distance_matrix = build_distance_matrix(self.maps)
+        self.sense_matrix = build_sense_matrix(self.maps)
 
     def get_addon_dir_for_source(self, source: str) -> Path:
         """Get the addon directory path for a given source/addon ID."""
@@ -651,6 +711,7 @@ class GameState:
             "traitDefs": self.trait_defs,
             "traitGroups": self.trait_groups,
             "actionDefs": self.action_defs,
+            "variableDefs": self.variable_defs,
             "maps": maps_summary,
             "characters": characters_summary,
         }

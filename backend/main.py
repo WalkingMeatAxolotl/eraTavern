@@ -631,6 +631,11 @@ async def delete_trait(trait_id: str):
     if not td:
         return {"success": False, "message": f"Trait '{trait_id}' not found"}
     del game_state.trait_defs[trait_id]
+    # Remove from all trait groups that reference this trait
+    for group in game_state.trait_groups.values():
+        traits_list = group.get("traits", [])
+        if trait_id in traits_list:
+            group["traits"] = [t for t in traits_list if t != trait_id]
     await _mark_dirty()
     return {"success": True, "message": f"Trait '{trait_id}' deleted"}
 
@@ -902,6 +907,119 @@ async def delete_trait_group(group_id: str):
     del game_state.trait_groups[group_id]
     await _mark_dirty()
     return {"success": True, "message": f"Trait group '{group_id}' deleted"}
+
+
+# --- Variable CRUD ---
+
+
+@app.get("/api/game/variables")
+async def get_variables():
+    """Get all derived variable definitions."""
+    return {"variables": list(game_state.variable_defs.values())}
+
+
+@app.post("/api/game/variables")
+async def create_variable(body: dict = Body(...)):
+    """Create a new derived variable (in memory)."""
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    var_id = _ensure_ns(raw_id, source)
+    if not var_id:
+        return {"success": False, "message": "Missing variable id"}
+    if var_id in game_state.variable_defs:
+        return {"success": False, "message": f"Variable '{var_id}' already exists"}
+    entry = {k: v for k, v in body.items() if k != "source"}
+    entry["id"] = var_id
+    entry["_local_id"] = to_local_id(var_id)
+    entry["source"] = source
+    game_state.variable_defs[var_id] = entry
+    await _mark_dirty()
+    return {"success": True, "message": f"Variable '{var_id}' created"}
+
+
+@app.put("/api/game/variables/{var_id:path}")
+async def update_variable(var_id: str, body: dict = Body(...)):
+    """Update a derived variable (in memory)."""
+    var_id = _ensure_ns(var_id)
+    vd = game_state.variable_defs.get(var_id)
+    if not vd:
+        return {"success": False, "message": f"Variable '{var_id}' not found"}
+    source = vd.get("source", "")
+    entry = {k: v for k, v in body.items() if k != "source"}
+    entry["id"] = var_id
+    entry["_local_id"] = to_local_id(var_id)
+    entry["source"] = source
+    game_state.variable_defs[var_id] = entry
+    await _mark_dirty()
+    return {"success": True, "message": f"Variable '{var_id}' updated"}
+
+
+@app.delete("/api/game/variables/{var_id:path}")
+async def delete_variable(var_id: str):
+    """Delete a derived variable (in memory)."""
+    var_id = _ensure_ns(var_id)
+    vd = game_state.variable_defs.get(var_id)
+    if not vd:
+        return {"success": False, "message": f"Variable '{var_id}' not found"}
+    del game_state.variable_defs[var_id]
+    await _mark_dirty()
+    return {"success": True, "message": f"Variable '{var_id}' deleted"}
+
+
+@app.post("/api/game/variables/{var_id:path}/evaluate")
+async def evaluate_variable_endpoint(var_id: str, body: dict = Body(...)):
+    """Evaluate a derived variable against a character's state.
+
+    Body: {"characterId": "addon.charId"}
+    Returns: {"result": float, "steps": [...debug trace...]}
+    """
+    from game.variable_engine import evaluate_variable_debug
+
+    var_id = _ensure_ns(var_id)
+    vd = game_state.variable_defs.get(var_id)
+    if not vd:
+        return {"success": False, "message": f"Variable '{var_id}' not found"}
+
+    char_id = body.get("characterId", "")
+    char_id = _ensure_ns(char_id)
+    char_state = game_state.characters.get(char_id)
+    if not char_state:
+        return {"success": False, "message": f"Character '{char_id}' not found"}
+
+    result = evaluate_variable_debug(vd, char_state, game_state.variable_defs)
+    return {"success": True, **result}
+
+
+# --- Variable Tag pool ---
+
+
+@app.get("/api/game/variable-tags")
+async def get_variable_tags():
+    """Get variable tag pool."""
+    return {"tags": game_state.variable_tags}
+
+
+@app.post("/api/game/variable-tags")
+async def create_variable_tag(body: dict = Body(...)):
+    """Add a tag to the variable tag pool."""
+    tag = body.get("tag", "").strip()
+    if not tag:
+        return {"success": False, "message": "Tag cannot be empty"}
+    if tag in game_state.variable_tags:
+        return {"success": False, "message": f"Tag '{tag}' already exists"}
+    game_state.variable_tags.append(tag)
+    await _mark_dirty()
+    return {"success": True, "message": f"Tag '{tag}' added"}
+
+
+@app.delete("/api/game/variable-tags/{tag}")
+async def delete_variable_tag(tag: str):
+    """Remove a tag from the variable tag pool."""
+    if tag not in game_state.variable_tags:
+        return {"success": False, "message": f"Tag '{tag}' not found"}
+    game_state.variable_tags.remove(tag)
+    await _mark_dirty()
+    return {"success": True, "message": f"Tag '{tag}' deleted"}
 
 
 # --- Map CRUD ---

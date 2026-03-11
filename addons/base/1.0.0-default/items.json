@@ -18,7 +18,7 @@
         "food"
       ],
       "description": "简单的饭团，携带方便",
-      "maxStack": 99,
+      "maxStack": 98,
       "sellable": true,
       "price": 8
     },

@@ -199,6 +199,53 @@ def load_action_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     return result
 
 
+def load_variable_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load derived variable definitions from addon directories, merged by id."""
+    result: dict[str, dict] = {}
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "variables.json")
+        for v in data.get("variables", []):
+            ns_id = namespace_id(addon_id, v["id"])
+            result[ns_id] = {**v, "id": ns_id, "_local_id": v["id"], "source": addon_id}
+    return result
+
+
+def load_variable_tags(data_dir_or_addons: Path | AddonDirs) -> list[str]:
+    """Load variable tag pool from all addon directories (union)."""
+    tags: list[str] = []
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for _, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "variables.json")
+        for tag in data.get("tags", []):
+            if tag not in tags:
+                tags.append(tag)
+    return tags
+
+
+def save_variable_defs_file(data_dir: Path, variables_list: list[dict]) -> None:
+    """Write variables.json (strips internal fields), preserving tags."""
+    clean = []
+    for v in variables_list:
+        entry = _strip_internal_fields(v)
+        entry["id"] = to_local_id(entry["id"])
+        clean.append(entry)
+    path = data_dir / "variables.json"
+    existing = _load_json_safe(path)
+    existing["variables"] = clean
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(existing, f, ensure_ascii=False, indent=2)
+
+
+def save_variable_tags_file(data_dir: Path, tags: list[str]) -> None:
+    """Write variable tag pool to variables.json, preserving variables."""
+    path = data_dir / "variables.json"
+    existing = _load_json_safe(path)
+    existing["tags"] = tags
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(existing, f, ensure_ascii=False, indent=2)
+
+
 def save_action_defs_file(data_dir: Path, actions_list: list[dict], addon_id: str = "") -> None:
     """Write game-specific actions.json (strips internal fields + de-namespaces refs)."""
     clean = []

@@ -1,4 +1,4 @@
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "maps" | "settings";
+type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "maps" | "settings";
 
 interface NavBarProps {
   navPage: NavPage | null;
@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
   { key: "clothing", label: "服装" },
   { key: "items", label: "物品" },
   { key: "actions", label: "行动" },
+  { key: "variables", label: "变量" },
   { key: "maps", label: "地图" },
   { key: "settings", label: "系统配置" },
 ];

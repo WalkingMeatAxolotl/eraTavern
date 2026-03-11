@@ -524,13 +524,6 @@
       "category": "bodyTrait",
       "description": "男性",
       "effects": []
-    },
-    {
-      "id": "woman",
-      "name": "女",
-      "category": "bodyTrait",
-      "description": "女性",
-      "effects": []
     }
   ],
   "traitGroups": [

@@ -296,6 +296,17 @@ def _evaluate_leaf(
                 return cl.get("state") == expected_state
         return False
 
+    if ctype == "variable":
+        var_id = cond.get("varId", "")
+        if not var_id or not hasattr(game_state, "variable_defs"):
+            return False
+        var_def = game_state.variable_defs.get(var_id)
+        if not var_def:
+            return False
+        from .variable_engine import evaluate_variable
+        var_value = evaluate_variable(var_def, check_char, game_state)
+        return _compare(var_value, cond.get("op", ">="), cond.get("value", 0))
+
     # Unknown condition type → pass
     return True
 
@@ -529,6 +540,96 @@ TICK_MINUTES = 5
 DISTANCE_PENALTY = 0.5  # desire reduction per minute of travel distance
 
 
+def _split_conditions(conditions: list) -> tuple[dict | None, dict | None, list]:
+    """Split conditions into (location_cond, npc_present_cond, hard_conds)."""
+    location_cond = None
+    npc_present_cond = None
+    hard_conds: list[dict] = []
+    for item in conditions:
+        if isinstance(item, dict) and item.get("type") == "location" and item.get("condTarget", "self") == "self":
+            location_cond = item
+        elif isinstance(item, dict) and item.get("type") == "npcPresent":
+            npc_present_cond = item
+        else:
+            hard_conds.append(item)
+    return location_cond, npc_present_cond, hard_conds
+
+
+def _expand_location_cells(location_cond: dict, maps: dict) -> list[tuple[str, int]]:
+    """Expand a location condition to a list of (mapId, cellId) tuples."""
+    target_map = location_cond.get("mapId", "")
+    if not target_map:
+        return []
+    target_cells = list(location_cond.get("cellIds", []))
+    cell_tags = location_cond.get("cellTags", [])
+    if cell_tags:
+        map_data = maps.get(target_map)
+        if map_data:
+            for cd in map_data.get("cells", []):
+                if any(t in cd.get("tags", []) for t in cell_tags):
+                    if cd["id"] not in target_cells:
+                        target_cells.append(cd["id"])
+    if not target_cells:
+        # No specific cells = any cell in the map
+        map_data = maps.get(target_map)
+        if map_data:
+            target_cells = [cd["id"] for cd in map_data.get("cells", [])]
+    return [(target_map, cid) for cid in target_cells]
+
+
+def build_cell_action_index(
+    action_defs: dict, maps: dict
+) -> tuple[dict[tuple, list[dict]], list[dict]]:
+    """Build cell->actions inverted index and no-location actions list.
+
+    Returns (cell_action_index, no_location_actions).
+    cell_action_index: {(mapId, cellId): [action_def, ...]}
+    no_location_actions: [action_def, ...] (actions without location conditions)
+    """
+    index: dict[tuple, list[dict]] = {}
+    no_location: list[dict] = []
+
+    for action_def in action_defs.values():
+        if action_def.get("npcWeight", 0) <= 0:
+            continue
+        location_cond, _, _ = _split_conditions(action_def.get("conditions", []))
+        if location_cond:
+            cells = _expand_location_cells(location_cond, maps)
+            for cell_key in cells:
+                if cell_key not in index:
+                    index[cell_key] = []
+                index[cell_key].append(action_def)
+        else:
+            no_location.append(action_def)
+
+    return index, no_location
+
+
+def _build_suggest_map(game_state: Any, npc_id: str) -> tuple[dict[str, float], dict[str, float]]:
+    """Build suggest maps from NPC action history (suggestNext bonuses).
+
+    Returns (action_suggest, category_suggest):
+      action_suggest: actionId -> bonus (exact match)
+      category_suggest: category -> bonus (category match)
+    """
+    action_suggest: dict[str, float] = {}
+    category_suggest: dict[str, float] = {}
+    current_time = game_state.time.total_minutes
+    for record in game_state.npc_action_history.get(npc_id, []):
+        elapsed = current_time - record.get("completedAt", 0)
+        for s in record.get("suggestNext", []):
+            decay = s.get("decay", 0)
+            if decay > 0 and elapsed < decay:
+                bonus = s.get("bonus", 0) * (1 - elapsed / decay)
+                aid = s.get("actionId", "")
+                cat = s.get("category", "")
+                if aid:
+                    action_suggest[aid] = action_suggest.get(aid, 0) + bonus
+                elif cat:
+                    category_suggest[cat] = category_suggest.get(cat, 0) + bonus
+    return action_suggest, category_suggest
+
+
 def simulate_npc_ticks(
     game_state: Any, elapsed_minutes: int,
     exclude_id: str = "", exclude_ids: list[str] | None = None,
@@ -622,7 +723,7 @@ def _npc_tick(game_state: Any, npc_id: str) -> str | None:
 
 
 def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
-    """Evaluate all actions and pick the best one for this NPC."""
+    """Evaluate actions using cell-first traversal + per-target evaluation."""
     import random
 
     npc = game_state.characters.get(npc_id)
@@ -631,172 +732,156 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
 
     pos = npc["position"]
     pos_key = (pos["mapId"], pos["cellId"])
+
+    # 1. Build suggest maps (behavior memory)
+    action_suggest, category_suggest = _build_suggest_map(game_state, npc_id)
+
+    # 2. Distance matrix row
     dm = getattr(game_state, "distance_matrix", {})
-    distances_from_here = dm.get(pos_key, {})
+    dist_row = dm.get(pos_key, {})
 
-    candidates: list[tuple[float, dict, int, tuple | None, str | None]] = []
-    # (effective_desire, action_def, distance, target_pos, target_npc_id)
+    # 3. Group sensed characters by cell (sense_matrix limits NPC awareness)
+    sense_row = getattr(game_state, "sense_matrix", {}).get(pos_key, {})
+    cell_npcs: dict[tuple, list[tuple[str, dict]]] = {}
+    for cid, c in game_state.characters.items():
+        if cid == npc_id:
+            continue
+        c_pos = (c["position"]["mapId"], c["position"]["cellId"])
+        if c_pos not in sense_row:
+            continue  # not within sense range
+        if c_pos not in cell_npcs:
+            cell_npcs[c_pos] = []
+        cell_npcs[c_pos].append((cid, c))
 
-    for action_def in game_state.action_defs.values():
+    candidates: list[tuple[float, dict, int, tuple, str | None]] = []
+
+    # ========== A. Cell-first: iterate reachable cells ==========
+    cell_action_index = getattr(game_state, "cell_action_index", {})
+
+    for cell_key, entry in dist_row.items():
+        distance = entry[0]
+        cell_actions = cell_action_index.get(cell_key, [])
+        if not cell_actions:
+            continue
+
+        npcs_here = cell_npcs.get(cell_key, [])
+
+        for action_def in cell_actions:
+            npc_weight = action_def.get("npcWeight", 0)
+            target_type = action_def.get("targetType", "none")
+            _, npc_present_cond, hard_conds = _split_conditions(
+                action_def.get("conditions", [])
+            )
+
+            # Hard conditions (self-only check) — early exit
+            if hard_conds and not _evaluate_conditions(
+                hard_conds, npc, game_state, char_id=npc_id, skip_target_conds=True
+            ):
+                continue
+
+            if target_type == "npc" or npc_present_cond:
+                # === Per-Target evaluation ===
+                required_npc = npc_present_cond.get("npcId") if npc_present_cond else None
+                for tid, tchar in npcs_here:
+                    if required_npc and tid != required_npc:
+                        continue
+                    # Re-check hard_conds with target (for condTarget="target" conditions)
+                    if hard_conds and not _evaluate_conditions(
+                        hard_conds, npc, game_state, target_id=tid, char_id=npc_id
+                    ):
+                        continue
+                    add, mul = _calc_modifier_bonus(
+                        action_def.get("npcWeightModifiers", []),
+                        npc, game_state, npc_id, tid,
+                    )
+                    desire = (npc_weight + add) * mul
+                    desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
+                    effective = desire - distance * DISTANCE_PENALTY
+                    if effective > 0:
+                        jitter = effective * random.uniform(-0.1, 0.1)
+                        candidates.append((effective + jitter, action_def, distance, cell_key, tid))
+            else:
+                # === No-target location action ===
+                add, mul = _calc_modifier_bonus(
+                    action_def.get("npcWeightModifiers", []),
+                    npc, game_state, npc_id, None,
+                )
+                desire = (npc_weight + add) * mul
+                desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
+                effective = desire - distance * DISTANCE_PENALTY
+                if effective > 0:
+                    jitter = effective * random.uniform(-0.1, 0.1)
+                    candidates.append((effective + jitter, action_def, distance, cell_key, None))
+
+    # ========== B. No-location actions ==========
+    no_location_actions = getattr(game_state, "no_location_actions", [])
+
+    for action_def in no_location_actions:
         npc_weight = action_def.get("npcWeight", 0)
-        if npc_weight <= 0:
-            continue
-
-        npc_add, npc_mul = _calc_modifier_bonus(
-            action_def.get("npcWeightModifiers", []), npc,
-            game_state, npc_id, None
-        )
-        desire = (npc_weight + npc_add) * npc_mul
-        if desire <= 0:
-            continue
-
-        # Evaluate conditions, categorize failures
         target_type = action_def.get("targetType", "none")
         conditions = action_def.get("conditions", [])
+        _, npc_present_cond, hard_conds = _split_conditions(conditions)
 
-        # Try to find a viable way to execute this action
-        result = _evaluate_action_viability(
-            action_def, conditions, npc, game_state, npc_id,
-            pos_key, distances_from_here, target_type
-        )
-        if result is None:
-            continue  # impossible (hard condition failure)
-
-        distance, target_pos, target_npc_id = result
-        effective = desire - distance * DISTANCE_PENALTY
-        if effective <= 0:
+        # Hard conditions (self-only) first
+        if hard_conds and not _evaluate_conditions(
+            hard_conds, npc, game_state, char_id=npc_id, skip_target_conds=True
+        ):
             continue
 
-        # Add random jitter (±10%) to break ties
-        jitter = effective * random.uniform(-0.1, 0.1)
-        candidates.append((effective + jitter, action_def, distance, target_pos, target_npc_id))
+        if target_type == "npc" or npc_present_cond:
+            # Per-target: iterate all cells with NPCs
+            required_npc = npc_present_cond.get("npcId") if npc_present_cond else None
+            for cell_key, npcs_in_cell in cell_npcs.items():
+                cell_dist = dist_row.get(cell_key, (9999,))[0]
+                for tid, tchar in npcs_in_cell:
+                    if required_npc and tid != required_npc:
+                        continue
+                    if hard_conds and not _evaluate_conditions(
+                        hard_conds, npc, game_state, target_id=tid, char_id=npc_id
+                    ):
+                        continue
+                    add, mul = _calc_modifier_bonus(
+                        action_def.get("npcWeightModifiers", []),
+                        npc, game_state, npc_id, tid,
+                    )
+                    desire = (npc_weight + add) * mul
+                    desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
+                    effective = desire - cell_dist * DISTANCE_PENALTY
+                    if effective > 0:
+                        jitter = effective * random.uniform(-0.1, 0.1)
+                        candidates.append((effective + jitter, action_def, cell_dist, cell_key, tid))
+        else:
+            # No target, no location — evaluate at current position (distance=0)
+            if not _evaluate_conditions(conditions, npc, game_state, char_id=npc_id):
+                continue
+            add, mul = _calc_modifier_bonus(
+                action_def.get("npcWeightModifiers", []),
+                npc, game_state, npc_id, None,
+            )
+            desire = (npc_weight + add) * mul
+            desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
+            if desire > 0:
+                jitter = desire * random.uniform(-0.1, 0.1)
+                candidates.append((desire + jitter, action_def, 0, pos_key, None))
 
+    # 4. Select best candidate
     if not candidates:
         game_state.npc_activities[npc_id] = "待机中"
         return None
 
-    # Sort by effective desire descending, pick the best
     candidates.sort(key=lambda x: -x[0])
     _, best_def, best_dist, target_pos, target_npc_id = candidates[0]
 
     if best_dist == 0:
-        # Can execute immediately
         return _npc_start_action(game_state, npc_id, best_def, target_npc_id)
     else:
-        # Need to move first
         game_state.npc_goals[npc_id] = {
             "actionId": best_def["id"],
             "targetPos": {"mapId": target_pos[0], "cellId": target_pos[1]} if target_pos else None,
             "targetNpcId": target_npc_id,
         }
-        game_state.npc_activities[npc_id] = f"正在前往..."
+        game_state.npc_activities[npc_id] = "正在前往..."
         return None
-
-
-def _evaluate_action_viability(
-    action_def: dict, conditions: list, npc: dict, game_state: Any,
-    npc_id: str, pos_key: tuple, distances: dict,
-    target_type: str,
-) -> tuple[int, tuple | None, str | None] | None:
-    """Check if an NPC can do this action (possibly after moving).
-
-    Returns (distance, target_pos, target_npc_id) or None if impossible.
-    """
-    # Separate conditions into location-resolvable and hard requirements
-    location_cond = None
-    npc_present_cond = None
-    hard_conds: list[dict] = []
-
-    for item in conditions:
-        # Only handle leaf conditions for location/npcPresent detection
-        if isinstance(item, dict) and item.get("type") == "location" and item.get("condTarget", "self") == "self":
-            location_cond = item
-        elif isinstance(item, dict) and item.get("type") == "npcPresent":
-            npc_present_cond = item
-        else:
-            hard_conds.append(item)
-
-    # Check hard conditions first (can't be solved by moving)
-    if hard_conds:
-        if not _evaluate_conditions(hard_conds, npc, game_state, char_id=npc_id):
-            return None
-
-    # Determine target position and distance
-    target_npc_id: str | None = None
-
-    if location_cond:
-        target_map = location_cond.get("mapId", "")
-        target_cells = list(location_cond.get("cellIds", []))
-        if not target_map:
-            return None
-        # Expand tags to cell IDs
-        cell_tags = location_cond.get("cellTags", [])
-        if cell_tags:
-            map_data = game_state.maps.get(target_map)
-            if map_data:
-                for cd in map_data.get("cells", []):
-                    if any(t in cd.get("tags", []) for t in cell_tags):
-                        if cd["id"] not in target_cells:
-                            target_cells.append(cd["id"])
-        # Find closest matching cell
-        best_dist = float("inf")
-        best_pos = None
-        check_cells = target_cells if target_cells else [
-            cid for cid in game_state.maps.get(target_map, {}).get("cell_index", {})
-        ]
-        for cell_id in check_cells:
-            dest_key = (target_map, cell_id)
-            if dest_key in distances:
-                d = distances[dest_key][0]
-                if d < best_dist:
-                    best_dist = d
-                    best_pos = dest_key
-        if best_pos is None:
-            return None  # unreachable
-        return (int(best_dist), best_pos, None)
-
-    if target_type == "npc" or npc_present_cond:
-        # Find an NPC to interact with
-        required_npc = npc_present_cond.get("npcId") if npc_present_cond else None
-        best_dist = float("inf")
-        best_pos = None
-        best_npc = None
-        for cid, c in game_state.characters.items():
-            if cid == npc_id or c.get("isPlayer"):
-                continue
-            if required_npc and cid != required_npc:
-                continue
-            cpos = c["position"]
-            dest_key = (cpos["mapId"], cpos["cellId"])
-            if dest_key in distances:
-                d = distances[dest_key][0]
-                if d < best_dist:
-                    best_dist = d
-                    best_pos = dest_key
-                    best_npc = cid
-        # Also consider player as potential target
-        for cid, c in game_state.characters.items():
-            if not c.get("isPlayer"):
-                continue
-            if required_npc and cid != required_npc:
-                continue
-            cpos = c["position"]
-            dest_key = (cpos["mapId"], cpos["cellId"])
-            if dest_key in distances:
-                d = distances[dest_key][0]
-                if d < best_dist:
-                    best_dist = d
-                    best_pos = dest_key
-                    best_npc = cid
-        if best_npc is None:
-            return None
-        target_npc_id = best_npc
-        return (int(best_dist), best_pos, target_npc_id)
-
-    # No location/npc requirement — check all conditions at current position
-    if not _evaluate_conditions(conditions, npc, game_state, char_id=npc_id):
-        return None
-    return (0, None, None)
 
 
 def _npc_start_action(
@@ -891,6 +976,27 @@ def _npc_complete_action(
         text = f"{text}\n{auto_line}" if text else auto_line
 
     game_state.npc_activities[npc_id] = text or action_def["name"]
+
+    # Record suggestNext from outcome into action history
+    if outcome:
+        suggest_next = outcome.get("suggestNext")
+        if suggest_next:
+            current_time = game_state.time.total_minutes
+            history = game_state.npc_action_history.get(npc_id, [])
+            # Clean expired records (all suggestNext past their decay)
+            history = [
+                r for r in history
+                if any(
+                    (current_time - r.get("completedAt", 0)) < s.get("decay", 0)
+                    for s in r.get("suggestNext", [])
+                )
+            ]
+            history.append({
+                "actionId": action_def["id"],
+                "suggestNext": suggest_next,
+                "completedAt": current_time,
+            })
+            game_state.npc_action_history[npc_id] = history
 
     return text
 
@@ -1063,6 +1169,16 @@ def _calc_modifier_bonus(
             per = mod.get("per", 1)
             if per > 0:
                 raw_bonus = (fav_val // per) * bonus
+        elif mtype == "variable":
+            var_id = mod.get("varId", "")
+            if var_id and hasattr(game_state, "variable_defs"):
+                var_def = game_state.variable_defs.get(var_id)
+                if var_def:
+                    from .variable_engine import evaluate_variable
+                    var_value = evaluate_variable(var_def, char, game_state)
+                    per = mod.get("per", 1)
+                    if per > 0:
+                        raw_bonus = (int(var_value) // per) * bonus
 
         if mode == "multiply":
             mul_total *= (1 + raw_bonus / 100)
@@ -1128,6 +1244,21 @@ def _apply_costs(costs: list[dict], char: dict) -> None:
                     break
 
 
+def _resolve_effect_value(eff: dict, char: dict, game_state: Any) -> float:
+    """Resolve effect value: if it's a dict with varId, evaluate the variable; otherwise return the number."""
+    raw = eff.get("value", 0)
+    if isinstance(raw, dict):
+        var_id = raw.get("varId", "")
+        if var_id and hasattr(game_state, "variable_defs"):
+            var_def = game_state.variable_defs.get(var_id)
+            if var_def:
+                from .variable_engine import evaluate_variable
+                result = evaluate_variable(var_def, char, game_state)
+                return result * raw.get("multiply", 1)
+        return 0
+    return raw
+
+
 def _apply_effects(
     effects: list[dict], char: dict, game_state: Any,
     char_id: str, target_id: str | None
@@ -1168,7 +1299,7 @@ def _apply_effects(
 
         if etype == "resource":
             key = eff.get("key", "")
-            value = int((eff.get("value", 0) + value_mod_add) * value_mod_mul)
+            value = int((_resolve_effect_value(eff, char, game_state) + value_mod_add) * value_mod_mul)
             is_pct = eff.get("valuePercent", False)
             res = target_char.get("resources", {}).get(key)
             if res:
@@ -1185,7 +1316,7 @@ def _apply_effects(
 
         elif etype == "ability":
             key = eff.get("key", "")
-            value = int((eff.get("value", 0) + value_mod_add) * value_mod_mul)
+            value = int((_resolve_effect_value(eff, char, game_state) + value_mod_add) * value_mod_mul)
             is_pct = eff.get("valuePercent", False)
             for ab in target_char.get("abilities", []):
                 if ab["key"] == key:
@@ -1205,7 +1336,7 @@ def _apply_effects(
 
         elif etype == "basicInfo":
             key = eff.get("key", "")
-            value = int((eff.get("value", 0) + value_mod_add) * value_mod_mul)
+            value = int((_resolve_effect_value(eff, char, game_state) + value_mod_add) * value_mod_mul)
             is_pct = eff.get("valuePercent", False)
             info = target_char.get("basicInfo", {}).get(key)
             if info and info.get("type") == "number":
@@ -1246,7 +1377,7 @@ def _apply_effects(
             if not fav_from_id or not fav_to_id:
                 continue
 
-            value = int((eff.get("value", 0) + value_mod_add) * value_mod_mul)
+            value = int((_resolve_effect_value(eff, char, game_state) + value_mod_add) * value_mod_mul)
             is_pct = eff.get("valuePercent", False)
             # Update: fav_from's favorability towards fav_to
             from_data = game_state.character_data.get(fav_from_id, {})

@@ -28,11 +28,12 @@ import TraitManager from "./components/TraitManager";
 import ClothingManager from "./components/ClothingManager";
 import ItemManager from "./components/ItemManager";
 import ActionManager from "./components/ActionManager";
+import VariableManager from "./components/VariableManager";
 import MapManager from "./components/MapManager";
 import SettingsPage from "./components/SettingsPage";
 import FloatingActions from "./components/FloatingActions";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "maps" | "settings";
+type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "maps" | "settings";
 
 export default function App() {
   const [config, setConfig] = useState<AppConfig>({ maxWidth: 1200 });
@@ -276,6 +277,7 @@ export default function App() {
     if (navPage === "clothing") return <>{addonTab}<ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
     if (navPage === "items") return <>{addonTab}<ItemManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
     if (navPage === "actions") return <>{addonTab}<ActionManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
+    if (navPage === "variables") return <>{addonTab}<VariableManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
     if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
     if (navPage === "settings") {
       return <SettingsPage
