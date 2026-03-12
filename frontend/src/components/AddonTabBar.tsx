@@ -1,3 +1,5 @@
+import T from "../theme";
+
 interface AddonTabBarProps {
   addons: { id: string; version: string }[];
   selectedAddon: string | null; // null = "全部(只读)"
@@ -6,7 +8,7 @@ interface AddonTabBarProps {
 
 const tabBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #333",
+  border: `1px solid ${T.border}`,
   borderBottom: "none",
   borderRadius: "4px 4px 0 0",
   cursor: "pointer",
@@ -22,7 +24,7 @@ export default function AddonTabBar({ addons, selectedAddon, onSelect }: AddonTa
     <div style={{
       display: "flex",
       gap: "2px",
-      borderBottom: "1px solid #333",
+      borderBottom: `1px solid ${T.border}`,
       marginBottom: "8px",
       flexWrap: "wrap",
     }}>
@@ -30,9 +32,9 @@ export default function AddonTabBar({ addons, selectedAddon, onSelect }: AddonTa
         onClick={() => onSelect(null)}
         style={{
           ...tabBase,
-          backgroundColor: selectedAddon === null ? "#16213e" : "transparent",
-          color: selectedAddon === null ? "#e94560" : "#666",
-          borderColor: selectedAddon === null ? "#333" : "#222",
+          backgroundColor: selectedAddon === null ? T.bg2 : "transparent",
+          color: selectedAddon === null ? T.accent : T.textDim,
+          borderColor: selectedAddon === null ? T.border : T.borderDim,
         }}
       >
         [全部(只读)]
@@ -43,9 +45,9 @@ export default function AddonTabBar({ addons, selectedAddon, onSelect }: AddonTa
           onClick={() => onSelect(a.id)}
           style={{
             ...tabBase,
-            backgroundColor: selectedAddon === a.id ? "#16213e" : "transparent",
-            color: selectedAddon === a.id ? "#e94560" : "#888",
-            borderColor: selectedAddon === a.id ? "#333" : "#222",
+            backgroundColor: selectedAddon === a.id ? T.bg2 : "transparent",
+            color: selectedAddon === a.id ? T.accent : T.textSub,
+            borderColor: selectedAddon === a.id ? T.border : T.borderDim,
           }}
         >
           {a.id}

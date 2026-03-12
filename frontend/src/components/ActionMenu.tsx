@@ -1,3 +1,4 @@
+import T from "../theme";
 import { useMemo, useState } from "react";
 import type { GameAction } from "../types/game";
 
@@ -62,7 +63,7 @@ export default function ActionMenu({
     textAlign: "left",
     padding: "4px 8px",
     marginBottom: "2px",
-    border: "1px solid #333",
+    border: `1px solid ${T.border}`,
     fontFamily: "monospace",
     fontSize: "13px",
   };
@@ -70,9 +71,9 @@ export default function ActionMenu({
   const tabStyle = (tab: string): React.CSSProperties => ({
     padding: "3px 8px",
     backgroundColor: "transparent",
-    color: activeTab === tab ? "#e94560" : "#888",
+    color: activeTab === tab ? T.accent : T.textSub,
     border: "none",
-    borderBottom: activeTab === tab ? "2px solid #e94560" : "2px solid transparent",
+    borderBottom: activeTab === tab ? `2px solid ${T.accent}` : "2px solid transparent",
     cursor: "pointer",
     fontFamily: "monospace",
     fontSize: "12px",
@@ -84,16 +85,16 @@ export default function ActionMenu({
       style={{
         fontFamily: "monospace",
         fontSize: "13px",
-        color: "#ddd",
-        backgroundColor: "#1a1a2e",
+        color: T.text,
+        backgroundColor: T.bg1,
         padding: "12px",
         borderRadius: "4px",
       }}
     >
       <div
         style={{
-          color: "#e94560",
-          borderBottom: "1px solid #333",
+          color: T.accent,
+          borderBottom: `1px solid ${T.border}`,
           marginBottom: "4px",
           paddingBottom: "2px",
           fontWeight: "bold",
@@ -104,7 +105,7 @@ export default function ActionMenu({
 
       {/* Category tabs */}
       {tabs.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", borderBottom: "1px solid #333", marginBottom: "8px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", borderBottom: `1px solid ${T.border}`, marginBottom: "8px" }}>
           <button style={tabStyle(ALL_TAB)} onClick={() => setActiveTab(ALL_TAB)}>
             [全部]
           </button>
@@ -119,7 +120,7 @@ export default function ActionMenu({
       {/* Move */}
       {showMove && moveAction && moveAction.targets && (
         <div style={{ marginBottom: "8px" }}>
-          {activeTab === ALL_TAB && <div style={{ color: "#aaa", marginBottom: "4px" }}>移动:</div>}
+          {activeTab === ALL_TAB && <div style={{ color: T.textSub, marginBottom: "4px" }}>移动:</div>}
           {moveAction.targets.map((target, idx) => (
             <button
               key={`${target.targetMap || ""}-${target.targetCell}`}
@@ -127,15 +128,15 @@ export default function ActionMenu({
               disabled={disabled}
               style={{
                 ...btnBase,
-                backgroundColor: disabled ? "#222" : "#16213e",
-                color: disabled ? "#666" : "#0ff",
+                backgroundColor: disabled ? T.borderDim : T.bg2,
+                color: disabled ? T.textDim : T.actionMove,
                 cursor: disabled ? "not-allowed" : "pointer",
               }}
             >
               [{idx + 1}]{" "}
               {target.targetMapName ? `${target.targetMapName} - ` : ""}
               {target.targetCellName}
-              <span style={{ color: "#888", fontSize: "11px" }}> ({target.travelTime ?? 10}分)</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}> ({target.travelTime ?? 10}分)</span>
             </button>
           ))}
         </div>
@@ -144,7 +145,7 @@ export default function ActionMenu({
       {/* Look */}
       {showLook && lookAction && lookAction.targets && (
         <div style={{ marginBottom: "8px" }}>
-          {activeTab === ALL_TAB && <div style={{ color: "#aaa", marginBottom: "4px" }}>查看:</div>}
+          {activeTab === ALL_TAB && <div style={{ color: T.textSub, marginBottom: "4px" }}>查看:</div>}
           {lookAction.targets.map((target, idx) => (
             <button
               key={`look-${target.targetMap || ""}-${target.targetCell}`}
@@ -152,8 +153,8 @@ export default function ActionMenu({
               disabled={disabled}
               style={{
                 ...btnBase,
-                backgroundColor: disabled ? "#222" : "#16213e",
-                color: disabled ? "#666" : "#6ec6ff",
+                backgroundColor: disabled ? T.borderDim : T.bg2,
+                color: disabled ? T.textDim : T.actionLook,
                 cursor: disabled ? "not-allowed" : "pointer",
               }}
             >
@@ -170,7 +171,7 @@ export default function ActionMenu({
         const catActions = grouped[cat] || [];
         return (
           <div key={cat} style={{ marginBottom: "8px" }}>
-            {activeTab === ALL_TAB && <div style={{ color: "#aaa", marginBottom: "4px" }}>{cat}:</div>}
+            {activeTab === ALL_TAB && <div style={{ color: T.textSub, marginBottom: "4px" }}>{cat}:</div>}
             {catActions.map((action) => {
               const needsNpc = action.targetType === "npc";
               const isDisabled = disabled || action.enabled === false || (needsNpc && !selectedNpcId);
@@ -189,15 +190,15 @@ export default function ActionMenu({
                   title={tooltip}
                   style={{
                     ...btnBase,
-                    backgroundColor: isDisabled ? "#222" : "#16213e",
-                    color: isDisabled ? "#666" : "#ff0",
+                    backgroundColor: isDisabled ? T.borderDim : T.bg2,
+                    color: isDisabled ? T.textDim : T.actionConfigured,
                     cursor: isDisabled ? "not-allowed" : "pointer",
                   }}
                 >
                   {action.name}
-                  {needsNpc && <span style={{ color: "#888", fontSize: "11px" }}> [NPC]</span>}
+                  {needsNpc && <span style={{ color: T.textSub, fontSize: "11px" }}> [NPC]</span>}
                   {action.enabled === false && action.disabledReason && (
-                    <span style={{ color: "#e94560", fontSize: "11px", marginLeft: "6px" }}>
+                    <span style={{ color: T.danger, fontSize: "11px", marginLeft: "6px" }}>
                       ({action.disabledReason})
                     </span>
                   )}
@@ -209,7 +210,7 @@ export default function ActionMenu({
       })}
 
       {actions.length === 0 && (
-        <div style={{ color: "#666" }}>无可用行动</div>
+        <div style={{ color: T.textDim }}>无可用行动</div>
       )}
     </div>
   );

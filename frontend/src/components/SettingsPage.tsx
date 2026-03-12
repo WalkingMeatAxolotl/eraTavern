@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchBackups, restoreBackup } from "../api/client";
+import T from "../theme";
 
 interface Props {
   worldId: string;
@@ -40,9 +41,9 @@ export default function SettingsPage({ worldId, onRestart, onWorldChanged, setti
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontFamily: "monospace", fontSize: "13px", color: "#ddd" }}>
-      <div style={{ color: "#e94560", fontSize: "15px", fontWeight: "bold" }}>
-        == 系统设置 ==
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontFamily: "monospace", fontSize: "13px", color: T.text }}>
+      <div style={{ color: T.accent, fontSize: "15px", fontWeight: "bold" }}>
+        == 世界设置 ==
       </div>
 
       {/* Restart */}
@@ -51,14 +52,14 @@ export default function SettingsPage({ worldId, onRestart, onWorldChanged, setti
           onClick={onRestart}
           style={{
             ...settingsBtnStyle,
-            background: "#3d0a0a",
-            color: "#f88",
-            borderColor: "#6a2a2a",
+            background: T.dangerBg,
+            color: T.danger,
+            borderColor: `${T.danger}66`,
           }}
         >
           [重新开始游戏]
         </button>
-        <span style={{ marginLeft: "8px", fontSize: "12px", color: "#666" }}>
+        <span style={{ marginLeft: "8px", fontSize: "12px", color: T.textDim }}>
           重新加载所有数据，重置时间和角色状态
         </span>
       </div>
@@ -66,19 +67,19 @@ export default function SettingsPage({ worldId, onRestart, onWorldChanged, setti
       {/* Backup & Rollback */}
       {worldId && (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ color: "#e94560", fontSize: "14px", fontWeight: "bold" }}>
+          <div style={{ color: T.accent, fontSize: "14px", fontWeight: "bold" }}>
             -- 备份与回滚 --
           </div>
-          <div style={{ color: "#888", fontSize: "12px", lineHeight: "1.6" }}>
+          <div style={{ color: T.textSub, fontSize: "12px", lineHeight: "1.6" }}>
             每次 [保存变更] 时自动创建备份（保留最近 5 份）。
             <br />
             回滚将恢复世界设置（addon 列表、实体定义）到备份时的状态。
             <br />
-            <span style={{ color: "#666" }}>注意：回滚不影响运行时存档数据（位置、库存等）。</span>
+            <span style={{ color: T.textDim }}>注意：回滚不影响运行时存档数据（位置、库存等）。</span>
           </div>
 
           {backups.length === 0 ? (
-            <div style={{ color: "#666", fontSize: "12px", padding: "4px 0" }}>
+            <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>
               暂无备份
             </div>
           ) : (
@@ -91,20 +92,20 @@ export default function SettingsPage({ worldId, onRestart, onWorldChanged, setti
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "6px 10px",
-                    backgroundColor: "#0a0a1a",
-                    border: "1px solid #222",
+                    backgroundColor: T.bg3,
+                    border: `1px solid ${T.borderDim}`,
                     borderRadius: "3px",
                   }}
                 >
-                  <span style={{ color: "#aaa", fontSize: "12px" }}>{ts}</span>
+                  <span style={{ color: T.textSub, fontSize: "12px" }}>{ts}</span>
                   <button
                     onClick={() => handleRestore(ts)}
                     disabled={restoring}
                     style={{
                       padding: "3px 10px",
-                      backgroundColor: "#16213e",
-                      color: "#e94560",
-                      border: "1px solid #333",
+                      backgroundColor: T.bg2,
+                      color: T.accent,
+                      border: `1px solid ${T.border}`,
                       borderRadius: "3px",
                       cursor: restoring ? "not-allowed" : "pointer",
                       fontFamily: "monospace",
@@ -119,7 +120,7 @@ export default function SettingsPage({ worldId, onRestart, onWorldChanged, setti
           )}
 
           {message && (
-            <span style={{ color: message === "已回滚" ? "#0f0" : "#e94560", fontSize: "12px" }}>
+            <span style={{ color: message === "已回滚" ? T.success : T.accent, fontSize: "12px" }}>
               {message}
             </span>
           )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { AddonInfo } from "../types/game";
 import { fetchAddons, fetchAddonVersions, forkAddon } from "../api/client";
+import T from "../theme";
 
 interface AddonSidebarProps {
   enabledAddons: { id: string; version: string }[];
@@ -34,15 +35,15 @@ function ToggleSwitch({ enabled, onChange }: { enabled: boolean; onChange: () =>
       onClick={(e) => { e.stopPropagation(); onChange(); }}
       style={{
         width: "34px", height: "18px", borderRadius: "9px",
-        border: `1.5px solid ${enabled ? "#e94560" : "#555"}`,
-        background: enabled ? "#e9456030" : "#1a1a2e",
+        border: `1.5px solid ${enabled ? T.accent : T.textFaint}`,
+        background: enabled ? `${T.accent}30` : T.bg1,
         position: "relative", cursor: "pointer", padding: 0,
         transition: "all 0.2s",
       }}
     >
       <div style={{
         width: "12px", height: "12px", borderRadius: "50%",
-        background: enabled ? "#e94560" : "#555",
+        background: enabled ? T.accent : T.textFaint,
         position: "absolute", top: "2px",
         left: enabled ? "18px" : "2px",
         transition: "all 0.2s",
@@ -66,7 +67,7 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: "#141428", border: "1px solid #444", borderRadius: "8px",
+          backgroundColor: T.bg2, border: `1px solid ${T.textFaint}`, borderRadius: "8px",
           padding: "24px", width: "380px", maxWidth: "90vw",
           display: "flex", flexDirection: "column", gap: "16px",
           fontFamily: "monospace", boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
@@ -84,11 +85,11 @@ function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onCance
 }) {
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: "#eee", fontSize: "14px", fontWeight: "bold" }}>{title}</div>
-      <div style={{ color: "#bbb", fontSize: "12px", lineHeight: 1.6 }}>{message}</div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{title}</div>
+      <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>{message}</div>
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button onClick={onCancel} style={modalBtnStyle("#222", "#aaa")}>取消</button>
-        <button onClick={onConfirm} style={modalBtnStyle(danger ? "#3d1520" : "#153025", danger ? "#e94560" : "#8f8")}>
+        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>取消</button>
+        <button onClick={onConfirm} style={modalBtnStyle(danger ? T.dangerBg : T.bg2, danger ? T.danger : T.success)}>
           {confirmLabel}
         </button>
       </div>
@@ -106,30 +107,30 @@ function ForkModal({ addon, worldId, onChoice, onCancel }: {
   };
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: "#eee", fontSize: "14px", fontWeight: "bold" }}>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>
         启用 Add-on
       </div>
-      <div style={{ color: "#bbb", fontSize: "12px" }}>
-        首次在此世界启用 <span style={{ color: "#e94560", fontWeight: "bold" }}>{addon.name}</span>
+      <div style={{ color: T.text, fontSize: "12px" }}>
+        首次在此世界启用 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>
       </div>
       <button onClick={() => onChoice(true)}
-        style={{ ...choiceBtn, backgroundColor: "#0f2e1a", color: "#7dce82" }}
+        style={{ ...choiceBtn, backgroundColor: T.bg3, color: T.success, border: `1px solid ${T.successDim}` }}
       >
         <div style={{ fontWeight: "bold", marginBottom: "4px" }}>创建世界专属分支</div>
-        <div style={{ color: "#5a9060", fontSize: "11px" }}>
-          复制为 <span style={{ color: "#7dce82" }}>v{addon.version}-{worldId}</span>，修改不影响其他世界
+        <div style={{ color: T.successDim, fontSize: "11px" }}>
+          复制为 <span style={{ color: T.success }}>v{addon.version}-{worldId}</span>，修改不影响其他世界
         </div>
       </button>
       <button onClick={() => onChoice(false)}
-        style={{ ...choiceBtn, backgroundColor: "#2e200f", color: "#ceaa5a" }}
+        style={{ ...choiceBtn, backgroundColor: T.bg3, color: T.accent, border: `1px solid ${T.accentDim}` }}
       >
         <div style={{ fontWeight: "bold", marginBottom: "4px" }}>直接使用原版本</div>
-        <div style={{ color: "#907a40", fontSize: "11px" }}>
-          使用 <span style={{ color: "#ceaa5a" }}>v{addon.version}</span>，修改会影响所有使用此版本的世界
+        <div style={{ color: T.accentDim, fontSize: "11px" }}>
+          使用 <span style={{ color: T.accent }}>v{addon.version}</span>，修改会影响所有使用此版本的世界
         </div>
       </button>
       <button onClick={onCancel}
-        style={{ ...choiceBtn, backgroundColor: "transparent", color: "#888", border: "1px solid #444", textAlign: "center", padding: "8px" }}
+        style={{ ...choiceBtn, backgroundColor: "transparent", color: T.textSub, border: `1px solid ${T.textFaint}`, textAlign: "center", padding: "8px" }}
       >
         取消
       </button>
@@ -139,7 +140,7 @@ function ForkModal({ addon, worldId, onChoice, onCancel }: {
 
 function modalBtnStyle(bg: string, color: string): React.CSSProperties {
   return {
-    padding: "7px 16px", backgroundColor: bg, color, border: "1px solid #444",
+    padding: "7px 16px", backgroundColor: bg, color, border: `1px solid ${T.textFaint}`,
     borderRadius: "4px", cursor: "pointer", fontFamily: "monospace", fontSize: "12px",
   };
 }
@@ -177,7 +178,7 @@ function VersionBranches({ addonId, committedVersion, selectedVersion, onSwitch 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-      <div style={{ color: "#aaa", fontSize: "10px", marginBottom: "2px", fontWeight: "bold" }}>
+      <div style={{ color: T.textSub, fontSize: "10px", marginBottom: "2px", fontWeight: "bold" }}>
         切换版本
       </div>
       {paged.map((ver) => {
@@ -192,8 +193,8 @@ function VersionBranches({ addonId, committedVersion, selectedVersion, onSwitch 
             style={{
               display: "flex", alignItems: "center", gap: "8px",
               padding: "5px 8px", borderRadius: "4px",
-              backgroundColor: isCurrent ? "#1a2a50" : "#10101e",
-              border: `1px solid ${isCurrent ? "#2a4a80" : "#222"}`,
+              backgroundColor: isCurrent ? T.bg2 : T.bg1,
+              border: `1px solid ${isCurrent ? T.borderLight : T.borderDim}`,
               cursor: isCurrent ? "default" : "pointer",
               fontSize: "11px",
             }}
@@ -201,13 +202,13 @@ function VersionBranches({ addonId, committedVersion, selectedVersion, onSwitch 
             {/* Radio-style indicator */}
             <div style={{
               width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0,
-              border: `2px solid ${isCurrent ? "#e94560" : "#555"}`,
-              backgroundColor: isCurrent ? "#e94560" : "transparent",
+              border: `2px solid ${isCurrent ? T.accent : T.textFaint}`,
+              backgroundColor: isCurrent ? T.accent : "transparent",
             }} />
 
             {/* Version string */}
             <span style={{
-              color: isCurrent ? "#eee" : "#ccc",
+              color: isCurrent ? T.text : T.text,
               fontWeight: isCurrent ? "bold" : "normal",
               flex: 1,
             }}>
@@ -215,8 +216,8 @@ function VersionBranches({ addonId, committedVersion, selectedVersion, onSwitch 
             </span>
 
             {/* Tag */}
-            {isCurrent && <Tag color="#e94560">当前</Tag>}
-            {isBase && !isCurrent && <Tag color="#999">本体</Tag>}
+            {isCurrent && <Tag color={T.accent}>当前</Tag>}
+            {isBase && !isCurrent && <Tag color={T.textSub}>本体</Tag>}
             {isForkVer && !isCurrent && !isBase && <Tag color="#6ab">分支</Tag>}
           </div>
         );
@@ -225,7 +226,7 @@ function VersionBranches({ addonId, committedVersion, selectedVersion, onSwitch 
       {totalPages > 1 && (
         <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "center", marginTop: "4px" }}>
           <PagerBtn disabled={page === 0} onClick={() => setPage(p => p - 1)}>&lt;</PagerBtn>
-          <span style={{ color: "#888", fontSize: "10px" }}>{page + 1} / {totalPages}</span>
+          <span style={{ color: T.textSub, fontSize: "10px" }}>{page + 1} / {totalPages}</span>
           <PagerBtn disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>&gt;</PagerBtn>
         </div>
       )}
@@ -250,8 +251,8 @@ function PagerBtn({ disabled, onClick, children }: { disabled: boolean; onClick:
     <button
       disabled={disabled} onClick={onClick}
       style={{
-        background: "none", border: "1px solid #444",
-        color: disabled ? "#333" : "#aaa",
+        background: "none", border: `1px solid ${T.textFaint}`,
+        color: disabled ? T.border : T.textSub,
         cursor: disabled ? "default" : "pointer",
         padding: "2px 8px", borderRadius: "3px",
         fontFamily: "monospace", fontSize: "10px",
@@ -361,18 +362,18 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
       )}
 
       <div style={{
-        width: "100%", height: "100vh", borderLeft: "1px solid #333",
+        width: "100%", height: "100vh", borderLeft: `1px solid ${T.border}`,
         display: "flex", flexDirection: "column", fontSize: "12px",
         overflow: "hidden", paddingTop: 40, boxSizing: "border-box",
-        backgroundColor: "#0d0d1a",
+        backgroundColor: T.bg0,
       }}>
         {/* Header */}
         <div style={{
-          padding: "10px 12px", borderBottom: "1px solid #252535",
+          padding: "10px 12px", borderBottom: `1px solid ${T.borderDim}`,
           display: "flex", alignItems: "center", gap: "6px",
         }}>
-          <span style={{ color: "#e94560", fontSize: "13px", fontWeight: "bold" }}>Add-on</span>
-          <span style={{ color: "#666", fontSize: "11px" }}>({allAddons.length})</span>
+          <span style={{ color: T.accent, fontSize: "13px", fontWeight: "bold" }}>Add-on</span>
+          <span style={{ color: T.textDim, fontSize: "11px" }}>({allAddons.length})</span>
         </div>
 
         {/* Addon cards */}
@@ -381,7 +382,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
           display: "flex", flexDirection: "column", gap: "8px",
         }}>
           {allAddons.length === 0 ? (
-            <div style={{ color: "#666", fontSize: "11px", padding: "16px 8px", textAlign: "center" }}>
+            <div style={{ color: T.textDim, fontSize: "11px", padding: "16px 8px", textAlign: "center" }}>
               没有已安装的 Add-on
             </div>
           ) : (
@@ -397,7 +398,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                   key={`${addon.id}@${addon.version}`}
                   style={{
                     borderRadius: "6px",
-                    border: `1px solid ${enabled ? "#2a3a5a" : "#252535"}`,
+                    border: `1px solid ${enabled ? T.borderLight : T.borderDim}`,
                     overflow: "hidden",
                   }}
                 >
@@ -406,7 +407,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                     style={{
                       display: "flex", alignItems: "center", gap: "8px",
                       padding: "8px 10px",
-                      backgroundColor: enabled ? "#111828" : "#111118",
+                      backgroundColor: enabled ? T.bg1 : T.bg1,
                       cursor: "pointer",
                     }}
                     onClick={() => setExpandedId(expanded ? null : addon.id)}
@@ -417,7 +418,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                       {/* Name */}
                       <div style={{
                         fontSize: "12px",
-                        color: enabled ? "#eee" : "#888",
+                        color: enabled ? T.text : T.textSub,
                         fontWeight: "bold",
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                       }}>
@@ -428,16 +429,16 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                         display: "flex", alignItems: "center", gap: "6px",
                         marginTop: "3px",
                       }}>
-                        <span style={{ fontSize: "10px", color: "#777" }}>{addon.id}</span>
-                        <span style={{ color: "#444", fontSize: "10px" }}>/</span>
-                        <span style={{ fontSize: "10px", color: "#bbb" }}>
+                        <span style={{ fontSize: "10px", color: T.textDim }}>{addon.id}</span>
+                        <span style={{ color: T.textFaint, fontSize: "10px" }}>/</span>
+                        <span style={{ fontSize: "10px", color: T.text }}>
                           v{displayVersion}
                         </span>
                         {isFork && <Tag color="#6ab">分支</Tag>}
                       </div>
                     </div>
 
-                    <span style={{ color: "#666", fontSize: "10px", flexShrink: 0 }}>
+                    <span style={{ color: T.textDim, fontSize: "10px", flexShrink: 0 }}>
                       {expanded ? "\u25B2" : "\u25BC"}
                     </span>
                   </div>
@@ -446,13 +447,13 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                   {expanded && (
                     <div style={{
                       padding: "10px 12px",
-                      backgroundColor: "#0a0a14",
-                      borderTop: "1px solid #252535",
+                      backgroundColor: T.bg0,
+                      borderTop: `1px solid ${T.borderDim}`,
                       display: "flex", flexDirection: "column", gap: "8px",
                       fontSize: "11px",
                     }}>
                       {addon.description && (
-                        <div style={{ color: "#aaa", lineHeight: 1.5 }}>{addon.description}</div>
+                        <div style={{ color: T.textSub, lineHeight: 1.5 }}>{addon.description}</div>
                       )}
 
                       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -471,7 +472,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                         const enabledRef = enabledAddons.find(a => a.id === addon.id);
                         const committedVer = enabledRef?.version ?? addon.version;
                         return (
-                          <div style={{ borderTop: "1px solid #252535", paddingTop: "8px" }}>
+                          <div style={{ borderTop: `1px solid ${T.borderDim}`, paddingTop: "8px" }}>
                             <VersionBranches
                               addonId={addon.id}
                               committedVersion={committedVer}
@@ -496,8 +497,8 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: "flex", gap: "8px", fontSize: "10px" }}>
-      <span style={{ color: "#888", width: "30px", flexShrink: 0 }}>{label}</span>
-      <span style={{ color: "#ccc" }}>{value}</span>
+      <span style={{ color: T.textSub, width: "30px", flexShrink: 0 }}>{label}</span>
+      <span style={{ color: T.text }}>{value}</span>
     </div>
   );
 }

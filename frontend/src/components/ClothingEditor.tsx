@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { GameDefinitions, ClothingDefinition, TraitEffect } from "../types/game";
 import { createClothingDef, saveClothingDef, deleteClothingDef } from "../api/client";
+import T from "../theme";
 
 function buildTargetOptions(defs: GameDefinitions) {
   const groups: { label: string; options: { value: string; label: string }[] }[] = [];
@@ -57,16 +58,16 @@ const SLOT_LABELS: Record<string, string> = {
 
 const inputStyle: React.CSSProperties = {
   padding: "4px 8px",
-  backgroundColor: "#0a0a1a",
-  color: "#ddd",
-  border: "1px solid #333",
+  backgroundColor: T.bg3,
+  color: T.text,
+  border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
   fontFamily: "monospace",
   fontSize: "12px",
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "#888",
+  color: T.textSub,
   fontSize: "11px",
   marginBottom: "2px",
 };
@@ -158,14 +159,14 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
   const occlusionOptions = slots.filter((s) => s !== slot && !occlusion.includes(s));
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: "#ddd", padding: "12px 0" }}>
+    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建服装" : "编辑服装"} ==
         </span>
         {clothing.source && (
-          <span style={{ color: "#e89a19", fontSize: "12px" }}>
+          <span style={{ color: T.accent, fontSize: "12px" }}>
             来源: {clothing.source}
           </span>
         )}
@@ -214,7 +215,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
 
       {/* Occlusion */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: "#aaa" }}>遮挡槽位</div>
+        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>遮挡槽位</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
           {occlusion.map((s) => (
             <span
@@ -224,8 +225,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 alignItems: "center",
                 gap: "2px",
                 padding: "2px 8px",
-                backgroundColor: "#1a1a2e",
-                border: "1px solid #444",
+                backgroundColor: T.bg2,
+                border: `1px solid ${T.borderLight}`,
                 borderRadius: "3px",
                 fontSize: "12px",
               }}
@@ -237,7 +238,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#e94560",
+                    color: T.danger,
                     cursor: "pointer",
                     padding: "0 2px",
                     fontFamily: "monospace",
@@ -265,13 +266,13 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               ))}
             </select>
           )}
-          {occlusion.length === 0 && <span style={{ color: "#666" }}>无</span>}
+          {occlusion.length === 0 && <span style={{ color: T.textDim }}>无</span>}
         </div>
       </div>
 
       {/* Effects */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: "#aaa" }}>效果</div>
+        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>效果</div>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           {effects.map((eff, idx) => (
             <div
@@ -281,7 +282,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 alignItems: "center",
                 gap: "6px",
                 padding: "4px 8px",
-                backgroundColor: "#1a1a2e",
+                backgroundColor: T.bg2,
                 borderRadius: "3px",
               }}
             >
@@ -325,7 +326,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 disabled={isReadOnly}
               />
               {eff.magnitudeType === "percentage" && (
-                <span style={{ color: "#666", fontSize: "11px", width: "50px", flexShrink: 0 }}>
+                <span style={{ color: T.textDim, fontSize: "11px", width: "50px", flexShrink: 0 }}>
                   {pctHint(eff.value, eff.effect)}
                 </span>
               )}
@@ -335,7 +336,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#e94560",
+                    color: T.danger,
                     cursor: "pointer",
                     fontFamily: "monospace",
                     fontSize: "14px",
@@ -354,9 +355,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             style={{
               marginTop: "6px",
               padding: "3px 10px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: "pointer",
               fontFamily: "monospace",
@@ -376,9 +377,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             disabled={saving}
             style={{
               padding: "5px 16px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
               fontFamily: "monospace",
@@ -394,9 +395,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             disabled={saving}
             style={{
               padding: "5px 16px",
-              backgroundColor: "#16213e",
-              color: "#e94560",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.danger,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
               fontFamily: "monospace",
@@ -410,9 +411,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           onClick={onBack}
           style={{
             padding: "5px 16px",
-            backgroundColor: "#16213e",
-            color: "#888",
-            border: "1px solid #333",
+            backgroundColor: T.bg2,
+            color: T.textSub,
+            border: `1px solid ${T.border}`,
             borderRadius: "3px",
             cursor: "pointer",
             fontFamily: "monospace",
@@ -422,7 +423,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message === "已保存" ? "#0f0" : "#e94560", fontSize: "12px" }}>
+          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>
             {message}
           </span>
         )}

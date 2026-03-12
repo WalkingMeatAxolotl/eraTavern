@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { WorldInfo } from "../types/game";
 import { fetchWorlds, selectWorld, saveSessionAs, deleteWorld, unloadWorld, updateWorldMeta, createWorld } from "../api/client";
+import T from "../theme";
 
 interface WorldSidebarProps {
   currentWorldId: string;
@@ -122,10 +123,10 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "4px 6px",
-    backgroundColor: "#0a0a1a",
-    border: "1px solid #333",
+    backgroundColor: T.bg3,
+    border: `1px solid ${T.border}`,
     borderRadius: "2px",
-    color: "#ddd",
+    color: T.text,
     fontFamily: "monospace",
     fontSize: "12px",
     boxSizing: "border-box",
@@ -134,8 +135,8 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
   const btnStyle: React.CSSProperties = {
     padding: "4px 10px",
     backgroundColor: "transparent",
-    color: "#888",
-    border: "1px solid #333",
+    color: T.textSub,
+    border: `1px solid ${T.border}`,
     fontFamily: "monospace",
     fontSize: "12px",
     cursor: "pointer",
@@ -143,8 +144,8 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
 
   const smallBtnStyle: React.CSSProperties = {
     padding: "3px 10px",
-    backgroundColor: "#16213e",
-    border: "1px solid #333",
+    backgroundColor: T.bg2,
+    border: `1px solid ${T.border}`,
     borderRadius: "3px",
     cursor: "pointer",
     fontFamily: "monospace",
@@ -155,7 +156,7 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
     <div style={{
       width: "100%",
       height: "100vh",
-      borderRight: "1px solid #333",
+      borderRight: `1px solid ${T.border}`,
       display: "flex",
       flexDirection: "column",
       fontSize: "12px",
@@ -164,18 +165,18 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
       boxSizing: "border-box",
     }}>
       {/* Top action area */}
-      <div style={{ padding: "8px", borderBottom: "1px solid #222", display: "flex", flexDirection: "column", gap: "6px" }}>
+      <div style={{ padding: "8px", borderBottom: `1px solid ${T.borderDim}`, display: "flex", flexDirection: "column", gap: "6px" }}>
         <div style={{ display: "flex", gap: "4px" }}>
           <button
             onClick={() => { setShowCreateForm(true); setShowSaveForm(false); setNewName(""); setNewId(""); setError(""); }}
-            style={{ ...btnStyle, color: "#0f0", borderColor: "#444", flex: 1 }}
+            style={{ ...btnStyle, color: T.success, borderColor: T.textFaint, flex: 1 }}
           >
             [新建世界]
           </button>
           {currentWorldId && (
             <button
               onClick={handleSelectEmpty}
-              style={{ ...btnStyle, color: "#666", borderColor: "#333" }}
+              style={{ ...btnStyle, color: T.textDim, borderColor: T.border }}
               title="卸载当前世界，进入空世界"
             >
               [空]
@@ -183,18 +184,18 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
           )}
         </div>
         {error && !showCreateForm && !showSaveForm && (
-          <div style={{ color: error.includes("已") ? "#0f0" : "#f88", fontSize: "11px" }}>{error}</div>
+          <div style={{ color: error.includes("已") ? T.success : T.danger, fontSize: "11px" }}>{error}</div>
         )}
 
         {/* Create new world form */}
         {showCreateForm && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "4px", border: "1px solid #333", borderRadius: "3px" }}>
-            <div style={{ color: "#888", fontSize: "11px" }}>创建新世界</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "4px", border: `1px solid ${T.border}`, borderRadius: "3px" }}>
+            <div style={{ color: T.textSub, fontSize: "11px" }}>创建新世界</div>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="世界名称" style={inputStyle} />
             <input value={newId} onChange={(e) => setNewId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ""))} placeholder="world-id" style={inputStyle} />
-            {error && <div style={{ color: "#f88", fontSize: "11px" }}>{error}</div>}
+            {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
             <div style={{ display: "flex", gap: "4px" }}>
-              <button onClick={handleCreateNew} disabled={!newId.trim() || !newName.trim()} style={{ ...btnStyle, color: "#0f0", flex: 1, opacity: (!newId.trim() || !newName.trim()) ? 0.5 : 1 }}>[创建]</button>
+              <button onClick={handleCreateNew} disabled={!newId.trim() || !newName.trim()} style={{ ...btnStyle, color: T.success, flex: 1, opacity: (!newId.trim() || !newName.trim()) ? 0.5 : 1 }}>[创建]</button>
               <button onClick={() => { setShowCreateForm(false); setError(""); }} style={{ ...btnStyle, flex: 1 }}>[取消]</button>
             </div>
           </div>
@@ -202,13 +203,13 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
 
         {/* Save-as form (from empty world) */}
         {showSaveForm && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "4px", border: "1px solid #333", borderRadius: "3px" }}>
-            <div style={{ color: "#888", fontSize: "11px" }}>保存为新世界</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "4px", border: `1px solid ${T.border}`, borderRadius: "3px" }}>
+            <div style={{ color: T.textSub, fontSize: "11px" }}>保存为新世界</div>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="世界名称" style={inputStyle} />
             <input value={newId} onChange={(e) => setNewId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ""))} placeholder="world-id" style={inputStyle} />
-            {error && <div style={{ color: "#f88", fontSize: "11px" }}>{error}</div>}
+            {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
             <div style={{ display: "flex", gap: "4px" }}>
-              <button onClick={handleSaveAs} disabled={!newId.trim() || !newName.trim()} style={{ ...btnStyle, color: "#e94560", flex: 1, opacity: (!newId.trim() || !newName.trim()) ? 0.5 : 1 }}>[确定]</button>
+              <button onClick={handleSaveAs} disabled={!newId.trim() || !newName.trim()} style={{ ...btnStyle, color: T.accent, flex: 1, opacity: (!newId.trim() || !newName.trim()) ? 0.5 : 1 }}>[确定]</button>
               <button onClick={() => { setShowSaveForm(false); setError(""); }} style={{ ...btnStyle, flex: 1 }}>[取消]</button>
             </div>
           </div>
@@ -225,7 +226,7 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
         gap: "6px",
       }}>
         {worlds.length === 0 && (
-          <div style={{ color: "#666", fontSize: "11px", padding: "8px 0", textAlign: "center" }}>
+          <div style={{ color: T.textDim, fontSize: "11px", padding: "8px 0", textAlign: "center" }}>
             没有已保存的世界
           </div>
         )}
@@ -246,8 +247,8 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
                   alignItems: "center",
                   gap: "8px",
                   padding: "6px 8px",
-                  backgroundColor: expanded ? "#16213e" : "#0a0a1a",
-                  border: active ? "1px solid #e94560" : "1px solid #222",
+                  backgroundColor: expanded ? T.bg2 : T.bg3,
+                  border: active ? `1px solid ${T.accent}` : `1px solid ${T.borderDim}`,
                   borderRadius: expanded ? "3px 3px 0 0" : "3px",
                   cursor: "pointer",
                 }}
@@ -256,18 +257,18 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
                   width: "28px",
                   height: "28px",
                   borderRadius: "3px",
-                  background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+                  background: `linear-gradient(135deg, ${T.bg1} 0%, ${T.bg2} 100%)`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                 }}>
-                  <span style={{ fontSize: "12px", color: "#333", fontWeight: "bold" }}>W</span>
+                  <span style={{ fontSize: "12px", color: T.border, fontWeight: "bold" }}>W</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: "12px",
-                    color: active ? "#e94560" : "#ddd",
+                    color: active ? T.accent : T.text,
                     fontWeight: active ? "bold" : "normal",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -275,14 +276,14 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
                   }}>
                     {w.name}
                   </div>
-                  <div style={{ fontSize: "10px", color: "#555" }}>
+                  <div style={{ fontSize: "10px", color: T.textFaint }}>
                     {addonCount} addon{addonCount !== 1 ? "s" : ""}
                   </div>
                 </div>
                 {active && (
-                  <span style={{ fontSize: "10px", color: "#e94560", flexShrink: 0 }}>当前</span>
+                  <span style={{ fontSize: "10px", color: T.accent, flexShrink: 0 }}>当前</span>
                 )}
-                <span style={{ color: "#555", fontSize: "10px" }}>
+                <span style={{ color: T.textFaint, fontSize: "10px" }}>
                   {expanded ? "\u25B2" : "\u25BC"}
                 </span>
               </div>
@@ -291,8 +292,8 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
               {expanded && (
                 <div style={{
                   padding: "8px",
-                  backgroundColor: "#0f0f20",
-                  border: "1px solid #222",
+                  backgroundColor: T.bg1,
+                  border: `1px solid ${T.borderDim}`,
                   borderTop: "none",
                   borderRadius: "0 0 3px 3px",
                   fontSize: "11px",
@@ -304,11 +305,11 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
                     /* Metadata editing form */
                     <>
                       <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                        <span style={{ color: "#666", width: "32px" }}>名称</span>
+                        <span style={{ color: T.textDim, width: "32px" }}>名称</span>
                         <input value={metaName} onChange={(e) => setMetaName(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
                       </div>
                       <div style={{ display: "flex", gap: "4px", alignItems: "flex-start" }}>
-                        <span style={{ color: "#666", width: "32px", paddingTop: "4px" }}>简介</span>
+                        <span style={{ color: T.textDim, width: "32px", paddingTop: "4px" }}>简介</span>
                         <textarea
                           value={metaDesc}
                           onChange={(e) => setMetaDesc(e.target.value)}
@@ -316,21 +317,21 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
                           style={{ ...inputStyle, flex: 1, resize: "vertical" }}
                         />
                       </div>
-                      {metaMessage && <div style={{ color: "#f88", fontSize: "11px" }}>{metaMessage}</div>}
+                      {metaMessage && <div style={{ color: T.danger, fontSize: "11px" }}>{metaMessage}</div>}
                       <div style={{ display: "flex", gap: "4px" }}>
-                        <button onClick={() => handleSaveMeta(w.id)} style={{ ...smallBtnStyle, color: "#0f0" }}>[保存]</button>
-                        <button onClick={() => setEditingMeta(null)} style={{ ...smallBtnStyle, color: "#888" }}>[取消]</button>
+                        <button onClick={() => handleSaveMeta(w.id)} style={{ ...smallBtnStyle, color: T.success }}>[保存]</button>
+                        <button onClick={() => setEditingMeta(null)} style={{ ...smallBtnStyle, color: T.textSub }}>[取消]</button>
                       </div>
                     </>
                   ) : (
                     /* Metadata display */
                     <>
-                      <div style={{ color: "#666" }}>ID: {w.id}</div>
+                      <div style={{ color: T.textDim }}>ID: {w.id}</div>
                       {(w as Record<string, unknown>).description && (
-                        <div style={{ color: "#888" }}>{(w as Record<string, unknown>).description as string}</div>
+                        <div style={{ color: T.textSub }}>{(w as Record<string, unknown>).description as string}</div>
                       )}
                       {w.addons && w.addons.length > 0 && (
-                        <div style={{ color: "#666" }}>
+                        <div style={{ color: T.textDim }}>
                           Addons: {w.addons.map(a => `${a.id}@${a.version}`).join(", ")}
                         </div>
                       )}
@@ -338,20 +339,20 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
                         {!active && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleSelectWorld(w.id); }}
-                            style={{ ...smallBtnStyle, color: "#0f0" }}
+                            style={{ ...smallBtnStyle, color: T.success }}
                           >
                             [切换]
                           </button>
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); startEditMeta(w); }}
-                          style={{ ...smallBtnStyle, color: "#e94560" }}
+                          style={{ ...smallBtnStyle, color: T.accent }}
                         >
                           [编辑信息]
                         </button>
                         <button
                           onClick={(e) => handleDelete(e, w.id)}
-                          style={{ ...smallBtnStyle, color: "#e94560" }}
+                          style={{ ...smallBtnStyle, color: T.danger }}
                         >
                           [删除]
                         </button>

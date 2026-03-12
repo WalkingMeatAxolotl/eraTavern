@@ -1,3 +1,4 @@
+import T from "../theme";
 import type { CharacterState } from "../types/game";
 
 type CompactTab = "basic" | "clothing";
@@ -19,9 +20,9 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: "4px 10px",
     backgroundColor: "transparent",
-    color: active ? "#e94560" : "#888",
+    color: active ? T.accent : T.textSub,
     border: "none",
-    borderBottom: active ? "2px solid #e94560" : "2px solid transparent",
+    borderBottom: active ? `2px solid ${T.accent}` : "2px solid transparent",
     cursor: "pointer",
     fontFamily: "monospace",
     fontSize: "12px",
@@ -33,14 +34,14 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
       style={{
         fontFamily: "monospace",
         fontSize: "13px",
-        color: "#ddd",
-        backgroundColor: "#1a1a2e",
+        color: T.text,
+        backgroundColor: T.bg1,
         padding: "8px",
         borderRadius: "4px",
       }}
     >
       {/* Tab bar */}
-      <div style={{ borderBottom: "1px solid #333", marginBottom: "6px", display: "flex" }}>
+      <div style={{ borderBottom: `1px solid ${T.border}`, marginBottom: "6px", display: "flex" }}>
         <button style={tabStyle(activeTab === "basic" && !detailOpen)} onClick={() => onTabChange("basic")}>
           [基本]
         </button>
@@ -64,12 +65,12 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
           <div style={{ marginBottom: "6px" }}>
             {Object.entries(basicInfo).map(([key, field]) => (
               <span key={key} style={{ marginRight: "10px" }}>
-                {field.label}: <span style={{ color: "#eee" }}>{field.value}</span>
+                {field.label}: <span style={{ color: T.text }}>{field.value}</span>
               </span>
             ))}
             {favToPlayer !== undefined && (
               <span style={{ marginRight: "10px" }}>
-                好感度: <span style={{ color: "#eee" }}>{favToPlayer}</span>
+                好感度: <span style={{ color: T.text }}>{favToPlayer}</span>
               </span>
             )}
           </div>
@@ -77,12 +78,12 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
           {/* Resources - compact bars */}
           {Object.entries(resources).map(([key, res]) => (
             <div key={key} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
-              <span style={{ minWidth: "32px", fontSize: "11px", color: "#888" }}>{res.label}</span>
+              <span style={{ minWidth: "32px", fontSize: "11px", color: T.textSub }}>{res.label}</span>
               <div
                 style={{
                   flex: 1,
                   height: "10px",
-                  backgroundColor: "#333",
+                  backgroundColor: T.border,
                   borderRadius: "2px",
                   overflow: "hidden",
                 }}
@@ -96,7 +97,7 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
                   }}
                 />
               </div>
-              <span style={{ fontSize: "11px", color: "#888", minWidth: "50px", textAlign: "right" }}>
+              <span style={{ fontSize: "11px", color: T.textSub, minWidth: "50px", textAlign: "right" }}>
                 {res.value}/{res.max}
               </span>
             </div>
@@ -107,7 +108,7 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
       {activeTab === "clothing" && (
         <div>
           {clothing.map((slot) => (
-            <div key={slot.slot} style={{ fontSize: "12px", color: slot.occluded ? "#555" : slot.itemId ? "#ddd" : "#666" }}>
+            <div key={slot.slot} style={{ fontSize: "12px", color: slot.occluded ? T.textFaint : slot.itemId ? T.text : T.textDim }}>
               {slot.slotLabel}:{" "}
               {slot.occluded ? (
                 "【？？？】"
@@ -115,10 +116,10 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
                 <>
                   [{slot.itemName}]
                   {slot.state === "halfWorn" && (
-                    <span style={{ color: "#e94560" }}> (半穿)</span>
+                    <span style={{ color: T.danger }}> (半穿)</span>
                   )}
                   {slot.state === "none" && (
-                    <span style={{ color: "#e94560" }}> (脱下)</span>
+                    <span style={{ color: T.danger }}> (脱下)</span>
                   )}
                 </>
               ) : (

@@ -7,6 +7,7 @@ import {
   evaluateVariable,
   fetchCharacterConfigs,
 } from "../api/client";
+import T from "../theme";
 
 interface Props {
   variable: VariableDefinition;
@@ -40,9 +41,9 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
 
 const inputStyle: React.CSSProperties = {
   padding: "4px 8px",
-  backgroundColor: "#0a0a1a",
-  color: "#ddd",
-  border: "1px solid #333",
+  backgroundColor: T.bg3,
+  color: T.text,
+  border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
   fontFamily: "monospace",
   fontSize: "12px",
@@ -54,15 +55,15 @@ const selectStyle: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "#888",
+  color: T.textSub,
   fontSize: "11px",
   marginBottom: "2px",
 };
 
 const btnBase: React.CSSProperties = {
   padding: "5px 16px",
-  backgroundColor: "#16213e",
-  border: "1px solid #333",
+  backgroundColor: T.bg2,
+  border: `1px solid ${T.border}`,
   borderRadius: "3px",
   cursor: "pointer",
   fontFamily: "monospace",
@@ -297,19 +298,19 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
   };
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: "#ddd", padding: "12px 0" }}>
+    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建变量" : `编辑: ${variable.name || variable.id}`} ==
         </span>
         <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={onBack} style={{ ...btnBase, color: "#888" }}>[返回]</button>
+          <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>[返回]</button>
           {!isReadOnly && !isNew && (
-            <button onClick={handleDelete} style={{ ...btnBase, color: "#e94560" }}>[删除]</button>
+            <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>[删除]</button>
           )}
           {!isReadOnly && (
-            <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: "#0f0", opacity: saving ? 0.6 : 1 }}>
+            <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim, opacity: saving ? 0.6 : 1 }}>
               {saving ? "保存中..." : "[保存]"}
             </button>
           )}
@@ -317,7 +318,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {message && (
-        <div style={{ color: message === "已保存" ? "#0f0" : "#e94560", fontSize: "12px", marginBottom: "8px" }}>
+        <div style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px", marginBottom: "8px" }}>
           {message}
         </div>
       )}
@@ -367,9 +368,9 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               onClick={() => !isReadOnly && toggleTag(tag)}
               style={{
                 padding: "2px 8px",
-                backgroundColor: tags.includes(tag) ? "#1a3a5e" : "#1a1a2e",
-                color: tags.includes(tag) ? "#6cf" : "#666",
-                border: `1px solid ${tags.includes(tag) ? "#4a8abf" : "#333"}`,
+                backgroundColor: tags.includes(tag) ? T.accentBg : T.bg2,
+                color: tags.includes(tag) ? T.accent : T.textDim,
+                border: `1px solid ${tags.includes(tag) ? T.accentDim : T.border}`,
                 borderRadius: "3px",
                 cursor: isReadOnly ? "default" : "pointer",
                 fontFamily: "monospace",
@@ -379,7 +380,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               {tag}
             </button>
           ))}
-          {allTags.length === 0 && <span style={{ color: "#666", fontSize: "11px" }}>无可用标签</span>}
+          {allTags.length === 0 && <span style={{ color: T.textDim, fontSize: "11px" }}>无可用标签</span>}
         </div>
       </div>
 
@@ -387,12 +388,12 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       <div style={{
         marginBottom: "12px",
         padding: "8px 12px",
-        backgroundColor: "#0a0a1a",
-        border: "1px solid #333",
+        backgroundColor: T.bg3,
+        border: `1px solid ${T.border}`,
         borderRadius: "3px",
       }}>
-        <div style={{ color: "#888", fontSize: "11px", marginBottom: "4px" }}>公式预览</div>
-        <div style={{ color: "#6cf", fontSize: "13px", wordBreak: "break-all" }}>
+        <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "4px" }}>公式预览</div>
+        <div style={{ color: T.accent, fontSize: "13px", wordBreak: "break-all" }}>
           {formulaPreview(steps)}
         </div>
       </div>
@@ -423,7 +424,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             onClick={addStep}
             style={{
               ...btnBase,
-              color: "#0f0",
+              color: T.successDim,
               marginTop: "6px",
               width: "100%",
               textAlign: "center",
@@ -436,7 +437,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
 
       {/* Test panel */}
       <div style={{
-        border: "1px solid #333",
+        border: `1px solid ${T.border}`,
         borderRadius: "3px",
         overflow: "hidden",
       }}>
@@ -450,8 +451,8 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             width: "100%",
             textAlign: "left",
             padding: "8px 12px",
-            backgroundColor: "#16213e",
-            color: testOpen ? "#e94560" : "#888",
+            backgroundColor: T.bg2,
+            color: testOpen ? T.accent : T.textSub,
             border: "none",
             cursor: "pointer",
             fontFamily: "monospace",
@@ -461,9 +462,9 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           {testOpen ? "\u25BC" : "\u25B6"} 测试计算
         </button>
         {testOpen && (
-          <div style={{ padding: "8px 12px", backgroundColor: "#0a0a1a" }}>
+          <div style={{ padding: "8px 12px", backgroundColor: T.bg3 }}>
             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px" }}>
-              <span style={{ color: "#888", fontSize: "12px" }}>目标角色:</span>
+              <span style={{ color: T.textSub, fontSize: "12px" }}>目标角色:</span>
               <select
                 style={{ ...selectStyle, flex: 1 }}
                 value={testCharId}
@@ -476,7 +477,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               </select>
               <button
                 onClick={handleTest}
-                style={{ ...btnBase, color: "#6cf", padding: "4px 12px" }}
+                style={{ ...btnBase, color: T.accent, padding: "4px 12px" }}
                 disabled={!testCharId || isNew}
               >
                 [计算]
@@ -484,7 +485,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             </div>
 
             {testError && (
-              <div style={{ color: "#e94560", fontSize: "12px", marginBottom: "6px" }}>{testError}</div>
+              <div style={{ color: T.danger, fontSize: "12px", marginBottom: "6px" }}>{testError}</div>
             )}
 
             {testResult && (
@@ -503,26 +504,26 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                         display: "flex",
                         justifyContent: "space-between",
                         padding: "2px 8px",
-                        backgroundColor: "#111828",
+                        backgroundColor: T.bg2,
                         borderRadius: "2px",
                       }}
                     >
-                      <span style={{ color: "#aaa" }}>
+                      <span style={{ color: T.textSub }}>
                         {s.index === 0 ? "初始" : opSymbol(s.op)}
                         {" "}
-                        <span style={{ color: "#888" }}>{s.type}</span>
-                        {s.label && <span style={{ color: "#666" }}> ({s.label})</span>}
-                        {" "}= <span style={{ color: "#ddd" }}>{s.stepValue}</span>
+                        <span style={{ color: T.textSub }}>{s.type}</span>
+                        {s.label && <span style={{ color: T.textDim }}> ({s.label})</span>}
+                        {" "}= <span style={{ color: T.text }}>{s.stepValue}</span>
                       </span>
-                      <span style={{ color: "#6cf" }}>{"\u2192"} {s.accumulated}</span>
+                      <span style={{ color: T.accent }}>{"\u2192"} {s.accumulated}</span>
                     </div>
                   ))}
                 </div>
                 <div style={{
                   padding: "4px 8px",
-                  backgroundColor: "#1a3a2e",
+                  backgroundColor: T.bg2,
                   borderRadius: "3px",
-                  color: "#0f0",
+                  color: T.success,
                   fontSize: "13px",
                   fontWeight: "bold",
                 }}>
@@ -532,7 +533,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             )}
 
             {isNew && (
-              <div style={{ color: "#888", fontSize: "11px", marginTop: "4px" }}>
+              <div style={{ color: T.textSub, fontSize: "11px", marginTop: "4px" }}>
                 * 请先保存变量后才能测试
               </div>
             )}
@@ -567,16 +568,16 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
     alignItems: "center",
     gap: "4px",
     padding: "4px 6px",
-    backgroundColor: dragOver ? "#1a2a3e" : "#111828",
+    backgroundColor: dragOver ? T.bg2 : T.bg1,
     borderRadius: "3px",
-    border: dragOver ? "1px solid #4a8abf" : "1px solid #222",
+    border: dragOver ? `1px solid ${T.accentDim}` : `1px solid ${T.borderDim}`,
     transition: "background-color 0.1s, border-color 0.1s",
   };
 
   const smallBtn: React.CSSProperties = {
     background: "none",
     border: "none",
-    color: "#666",
+    color: T.textDim,
     cursor: readOnly ? "default" : "pointer",
     fontFamily: "monospace",
     fontSize: "12px",
@@ -612,19 +613,19 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
     >
       {/* Drag handle */}
       {!readOnly && (
-        <span style={{ cursor: "grab", color: "#555", fontSize: "14px", userSelect: "none", padding: "0 2px" }} title="拖拽排序">
+        <span style={{ cursor: "grab", color: T.textDim, fontSize: "14px", userSelect: "none", padding: "0 2px" }} title="拖拽排序">
           {"\u2807"}
         </span>
       )}
 
       {/* Step number */}
-      <span style={{ color: "#555", fontSize: "11px", minWidth: "18px", textAlign: "center" }}>
+      <span style={{ color: T.textDim, fontSize: "11px", minWidth: "18px", textAlign: "center" }}>
         {index + 1}
       </span>
 
       {/* Operator */}
       {isFirst ? (
-        <span style={{ color: "#888", fontSize: "11px", minWidth: "60px", textAlign: "center" }}>初始值</span>
+        <span style={{ color: T.textSub, fontSize: "11px", minWidth: "60px", textAlign: "center" }}>初始值</span>
       ) : (
         <select
           style={{ ...selectStyle, minWidth: "60px" }}
@@ -793,7 +794,7 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
                   <option key={d.id} value={d.id}>{d.name} ({d.id})</option>
                 ))}
               </select>
-              <span style={{ color: "#888", fontSize: "10px", whiteSpace: "nowrap" }} title="拥有=1, 没有=0">1/0</span>
+              <span style={{ color: T.textSub, fontSize: "10px", whiteSpace: "nowrap" }} title="拥有=1, 没有=0">1/0</span>
             </>
           );
         })()}
@@ -829,7 +830,7 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
           onClick={onRemove}
           style={{
             ...smallBtn,
-            color: "#e94560",
+            color: T.danger,
             fontSize: "14px",
           }}
         >

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import T from "./theme";
 import type { GameState, GameAction } from "./types/game";
 import type { DetailTab } from "./components/CharacterPanel";
 import {
@@ -55,6 +56,7 @@ export default function App() {
 
   // Session state (current world + addons)
   const [currentWorldId, setCurrentWorldId] = useState("");
+  const [currentWorldName, setCurrentWorldName] = useState("");
   const [currentAddons, setCurrentAddons] = useState<{ id: string; version: string }[]>([]);
   const [stagedAddons, setStagedAddons] = useState<{ id: string; version: string }[]>([]);
   const [sessionDirty, setSessionDirty] = useState(false);
@@ -90,6 +92,7 @@ export default function App() {
   const refreshSession = useCallback(async () => {
     const session = await fetchSession();
     setCurrentWorldId(session.worldId);
+    setCurrentWorldName(session.worldName);
     setCurrentAddons(session.addons);
     setStagedAddons(session.addons);
     setSessionDirty(session.dirty);
@@ -109,6 +112,7 @@ export default function App() {
     if (p) setActiveMapId(p.position.mapId);
     fetchSession().then((s) => {
       setCurrentWorldId(s.worldId);
+      setCurrentWorldName(s.worldName);
       setCurrentAddons(s.addons);
       setStagedAddons(s.addons);
       setSessionDirty(s.dirty);
@@ -224,6 +228,7 @@ export default function App() {
     const [state, session] = await Promise.all([fetchGameState(), fetchSession()]);
     setGameState(state);
     setCurrentWorldId(session.worldId);
+    setCurrentWorldName(session.worldName);
     setCurrentAddons(session.addons);
     setStagedAddons(session.addons);
     setSessionDirty(session.dirty);
@@ -244,7 +249,7 @@ export default function App() {
 
   if (!gameState) {
     return (
-      <div style={{ color: "#ddd", fontFamily: "monospace", padding: "20px", backgroundColor: "#0f0f23", minHeight: "100vh" }}>
+      <div style={{ color: T.text, fontFamily: "monospace", padding: "20px", backgroundColor: T.bg0, minHeight: "100vh" }}>
         加载中...
       </div>
     );
@@ -260,7 +265,7 @@ export default function App() {
     fontFamily: "monospace",
     fontSize: "13px",
     cursor: "pointer",
-    border: "1px solid #333",
+    border: `1px solid ${T.border}`,
   };
 
   const renderNavPage = () => {
@@ -304,7 +309,7 @@ export default function App() {
     // No player
     if (!player) {
       return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", color: "#666", fontSize: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", color: T.textDim, fontSize: "14px" }}>
           没有活跃的玩家角色。请在 [人物] 页面中设置一个 Player。
         </div>
       );
@@ -319,10 +324,10 @@ export default function App() {
               onClick={() => setTopView("location")}
               style={{
                 padding: "6px 16px",
-                backgroundColor: topView === "location" ? "#16213e" : "#0f3460",
-                color: topView === "location" ? "#e94560" : "#eee",
-                border: "1px solid #333",
-                borderBottom: topView === "location" ? "2px solid #e94560" : "1px solid #333",
+                backgroundColor: topView === "location" ? T.bg2 : T.bg1,
+                color: topView === "location" ? T.accent : T.text,
+                border: `1px solid ${T.border}`,
+                borderBottom: topView === "location" ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
                 cursor: "pointer",
                 fontFamily: "monospace",
                 fontSize: "13px",
@@ -336,10 +341,10 @@ export default function App() {
                 onClick={() => { setTopView(m.id); setActiveMapId(m.id); }}
                 style={{
                   padding: "6px 16px",
-                  backgroundColor: topView === m.id ? "#16213e" : "#0f3460",
-                  color: topView === m.id ? "#e94560" : "#eee",
-                  border: "1px solid #333",
-                  borderBottom: topView === m.id ? "2px solid #e94560" : "1px solid #333",
+                  backgroundColor: topView === m.id ? T.bg2 : T.bg1,
+                  color: topView === m.id ? T.accent : T.text,
+                  border: `1px solid ${T.border}`,
+                  borderBottom: topView === m.id ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
                   cursor: "pointer",
                   fontFamily: "monospace",
                   fontSize: "13px",
@@ -426,13 +431,13 @@ export default function App() {
       style={{
         display: "flex",
         minHeight: "100vh",
-        backgroundColor: "#0f0f23",
+        backgroundColor: T.bg0,
       }}
     >
       <NavBar
         navPage={navPage}
         onNavChange={(p) => setNavPage(p)}
-        worldName={currentWorldId ? gameState.worldId : ""}
+        worldName={currentWorldId ? (currentWorldName || currentWorldId) : ""}
         maxWidth={config.maxWidth}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
@@ -461,7 +466,7 @@ export default function App() {
           width: "100%",
           display: "flex",
           flexDirection: "column",
-          color: "#ddd",
+          color: T.text,
           fontFamily: "monospace",
           padding: "8px",
           paddingTop: 48,

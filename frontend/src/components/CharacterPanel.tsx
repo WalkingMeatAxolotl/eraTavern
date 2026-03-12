@@ -1,3 +1,4 @@
+import T from "../theme";
 import type { CharacterState } from "../types/game";
 
 export type DetailTab = "basic" | "ability" | "experience" | "inventory" | "social";
@@ -11,7 +12,7 @@ interface CharacterPanelProps {
 
 const TAB_ITEMS: { key: DetailTab; label: string }[] = [
   { key: "basic", label: "基本" },
-  { key: "ability", label: "素质" },
+  { key: "ability", label: "能力" },
   { key: "experience", label: "经验" },
   { key: "inventory", label: "物品" },
   { key: "social", label: "社交" },
@@ -23,9 +24,9 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
   const tabStyle = (tab: DetailTab): React.CSSProperties => ({
     padding: "4px 10px",
     backgroundColor: "transparent",
-    color: activeTab === tab ? "#e94560" : "#888",
+    color: activeTab === tab ? T.accent : T.textSub,
     border: "none",
-    borderBottom: activeTab === tab ? "2px solid #e94560" : "2px solid transparent",
+    borderBottom: activeTab === tab ? `2px solid ${T.accent}` : "2px solid transparent",
     cursor: "pointer",
     fontFamily: "monospace",
     fontSize: "12px",
@@ -37,15 +38,15 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
       style={{
         fontFamily: "monospace",
         fontSize: "13px",
-        color: "#ddd",
-        backgroundColor: "#1a1a2e",
+        color: T.text,
+        backgroundColor: T.bg1,
         padding: "12px",
         borderRadius: "4px",
         overflowY: "auto",
       }}
     >
       {/* Tab bar */}
-      <div style={{ borderBottom: "1px solid #333", marginBottom: "8px", display: "flex" }}>
+      <div style={{ borderBottom: `1px solid ${T.border}`, marginBottom: "8px", display: "flex" }}>
         {TAB_ITEMS.map((item) => (
           <button key={item.key} style={tabStyle(item.key)} onClick={() => onTabChange(item.key)}>
             [{item.label}]
@@ -55,7 +56,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
           style={{
             ...tabStyle("basic" as DetailTab),
             marginLeft: "auto",
-            color: "#888",
+            color: T.textSub,
             borderBottom: "2px solid transparent",
           }}
           onClick={onClose}
@@ -84,7 +85,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                   style={{
                     width: "100%",
                     height: "12px",
-                    backgroundColor: "#333",
+                    backgroundColor: T.border,
                     borderRadius: "2px",
                     overflow: "hidden",
                   }}
@@ -104,7 +105,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
 
           <Section title="服装">
             {clothing.map((slot) => (
-              <div key={slot.slot} style={{ color: slot.occluded ? "#555" : slot.itemId ? "#ddd" : "#666" }}>
+              <div key={slot.slot} style={{ color: slot.occluded ? T.textFaint : slot.itemId ? T.text : T.textDim }}>
                 {slot.slotLabel}:{" "}
                 {slot.occluded ? (
                   "【？？？】"
@@ -112,10 +113,10 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                   <>
                     [{slot.itemName}]
                     {slot.state === "halfWorn" && (
-                      <span style={{ color: "#e94560" }}> (半穿)</span>
+                      <span style={{ color: T.danger }}> (半穿)</span>
                     )}
                     {slot.state === "none" && (
-                      <span style={{ color: "#e94560" }}> (脱下)</span>
+                      <span style={{ color: T.danger }}> (脱下)</span>
                     )}
                   </>
                 ) : (
@@ -129,7 +130,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
 
       {activeTab === "ability" && (
         <>
-          <Section title="素质/特征">
+          <Section title="特质">
             {traits.map((trait) => (
               <div key={trait.key}>
                 {trait.label}:{" "}
@@ -151,7 +152,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
               {abilities.map((ab) => (
                 <div key={ab.key}>
                   {ab.label}: {ab.grade}{" "}
-                  <span style={{ color: "#888" }}>{ab.exp}</span>
+                  <span style={{ color: T.textSub }}>{ab.exp}</span>
                 </div>
               ))}
             </div>
@@ -166,10 +167,10 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
               experiences.filter((exp) => exp.count > 0).map((exp) => (
                 <div key={exp.key} style={{ marginBottom: "6px" }}>
                   <div>
-                    {exp.label}: <span style={{ color: "#e94560" }}>{exp.count}</span>回
+                    {exp.label}: <span style={{ color: T.accent }}>{exp.count}</span>回
                   </div>
                   {exp.first && (
-                    <div style={{ color: "#888", fontSize: "11px", paddingLeft: "12px" }}>
+                    <div style={{ color: T.textSub, fontSize: "11px", paddingLeft: "12px" }}>
                       第一次: {exp.first.time ?? ""}
                       {exp.first.location && <>，在{exp.first.location}</>}
                       {exp.first.target && <>，和 {exp.first.target}</>}
@@ -178,10 +179,10 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                 </div>
               ))
             ) : (
-              <div style={{ color: "#666" }}>无经验记录</div>
+              <div style={{ color: T.textDim }}>无经验记录</div>
             )
           ) : (
-            <div style={{ color: "#666" }}>无经验定义</div>
+            <div style={{ color: T.textDim }}>无经验定义</div>
           )}
         </Section>
       )}
@@ -195,7 +196,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
               </div>
             ))
           ) : (
-            <div style={{ color: "#666" }}>无</div>
+            <div style={{ color: T.textDim }}>无</div>
           )}
         </Section>
       )}
@@ -210,7 +211,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                   style={{
                     flex: 1,
                     height: "12px",
-                    backgroundColor: "#333",
+                    backgroundColor: T.border,
                     borderRadius: "2px",
                     overflow: "hidden",
                     position: "relative",
@@ -220,16 +221,16 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                     style={{
                       width: `${Math.min(100, Math.max(0, (fav.value / 1000) * 100))}%`,
                       height: "100%",
-                      backgroundColor: "#888",
+                      backgroundColor: T.textSub,
                       transition: "width 0.3s",
                     }}
                   />
                 </div>
-                <span style={{ color: "#888", fontSize: "12px", minWidth: "30px", textAlign: "right" }}>{fav.value}</span>
+                <span style={{ color: T.textSub, fontSize: "12px", minWidth: "30px", textAlign: "right" }}>{fav.value}</span>
               </div>
             ))
           ) : (
-            <div style={{ color: "#666" }}>暂无社交关系</div>
+            <div style={{ color: T.textDim }}>暂无社交关系</div>
           )}
         </Section>
       )}
@@ -248,8 +249,8 @@ function Section({
     <div style={{ marginBottom: "12px" }}>
       <div
         style={{
-          color: "#e94560",
-          borderBottom: "1px solid #333",
+          color: T.accent,
+          borderBottom: `1px solid ${T.border}`,
           marginBottom: "4px",
           paddingBottom: "2px",
           fontWeight: "bold",

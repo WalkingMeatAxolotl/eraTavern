@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from "../types/game";
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../api/client";
+import T from "../theme";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -59,16 +60,16 @@ function buildTargetOptions(defs: GameDefinitions) {
 
 const inputStyle: React.CSSProperties = {
   padding: "4px 8px",
-  backgroundColor: "#0a0a1a",
-  color: "#ddd",
-  border: "1px solid #333",
+  backgroundColor: T.bg3,
+  color: T.text,
+  border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
   fontFamily: "monospace",
   fontSize: "12px",
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "#888",
+  color: T.textSub,
   fontSize: "11px",
   marginBottom: "2px",
 };
@@ -165,14 +166,14 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
   };
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: "#ddd", padding: "12px 0" }}>
+    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建特质" : "编辑特质"} ==
         </span>
         {trait.source && (
-          <span style={{ color: "#e89a19", fontSize: "12px" }}>
+          <span style={{ color: T.accent, fontSize: "12px" }}>
             来源: {trait.source}
           </span>
         )}
@@ -228,10 +229,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
       {/* Experience-specific hint */}
       {category === "experience" && (
-        <div style={{ marginBottom: "16px", padding: "8px", backgroundColor: "#1a1a2e", borderRadius: "3px" }}>
-          <div style={{ ...labelStyle, marginBottom: "4px", fontSize: "12px", color: "#aaa" }}>经验设定</div>
-          <div style={{ color: "#888", fontSize: "12px", lineHeight: 1.5 }}>
-            经验类型的特质会自动作用于全部角色，记录事件发生的次数。
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>经验设定</div>
+          <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", color: T.textDim, fontSize: "12px", lineHeight: 1.5 }}>
+            经验会自动作用于全部角色，记录事件发生的次数。
             <br />
             通过行动效果中的「经验」类型来增加次数，首次触发时自动记录事件/地点/对象。
           </div>
@@ -240,9 +241,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
       {/* Ability-specific fields */}
       {category === "ability" && (
-        <div style={{ marginBottom: "16px", padding: "8px", backgroundColor: "#1a1a2e", borderRadius: "3px" }}>
-          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: "#aaa" }}>能力设定</div>
-          <div style={{ display: "flex", gap: "12px", marginBottom: "8px" }}>
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>能力设定</div>
+          <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "12px" }}>
             <div style={{ flex: 1 }}>
               <div style={labelStyle}>默认经验值</div>
               <input
@@ -266,7 +268,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           </div>
 
           {/* Decay settings */}
-          <div style={{ marginTop: "8px" }}>
+          <div>
             <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
               <input
                 type="checkbox"
@@ -313,13 +315,14 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               </div>
             )}
           </div>
+          </div>
         </div>
       )}
 
       {/* Effects */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: "#aaa" }}>效果</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>效果</div>
+        <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexDirection: "column", gap: "4px" }}>
           {effects.map((eff, idx) => (
             <div
               key={idx}
@@ -328,7 +331,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 alignItems: "center",
                 gap: "6px",
                 padding: "4px 8px",
-                backgroundColor: "#1a1a2e",
+                backgroundColor: T.bg2,
                 borderRadius: "3px",
               }}
             >
@@ -381,7 +384,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
               {/* Multiplier hint for percentage */}
               {eff.magnitudeType === "percentage" && (
-                <span style={{ color: "#666", fontSize: "11px", width: "50px", flexShrink: 0 }}>
+                <span style={{ color: T.textDim, fontSize: "11px", width: "50px", flexShrink: 0 }}>
                   {pctHint(eff.value, eff.effect)}
                 </span>
               )}
@@ -393,7 +396,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#e94560",
+                    color: T.danger,
                     cursor: "pointer",
                     fontFamily: "monospace",
                     fontSize: "14px",
@@ -405,25 +408,26 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               )}
             </div>
           ))}
+          {!isReadOnly && (
+            <button
+              onClick={addEffect}
+              style={{
+                marginTop: "2px",
+                padding: "3px 10px",
+                backgroundColor: T.bg2,
+                color: T.successDim,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "12px",
+                alignSelf: "flex-start",
+              }}
+            >
+              [+ 添加效果]
+            </button>
+          )}
         </div>
-        {!isReadOnly && (
-          <button
-            onClick={addEffect}
-            style={{
-              marginTop: "6px",
-              padding: "3px 10px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "12px",
-            }}
-          >
-            [+ 添加效果]
-          </button>
-        )}
       </div>
 
       {/* Action bar */}
@@ -434,9 +438,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
             disabled={saving}
             style={{
               padding: "5px 16px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
               fontFamily: "monospace",
@@ -452,9 +456,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
             disabled={saving}
             style={{
               padding: "5px 16px",
-              backgroundColor: "#16213e",
-              color: "#e94560",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.danger,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
               fontFamily: "monospace",
@@ -468,9 +472,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           onClick={onBack}
           style={{
             padding: "5px 16px",
-            backgroundColor: "#16213e",
-            color: "#888",
-            border: "1px solid #333",
+            backgroundColor: T.bg2,
+            color: T.textSub,
+            border: `1px solid ${T.border}`,
             borderRadius: "3px",
             cursor: "pointer",
             fontFamily: "monospace",
@@ -480,7 +484,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message === "已保存" ? "#0f0" : "#e94560", fontSize: "12px" }}>
+          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>
             {message}
           </span>
         )}

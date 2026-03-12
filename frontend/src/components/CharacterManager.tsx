@@ -1,3 +1,4 @@
+import T from "../theme";
 import { useEffect, useState, useCallback } from "react";
 import type { GameDefinitions, RawCharacterData } from "../types/game";
 import { fetchDefinitions, fetchCharacterConfigs, patchCharacter } from "../api/client";
@@ -58,7 +59,7 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
 
   if (!definitions) {
     return (
-      <div style={{ color: "#666", fontFamily: "monospace", padding: "20px", textAlign: "center" }}>
+      <div style={{ color: T.textDim, fontFamily: "monospace", padding: "20px", textAlign: "center" }}>
         加载中...
       </div>
     );
@@ -115,12 +116,12 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
       style={{
         fontFamily: "monospace",
         fontSize: "13px",
-        color: "#ddd",
+        color: T.text,
         padding: "12px 0",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == 角色列表 ==
         </span>
         {!readOnly && (
@@ -128,9 +129,9 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
             onClick={handleNew}
             style={{
               padding: "4px 12px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: "pointer",
               fontFamily: "monospace",
@@ -153,7 +154,7 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
                 alignItems: "center",
                 gap: "10px",
                 padding: "7px 12px",
-                backgroundColor: "#1a1a2e",
+                backgroundColor: T.bg1,
                 borderRadius: "4px",
                 opacity: isActive ? 1 : 0.45,
               }}
@@ -165,7 +166,7 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
                   flex: 1,
                   background: "none",
                   border: "none",
-                  color: "#ddd",
+                  color: T.text,
                   cursor: "pointer",
                   fontFamily: "monospace",
                   fontSize: "13px",
@@ -228,16 +229,16 @@ function ToggleSwitch({
           width={w - 2} height={h - 2}
           rx={(h - 2) / 2} ry={(h - 2) / 2}
           fill={on ? onColor : "transparent"}
-          stroke={on ? onColor : "#555"}
+          stroke={on ? onColor : T.borderLight}
           strokeWidth={1.5}
         />
         {/* Thumb */}
         <circle
           cx={cx} cy={h / 2} r={r}
-          fill={on ? "#fff" : "#888"}
+          fill={on ? "#fff" : T.textSub}
         />
       </svg>
-      <span style={{ fontSize: "11px", color: on ? "#ccc" : "#555", userSelect: "none" }}>
+      <span style={{ fontSize: "11px", color: on ? "#ccc" : T.borderLight, userSelect: "none" }}>
         {label}
       </span>
     </div>

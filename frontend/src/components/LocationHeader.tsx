@@ -1,3 +1,4 @@
+import T from "../theme";
 import { useState } from "react";
 import type { GameTime, GameMap, CharacterState } from "../types/game";
 
@@ -34,7 +35,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
         maxHeight: "50vh",
         borderRadius: "4px",
         overflow: "hidden",
-        backgroundColor: "#000",
+        backgroundColor: T.bg0,
       }}
     >
       {/* Background image or gradient fallback */}
@@ -56,7 +57,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(135deg, #16213e 0%, #1a1a2e 50%, #0f3460 100%)",
+            background: `linear-gradient(135deg, ${T.bg2} 0%, ${T.bg1} 50%, ${T.bg2} 100%)`,
           }}
         />
       )}
@@ -79,7 +80,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
           left: "12px",
           fontFamily: "monospace",
           fontSize: "13px",
-          color: "#eee",
+          color: T.text,
           textShadow: "1px 1px 3px rgba(0,0,0,0.9)",
           lineHeight: "1.6",
           zIndex: 2,
@@ -114,7 +115,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
                 top: "50%",
                 transform: "translateY(-50%)",
                 background: "rgba(0,0,0,0.5)",
-                color: "#eee",
+                color: T.text,
                 border: "none",
                 borderRadius: "4px",
                 padding: "6px 10px",
@@ -143,7 +144,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
                   objectPosition: "bottom",
                   cursor: "pointer",
                   filter: isSelected ? "brightness(1.2)" : "none",
-                  outline: isSelected ? "2px solid #e94560" : "none",
+                  outline: isSelected ? `2px solid ${T.accent}` : "none",
                   outlineOffset: "-2px",
                 }}
               />
@@ -159,7 +160,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
                 top: "50%",
                 transform: "translateY(-50%)",
                 background: "rgba(0,0,0,0.5)",
-                color: "#eee",
+                color: T.text,
                 border: "none",
                 borderRadius: "4px",
                 padding: "6px 10px",

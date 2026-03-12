@@ -1,3 +1,4 @@
+import T from "../theme";
 import type { GameMap } from "../types/game";
 
 interface MapTabsProps {
@@ -29,10 +30,10 @@ export default function MapTabs({
             onClick={() => onSelectMap(map.id)}
             style={{
               padding: "6px 16px",
-              backgroundColor: isActive ? "#16213e" : "#0f3460",
-              color: isActive ? "#e94560" : "#eee",
-              border: "1px solid #333",
-              borderBottom: isActive ? "2px solid #e94560" : "1px solid #333",
+              backgroundColor: isActive ? T.bg2 : T.bg1,
+              color: isActive ? T.accent : T.text,
+              border: `1px solid ${T.border}`,
+              borderBottom: isActive ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
               cursor: "pointer",
               fontFamily: "monospace",
               fontSize: "13px",
@@ -49,8 +50,8 @@ export default function MapTabs({
           marginLeft: "auto",
           padding: "4px 10px",
           backgroundColor: "transparent",
-          color: "#888",
-          border: "1px solid #333",
+          color: T.textSub,
+          border: `1px solid ${T.border}`,
           borderRadius: "4px",
           cursor: "pointer",
           fontFamily: "monospace",

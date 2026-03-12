@@ -5,6 +5,7 @@ import type {
   ValueModifier, GameDefinitions, OutputTemplateEntry, SuggestNext,
 } from "../types/game";
 import { createActionDef, saveActionDef, deleteActionDef } from "../api/client";
+import T from "../theme";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -22,16 +23,16 @@ interface Props {
 
 const inputStyle: React.CSSProperties = {
   padding: "4px 8px",
-  backgroundColor: "#0a0a1a",
-  color: "#ddd",
-  border: "1px solid #333",
+  backgroundColor: T.bg3,
+  color: T.text,
+  border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
   fontFamily: "monospace",
   fontSize: "12px",
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "#888",
+  color: T.textSub,
   fontSize: "11px",
   marginBottom: "2px",
 };
@@ -39,8 +40,8 @@ const labelStyle: React.CSSProperties = {
 const sectionBase: React.CSSProperties = {
   marginBottom: "12px",
   padding: "8px 8px 8px 10px",
-  backgroundColor: "#0a0a1a",
-  border: "1px solid #333",
+  backgroundColor: T.bg3,
+  border: `1px solid ${T.border}`,
   borderRadius: "3px",
 };
 
@@ -54,10 +55,10 @@ const SEC = {
 };
 
 // Alternating row style for list items — makes [x] buttons clearly belong to their row
-const rowBg = (idx: number) => idx % 2 === 0 ? "#0c0c1e" : "#101028";
+const rowBg = (idx: number) => idx % 2 === 0 ? T.bg1 : T.bg2;
 const listRowStyle = (idx: number, last: boolean): React.CSSProperties => ({
   backgroundColor: rowBg(idx),
-  borderBottom: last ? "none" : "1px solid #1a1a2e",
+  borderBottom: last ? "none" : `1px solid ${T.borderDim}`,
   padding: "3px 4px",
   borderRadius: "2px",
 });
@@ -69,9 +70,9 @@ const sectionStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
 
 const smallBtnStyle = (color: string): React.CSSProperties => ({
   padding: "2px 8px",
-  backgroundColor: "#16213e",
+  backgroundColor: T.bg2,
   color,
-  border: "1px solid #333",
+  border: `1px solid ${T.border}`,
   borderRadius: "3px",
   cursor: "pointer",
   fontFamily: "monospace",
@@ -243,13 +244,13 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   };
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: "#ddd", padding: "12px 0" }}>
+    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建行动" : "编辑行动"} ==
         </span>
-        {action.source && <span style={{ color: "#e89a19", fontSize: "12px" }}>来源: {action.source}</span>}
+        {action.source && <span style={{ color: T.accent, fontSize: "12px" }}>来源: {action.source}</span>}
       </div>
 
       {/* Basic info */}
@@ -312,13 +313,13 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             <div style={labelStyle}>基础权重</div>
             <input type="number" style={{ ...inputStyle, width: "80px" }}
               value={npcWeight} onChange={(e) => setNpcWeight(Number(e.target.value))} disabled={isReadOnly} />
-            <div style={{ color: "#666", fontSize: "10px", marginTop: "2px" }}>0 = NPC不会执行此行动</div>
+            <div style={{ color: T.textDim, fontSize: "10px", marginTop: "2px" }}>0 = NPC不会执行此行动</div>
           </div>
           <div style={{
             flex: 1,
             paddingLeft: "8px",
             borderLeft: "2px solid #333",
-            backgroundColor: "#0d0d1e",
+            backgroundColor: T.bg1,
             borderRadius: "0 3px 3px 0",
           }}>
             <ModifierListEditor
@@ -342,13 +343,13 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           <span style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>显示条件 (AND)</span>
           {!isReadOnly && (
             <div style={{ display: "flex", gap: "4px" }}>
-              <button onClick={addCondition} style={smallBtnStyle("#0f0")}>[+ 条件]</button>
-              <button onClick={addOrGroup} style={smallBtnStyle("#0f0")}>[+ OR]</button>
-              <button onClick={addAndGroup} style={smallBtnStyle("#0f0")}>[+ AND]</button>
+              <button onClick={addCondition} style={smallBtnStyle(T.successDim)}>[+ 条件]</button>
+              <button onClick={addOrGroup} style={smallBtnStyle(T.successDim)}>[+ OR]</button>
+              <button onClick={addAndGroup} style={smallBtnStyle(T.successDim)}>[+ AND]</button>
             </div>
           )}
         </div>
-        {conditions.length === 0 && <div style={{ color: "#666", fontSize: "12px" }}>无条件（始终显示）</div>}
+        {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无条件（始终显示）</div>}
         {conditions.map((item, idx) => (
           <div key={idx} style={listRowStyle(idx, idx === conditions.length - 1)}>
             <ConditionItemEditor
@@ -370,9 +371,9 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       <div style={sectionStyle("outcome")}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
           <span style={{ color: SEC.outcome.color, fontSize: "12px", fontWeight: "bold" }}>结果分级</span>
-          {!isReadOnly && <button onClick={addOutcome} style={smallBtnStyle("#0f0")}>[+ 结果]</button>}
+          {!isReadOnly && <button onClick={addOutcome} style={smallBtnStyle(T.successDim)}>[+ 结果]</button>}
         </div>
-        {outcomes.length === 0 && <div style={{ color: "#666", fontSize: "12px" }}>无结果（固定成功）</div>}
+        {outcomes.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无结果（固定成功）</div>}
         {outcomes.map((outcome, idx) => (
           <OutcomeEditor key={idx} outcome={outcome} onChange={(o) => updateOutcome(idx, o)}
             onRemove={() => removeOutcome(idx)} disabled={isReadOnly} definitions={definitions}
@@ -386,7 +387,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
           <span style={{ color: SEC.template.color, fontSize: "12px", fontWeight: "bold" }}>行为模板</span>
           <button onClick={() => setShowVarHelp((v) => !v)}
-            style={{ ...smallBtnStyle(showVarHelp ? "#e94560" : "#888"), fontSize: "11px" }}>
+            style={{ ...smallBtnStyle(showVarHelp ? T.danger : T.textSub), fontSize: "11px" }}>
             [?]
           </button>
         </div>
@@ -412,21 +413,21 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         {!isReadOnly && (
           <button onClick={handleSave} disabled={saving}
-            style={{ ...smallBtnStyle("#0f0"), padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
+            style={{ ...smallBtnStyle(T.successDim), padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
             [保存]
           </button>
         )}
         {!isReadOnly && !isNew && (
           <button onClick={handleDelete} disabled={saving}
-            style={{ ...smallBtnStyle("#e94560"), padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
+            style={{ ...smallBtnStyle(T.danger), padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
             [删除]
           </button>
         )}
         <button onClick={onBack}
-          style={{ ...smallBtnStyle("#888"), padding: "5px 16px", fontSize: "13px" }}>
+          style={{ ...smallBtnStyle(T.textSub), padding: "5px 16px", fontSize: "13px" }}>
           [返回列表]
         </button>
-        {message && <span style={{ color: message === "已保存" ? "#0f0" : "#e94560", fontSize: "12px" }}>{message}</span>}
+        {message && <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>}
       </div>
     </div>
   );
@@ -514,7 +515,7 @@ function ConditionItemEditor({
         <button
           onClick={toggleNot}
           style={{
-            ...smallBtnStyle(isNot ? "#e9a045" : "#666"),
+            ...smallBtnStyle(isNot ? "#e9a045" : T.textDim),
             minWidth: "28px", textAlign: "center", padding: "1px 4px",
             fontWeight: isNot ? "bold" : "normal",
           }}
@@ -523,12 +524,12 @@ function ConditionItemEditor({
           {isNot ? "NOT" : "AND"}
         </button>
       ) : (
-        <span style={{ color: isNot ? "#e9a045" : "#666", fontSize: "11px", minWidth: "28px", fontWeight: isNot ? "bold" : "normal" }}>
+        <span style={{ color: isNot ? "#e9a045" : T.textDim, fontSize: "11px", minWidth: "28px", fontWeight: isNot ? "bold" : "normal" }}>
           {isNot ? "NOT" : "AND"}
         </span>
       )}
       <ConditionLeafEditor condition={leaf} onChange={(c) => isNot ? onChange({ not: c }) : onChange(c)} disabled={disabled} ctx={ctx} />
-      {!disabled && <button onClick={onRemove} style={smallBtnStyle("#e94560")}>x</button>}
+      {!disabled && <button onClick={onRemove} style={smallBtnStyle(T.danger)}>x</button>}
     </div>
   );
 }
@@ -548,7 +549,7 @@ function ConditionGroupEditor({
 }) {
   const label = (isNot ? "NOT " : "") + (type === "and" ? "AND 组" : "OR 组");
   const labelColor = isNot ? "#e9a045" : type === "and" ? "#6ec6ff" : "#e9a045";
-  const borderColor = ["#444", "#555", "#666"][depth % 3];
+  const borderColor = [T.border, T.borderLight, T.textDim][depth % 3];
 
   const addLeaf = () => onChange([...items, { type: "location" }]);
   const addOr = () => onChange([...items, { or: [{ type: "location" }] }]);
@@ -573,7 +574,7 @@ function ConditionGroupEditor({
         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
           {!disabled && onToggleNot && (
             <button onClick={onToggleNot}
-              style={{ ...smallBtnStyle(isNot ? "#e9a045" : "#666"), fontSize: "10px", padding: "1px 4px" }}
+              style={{ ...smallBtnStyle(isNot ? "#e9a045" : T.textDim), fontSize: "10px", padding: "1px 4px" }}
               title={isNot ? "取消 NOT" : "添加 NOT"}>
               {isNot ? "NOT" : "NOT"}
             </button>
@@ -583,15 +584,15 @@ function ConditionGroupEditor({
         <div style={{ display: "flex", gap: "4px" }}>
           {!disabled && depth + 1 < MAX_UI_DEPTH && (
             <>
-              <button onClick={addLeaf} style={smallBtnStyle("#0f0")}>[+条件]</button>
-              <button onClick={addOr} style={smallBtnStyle("#0f0")}>[+OR]</button>
-              <button onClick={addAnd} style={smallBtnStyle("#0f0")}>[+AND]</button>
+              <button onClick={addLeaf} style={smallBtnStyle(T.successDim)}>[+条件]</button>
+              <button onClick={addOr} style={smallBtnStyle(T.successDim)}>[+OR]</button>
+              <button onClick={addAnd} style={smallBtnStyle(T.successDim)}>[+AND]</button>
             </>
           )}
           {!disabled && depth + 1 >= MAX_UI_DEPTH && (
-            <button onClick={addLeaf} style={smallBtnStyle("#0f0")}>[+条件]</button>
+            <button onClick={addLeaf} style={smallBtnStyle(T.successDim)}>[+条件]</button>
           )}
-          {!disabled && <button onClick={onRemove} style={smallBtnStyle("#e94560")}>x</button>}
+          {!disabled && <button onClick={onRemove} style={smallBtnStyle(T.danger)}>x</button>}
         </div>
       </div>
       {items.map((child, idx) => (
@@ -732,7 +733,7 @@ function ConditionLeafEditor({
           <input type="number" style={{ ...inputStyle, width: "50px" }} value={condition.hourMin ?? ""}
             onChange={(e) => update({ hourMin: e.target.value ? Number(e.target.value) : undefined })} disabled={disabled}
             placeholder="时起" min={0} max={23} />
-          <span style={{ color: "#666" }}>~</span>
+          <span style={{ color: T.textDim }}>~</span>
           <input type="number" style={{ ...inputStyle, width: "50px" }} value={condition.hourMax ?? ""}
             onChange={(e) => update({ hourMax: e.target.value ? Number(e.target.value) : undefined })} disabled={disabled}
             placeholder="时止" min={0} max={23} />
@@ -809,9 +810,9 @@ function LocationCondEditor({
             <label key={`tag-${tag}`} style={{
               display: "inline-flex", alignItems: "center", gap: "3px",
               padding: "2px 6px", fontSize: "11px", cursor: disabled ? "default" : "pointer",
-              backgroundColor: selectedTags.has(tag) ? "#2a4a2a" : "#1a1a2e",
-              border: `1px solid ${selectedTags.has(tag) ? "#4a8a4a" : "#333"}`,
-              borderRadius: "3px", color: selectedTags.has(tag) ? "#8f8" : "#aaa",
+              backgroundColor: selectedTags.has(tag) ? "#2a4a2a" : T.bg2,
+              border: `1px solid ${selectedTags.has(tag) ? "#4a8a4a" : T.border}`,
+              borderRadius: "3px", color: selectedTags.has(tag) ? "#8f8" : T.textSub,
             }}>
               <input type="checkbox" checked={selectedTags.has(tag)} onChange={() => toggleTag(tag)}
                 disabled={disabled} style={{ margin: 0, width: "12px", height: "12px" }} />
@@ -826,9 +827,9 @@ function LocationCondEditor({
               <label key={c.id} style={{
                 display: "inline-flex", alignItems: "center", gap: "3px",
                 padding: "2px 6px", fontSize: "11px", cursor: disabled ? "default" : "pointer",
-                backgroundColor: isActive ? (isTagged ? "#1a3a4a" : "#2a2a4a") : "#1a1a2e",
-                border: `1px solid ${isActive ? (isTagged ? "#4a8aaa" : "#6a6aaa") : "#333"}`,
-                borderRadius: "3px", color: isActive ? "#ddd" : "#888",
+                backgroundColor: isActive ? (isTagged ? "#1a3a4a" : "#2a2a4a") : T.bg2,
+                border: `1px solid ${isActive ? (isTagged ? "#4a8aaa" : "#6a6aaa") : T.border}`,
+                borderRadius: "3px", color: isActive ? T.text : T.textSub,
                 opacity: isTagged && !isManual ? 0.8 : 1,
               }}>
                 <input type="checkbox" checked={isManual} onChange={() => toggleCell(c.id)}
@@ -908,8 +909,8 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
   return (
     <div style={{ marginBottom: "4px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ color: "#888", fontSize: "10px" }}>{label}</span>
-        {!disabled && <button onClick={add} style={smallBtnStyle("#888")}>[+]</button>}
+        <span style={{ color: T.textSub, fontSize: "10px" }}>{label}</span>
+        {!disabled && <button onClick={add} style={smallBtnStyle(T.textSub)}>[+]</button>}
       </div>
       {modifiers.map((mod, idx) => (
         <div key={idx} style={{ ...listRowStyle(idx, idx === modifiers.length - 1), display: "flex", gap: "4px", alignItems: "center", marginTop: "2px", flexWrap: "wrap" }}>
@@ -935,7 +936,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })} disabled={disabled}>
                 {abilityKeys.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
               </select>
-              <span style={{ color: "#888", fontSize: "10px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "10px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1000}
                 onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
             </>
@@ -947,7 +948,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })} disabled={disabled}>
                 {experienceKeys.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
               </select>
-              <span style={{ color: "#888", fontSize: "10px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "10px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
                 onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
             </>
@@ -976,7 +977,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
                 <option value="target">目标→自身</option>
                 <option value="self">自身→目标</option>
               </select>
-              <span style={{ color: "#888", fontSize: "10px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "10px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 100}
                 onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
             </>
@@ -989,7 +990,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
                 <option value="">选择变量</option>
                 {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
               </select>
-              <span style={{ color: "#888", fontSize: "10px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "10px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
                 onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
             </>
@@ -1004,7 +1005,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
           </select>
           <input type="number" style={{ ...inputStyle, width: "60px" }} value={mod.bonus}
             onChange={(e) => update(idx, { ...mod, bonus: Number(e.target.value) })} disabled={disabled} />
-          {!disabled && <button onClick={() => remove(idx)} style={smallBtnStyle("#e94560")}>x</button>}
+          {!disabled && <button onClick={() => remove(idx)} style={smallBtnStyle(T.danger)}>x</button>}
         </div>
       ))}
     </div>
@@ -1097,8 +1098,8 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
     }}>
       <span style={{ fontSize: "11px", fontWeight: "bold" }}>
         <span style={{ color, marginRight: "4px" }}>|</span>
-        <span style={{ color: "#bbb" }}>{label}</span>
-        {count !== null && <span style={{ color: "#666", fontSize: "10px", marginLeft: "4px" }}>({count})</span>}
+        <span style={{ color: T.textSub }}>{label}</span>
+        {count !== null && <span style={{ color: T.textDim, fontSize: "10px", marginLeft: "4px" }}>({count})</span>}
       </span>
       {rightContent}
     </div>
@@ -1115,8 +1116,8 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
     }} onClick={toggle}>
       <span style={{ fontSize: "11px", fontWeight: "bold" }}>
         <span style={{ color, marginRight: "4px" }}>{isOpen ? "\u25BC" : "\u25B6"}</span>
-        <span style={{ color: "#bbb" }}>{label}</span>
-        {count > 0 && <span style={{ color: "#666", fontSize: "10px", marginLeft: "4px" }}>({count})</span>}
+        <span style={{ color: T.textSub }}>{label}</span>
+        {count > 0 && <span style={{ color: T.textDim, fontSize: "10px", marginLeft: "4px" }}>({count})</span>}
       </span>
       <div onClick={(e) => e.stopPropagation()}>{rightContent}</div>
     </div>
@@ -1126,17 +1127,17 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
   const tplCount = (outcome.outputTemplates ?? (outcome.outputTemplate ? [{ text: outcome.outputTemplate }] : [])).length;
 
   return (
-    <div style={{ border: "1px solid #444", borderRadius: "3px", padding: "8px", marginBottom: "8px", backgroundColor: "#111122" }}>
+    <div style={{ border: `1px solid ${T.borderLight}`, borderRadius: "3px", padding: "8px", marginBottom: "8px", backgroundColor: T.bg2 }}>
       {/* Outcome header: grade, label, weight */}
-      <div style={{ display: "flex", gap: "6px", alignItems: "center", marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px solid #333" }}>
+      <div style={{ display: "flex", gap: "6px", alignItems: "center", marginBottom: "8px", paddingBottom: "6px", borderBottom: `1px solid ${T.border}` }}>
         <input style={{ ...inputStyle, width: "80px" }} value={outcome.grade}
           onChange={(e) => update({ grade: e.target.value })} disabled={disabled} placeholder="grade" />
         <input style={{ ...inputStyle, width: "60px" }} value={outcome.label}
           onChange={(e) => update({ label: e.target.value })} disabled={disabled} placeholder="标签" />
-        <span style={{ color: "#888", fontSize: "11px" }}>权重:</span>
+        <span style={{ color: T.textSub, fontSize: "11px" }}>权重:</span>
         <input type="number" style={{ ...inputStyle, width: "50px" }} value={outcome.weight}
           onChange={(e) => update({ weight: Math.max(0, Number(e.target.value)) })} disabled={disabled} />
-        {!disabled && <button onClick={onRemove} style={{ ...smallBtnStyle("#e94560"), marginLeft: "auto" }}>x</button>}
+        {!disabled && <button onClick={onRemove} style={{ ...smallBtnStyle(T.danger), marginLeft: "auto" }}>x</button>}
       </div>
 
       {/* Weight modifiers */}
@@ -1144,7 +1145,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
         marginLeft: "8px",
         paddingLeft: "8px",
         borderLeft: "2px solid #333",
-        backgroundColor: "#0d0d1e",
+        backgroundColor: T.bg1,
         borderRadius: "0 3px 3px 0",
         marginBottom: "8px",
       }}>
@@ -1163,9 +1164,9 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
       {/* Effects grouped by target */}
       <div style={{ marginBottom: "8px" }}>
         {subHeader("效果", "#6ec6ff", outcome.effects.length,
-          !disabled && <button onClick={addTargetGroup} style={smallBtnStyle("#0f0")}>[+ 目标组]</button>
+          !disabled && <button onClick={addTargetGroup} style={smallBtnStyle(T.successDim)}>[+ 目标组]</button>
         )}
-        {targetGroups.length === 0 && <div style={{ color: "#555", fontSize: "11px", paddingLeft: "12px" }}>无效果</div>}
+        {targetGroups.length === 0 && <div style={{ color: T.textDim, fontSize: "11px", paddingLeft: "12px" }}>无效果</div>}
         {targetGroups.map((group) => (
           <div key={group.target} style={{
             border: `1px solid ${targetColor(group.target)}33`,
@@ -1173,7 +1174,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
             borderRadius: "3px",
             padding: "4px 6px",
             marginBottom: "4px",
-            backgroundColor: "#0a0a1a",
+            backgroundColor: T.bg3,
           }}>
             <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
               <span style={{ color: targetColor(group.target), fontSize: "11px", fontWeight: "bold" }}>目标:</span>
@@ -1186,7 +1187,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                 {npcList.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
               </select>
               {!disabled && (
-                <button onClick={() => addEffectForTarget(group.target)} style={{ ...smallBtnStyle("#0f0"), marginLeft: "auto" }}>
+                <button onClick={() => addEffectForTarget(group.target)} style={{ ...smallBtnStyle(T.successDim), marginLeft: "auto" }}>
                   [+ 效果]
                 </button>
               )}
@@ -1200,7 +1201,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                     <EffectEditor effect={eff} onChange={(e) => updateEffect(effIdx, { ...e, target: group.target })} disabled={disabled}
                       resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
                       traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} variableList={variableList} />
-                    {!disabled && <button onClick={() => removeEffect(effIdx)} style={smallBtnStyle("#e94560")}>x</button>}
+                    {!disabled && <button onClick={() => removeEffect(effIdx)} style={smallBtnStyle(T.danger)}>x</button>}
                   </div>
                   {hasModifiers && (
                     <div style={{
@@ -1208,7 +1209,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                       marginLeft: "12px",
                       paddingLeft: "8px",
                       borderLeft: "2px solid #333",
-                      backgroundColor: "#0d0d1e",
+                      backgroundColor: T.bg1,
                       borderRadius: "0 3px 3px 0",
                     }}>
                       <ModifierListEditor
@@ -1239,7 +1240,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
               onClick={() => update({
                 suggestNext: [...(outcome.suggestNext ?? []), { actionId: actionList[0]?.id ?? "", bonus: 50, decay: 60 }],
               })}
-              style={smallBtnStyle("#0f0")}
+              style={smallBtnStyle(T.successDim)}
             >
               [+]
             </button>
@@ -1247,7 +1248,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
         )}
         {showChain && (
           <div style={{ paddingLeft: "12px" }}>
-            {chainCount === 0 && <div style={{ color: "#555", fontSize: "11px" }}>无行动链（此结果后NPC自由选择下一行动）</div>}
+            {chainCount === 0 && <div style={{ color: T.textDim, fontSize: "11px" }}>无行动链（此结果后NPC自由选择下一行动）</div>}
             {(outcome.suggestNext ?? []).map((sn, snIdx) => {
               const mode = sn.category ? "category" : "action";
               const updateSn = (patch: Partial<SuggestNext>) => {
@@ -1312,7 +1313,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                     disabled={disabled}
                     title="权重加成"
                   />
-                  <span style={{ color: "#666", fontSize: "10px", whiteSpace: "nowrap" }}>/</span>
+                  <span style={{ color: T.textDim, fontSize: "10px", whiteSpace: "nowrap" }}>/</span>
                   <input
                     type="number"
                     style={{ ...inputStyle, width: "45px" }}
@@ -1321,14 +1322,14 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                     disabled={disabled}
                     title="衰减时间(分钟)"
                   />
-                  <span style={{ color: "#666", fontSize: "10px" }}>分</span>
+                  <span style={{ color: T.textDim, fontSize: "10px" }}>分</span>
                   {!disabled && (
                     <button
                       onClick={() => {
                         const next = (outcome.suggestNext ?? []).filter((_, i) => i !== snIdx);
                         update({ suggestNext: next.length > 0 ? next : undefined });
                       }}
-                      style={smallBtnStyle("#e94560")}
+                      style={smallBtnStyle(T.danger)}
                     >
                       x
                     </button>
@@ -1402,7 +1403,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
               <option value="add">增加</option>
               <option value="set">设为</option>
             </select>
-            <button type="button" style={{ ...inputStyle, cursor: "pointer", color: isVarMode ? "#e94560" : "#888", minWidth: "28px", textAlign: "center" }}
+            <button type="button" style={{ ...inputStyle, cursor: "pointer", color: isVarMode ? T.danger : T.textSub, minWidth: "28px", textAlign: "center" }}
               onClick={() => {
                 if (isVarMode) {
                   update({ value: 0 });
@@ -1419,7 +1420,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
                   <option value="">选择变量</option>
                   {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                 </select>
-                <span style={{ color: "#888", fontSize: "10px" }}>×</span>
+                <span style={{ color: T.textSub, fontSize: "10px" }}>×</span>
                 <input type="number" step="0.1" style={{ ...inputStyle, width: "55px" }} value={varVal?.multiply ?? 1}
                   onChange={(e) => update({ value: { ...varVal!, multiply: Number(e.target.value) } as any })} disabled={disabled} />
               </>
@@ -1427,7 +1428,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
               <>
                 <input type="number" style={{ ...inputStyle, width: "70px" }} value={(effect.value as number) ?? 0}
                   onChange={(e) => update({ value: Number(e.target.value) })} disabled={disabled} />
-                <button type="button" style={{ ...inputStyle, cursor: "pointer", color: effect.valuePercent ? "#e94560" : "#888", minWidth: "28px", textAlign: "center" }}
+                <button type="button" style={{ ...inputStyle, cursor: "pointer", color: effect.valuePercent ? T.danger : T.textSub, minWidth: "28px", textAlign: "center" }}
                   onClick={() => update({ valuePercent: !effect.valuePercent })} disabled={disabled}>
                   %
                 </button>
@@ -1444,7 +1445,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
             <option value="">选择</option>
             {experienceKeys.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
           </select>
-          <span style={{ color: "#888", fontSize: "10px" }}>+</span>
+          <span style={{ color: T.textSub, fontSize: "10px" }}>+</span>
           <input type="number" style={{ ...inputStyle, width: "50px" }} value={effect.value ?? 1}
             onChange={(e) => update({ value: Number(e.target.value) })} disabled={disabled} />
         </>
@@ -1452,15 +1453,15 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
 
       {effect.type === "favorability" && (
         <>
-          <span style={{ color: "#888", fontSize: "10px" }}>源:</span>
+          <span style={{ color: T.textSub, fontSize: "10px" }}>源:</span>
           <select style={inputStyle} value={effect.favFrom ?? "{{targetId}}"}
             onChange={(e) => update({ favFrom: e.target.value })} disabled={disabled}>
             <option value="self">自身</option>
             <option value="{{targetId}}">目标</option>
             <option value="{{player}}">Player</option>
           </select>
-          <span style={{ color: "#888", fontSize: "10px" }}>→</span>
-          <span style={{ color: "#888", fontSize: "10px" }}>对象:</span>
+          <span style={{ color: T.textSub, fontSize: "10px" }}>→</span>
+          <span style={{ color: T.textSub, fontSize: "10px" }}>对象:</span>
           <select style={inputStyle} value={effect.favTo ?? "self"}
             onChange={(e) => update({ favTo: e.target.value })} disabled={disabled}>
             <option value="self">自身</option>
@@ -1476,7 +1477,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
             const varVal = isVarMode ? (effect.value as { varId: string; multiply?: number }) : null;
             return (
               <>
-                <button type="button" style={{ ...inputStyle, cursor: "pointer", color: isVarMode ? "#e94560" : "#888", minWidth: "28px", textAlign: "center" }}
+                <button type="button" style={{ ...inputStyle, cursor: "pointer", color: isVarMode ? T.danger : T.textSub, minWidth: "28px", textAlign: "center" }}
                   onClick={() => {
                     if (isVarMode) update({ value: 0 });
                     else update({ value: { varId: variableList[0]?.id ?? "", multiply: 1 } as any });
@@ -1490,7 +1491,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
                       <option value="">选择变量</option>
                       {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                     </select>
-                    <span style={{ color: "#888", fontSize: "10px" }}>×</span>
+                    <span style={{ color: T.textSub, fontSize: "10px" }}>×</span>
                     <input type="number" step="0.1" style={{ ...inputStyle, width: "55px" }} value={varVal?.multiply ?? 1}
                       onChange={(e) => update({ value: { ...varVal!, multiply: Number(e.target.value) } as any })} disabled={disabled} />
                   </>
@@ -1498,7 +1499,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
                   <>
                     <input type="number" style={{ ...inputStyle, width: "70px" }} value={(effect.value as number) ?? 0}
                       onChange={(e) => update({ value: Number(e.target.value) })} disabled={disabled} />
-                    <button type="button" style={{ ...inputStyle, cursor: "pointer", color: effect.valuePercent ? "#e94560" : "#888", minWidth: "28px", textAlign: "center" }}
+                    <button type="button" style={{ ...inputStyle, cursor: "pointer", color: effect.valuePercent ? T.danger : T.textSub, minWidth: "28px", textAlign: "center" }}
                       onClick={() => update({ valuePercent: !effect.valuePercent })} disabled={disabled}>
                       %
                     </button>
@@ -1614,10 +1615,10 @@ function TemplateListEditor({ templates, onChange, disabled, ctx }: {
       <div>
         <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
           {!disabled && templates.length === 0 && (
-            <button onClick={add} style={smallBtnStyle("#0f0")}>[+ 模板]</button>
+            <button onClick={add} style={smallBtnStyle(T.successDim)}>[+ 模板]</button>
           )}
           {templates.length === 1 && !disabled && (
-            <button onClick={add} style={smallBtnStyle("#0f0")}>[+ 分支]</button>
+            <button onClick={add} style={smallBtnStyle(T.successDim)}>[+ 分支]</button>
           )}
         </div>
         {templates.length === 1 && (
@@ -1626,7 +1627,7 @@ function TemplateListEditor({ templates, onChange, disabled, ctx }: {
               value={templates[0].text}
               onChange={(e) => update(0, { ...templates[0], text: e.target.value })}
               disabled={disabled} placeholder="{{player}} ..." />
-            {!disabled && <button onClick={() => remove(0)} style={smallBtnStyle("#e94560")}>x</button>}
+            {!disabled && <button onClick={() => remove(0)} style={smallBtnStyle(T.danger)}>x</button>}
           </div>
         )}
       </div>
@@ -1637,21 +1638,21 @@ function TemplateListEditor({ templates, onChange, disabled, ctx }: {
   return (
     <div>
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
-        {!disabled && <button onClick={add} style={smallBtnStyle("#0f0")}>[+ 分支]</button>}
-        <span style={{ color: "#666", fontSize: "10px" }}>满足条件的模板中随机选择（按权重）</span>
+        {!disabled && <button onClick={add} style={smallBtnStyle(T.successDim)}>[+ 分支]</button>}
+        <span style={{ color: T.textDim, fontSize: "10px" }}>满足条件的模板中随机选择（按权重）</span>
       </div>
       {templates.map((entry, idx) => (
         <div key={idx} style={{
           ...listRowStyle(idx, idx === templates.length - 1),
-          border: "1px solid #333", borderRadius: "3px", padding: "4px 6px",
+          border: `1px solid ${T.border}`, borderRadius: "3px", padding: "4px 6px",
         }}>
           <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
             <span style={{ color: "#6ec6ff", fontSize: "10px", fontWeight: "bold" }}>#{idx + 1}</span>
-            <span style={{ color: "#888", fontSize: "10px" }}>权重:</span>
+            <span style={{ color: T.textSub, fontSize: "10px" }}>权重:</span>
             <input type="number" style={{ ...inputStyle, width: "50px" }} value={entry.weight ?? 1}
               onChange={(e) => update(idx, { ...entry, weight: Math.max(0, Number(e.target.value)) })}
               disabled={disabled} />
-            {!disabled && <button onClick={() => remove(idx)} style={{ ...smallBtnStyle("#e94560"), marginLeft: "auto" }}>x</button>}
+            {!disabled && <button onClick={() => remove(idx)} style={{ ...smallBtnStyle(T.danger), marginLeft: "auto" }}>x</button>}
           </div>
           <textarea style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: "32px", resize: "vertical", marginBottom: "2px" }}
             value={entry.text}
@@ -1694,9 +1695,9 @@ function TemplateConditionsEditor({ conditions, onChange, disabled, ctx }: {
       marginTop: "2px",
     }}>
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
-        <span style={{ color: "#888", fontSize: "10px" }}>↳ 条件</span>
-        {!disabled && <button onClick={addCond} style={smallBtnStyle("#888")}>[+]</button>}
-        {conditions.length === 0 && <span style={{ color: "#555", fontSize: "10px" }}>无条件（始终可选）</span>}
+        <span style={{ color: T.textSub, fontSize: "10px" }}>↳ 条件</span>
+        {!disabled && <button onClick={addCond} style={smallBtnStyle(T.textSub)}>[+]</button>}
+        {conditions.length === 0 && <span style={{ color: T.textDim, fontSize: "10px" }}>无条件（始终可选）</span>}
       </div>
       {conditions.map((item, idx) => (
         <div key={idx} style={{ marginBottom: "2px" }}>
@@ -1724,7 +1725,7 @@ function TemplateVarHelp({ resourceKeys, abilityKeys, basicInfoNumKeys, traitCat
   clothingSlots: string[];
 }) {
   const s: React.CSSProperties = { color: "#0ff", fontSize: "11px", fontFamily: "monospace" };
-  const d: React.CSSProperties = { color: "#888", fontSize: "11px" };
+  const d: React.CSSProperties = { color: T.textSub, fontSize: "11px" };
   const row = (v: string, desc: string) => (
     <div key={v} style={{ display: "flex", gap: "8px", marginBottom: "1px" }}>
       <span style={{ ...s, minWidth: "220px" }}>{`{{${v}}}`}</span>
@@ -1733,8 +1734,8 @@ function TemplateVarHelp({ resourceKeys, abilityKeys, basicInfoNumKeys, traitCat
   );
 
   return (
-    <div style={{ marginTop: "6px", padding: "8px", backgroundColor: "#0a0a1a", border: "1px solid #333", borderRadius: "3px", maxHeight: "300px", overflowY: "auto" }}>
-      <div style={{ color: "#e94560", fontSize: "11px", fontWeight: "bold", marginBottom: "4px" }}>可用变量 (self = 行动者, target = 目标)</div>
+    <div style={{ marginTop: "6px", padding: "8px", backgroundColor: T.bg3, border: `1px solid ${T.border}`, borderRadius: "3px", maxHeight: "300px", overflowY: "auto" }}>
+      <div style={{ color: T.accent, fontSize: "11px", fontWeight: "bold", marginBottom: "4px" }}>可用变量 (self = 行动者, target = 目标)</div>
       {row("player", "行动者名称 (= self.name)")}
       {row("target", "目标名称 (= target.name)")}
       {row("outcome", "结果标签 (成功/失败等)")}

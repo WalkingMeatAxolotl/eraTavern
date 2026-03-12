@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import type { GameDefinitions, RawCharacterData } from "../types/game";
 import { saveCharacterConfig, createCharacter, deleteCharacter, uploadAsset } from "../api/client";
+import T from "../theme";
 
 interface Props {
   character: RawCharacterData;
@@ -148,18 +149,18 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       style={{
         fontFamily: "monospace",
         fontSize: "13px",
-        color: "#ddd",
-        backgroundColor: "#1a1a2e",
+        color: T.text,
+        backgroundColor: T.bg2,
         padding: "12px",
         borderRadius: "4px",
       }}
     >
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建角色" : `编辑: ${data.id}`} ==
         </span>
-        <button onClick={onBack} style={btnStyle("#888")}>
+        <button onClick={onBack} style={btnStyle(T.textSub)}>
           [返回列表]
         </button>
       </div>
@@ -171,7 +172,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             value={data.id}
             onChange={(e) => updateField("id", e.target.value)}
             readOnly={!isNew}
-            style={inputStyle(isNew ? undefined : "#555")}
+            style={inputStyle(isNew ? undefined : T.textDim)}
           />
         </Row>
         <Row label="立绘">
@@ -218,7 +219,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   }}
                   style={{ ...inputStyle(), width: "80px" }}
                 />
-                <span style={{ color: "#888" }}>/</span>
+                <span style={{ color: T.textSub }}>/</span>
                 <input
                   type="number"
                   value={res.max}
@@ -267,7 +268,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       </Section>
 
       {/* Traits */}
-      <Section title="初始素质/特征">
+      <Section title="初始特质">
         {template.traits.filter((f) => f.key !== "ability" && f.key !== "experience").map((field) => {
           const ids = data.traits[field.key] ?? [];
           const catGroups = groupsByCategory[field.key] ?? [];
@@ -298,8 +299,8 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                         alignItems: "center",
                         gap: "2px",
                         padding: "1px 6px",
-                        backgroundColor: "#16213e",
-                        border: "1px solid #444",
+                        backgroundColor: T.bg2,
+                        border: `1px solid ${T.borderLight}`,
                         borderRadius: "3px",
                         fontSize: "12px",
                       }}
@@ -314,7 +315,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                         style={{
                           background: "none",
                           border: "none",
-                          color: "#e94560",
+                          color: T.danger,
                           cursor: "pointer",
                           padding: "0 2px",
                           fontFamily: "monospace",
@@ -408,7 +409,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   }}
                   style={{ ...inputStyle(), width: "70px" }}
                 />
-                <span style={{ color: "#888" }}>{expToGrade(exp)}</span>
+                <span style={{ color: T.textSub }}>{expToGrade(exp)}</span>
               </div>
             );
           })}
@@ -449,7 +450,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             })}
           </div>
         ) : (
-          <div style={{ color: "#666", fontSize: "12px" }}>无经验定义 (在特质编辑中添加「经验」类别的特质)</div>
+          <div style={{ color: T.textDim, fontSize: "12px" }}>无经验定义 (在属性页面添加「经验」类别)</div>
         )}
       </Section>
 
@@ -473,7 +474,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   <option key={item.id} value={item.id}>{item.name}</option>
                 ))}
               </select>
-              <span style={{ color: "#888", fontSize: "11px" }}>x</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>x</span>
               <input
                 type="number"
                 value={entry.amount}
@@ -494,7 +495,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#e94560",
+                  color: T.danger,
                   cursor: "pointer",
                   fontFamily: "monospace",
                   fontSize: "14px",
@@ -512,12 +513,12 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             updateField("inventory", [...(data.inventory ?? []), { itemId: firstItem, amount: 1 }]);
           }}
           disabled={Object.keys(itemDefs).length === 0}
-          style={btnStyle("#0f0")}
+          style={btnStyle(T.successDim)}
         >
           [+ 添加物品]
         </button>
         {Object.keys(itemDefs).length === 0 && (
-          <span style={{ color: "#666", fontSize: "12px", marginLeft: "8px" }}>无可用物品定义</span>
+          <span style={{ color: T.textDim, fontSize: "12px", marginLeft: "8px" }}>无可用物品定义</span>
         )}
       </Section>
 
@@ -599,7 +600,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
           const targetName = targetChar ? String(targetChar.basicInfo?.name || targetId) : targetId;
           return (
             <div key={targetId} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-              <span style={{ minWidth: "80px", color: "#aaa" }}>{targetName}:</span>
+              <span style={{ minWidth: "80px", color: T.textSub }}>{targetName}:</span>
               <input
                 type="number"
                 value={val}
@@ -620,7 +621,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#e94560",
+                  color: T.danger,
                   cursor: "pointer",
                   fontFamily: "monospace",
                   fontSize: "14px",
@@ -656,25 +657,25 @@ export default function CharacterEditor({ character, definitions, allCharacters,
           );
         })()}
         {Object.keys(data.favorability ?? {}).length === 0 && (
-          <div style={{ color: "#666", fontSize: "12px", marginBottom: "4px" }}>未设置 (默认 0)</div>
+          <div style={{ color: T.textDim, fontSize: "12px", marginBottom: "4px" }}>未设置 (默认 0)</div>
         )}
       </Section>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: "1px solid #333", paddingTop: "12px" }}>
-        <button onClick={handleSave} disabled={saving} style={btnStyle("#0f0")}>
+      <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: `1px solid ${T.border}`, paddingTop: "12px" }}>
+        <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
           [{saving ? "保存中..." : "保存"}]
         </button>
         {!isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btnStyle("#e94560")}>
+          <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
             [删除]
           </button>
         )}
-        <button onClick={onBack} style={btnStyle("#888")}>
+        <button onClick={onBack} style={btnStyle(T.textSub)}>
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message.includes("fail") || message.includes("not found") ? "#e94560" : "#0f0", marginLeft: "8px", alignSelf: "center" }}>
+          <span style={{ color: message.includes("fail") || message.includes("not found") ? T.danger : T.success, marginLeft: "8px", alignSelf: "center" }}>
             {message}
           </span>
         )}
@@ -690,8 +691,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div style={{ marginBottom: "12px" }}>
       <div
         style={{
-          color: "#e94560",
-          borderBottom: "1px solid #333",
+          color: T.accent,
+          borderBottom: `1px solid ${T.border}`,
           marginBottom: "6px",
           paddingBottom: "2px",
           fontWeight: "bold",
@@ -707,7 +708,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-      <span style={{ minWidth: "100px", color: "#aaa" }}>{label}:</span>
+      <span style={{ minWidth: "100px", color: T.textSub }}>{label}:</span>
       {children}
     </div>
   );
@@ -715,9 +716,9 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function inputStyle(color?: string): React.CSSProperties {
   return {
-    backgroundColor: "#16213e",
-    color: color ?? "#ddd",
-    border: "1px solid #333",
+    backgroundColor: T.bg2,
+    color: color ?? T.text,
+    border: `1px solid ${T.borderLight}`,
     borderRadius: "3px",
     padding: "3px 6px",
     fontFamily: "monospace",
@@ -728,9 +729,9 @@ function inputStyle(color?: string): React.CSSProperties {
 
 function selectStyle(): React.CSSProperties {
   return {
-    backgroundColor: "#16213e",
-    color: "#ddd",
-    border: "1px solid #333",
+    backgroundColor: T.bg2,
+    color: T.text,
+    border: `1px solid ${T.borderLight}`,
     borderRadius: "3px",
     padding: "3px 6px",
     fontFamily: "monospace",
@@ -745,7 +746,7 @@ function btnStyle(color: string): React.CSSProperties {
     padding: "4px 12px",
     backgroundColor: "transparent",
     color,
-    border: "1px solid #333",
+    border: `1px solid ${T.border}`,
     borderRadius: "3px",
     cursor: "pointer",
     fontFamily: "monospace",
@@ -780,17 +781,17 @@ function PortraitPicker({
         <img
           src={`/assets/characters/${portrait}?t=${Date.now()}`}
           alt=""
-          style={{ height: "40px", width: "40px", objectFit: "cover", borderRadius: "3px", border: "1px solid #333" }}
+          style={{ height: "40px", width: "40px", objectFit: "cover", borderRadius: "3px", border: `1px solid ${T.border}` }}
         />
       )}
-      <span style={{ fontSize: "12px", color: "#888", minWidth: "60px" }}>
+      <span style={{ fontSize: "12px", color: T.textSub, minWidth: "60px" }}>
         {portrait ?? "无"}
       </span>
-      <button onClick={() => fileRef.current?.click()} style={btnStyle("#8cf")}>
+      <button onClick={() => fileRef.current?.click()} style={btnStyle(T.accent)}>
         [选择图片]
       </button>
       {portrait && (
-        <button onClick={() => onChange(null)} style={btnStyle("#f88")}>
+        <button onClick={() => onChange(null)} style={btnStyle(T.danger)}>
           [清除]
         </button>
       )}

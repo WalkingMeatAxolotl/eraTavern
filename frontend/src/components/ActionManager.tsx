@@ -1,3 +1,4 @@
+import T from "../theme";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ActionDefinition, GameDefinitions } from "../types/game";
 import { fetchActionDefs, fetchDefinitions } from "../api/client";
@@ -63,7 +64,7 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
 
   if (loading || !defs) {
     return (
-      <div style={{ color: "#666", fontFamily: "monospace", padding: "20px", textAlign: "center" }}>
+      <div style={{ color: T.textDim, fontFamily: "monospace", padding: "20px", textAlign: "center" }}>
         加载中...
       </div>
     );
@@ -101,12 +102,12 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
       style={{
         fontFamily: "monospace",
         fontSize: "13px",
-        color: "#ddd",
+        color: T.text,
         padding: "12px 0",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == 行动列表 ==
         </span>
         {!readOnly && (
@@ -114,9 +115,9 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
             onClick={handleNew}
             style={{
               padding: "4px 12px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: "pointer",
               fontFamily: "monospace",
@@ -141,8 +142,8 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
                   width: "100%",
                   textAlign: "left",
                   padding: "6px 12px",
-                  backgroundColor: "#16213e",
-                  color: "#aaa",
+                  backgroundColor: T.bg2,
+                  color: T.textSub,
                   border: "none",
                   cursor: "pointer",
                   fontFamily: "monospace",
@@ -161,9 +162,9 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
                       style={{
                         position: "relative",
                         padding: "4px 10px",
-                        backgroundColor: "#1a1a2e",
-                        color: "#ddd",
-                        border: "1px solid #333",
+                        backgroundColor: T.bg1,
+                        color: T.text,
+                        border: `1px solid ${T.border}`,
                         borderRadius: "3px",
                         cursor: "pointer",
                         fontFamily: "monospace",
@@ -172,7 +173,7 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
                     >
                       {action.name || action.id}
                       {action.source && (
-                        <span style={{ color: "#888", fontSize: "11px" }}> [{action.source}]</span>
+                        <span style={{ color: T.textSub, fontSize: "11px" }}> [{action.source}]</span>
                       )}
                     </button>
                   ))}
@@ -182,7 +183,7 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
           );
         })}
         {actions.length === 0 && (
-          <div style={{ color: "#666", padding: "8px" }}>暂无行动</div>
+          <div style={{ color: T.textDim, padding: "8px" }}>暂无行动</div>
         )}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import type { GameDefinitions, TraitGroup } from "../types/game";
 import { createTraitGroup, saveTraitGroup, deleteTraitGroup } from "../api/client";
+import T from "../theme";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -76,18 +77,18 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       style={{
         fontFamily: "monospace",
         fontSize: "13px",
-        color: "#ddd",
-        backgroundColor: "#1a1a2e",
+        color: T.text,
+        backgroundColor: T.bg2,
         padding: "12px",
         borderRadius: "4px",
       }}
     >
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建特质组" : `编辑特质组: ${data.name}`} ==
         </span>
-        <button onClick={onBack} style={btnStyle("#888")}>
+        <button onClick={onBack} style={btnStyle(T.textSub)}>
           [返回]
         </button>
       </div>
@@ -98,7 +99,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
           value={data.id}
           onChange={(e) => setData((prev) => ({ ...prev, id: e.target.value }))}
           readOnly={!isNew || isReadOnly}
-          style={inputStyle(!isNew || isReadOnly ? "#555" : undefined)}
+          style={inputStyle(!isNew || isReadOnly ? T.textDim : undefined)}
         />
       </Row>
 
@@ -108,7 +109,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
           value={data.name}
           onChange={(e) => setData((prev) => ({ ...prev, name: e.target.value }))}
           readOnly={isReadOnly}
-          style={inputStyle(isReadOnly ? "#555" : undefined)}
+          style={inputStyle(isReadOnly ? T.textDim : undefined)}
         />
       </Row>
 
@@ -127,7 +128,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       </Row>
 
       {/* Member traits */}
-      <div style={{ marginTop: "8px", marginBottom: "4px", color: "#aaa" }}>成员特质:</div>
+      <div style={{ marginTop: "8px", marginBottom: "4px", color: T.textSub }}>成员特质:</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center", marginBottom: "8px" }}>
         {data.traits.map((tid) => {
           const def = definitions.traitDefs[tid];
@@ -139,8 +140,8 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
                 alignItems: "center",
                 gap: "2px",
                 padding: "1px 6px",
-                backgroundColor: "#16213e",
-                border: "1px solid #444",
+                backgroundColor: T.bg2,
+                border: `1px solid ${T.borderLight}`,
                 borderRadius: "3px",
                 fontSize: "12px",
               }}
@@ -152,7 +153,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#e94560",
+                    color: T.danger,
                     cursor: "pointer",
                     padding: "0 2px",
                     fontFamily: "monospace",
@@ -186,22 +187,22 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: "1px solid #333", paddingTop: "12px" }}>
+      <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: `1px solid ${T.border}`, paddingTop: "12px" }}>
         {!isReadOnly && (
-          <button onClick={handleSave} disabled={saving} style={btnStyle("#0f0")}>
+          <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
             [{saving ? "保存中..." : "保存"}]
           </button>
         )}
         {!isReadOnly && !isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btnStyle("#e94560")}>
+          <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
             [删除]
           </button>
         )}
-        <button onClick={onBack} style={btnStyle("#888")}>
+        <button onClick={onBack} style={btnStyle(T.textSub)}>
           [返回]
         </button>
         {message && (
-          <span style={{ color: message.includes("fail") || message.includes("not found") ? "#e94560" : "#0f0", marginLeft: "8px", alignSelf: "center" }}>
+          <span style={{ color: message.includes("fail") || message.includes("not found") ? T.danger : T.success, marginLeft: "8px", alignSelf: "center" }}>
             {message}
           </span>
         )}
@@ -213,7 +214,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-      <span style={{ minWidth: "60px", color: "#aaa" }}>{label}:</span>
+      <span style={{ minWidth: "60px", color: T.textSub }}>{label}:</span>
       {children}
     </div>
   );
@@ -221,9 +222,9 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function inputStyle(color?: string): React.CSSProperties {
   return {
-    backgroundColor: "#16213e",
-    color: color ?? "#ddd",
-    border: "1px solid #333",
+    backgroundColor: T.bg2,
+    color: color ?? T.text,
+    border: `1px solid ${T.borderLight}`,
     borderRadius: "3px",
     padding: "3px 6px",
     fontFamily: "monospace",
@@ -234,9 +235,9 @@ function inputStyle(color?: string): React.CSSProperties {
 
 function selectStyle(): React.CSSProperties {
   return {
-    backgroundColor: "#16213e",
-    color: "#ddd",
-    border: "1px solid #333",
+    backgroundColor: T.bg2,
+    color: T.text,
+    border: `1px solid ${T.borderLight}`,
     borderRadius: "3px",
     padding: "3px 6px",
     fontFamily: "monospace",
@@ -251,7 +252,7 @@ function btnStyle(color: string): React.CSSProperties {
     padding: "4px 12px",
     backgroundColor: "transparent",
     color,
-    border: "1px solid #333",
+    border: `1px solid ${T.border}`,
     borderRadius: "3px",
     cursor: "pointer",
     fontFamily: "monospace",

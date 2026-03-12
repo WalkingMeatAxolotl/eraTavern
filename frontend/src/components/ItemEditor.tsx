@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ItemDefinition } from "../types/game";
 import { createItemDef, saveItemDef, deleteItemDef } from "../api/client";
+import T from "../theme";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -18,16 +19,16 @@ interface Props {
 
 const inputStyle: React.CSSProperties = {
   padding: "4px 8px",
-  backgroundColor: "#0a0a1a",
-  color: "#ddd",
-  border: "1px solid #333",
+  backgroundColor: T.bg3,
+  color: T.text,
+  border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
   fontFamily: "monospace",
   fontSize: "12px",
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "#888",
+  color: T.textSub,
   fontSize: "11px",
   marginBottom: "2px",
 };
@@ -103,14 +104,14 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
   };
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: "#ddd", padding: "12px 0" }}>
+    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: "#e94560", fontWeight: "bold", fontSize: "14px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建物品" : "编辑物品"} ==
         </span>
         {item.source && (
-          <span style={{ color: "#e89a19", fontSize: "12px" }}>
+          <span style={{ color: T.accent, fontSize: "12px" }}>
             来源: {item.source}
           </span>
         )}
@@ -152,8 +153,8 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
                   alignItems: "center",
                   gap: "2px",
                   padding: "2px 8px",
-                  backgroundColor: "#1a1a2e",
-                  border: "1px solid #444",
+                  backgroundColor: T.bg2,
+                  border: `1px solid ${T.borderLight}`,
                   borderRadius: "3px",
                   fontSize: "12px",
                 }}
@@ -165,7 +166,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#e94560",
+                      color: T.danger,
                       cursor: "pointer",
                       padding: "0 2px",
                       fontFamily: "monospace",
@@ -178,7 +179,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
                 )}
               </span>
             ))}
-            {tags.length === 0 && <span style={{ color: "#666" }}>无</span>}
+            {tags.length === 0 && <span style={{ color: T.textDim }}>无</span>}
           </div>
           {/* Available tags from pool (clickable) */}
           {!isReadOnly && availableTags.length > 0 && (
@@ -189,9 +190,9 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
                   onClick={() => addTag(t)}
                   style={{
                     padding: "2px 8px",
-                    backgroundColor: "#0a0a1a",
-                    color: "#666",
-                    border: "1px dashed #333",
+                    backgroundColor: T.bg3,
+                    color: T.textDim,
+                    border: `1px dashed ${T.border}`,
                     borderRadius: "3px",
                     cursor: "pointer",
                     fontFamily: "monospace",
@@ -280,9 +281,9 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
             disabled={saving}
             style={{
               padding: "5px 16px",
-              backgroundColor: "#16213e",
-              color: "#0f0",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
               fontFamily: "monospace",
@@ -298,9 +299,9 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
             disabled={saving}
             style={{
               padding: "5px 16px",
-              backgroundColor: "#16213e",
-              color: "#e94560",
-              border: "1px solid #333",
+              backgroundColor: T.bg2,
+              color: T.danger,
+              border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
               fontFamily: "monospace",
@@ -314,9 +315,9 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
           onClick={onBack}
           style={{
             padding: "5px 16px",
-            backgroundColor: "#16213e",
-            color: "#888",
-            border: "1px solid #333",
+            backgroundColor: T.bg2,
+            color: T.textSub,
+            border: `1px solid ${T.border}`,
             borderRadius: "3px",
             cursor: "pointer",
             fontFamily: "monospace",
@@ -326,7 +327,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message === "已保存" ? "#0f0" : "#e94560", fontSize: "12px" }}>
+          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>
             {message}
           </span>
         )}

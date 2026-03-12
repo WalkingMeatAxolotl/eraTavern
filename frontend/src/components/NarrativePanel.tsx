@@ -1,3 +1,4 @@
+import T from "../theme";
 import { useEffect, useRef } from "react";
 
 interface NarrativePanelProps {
@@ -16,8 +17,8 @@ export default function NarrativePanel({ messages }: NarrativePanelProps) {
       style={{
         fontFamily: "monospace",
         fontSize: "13px",
-        color: "#ddd",
-        backgroundColor: "#1a1a2e",
+        color: T.text,
+        backgroundColor: T.bg1,
         padding: "12px",
         borderRadius: "4px",
         flex: 1,
@@ -26,7 +27,7 @@ export default function NarrativePanel({ messages }: NarrativePanelProps) {
       }}
     >
       {messages.length === 0 ? (
-        <div style={{ color: "#666" }}>暂无消息</div>
+        <div style={{ color: T.textDim }}>暂无消息</div>
       ) : (
         messages.map((msg, idx) => (
           <div key={idx} style={{ marginBottom: "2px", whiteSpace: "pre-wrap" }}>

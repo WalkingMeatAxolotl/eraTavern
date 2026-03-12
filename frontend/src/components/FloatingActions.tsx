@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { saveSession } from "../api/client";
+import T from "../theme";
 
 interface FloatingActionsProps {
   dirty: boolean;
@@ -42,13 +43,13 @@ export default function FloatingActions({
 
   const btnStyle: React.CSSProperties = {
     padding: "6px 14px",
-    border: "1px solid #333",
+    border: `1px solid ${T.border}`,
     borderRadius: "3px",
     cursor: busy ? "not-allowed" : "pointer",
     fontFamily: "monospace",
     fontSize: "12px",
     opacity: busy ? 0.6 : 1,
-    backgroundColor: "#16213e",
+    backgroundColor: T.bg2,
   };
 
   return (
@@ -62,8 +63,8 @@ export default function FloatingActions({
         alignItems: "center",
         gap: "8px",
         padding: "8px 16px",
-        backgroundColor: "#0a0a1aee",
-        border: "1px solid #333",
+        backgroundColor: T.bgFloat,
+        border: `1px solid ${T.border}`,
         borderRadius: "6px",
         zIndex: 90,
         fontFamily: "monospace",
@@ -74,21 +75,21 @@ export default function FloatingActions({
       <button
         onClick={onRevert}
         disabled={busy}
-        style={{ ...btnStyle, color: "#888" }}
+        style={{ ...btnStyle, color: T.textSub }}
       >
         [撤销变更]
       </button>
       <button
         onClick={handleSave}
         disabled={busy}
-        style={{ ...btnStyle, color: "#e94560" }}
+        style={{ ...btnStyle, color: T.accent }}
       >
         {busy ? "保存中..." : "[保存变更]"}
       </button>
       {message && (
         <span
           style={{
-            color: message.includes("失败") ? "#e94560" : "#0f0",
+            color: message.includes("失败") ? T.danger : T.success,
             fontSize: "11px",
             whiteSpace: "nowrap",
           }}
