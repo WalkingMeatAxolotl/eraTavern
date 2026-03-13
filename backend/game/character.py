@@ -504,8 +504,9 @@ def load_trait_groups(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
             ns_id = namespace_id(addon_id, g["id"])
             # Also namespace trait references within the group
             ns_traits = [namespace_id(addon_id, tid) for tid in g.get("traits", [])]
+            exclusive = g.get("exclusive", True)
             result[ns_id] = {**g, "id": ns_id, "_local_id": g["id"], "source": addon_id,
-                             "traits": ns_traits}
+                             "traits": ns_traits, "exclusive": exclusive}
     return result
 
 

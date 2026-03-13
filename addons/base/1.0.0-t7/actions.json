@@ -1,0 +1,330 @@
+{
+  "actions": [
+    {
+      "id": "rest",
+      "name": "休息",
+      "category": "日常",
+      "targetType": "none",
+      "triggerLLM": false,
+      "timeCost": 60,
+      "npcWeight": 0,
+      "conditions": [],
+      "costs": [],
+      "outcomes": [
+        {
+          "grade": "normal",
+          "label": "正常",
+          "weight": 1,
+          "effects": [
+            {
+              "type": "resource",
+              "key": "stamina",
+              "op": "add",
+              "value": 500
+            },
+            {
+              "type": "resource",
+              "key": "energy",
+              "op": "add",
+              "value": 300
+            }
+          ],
+          "outputTemplate": "休息了一会儿，恢复了体力和气力。"
+        }
+      ]
+    },
+    {
+      "id": "talk",
+      "name": "交谈",
+      "category": "社交",
+      "targetType": "npc",
+      "triggerLLM": true,
+      "timeCost": 30,
+      "npcWeight": 0,
+      "conditions": [],
+      "costs": [
+        {
+          "type": "resource",
+          "key": "energy",
+          "amount": 50
+        }
+      ],
+      "outcomes": [
+        {
+          "grade": "success",
+          "label": "愉快",
+          "weight": 3,
+          "effects": [
+            {
+              "type": "favorability",
+              "op": "add",
+              "value": 5
+            }
+          ],
+          "outputTemplate": "和{{target}}进行了愉快的交谈。"
+        },
+        {
+          "grade": "normal",
+          "label": "普通",
+          "weight": 5,
+          "effects": [
+            {
+              "type": "favorability",
+              "op": "add",
+              "value": 1
+            }
+          ],
+          "outputTemplate": "和{{target}}聊了几句。"
+        },
+        {
+          "grade": "fail",
+          "label": "冷淡",
+          "weight": 2,
+          "effects": [],
+          "outputTemplate": "{{target}}似乎没什么兴趣交谈。"
+        }
+      ]
+    },
+    {
+      "id": "train",
+      "name": "锻炼",
+      "category": "日常",
+      "targetType": "none",
+      "triggerLLM": false,
+      "timeCost": 60,
+      "npcWeight": 0,
+      "conditions": [],
+      "costs": [
+        {
+          "type": "resource",
+          "key": "stamina",
+          "amount": 300
+        },
+        {
+          "type": "resource",
+          "key": "energy",
+          "amount": 200
+        }
+      ],
+      "outcomes": [
+        {
+          "grade": "normal",
+          "label": "正常",
+          "weight": 1,
+          "effects": [],
+          "outputTemplate": "进行了一番锻炼。"
+        }
+      ]
+    },
+    {
+      "id": "eat",
+      "name": "进食",
+      "category": "日常",
+      "targetType": "none",
+      "triggerLLM": false,
+      "timeCost": 15,
+      "npcWeight": 0,
+      "conditions": [
+        {
+          "type": "hasItem",
+          "tag": "food"
+        }
+      ],
+      "costs": [],
+      "outcomes": [
+        {
+          "grade": "normal",
+          "label": "正常",
+          "weight": 1,
+          "effects": [
+            {
+              "type": "resource",
+              "key": "stamina",
+              "op": "add",
+              "value": 200
+            }
+          ],
+          "outputTemplate": "吃了些东西，恢复了一点体力。"
+        }
+      ]
+    },
+    {
+      "id": "trade",
+      "name": "交易",
+      "category": "社交",
+      "targetType": "npc",
+      "triggerLLM": false,
+      "timeCost": 15,
+      "npcWeight": 0,
+      "conditions": [],
+      "costs": [],
+      "outcomes": [
+        {
+          "grade": "normal",
+          "label": "正常",
+          "weight": 1,
+          "effects": [],
+          "outputTemplate": "与{{target}}进行了交易。"
+        }
+      ]
+    },
+    {
+      "id": "give-gift",
+      "name": "送礼",
+      "category": "社交",
+      "targetType": "npc",
+      "triggerLLM": false,
+      "timeCost": 10,
+      "npcWeight": 0,
+      "conditions": [],
+      "costs": [],
+      "outcomes": [
+        {
+          "grade": "success",
+          "label": "喜欢",
+          "weight": 3,
+          "effects": [
+            {
+              "type": "favorability",
+              "op": "add",
+              "value": 10
+            }
+          ],
+          "outputTemplate": "{{target}}收下了礼物，看起来很高兴。"
+        },
+        {
+          "grade": "normal",
+          "label": "普通",
+          "weight": 5,
+          "effects": [
+            {
+              "type": "favorability",
+              "op": "add",
+              "value": 3
+            }
+          ],
+          "outputTemplate": "{{target}}收下了礼物。"
+        },
+        {
+          "grade": "fail",
+          "label": "不喜欢",
+          "weight": 2,
+          "effects": [
+            {
+              "type": "favorability",
+              "op": "add",
+              "value": -2
+            }
+          ],
+          "outputTemplate": "{{target}}似乎不太喜欢这个礼物。"
+        }
+      ]
+    },
+    {
+      "id": "explore",
+      "name": "探索",
+      "category": "冒险",
+      "targetType": "none",
+      "triggerLLM": true,
+      "timeCost": 60,
+      "npcWeight": 0,
+      "conditions": [],
+      "costs": [
+        {
+          "type": "resource",
+          "key": "stamina",
+          "amount": 200
+        },
+        {
+          "type": "resource",
+          "key": "energy",
+          "amount": 100
+        }
+      ],
+      "outcomes": [
+        {
+          "grade": "success",
+          "label": "发现",
+          "weight": 3,
+          "effects": [],
+          "outputTemplate": "在探索中有了新发现。"
+        },
+        {
+          "grade": "normal",
+          "label": "无事",
+          "weight": 5,
+          "effects": [],
+          "outputTemplate": "四处探索了一番，没有特别的发现。"
+        },
+        {
+          "grade": "fail",
+          "label": "遇险",
+          "weight": 2,
+          "effects": [
+            {
+              "type": "resource",
+              "key": "stamina",
+              "op": "add",
+              "value": -100
+            }
+          ],
+          "outputTemplate": "探索途中遇到了危险。"
+        }
+      ]
+    },
+    {
+      "id": "gather",
+      "name": "采集",
+      "category": "冒险",
+      "targetType": "none",
+      "triggerLLM": false,
+      "timeCost": 30,
+      "npcWeight": 0,
+      "conditions": [],
+      "costs": [
+        {
+          "type": "resource",
+          "key": "stamina",
+          "amount": 100
+        }
+      ],
+      "outcomes": [
+        {
+          "grade": "success",
+          "label": "丰收",
+          "weight": 3,
+          "effects": [
+            {
+              "type": "item",
+              "itemId": "herb",
+              "op": "add",
+              "amount": 3
+            }
+          ],
+          "outputTemplate": "收获颇丰，采集到了不少药草。"
+        },
+        {
+          "grade": "normal",
+          "label": "普通",
+          "weight": 5,
+          "effects": [
+            {
+              "type": "item",
+              "itemId": "herb",
+              "op": "add",
+              "amount": 1
+            }
+          ],
+          "outputTemplate": "采集到了一些药草。"
+        },
+        {
+          "grade": "fail",
+          "label": "空手",
+          "weight": 2,
+          "effects": [],
+          "outputTemplate": "没有找到值得采集的东西。"
+        }
+      ]
+    }
+  ]
+}

@@ -58,6 +58,8 @@ export interface RawMapData {
 export interface WorldInfo {
   id: string;
   name: string;
+  description?: string;
+  cover?: string;
   addons?: { id: string; version: string }[];
   playerCharacter?: string;
 }
@@ -71,6 +73,7 @@ export interface AddonInfo {
   version: string;
   description?: string;
   author?: string;
+  cover?: string;
   categories?: string[];
   dependencies?: { id: string; version: string }[];
 }
@@ -201,6 +204,7 @@ export interface TraitGroup {
   name: string;
   category: string;
   traits: string[];
+  exclusive?: boolean;
   source: string;
 }
 

@@ -1164,7 +1164,8 @@ function BgImagePicker({
     const file = e.target.files?.[0];
     if (!file) return;
     const name = `${mapId}_cell${cellId}`;
-    const result = await uploadAsset(file, "backgrounds", name);
+    const addonId = mapId.includes(".") ? mapId.split(".")[0] : undefined;
+    const result = await uploadAsset(file, "backgrounds", name, { addonId });
     if (result.success && result.filename) {
       onChange(result.filename);
     }

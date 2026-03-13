@@ -40,7 +40,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
     setSaving(true);
     setMessage(null);
     try {
-      const payload = { id: data.id, name: data.name, category: data.category, traits: data.traits };
+      const payload = { id: data.id, name: data.name, category: data.category, traits: data.traits, exclusive: data.exclusive !== false };
       if (addonCrud) {
         if (isNew) { await addonCrud.create(payload); } else { await addonCrud.save(data.id, payload); }
         return;
@@ -124,6 +124,20 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
             <option key={cat.key} value={cat.key}>{cat.label}</option>
           ))}
         </select>
+      </Row>
+
+      {/* Exclusive */}
+      <Row label="互斥">
+        <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", color: T.textSub }}>
+          <input
+            type="checkbox"
+            checked={data.exclusive !== false}
+            onChange={(e) => setData((prev) => ({ ...prev, exclusive: e.target.checked }))}
+            disabled={isReadOnly}
+            style={{ cursor: isReadOnly ? "default" : "pointer" }}
+          />
+          同组只能选一个
+        </label>
       </Row>
 
       {/* Member traits */}

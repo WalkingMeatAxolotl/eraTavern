@@ -7,13 +7,13 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from .addon_loader import SAVES_DIR
+from .addon_loader import WORLDS_DIR
 
 MAX_SLOTS = 10
 
 
 def _world_save_dir(world_id: str) -> Path:
-    return SAVES_DIR / world_id
+    return WORLDS_DIR / world_id / "saves"
 
 
 def list_saves(world_id: str) -> list[dict[str, Any]]:

@@ -18,6 +18,7 @@ from game.map_engine import compile_grid
 from game.character import namespace_id, to_local_id, get_addon_from_id
 from game.addon_loader import (
     ADDONS_DIR, get_addon_dir, fork_addon_version, list_addon_versions,
+    list_addon_versions_detail, copy_addon_version, overwrite_addon_version,
     build_addon_dirs,
 )
 
@@ -246,9 +247,6 @@ async def delete_world(world_id: str):
     if not world_dir.exists():
         return {"success": False, "message": f"World '{world_id}' not found"}
     _shutil.rmtree(world_dir)
-    # Also clean up saves for this world
-    from game.save_manager import delete_world_saves
-    delete_world_saves(world_id)
     return {"success": True, "message": f"World '{world_id}' deleted"}
 
 
@@ -285,18 +283,19 @@ async def update_world_meta(world_id: str, body: dict = Body(...)):
 
 @app.put("/api/addon/{addon_id}/{version}/meta")
 async def update_addon_meta(addon_id: str, version: str, body: dict = Body(...)):
-    """Update addon.json metadata (name, description, author, cover)."""
-    addon_dir = _get_addon_dir_or_404(addon_id, version)
-    if not addon_dir:
+    """Update addon-level shared metadata (name, description, author, cover, categories).
+
+    Writes to addons/{addonId}/meta.json (shared across all versions).
+    """
+    from game.addon_loader import save_addon_shared_meta, load_addon_shared_meta, ADDONS_DIR
+    addon_base = ADDONS_DIR / addon_id
+    if not addon_base.exists():
         return {"success": False, "message": "Addon not found"}
-    from game.addon_loader import _load_json_safe
-    meta_path = addon_dir / "addon.json"
-    meta = _load_json_safe(meta_path)
-    for key in ("name", "description", "author", "cover"):
+    meta = load_addon_shared_meta(addon_id)
+    for key in ("name", "description", "author", "cover", "categories"):
         if key in body:
             meta[key] = body[key]
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
+    save_addon_shared_meta(addon_id, meta)
     return {"success": True, "message": "Addon metadata updated"}
 
 
@@ -314,10 +313,97 @@ async def fork_addon(addon_id: str, body: dict = Body(...)):
     return {"success": True, "newVersion": new_version}
 
 
+@app.post("/api/addon/{addon_id}/copy")
+async def copy_addon(addon_id: str, body: dict = Body(...)):
+    """Copy an addon version to create a new branch or version bump."""
+    source_version = body.get("sourceVersion", "")
+    new_version = body.get("newVersion", "")
+    forked_from = body.get("forkedFrom", None)  # set for branches, None for version bumps
+    if not source_version or not new_version:
+        return {"success": False, "message": "Missing sourceVersion or newVersion"}
+    try:
+        result = copy_addon_version(addon_id, source_version, new_version, forked_from)
+    except FileExistsError as e:
+        return {"success": False, "message": str(e)}
+    except FileNotFoundError as e:
+        return {"success": False, "message": str(e)}
+    return {"success": True, "newVersion": result}
+
+
+@app.post("/api/addon/{addon_id}/overwrite")
+async def overwrite_addon(addon_id: str, body: dict = Body(...)):
+    """Overwrite target version's content with source version's files (keeps target metadata)."""
+    source_version = body.get("sourceVersion", "")
+    target_version = body.get("targetVersion", "")
+    if not source_version or not target_version:
+        return {"success": False, "message": "Missing sourceVersion or targetVersion"}
+    if source_version == target_version:
+        return {"success": False, "message": "Source and target are the same"}
+    try:
+        overwrite_addon_version(addon_id, source_version, target_version)
+    except FileNotFoundError as e:
+        return {"success": False, "message": str(e)}
+    return {"success": True, "message": f"Copied {source_version} → {target_version}"}
+
+
 @app.get("/api/addon/{addon_id}/versions")
-async def get_addon_versions(addon_id: str):
-    """List all versions of an addon."""
+async def get_addon_versions(addon_id: str, detail: bool = False):
+    """List all versions of an addon. With detail=true, includes forkedFrom/worldId."""
+    if detail:
+        return {"versions": list_addon_versions_detail(addon_id)}
     return {"versions": list_addon_versions(addon_id)}
+
+
+@app.post("/api/addon")
+async def create_addon(body: dict = Body(...)):
+    """Create a new empty addon with initial version."""
+    addon_id = body.get("id", "").strip()
+    name = body.get("name", "").strip()
+    version = body.get("version", "1.0.0").strip()
+    if not addon_id:
+        return {"success": False, "message": "缺少 addon ID"}
+    if not name:
+        return {"success": False, "message": "缺少 addon 名称"}
+
+    version_dir = ADDONS_DIR / addon_id / version
+    if version_dir.exists():
+        return {"success": False, "message": f"Add-on '{addon_id}@{version}' 已存在"}
+
+    version_dir.mkdir(parents=True, exist_ok=True)
+    version_meta = {
+        "id": addon_id,
+        "version": version,
+        "dependencies": [],
+    }
+    with open(version_dir / "addon.json", "w", encoding="utf-8") as f:
+        json.dump(version_meta, f, ensure_ascii=False, indent=2)
+
+    # Write shared addon-level metadata
+    from game.addon_loader import save_addon_shared_meta
+    shared_meta = {
+        "name": name,
+        "description": body.get("description", ""),
+        "author": body.get("author", ""),
+        "categories": [],
+    }
+    save_addon_shared_meta(addon_id, shared_meta)
+
+    return {"success": True, "message": f"Add-on '{addon_id}@{version}' created"}
+
+
+@app.delete("/api/addon/{addon_id}")
+async def delete_addon_all(addon_id: str):
+    """Delete an entire addon (all versions) from disk."""
+    addon_dir = ADDONS_DIR / addon_id
+    if not addon_dir.exists():
+        return {"success": False, "message": f"Add-on '{addon_id}' not found"}
+
+    # Don't allow if any version is currently loaded
+    if any(ref.get("id") == addon_id for ref in game_state.addon_refs):
+        return {"success": False, "message": "不能删除当前世界正在使用的 Add-on，请先禁用"}
+
+    shutil.rmtree(addon_dir)
+    return {"success": True, "message": f"Add-on '{addon_id}' deleted"}
 
 
 @app.delete("/api/addon/{addon_id}/{version}")
@@ -468,24 +554,55 @@ async def rename_save_endpoint(slot_id: str, body: dict = Body(...)):
 
 @app.get("/assets/{path:path}")
 async def serve_asset(path: str):
-    """Serve static assets. Path format: {addonId}/{subfolder}/{filename}."""
+    """Serve static assets.
+
+    Path formats:
+      - world/{worldId}/{subfolder}/{filename} — world assets
+      - {addonId}/{subfolder}/{filename} — addon assets
+    Searches both about/ and assets/ subdirectories.
+    """
+    from game.addon_loader import WORLDS_DIR, ADDONS_DIR
+
     parts = path.split("/", 1)
     if len(parts) == 2:
-        addon_id, sub_path = parts
-        # Try to serve from specific addon
-        addon_dir = get_addon_dir(addon_id)
-        file_path = (addon_dir / "assets" / sub_path).resolve()
-        if not str(file_path).startswith(str(addon_dir.resolve())):
-            return {"error": "Invalid path"}
-        if file_path.exists():
-            return FileResponse(file_path)
+        prefix, sub_path = parts
 
-    # Fallback: search all addon directories (legacy paths without addon prefix)
-    for _, addon_path in reversed(game_state.addon_dirs):
+        # World assets: /assets/world/{worldId}/...
+        if prefix == "world":
+            world_parts = sub_path.split("/", 1)
+            if len(world_parts) == 2:
+                world_id, asset_sub = world_parts
+                world_dir = WORLDS_DIR / world_id
+                for sub_root in ("about", "assets"):
+                    file_path = (world_dir / sub_root / asset_sub).resolve()
+                    if str(file_path).startswith(str(world_dir.resolve())) and file_path.exists():
+                        return FileResponse(file_path)
+            return {"error": "File not found"}
+
+        # Addon assets: /assets/{addonId}/{subfolder}/{filename}
+        addon_id = prefix
+        addon_dir = get_addon_dir(addon_id)
+        for sub_root in ("about", "assets"):
+            file_path = (addon_dir / sub_root / sub_path).resolve()
+            if str(file_path).startswith(str(addon_dir.resolve())) and file_path.exists():
+                return FileResponse(file_path)
+
+    # Fallback: search addon directories (legacy paths without addon prefix)
+    # Check both addon-root assets/ and version-level assets/
+    seen_roots: set[str] = set()
+    for addon_id, addon_path in reversed(game_state.addon_dirs):
+        # Version-level assets
         assets_dir = addon_path / "assets"
         file_path = (assets_dir / path).resolve()
         if str(file_path).startswith(str(assets_dir.resolve())) and file_path.exists():
             return FileResponse(file_path)
+        # Addon-root shared assets (check once per addon)
+        if addon_id not in seen_roots:
+            seen_roots.add(addon_id)
+            root_assets = ADDONS_DIR / addon_id / "assets"
+            file_path = (root_assets / path).resolve()
+            if str(file_path).startswith(str(root_assets.resolve())) and file_path.exists():
+                return FileResponse(file_path)
 
     return {"error": "File not found"}
 
@@ -496,24 +613,36 @@ async def upload_asset(
     folder: str = Query(...),
     name: str = Query(...),
     addonId: Optional[str] = Query(None),
+    worldId: Optional[str] = Query(None),
 ):
-    """Upload an asset file. folder: 'characters' or 'backgrounds'. name: target filename (without ext)."""
-    if folder not in ("characters", "backgrounds"):
+    """Upload an asset file. folder: 'characters', 'backgrounds', or 'covers'. name: target filename (without ext)."""
+    if folder not in ("characters", "backgrounds", "covers"):
         return {"success": False, "message": "Invalid folder"}
     original_name = file.filename or ""
     ext = Path(original_name).suffix.lower() or ".png"
     if ext not in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
         return {"success": False, "message": f"Unsupported file type: {ext}"}
 
-    # Determine target addon directory
-    if addonId:
-        target_base = get_addon_dir(addonId)
+    if folder == "covers":
+        if worldId:
+            # World cover → worlds/{worldId}/about/covers/
+            from game.addon_loader import WORLDS_DIR
+            target_dir = WORLDS_DIR / worldId / "about" / "covers"
+        elif addonId:
+            # Addon cover → addons/{addonId}/about/covers/ (shared across versions)
+            target_dir = get_addon_dir(addonId) / "about" / "covers"
+        else:
+            return {"success": False, "message": "worldId or addonId required for covers"}
+    elif addonId:
+        # Shared assets at addon root: addons/{addonId}/assets/{folder}/
+        target_dir = get_addon_dir(addonId) / "assets" / folder
     elif game_state.addon_dirs:
-        target_base = game_state.addon_dirs[-1][1]  # last addon
+        # Default: use last addon's root assets dir
+        last_addon_id = game_state.addon_dirs[-1][0]
+        target_dir = get_addon_dir(last_addon_id) / "assets" / folder
     else:
         return {"success": False, "message": "No addon available for upload"}
 
-    target_dir = target_base / "assets" / folder
     target_dir.mkdir(parents=True, exist_ok=True)
     target_path = target_dir / f"{name}{ext}"
 

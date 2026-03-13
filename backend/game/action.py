@@ -1473,6 +1473,13 @@ def _apply_effects(
             if op == "addTrait":
                 vals = traits.get(key, [])
                 if trait_id not in vals:
+                    # Check exclusive trait groups: remove other members
+                    for grp in game_state.trait_groups.values():
+                        if grp.get("exclusive", True) and trait_id in grp.get("traits", []):
+                            removed = [t for t in vals if t in grp["traits"]]
+                            for t in removed:
+                                vals.remove(t)
+                            break
                     vals.append(trait_id)
                     traits[key] = vals
                 summaries.append(f"{target_prefix}获得特质 [{trait_id}]")

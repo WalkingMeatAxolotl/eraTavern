@@ -272,10 +272,14 @@ export default function CharacterEditor({ character, definitions, allCharacters,
           const ids = data.traits[field.key] ?? [];
           const catGroups = groupsByCategory[field.key] ?? [];
 
-          // Build dropdown options: trait groups (whose member is not yet selected) + ungrouped traits not yet selected
-          const groupsNotFullySelected = catGroups.filter(
-            (g) => !g.traits.some((tid) => ids.includes(tid))
-          );
+          // Build dropdown options: trait groups still selectable + ungrouped traits not yet selected
+          // Exclusive groups: hide once any member is selected; multi-select: hide when all members selected
+          const groupsNotFullySelected = catGroups.filter((g) => {
+            const isExclusive = g.exclusive !== false;
+            return isExclusive
+              ? !g.traits.some((tid) => ids.includes(tid))
+              : g.traits.some((tid) => !ids.includes(tid));
+          });
           const ungroupedAvailable = (traitsByCategory[field.key] ?? [])
             .filter((t) => !traitToGroup[t.id] && !ids.includes(t.id));
 
@@ -367,9 +371,12 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                     onChange={(e) => {
                       if (!e.target.value) return;
                       const newTraits = { ...data.traits };
-                      // Remove any existing trait from this group, add new one
-                      let catIds = ids.filter((x) => !curPendingGroupDef.traits.includes(x));
-                      catIds.push(e.target.value);
+                      // Exclusive group: remove existing traits from this group; multi-select: just add
+                      const isExclusive = curPendingGroupDef.exclusive !== false;
+                      let catIds = isExclusive
+                        ? ids.filter((x) => !curPendingGroupDef.traits.includes(x))
+                        : [...ids];
+                      if (!catIds.includes(e.target.value)) catIds.push(e.target.value);
                       newTraits[field.key] = catIds;
                       updateField("traits", newTraits);
                       setPendingGroup((prev) => { const next = { ...prev }; delete next[field.key]; return next; });
@@ -377,7 +384,9 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                     style={selectStyle()}
                   >
                     <option value="">选择...</option>
-                    {curPendingGroupDef.traits.map((tid) => {
+                    {curPendingGroupDef.traits
+                      .filter((tid) => curPendingGroupDef.exclusive !== false || !ids.includes(tid))
+                      .map((tid) => {
                       const def = traitDefs[tid];
                       return (
                         <option key={tid} value={tid}>{def?.name ?? tid}</option>
@@ -757,13 +766,16 @@ function PortraitPicker({
   onChange: (filename: string | null) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [cacheBust, setCacheBust] = useState(0);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const result = await uploadAsset(file, "characters", characterId);
+    const addonId = characterId.includes(".") ? characterId.split(".")[0] : undefined;
+    const result = await uploadAsset(file, "characters", characterId, { addonId });
     if (result.success && result.filename) {
       onChange(result.filename);
+      setCacheBust(n => n + 1);
     }
     e.target.value = "";
   };
@@ -772,7 +784,7 @@ function PortraitPicker({
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
       {portrait && (
         <img
-          src={`/assets/characters/${portrait}?t=${Date.now()}`}
+          src={`/assets/characters/${portrait}?t=${cacheBust}`}
           alt=""
           style={{ height: "40px", width: "40px", objectFit: "cover", borderRadius: "3px", border: `1px solid ${T.border}` }}
         />

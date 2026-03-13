@@ -1,0 +1,750 @@
+{
+  "traits": [
+    {
+      "id": "human",
+      "name": "人类",
+      "category": "race",
+      "description": "最常见的种族，适应力强",
+      "effects": []
+    },
+    {
+      "id": "elf",
+      "name": "精灵",
+      "category": "race",
+      "description": "长寿的森林居民，擅长魔法与弓术",
+      "effects": []
+    },
+    {
+      "id": "dwarf",
+      "name": "矮人",
+      "category": "race",
+      "description": "矮壮而坚韧，精通锻造与采矿",
+      "effects": []
+    },
+    {
+      "id": "beastkin",
+      "name": "兽人",
+      "category": "race",
+      "description": "拥有兽类特征的种族，身体能力出众",
+      "effects": []
+    },
+    {
+      "id": "fairy",
+      "name": "妖精",
+      "category": "race",
+      "description": "体型小巧的魔法生物",
+      "effects": []
+    },
+    {
+      "id": "demon",
+      "name": "魔族",
+      "category": "race",
+      "description": "来自魔界的种族，天生亲和暗属性",
+      "effects": []
+    },
+    {
+      "id": "undead",
+      "name": "不死族",
+      "category": "race",
+      "description": "超越生死的存在",
+      "effects": []
+    },
+    {
+      "id": "angel",
+      "name": "天使",
+      "category": "race",
+      "description": "来自天界的神圣存在",
+      "effects": []
+    },
+    {
+      "id": "dragonborn",
+      "name": "龙人",
+      "category": "race",
+      "description": "拥有龙之血脉的种族",
+      "effects": []
+    },
+    {
+      "id": "vampire",
+      "name": "吸血鬼",
+      "category": "race",
+      "description": "以血为食的夜之种族",
+      "effects": []
+    },
+    {
+      "id": "halfelf",
+      "name": "半精灵",
+      "category": "race",
+      "description": "人类与精灵的混血",
+      "effects": []
+    },
+    {
+      "id": "golem",
+      "name": "魔偶",
+      "category": "race",
+      "description": "被赋予生命的人造存在",
+      "effects": []
+    },
+    {
+      "id": "tall",
+      "name": "高大",
+      "category": "bodyTrait",
+      "description": "身材高大，体格出众",
+      "effects": []
+    },
+    {
+      "id": "short-body",
+      "name": "矮小",
+      "category": "bodyTrait",
+      "description": "身材矮小，动作灵活",
+      "effects": []
+    },
+    {
+      "id": "strong-body",
+      "name": "强壮",
+      "category": "bodyTrait",
+      "description": "肌肉发达，力量充沛",
+      "effects": []
+    },
+    {
+      "id": "slender",
+      "name": "纤细",
+      "category": "bodyTrait",
+      "description": "体型纤细，身轻如燕",
+      "effects": []
+    },
+    {
+      "id": "tough",
+      "name": "耐性体质",
+      "category": "bodyTrait",
+      "description": "身体强韧，不易受伤",
+      "effects": []
+    },
+    {
+      "id": "agile-body",
+      "name": "敏捷体质",
+      "category": "bodyTrait",
+      "description": "反应迅速，身手矫健",
+      "effects": []
+    },
+    {
+      "id": "beautiful",
+      "name": "美貌",
+      "category": "bodyTrait",
+      "description": "容貌出众，引人注目",
+      "effects": []
+    },
+    {
+      "id": "imposing",
+      "name": "威严",
+      "category": "bodyTrait",
+      "description": "气场强大，令人敬畏",
+      "effects": []
+    },
+    {
+      "id": "longevity",
+      "name": "长寿",
+      "category": "bodyTrait",
+      "description": "寿命远超常人",
+      "effects": []
+    },
+    {
+      "id": "nightvision",
+      "name": "夜视",
+      "category": "bodyTrait",
+      "description": "在黑暗中也能清晰视物",
+      "effects": []
+    },
+    {
+      "id": "horns",
+      "name": "角",
+      "category": "bodyTrait",
+      "description": "头部生有角",
+      "effects": []
+    },
+    {
+      "id": "tail",
+      "name": "尾巴",
+      "category": "bodyTrait",
+      "description": "拥有尾巴",
+      "effects": []
+    },
+    {
+      "id": "wings",
+      "name": "翼",
+      "category": "bodyTrait",
+      "description": "背部生有翅膀",
+      "effects": []
+    },
+    {
+      "id": "pointed-ears",
+      "name": "尖耳",
+      "category": "bodyTrait",
+      "description": "耳朵呈尖形",
+      "effects": []
+    },
+    {
+      "id": "scarred",
+      "name": "伤痕",
+      "category": "bodyTrait",
+      "description": "身上留有明显的伤疤",
+      "effects": []
+    },
+    {
+      "id": "heterochromia",
+      "name": "异色瞳",
+      "category": "bodyTrait",
+      "description": "左右眼颜色不同",
+      "effects": []
+    },
+    {
+      "id": "brave",
+      "name": "坚强",
+      "category": "mentalTrait",
+      "description": "意志坚定，不轻易退缩",
+      "effects": []
+    },
+    {
+      "id": "timid",
+      "name": "胆怯",
+      "category": "mentalTrait",
+      "description": "容易害怕，遇事犹豫",
+      "effects": []
+    },
+    {
+      "id": "cheerful",
+      "name": "开朗",
+      "category": "mentalTrait",
+      "description": "性格明快，善于社交",
+      "effects": []
+    },
+    {
+      "id": "gloomy",
+      "name": "阴郁",
+      "category": "mentalTrait",
+      "description": "沉默寡言，情绪低沉",
+      "effects": []
+    },
+    {
+      "id": "rational",
+      "name": "理性",
+      "category": "mentalTrait",
+      "description": "冷静分析，逻辑思考",
+      "effects": []
+    },
+    {
+      "id": "emotional",
+      "name": "感性",
+      "category": "mentalTrait",
+      "description": "感情丰富，凭直觉行事",
+      "effects": []
+    },
+    {
+      "id": "gentle",
+      "name": "温柔",
+      "category": "mentalTrait",
+      "description": "待人和善，富有同理心",
+      "effects": []
+    },
+    {
+      "id": "cold",
+      "name": "冷酷",
+      "category": "mentalTrait",
+      "description": "不近人情，处事果断",
+      "effects": []
+    },
+    {
+      "id": "diligent",
+      "name": "勤勉",
+      "category": "mentalTrait",
+      "description": "勤奋努力，不知疲倦",
+      "effects": []
+    },
+    {
+      "id": "lazy",
+      "name": "怠惰",
+      "category": "mentalTrait",
+      "description": "好逸恶劳，能躺不坐",
+      "effects": []
+    },
+    {
+      "id": "honest",
+      "name": "诚实",
+      "category": "mentalTrait",
+      "description": "言行一致，不善欺瞒",
+      "effects": []
+    },
+    {
+      "id": "cunning",
+      "name": "狡猾",
+      "category": "mentalTrait",
+      "description": "心思灵活，善于算计",
+      "effects": []
+    },
+    {
+      "id": "curious",
+      "name": "好奇心旺盛",
+      "category": "mentalTrait",
+      "description": "对未知事物充满探索欲",
+      "effects": []
+    },
+    {
+      "id": "prideful",
+      "name": "高傲",
+      "category": "mentalTrait",
+      "description": "自视甚高，不轻易低头",
+      "effects": []
+    },
+    {
+      "id": "humble",
+      "name": "谦虚",
+      "category": "mentalTrait",
+      "description": "待人谦逊，不自夸",
+      "effects": []
+    },
+    {
+      "id": "stubborn",
+      "name": "顽固",
+      "category": "mentalTrait",
+      "description": "一旦决定就不会改变",
+      "effects": []
+    },
+    {
+      "id": "adaptable",
+      "name": "随和",
+      "category": "mentalTrait",
+      "description": "性格柔和，容易相处",
+      "effects": []
+    },
+    {
+      "id": "ambitious",
+      "name": "野心家",
+      "category": "mentalTrait",
+      "description": "胸怀大志，不甘平凡",
+      "effects": []
+    },
+    {
+      "id": "justice",
+      "name": "正义感",
+      "category": "mentalTrait",
+      "description": "嫉恶如仇，见义勇为",
+      "effects": []
+    },
+    {
+      "id": "carefree",
+      "name": "天真",
+      "category": "mentalTrait",
+      "description": "心思单纯，不谙世事",
+      "effects": []
+    },
+    {
+      "id": "swordsmanship",
+      "name": "剑术",
+      "category": "techTrait",
+      "description": "精通剑技",
+      "effects": []
+    },
+    {
+      "id": "magic-talent",
+      "name": "魔法才能",
+      "category": "techTrait",
+      "description": "天生对魔力敏感",
+      "effects": []
+    },
+    {
+      "id": "archery",
+      "name": "弓术",
+      "category": "techTrait",
+      "description": "箭术精湛",
+      "effects": []
+    },
+    {
+      "id": "cooking-skill",
+      "name": "料理",
+      "category": "techTrait",
+      "description": "擅长烹饪",
+      "effects": []
+    },
+    {
+      "id": "smithing",
+      "name": "锻造",
+      "category": "techTrait",
+      "description": "精通金属加工",
+      "effects": []
+    },
+    {
+      "id": "alchemy",
+      "name": "炼金",
+      "category": "techTrait",
+      "description": "熟知炼金术",
+      "effects": []
+    },
+    {
+      "id": "medicine",
+      "name": "医术",
+      "category": "techTrait",
+      "description": "擅长治疗与调药",
+      "effects": []
+    },
+    {
+      "id": "thievery",
+      "name": "盗术",
+      "category": "techTrait",
+      "description": "精通潜行与开锁",
+      "effects": []
+    },
+    {
+      "id": "persuasion",
+      "name": "话术",
+      "category": "techTrait",
+      "description": "善于说服与交涉",
+      "effects": []
+    },
+    {
+      "id": "music",
+      "name": "音乐",
+      "category": "techTrait",
+      "description": "精通乐器演奏或歌唱",
+      "effects": []
+    },
+    {
+      "id": "riding",
+      "name": "骑术",
+      "category": "techTrait",
+      "description": "擅长驾驭坐骑",
+      "effects": []
+    },
+    {
+      "id": "tactics",
+      "name": "战术",
+      "category": "techTrait",
+      "description": "精于战略规划",
+      "effects": []
+    },
+    {
+      "id": "enchanting",
+      "name": "附魔",
+      "category": "techTrait",
+      "description": "能为物品注入魔力",
+      "effects": []
+    },
+    {
+      "id": "herbalism",
+      "name": "药草学",
+      "category": "techTrait",
+      "description": "熟知各种药草的用途",
+      "effects": []
+    },
+    {
+      "id": "taming",
+      "name": "驯兽",
+      "category": "techTrait",
+      "description": "擅长驯服和驾驭野兽",
+      "effects": []
+    },
+    {
+      "id": "trap-making",
+      "name": "陷阱",
+      "category": "techTrait",
+      "description": "精通陷阱的制作与设置",
+      "effects": []
+    },
+    {
+      "id": "noble",
+      "name": "贵族",
+      "category": "other",
+      "description": "出身名门望族",
+      "effects": []
+    },
+    {
+      "id": "commoner",
+      "name": "平民",
+      "category": "other",
+      "description": "普通百姓出身",
+      "effects": []
+    },
+    {
+      "id": "wanderer",
+      "name": "流浪者",
+      "category": "other",
+      "description": "居无定所的旅人",
+      "effects": []
+    },
+    {
+      "id": "merchant",
+      "name": "商人",
+      "category": "other",
+      "description": "以经商为生",
+      "effects": []
+    },
+    {
+      "id": "adventurer",
+      "name": "冒险者",
+      "category": "other",
+      "description": "以探索与讨伐为业",
+      "effects": []
+    },
+    {
+      "id": "scholar",
+      "name": "学者",
+      "category": "other",
+      "description": "专注于学问研究",
+      "effects": []
+    },
+    {
+      "id": "knight",
+      "name": "骑士",
+      "category": "other",
+      "description": "效忠于领主的武者",
+      "effects": []
+    },
+    {
+      "id": "outlaw",
+      "name": "无法者",
+      "category": "other",
+      "description": "游离于法律之外",
+      "effects": []
+    },
+    {
+      "id": "clergy",
+      "name": "圣职者",
+      "category": "other",
+      "description": "侍奉神明的宗教人士",
+      "effects": []
+    },
+    {
+      "id": "artisan",
+      "name": "职人",
+      "category": "other",
+      "description": "精通某项手艺的匠人",
+      "effects": []
+    },
+    {
+      "id": "man",
+      "name": "男",
+      "category": "bodyTrait",
+      "description": "男性",
+      "effects": []
+    },
+    {
+      "id": "woman",
+      "name": "女",
+      "category": "bodyTrait",
+      "description": "女性",
+      "effects": []
+    }
+  ],
+  "traitGroups": [
+    {
+      "id": "grp-race",
+      "name": "种族",
+      "category": "race",
+      "traits": [
+        "human",
+        "elf",
+        "dwarf",
+        "beastkin",
+        "fairy",
+        "demon",
+        "undead",
+        "angel",
+        "dragonborn",
+        "vampire",
+        "halfelf",
+        "golem"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-gender",
+      "name": "性别",
+      "category": "bodyTrait",
+      "traits": [
+        "man",
+        "woman"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-build",
+      "name": "体格",
+      "category": "bodyTrait",
+      "traits": [
+        "tall",
+        "short-body",
+        "strong-body",
+        "slender"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-constitution",
+      "name": "体质",
+      "category": "bodyTrait",
+      "traits": [
+        "tough",
+        "agile-body",
+        "longevity",
+        "nightvision"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-appearance",
+      "name": "外貌",
+      "category": "bodyTrait",
+      "traits": [
+        "beautiful",
+        "imposing",
+        "scarred",
+        "heterochromia"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-features",
+      "name": "身体特征",
+      "category": "bodyTrait",
+      "traits": [
+        "horns",
+        "tail",
+        "wings",
+        "pointed-ears"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-will",
+      "name": "意志",
+      "category": "mentalTrait",
+      "traits": [
+        "brave",
+        "timid"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-mood",
+      "name": "气质",
+      "category": "mentalTrait",
+      "traits": [
+        "cheerful",
+        "gloomy"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-thinking",
+      "name": "思维",
+      "category": "mentalTrait",
+      "traits": [
+        "rational",
+        "emotional"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-temper",
+      "name": "性情",
+      "category": "mentalTrait",
+      "traits": [
+        "gentle",
+        "cold"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-diligence",
+      "name": "勤惰",
+      "category": "mentalTrait",
+      "traits": [
+        "diligent",
+        "lazy"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-honesty",
+      "name": "诚伪",
+      "category": "mentalTrait",
+      "traits": [
+        "honest",
+        "cunning"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-pride",
+      "name": "傲谦",
+      "category": "mentalTrait",
+      "traits": [
+        "prideful",
+        "humble"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-combat",
+      "name": "战斗技术",
+      "category": "techTrait",
+      "traits": [
+        "swordsmanship",
+        "archery",
+        "riding",
+        "tactics",
+        "trap-making"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-magic",
+      "name": "魔法技术",
+      "category": "techTrait",
+      "traits": [
+        "magic-talent",
+        "enchanting",
+        "alchemy"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-craft",
+      "name": "制作技术",
+      "category": "techTrait",
+      "traits": [
+        "cooking-skill",
+        "smithing",
+        "herbalism"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-social",
+      "name": "社交技术",
+      "category": "techTrait",
+      "traits": [
+        "persuasion",
+        "music",
+        "taming"
+      ],
+      "exclusive": true
+    },
+    {
+      "id": "grp-class",
+      "name": "身份",
+      "category": "other",
+      "traits": [
+        "noble",
+        "commoner",
+        "wanderer",
+        "merchant",
+        "adventurer",
+        "scholar",
+        "knight",
+        "outlaw",
+        "clergy",
+        "artisan"
+      ],
+      "exclusive": true
+    }
+  ]
+}

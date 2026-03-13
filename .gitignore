@@ -29,7 +29,11 @@ npm-debug.log*
 Thumbs.db
 
 # Game data - worlds (all user-created)
+worlds/
+
+# Game data - legacy location
 backend/data/worlds/
+backend/data/saves/
 
 # Game data - addons (keep only base)
 addons/*

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { WorldInfo } from "../types/game";
-import { fetchWorlds, selectWorld, saveSessionAs, deleteWorld, unloadWorld, updateWorldMeta, createWorld } from "../api/client";
+import { fetchWorlds, fetchAddons, selectWorld, deleteWorld, unloadWorld, updateWorldMeta, createWorld, uploadAsset } from "../api/client";
 import T from "../theme";
 
 interface WorldSidebarProps {
@@ -9,107 +9,202 @@ interface WorldSidebarProps {
   onWorldChanged: () => void;
 }
 
+/* ── Overlay / Modal helpers ──────────────────────── */
+
+function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        backgroundColor: "rgba(0,0,0,0.7)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: T.bg2, border: `1px solid ${T.textFaint}`, borderRadius: "8px",
+          padding: "24px", width: "380px", maxWidth: "90vw",
+          display: "flex", flexDirection: "column", gap: "16px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function modalBtnStyle(bg: string, color: string): React.CSSProperties {
+  return {
+    padding: "7px 16px", backgroundColor: bg, color, border: `1px solid ${T.textFaint}`,
+    borderRadius: "4px", cursor: "pointer", fontSize: "12px",
+  };
+}
+
+function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onCancel }: {
+  title: string; message: string; confirmLabel: string; danger?: boolean;
+  onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <Overlay onClose={onCancel}>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{title}</div>
+      <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>{message}</div>
+      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>取消</button>
+        <button onClick={onConfirm} style={modalBtnStyle(danger ? T.dangerBg : T.bg2, danger ? T.danger : T.success)}>
+          {confirmLabel}
+        </button>
+      </div>
+    </Overlay>
+  );
+}
+
+/* ── Create world modal ───────────────────────────── */
+
+function CreateWorldModal({ onCreated, onCancel }: {
+  onCreated: (id: string) => void; onCancel: () => void;
+}) {
+  const [id, setId] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "6px 8px", fontSize: "12px", boxSizing: "border-box",
+    backgroundColor: T.bg2, color: T.text, border: `1px solid ${T.borderDim}`,
+    borderRadius: "4px", outline: "none",
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: "11px", color: T.textSub, marginBottom: "2px",
+  };
+
+  const handleCreate = async () => {
+    if (!id.trim() || !name.trim()) return;
+    setBusy(true);
+    setError("");
+    const result = await createWorld(id.trim(), name.trim(), []);
+    setBusy(false);
+    if (result.success) {
+      onCreated(id.trim());
+    } else {
+      setError(result.message);
+    }
+  };
+
+  return (
+    <Overlay onClose={onCancel}>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>新建世界</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div>
+          <div style={labelStyle}>名称</div>
+          <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="我的世界" />
+        </div>
+        <div>
+          <div style={labelStyle}>ID（英文数字、-、_）</div>
+          <input style={inputStyle} value={id} onChange={e => setId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ""))} placeholder="my-world" />
+        </div>
+        {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
+      </div>
+      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>取消</button>
+        <button onClick={handleCreate} disabled={busy || !id.trim() || !name.trim()}
+          style={{ ...modalBtnStyle(T.bg2, T.success), opacity: busy || !id.trim() || !name.trim() ? 0.5 : 1 }}
+        >{busy ? "创建中..." : "创建"}</button>
+      </div>
+    </Overlay>
+  );
+}
+
+/* ── Toggle button (reusable) ─────────────────────── */
+
+function ToggleBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button onClick={(e) => { e.stopPropagation(); onClick(); }} style={{
+      padding: "4px 10px", fontSize: "11px", cursor: "pointer",
+      backgroundColor: active ? T.bg2 : T.bg1,
+      color: active ? T.accent : T.textSub,
+      border: `1px solid ${active ? T.accent + "60" : T.borderDim}`,
+      borderBottom: active ? `2px solid ${T.accent}` : `1px solid ${T.borderDim}`,
+      borderRadius: "3px",
+    }}>
+      {label}
+    </button>
+  );
+}
+
+/* ── Main Component ────────────────────────────────── */
+
 export default function WorldSidebar({ currentWorldId, currentAddons, onWorldChanged }: WorldSidebarProps) {
   const [worlds, setWorlds] = useState<WorldInfo[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showSaveForm, setShowSaveForm] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newId, setNewId] = useState("");
-  const [error, setError] = useState("");
+  const [addonNames, setAddonNames] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<WorldInfo | null>(null);
+  const [unloadConfirm, setUnloadConfirm] = useState(false);
 
-  // Inline editing state for world metadata
+  // Inline editing state
   const [editingMeta, setEditingMeta] = useState<string | null>(null);
   const [metaName, setMetaName] = useState("");
   const [metaDesc, setMetaDesc] = useState("");
+  const [metaCover, setMetaCover] = useState("");
   const [metaMessage, setMetaMessage] = useState("");
+  const coverFileRef = useRef<HTMLInputElement>(null);
 
-  const refresh = () => { fetchWorlds().then(setWorlds); };
-  useEffect(() => { refresh(); }, [currentWorldId]);
+  // Double-click tracking
+  const lastClickRef = useRef<{ id: string; time: number } | null>(null);
+
+  const refresh = useCallback(() => {
+    fetchWorlds().then(setWorlds);
+    fetchAddons().then(addons => {
+      const map: Record<string, string> = {};
+      for (const a of addons) map[a.id] = a.name;
+      setAddonNames(map);
+    });
+  }, []);
+  useEffect(() => { refresh(); }, [currentWorldId, refresh]);
 
   const handleSelectWorld = async (worldId: string) => {
     await selectWorld(worldId);
     onWorldChanged();
   };
 
-  const handleSelectEmpty = async () => {
-    try {
-      await unloadWorld();
-      onWorldChanged();
-    } catch (e) {
-      console.error("Failed to unload world:", e);
-    }
+  const handleUnload = async () => {
+    setUnloadConfirm(false);
+    await unloadWorld();
+    onWorldChanged();
   };
 
-  const handleSaveAs = async () => {
-    if (!newId.trim() || !newName.trim()) return;
-    setSaving(true);
-    setError("");
-    try {
-      const result = await saveSessionAs(newId.trim(), newName.trim());
-      if (result.success) {
-        setShowSaveForm(false);
-        setNewName("");
-        setNewId("");
-        refresh();
-        onWorldChanged();
-        setError("世界已保存");
-        setTimeout(() => setError(""), 3000);
-      } else {
-        setError(result.message);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCreateNew = async () => {
-    if (!newId.trim() || !newName.trim()) return;
-    setSaving(true);
-    setError("");
-    try {
-      // New world starts with no addons — user enables them via the addon sidebar
-      const result = await createWorld(newId.trim(), newName.trim(), []);
-      if (result.success) {
-        setShowCreateForm(false);
-        setNewName("");
-        setNewId("");
-        // Switch to the new world
-        await selectWorld(newId.trim());
-        refresh();
-        onWorldChanged();
-        setError("世界已创建");
-        setTimeout(() => setError(""), 3000);
-      } else {
-        setError(result.message);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (e: React.MouseEvent, worldId: string) => {
-    e.stopPropagation();
-    if (!confirm(`确认删除世界 "${worldId}"？`)) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    const worldId = deleteConfirm.id;
+    setDeleteConfirm(null);
     await deleteWorld(worldId);
     refresh();
     if (currentWorldId === worldId) {
-      handleSelectEmpty();
+      await unloadWorld();
+      onWorldChanged();
     }
-    setError("世界已删除");
-    setTimeout(() => setError(""), 3000);
+  };
+
+  const handleCreated = async (worldId: string) => {
+    setShowCreateModal(false);
+    await selectWorld(worldId);
+    refresh();
+    onWorldChanged();
   };
 
   const startEditMeta = (w: WorldInfo) => {
     setEditingMeta(w.id);
     setMetaName(w.name);
-    setMetaDesc((w as Record<string, unknown>).description as string ?? "");
+    setMetaDesc(w.description ?? "");
+    setMetaCover(w.cover ?? "");
     setMetaMessage("");
   };
 
   const handleSaveMeta = async (worldId: string) => {
-    const result = await updateWorldMeta(worldId, { name: metaName, description: metaDesc });
+    const result = await updateWorldMeta(worldId, { name: metaName, description: metaDesc, cover: metaCover || undefined });
     if (result.success) {
       setEditingMeta(null);
       setMetaMessage("");
@@ -120,248 +215,276 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
     }
   };
 
+  const handleCardClick = (w: WorldInfo) => {
+    const now = Date.now();
+    const last = lastClickRef.current;
+    // Double-click: switch world (non-current only)
+    if (last && last.id === w.id && now - last.time < 400 && w.id !== currentWorldId) {
+      lastClickRef.current = null;
+      handleSelectWorld(w.id);
+      return;
+    }
+    lastClickRef.current = { id: w.id, time: now };
+    // Single click: toggle expand
+    setExpandedId(expandedId === w.id ? null : w.id);
+  };
+
   const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "4px 6px",
-    backgroundColor: T.bg3,
-    border: `1px solid ${T.border}`,
-    borderRadius: "2px",
-    color: T.text,
-    fontSize: "12px",
-    boxSizing: "border-box",
-  };
-
-  const btnStyle: React.CSSProperties = {
-    padding: "4px 10px",
-    backgroundColor: "transparent",
-    color: T.textSub,
-    border: `1px solid ${T.border}`,
-    fontSize: "12px",
-    cursor: "pointer",
-  };
-
-  const smallBtnStyle: React.CSSProperties = {
-    padding: "3px 10px",
-    backgroundColor: T.bg2,
-    border: `1px solid ${T.border}`,
-    borderRadius: "3px",
-    cursor: "pointer",
-    fontSize: "11px",
+    width: "100%", padding: "4px 6px", backgroundColor: T.bg3,
+    border: `1px solid ${T.border}`, borderRadius: "3px",
+    color: T.text, fontSize: "12px", boxSizing: "border-box", outline: "none",
   };
 
   return (
-    <div style={{
-      width: "100%",
-      height: "100vh",
-      borderRight: `1px solid ${T.border}`,
-      display: "flex",
-      flexDirection: "column",
-      fontSize: "12px",
-      overflow: "hidden",
-      paddingTop: 40,
-      boxSizing: "border-box",
-    }}>
-      {/* Top action area */}
-      <div style={{ padding: "8px", borderBottom: `1px solid ${T.borderDim}`, display: "flex", flexDirection: "column", gap: "6px" }}>
-        <div style={{ display: "flex", gap: "4px" }}>
-          <button
-            onClick={() => { setShowCreateForm(true); setShowSaveForm(false); setNewName(""); setNewId(""); setError(""); }}
-            style={{ ...btnStyle, color: T.success, borderColor: T.textFaint, flex: 1 }}
-          >
-            [新建世界]
-          </button>
-          {currentWorldId && (
-            <button
-              onClick={handleSelectEmpty}
-              style={{ ...btnStyle, color: T.textDim, borderColor: T.border }}
-              title="卸载当前世界，进入空世界"
-            >
-              [空]
-            </button>
-          )}
-        </div>
-        {error && !showCreateForm && !showSaveForm && (
-          <div style={{ color: error.includes("已") ? T.success : T.danger, fontSize: "11px" }}>{error}</div>
-        )}
+    <>
+      {showCreateModal && (
+        <CreateWorldModal onCreated={handleCreated} onCancel={() => setShowCreateModal(false)} />
+      )}
+      {deleteConfirm && (
+        <ConfirmModal
+          title="删除世界"
+          message={`确认删除世界「${deleteConfirm.name}」(${deleteConfirm.id})？此操作不可撤销。`}
+          confirmLabel="确认删除" danger
+          onConfirm={handleDelete} onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
+      {unloadConfirm && (
+        <ConfirmModal
+          title="卸载世界"
+          message="确认卸载当前世界？未保存的更改将丢失。"
+          confirmLabel="确认卸载" danger
+          onConfirm={handleUnload} onCancel={() => setUnloadConfirm(false)}
+        />
+      )}
 
-        {/* Create new world form */}
-        {showCreateForm && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "4px", border: `1px solid ${T.border}`, borderRadius: "3px" }}>
-            <div style={{ color: T.textSub, fontSize: "11px" }}>创建新世界</div>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="世界名称" style={inputStyle} />
-            <input value={newId} onChange={(e) => setNewId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ""))} placeholder="world-id" style={inputStyle} />
-            {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
-            <div style={{ display: "flex", gap: "4px" }}>
-              <button onClick={handleCreateNew} disabled={!newId.trim() || !newName.trim()} style={{ ...btnStyle, color: T.success, flex: 1, opacity: (!newId.trim() || !newName.trim()) ? 0.5 : 1 }}>[创建]</button>
-              <button onClick={() => { setShowCreateForm(false); setError(""); }} style={{ ...btnStyle, flex: 1 }}>[取消]</button>
-            </div>
-          </div>
-        )}
-
-        {/* Save-as form (from empty world) */}
-        {showSaveForm && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "4px", border: `1px solid ${T.border}`, borderRadius: "3px" }}>
-            <div style={{ color: T.textSub, fontSize: "11px" }}>保存为新世界</div>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="世界名称" style={inputStyle} />
-            <input value={newId} onChange={(e) => setNewId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ""))} placeholder="world-id" style={inputStyle} />
-            {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
-            <div style={{ display: "flex", gap: "4px" }}>
-              <button onClick={handleSaveAs} disabled={!newId.trim() || !newName.trim()} style={{ ...btnStyle, color: T.accent, flex: 1, opacity: (!newId.trim() || !newName.trim()) ? 0.5 : 1 }}>[确定]</button>
-              <button onClick={() => { setShowSaveForm(false); setError(""); }} style={{ ...btnStyle, flex: 1 }}>[取消]</button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* World list */}
       <div style={{
-        flex: 1,
-        overflowY: "scroll",
-        padding: "8px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "6px",
+        width: "100%", height: "100vh", borderRight: `1px solid ${T.border}`,
+        display: "flex", flexDirection: "column", fontSize: "12px",
+        overflow: "hidden", paddingTop: 40, boxSizing: "border-box",
+        backgroundColor: T.bg0,
       }}>
-        {worlds.length === 0 && (
-          <div style={{ color: T.textDim, fontSize: "11px", padding: "8px 0", textAlign: "center" }}>
-            没有已保存的世界
-          </div>
-        )}
+        {/* Header */}
+        <div style={{
+          padding: "10px 12px", borderBottom: `1px solid ${T.borderDim}`,
+          display: "flex", alignItems: "center", gap: "6px",
+        }}>
+          <span style={{ color: T.accent, fontSize: "13px", fontWeight: "bold" }}>世界</span>
+          <span style={{ color: T.textDim, fontSize: "11px" }}>({worlds.length})</span>
+          <span style={{ flex: 1 }} />
+          <button onClick={() => setShowCreateModal(true)} style={{
+            background: "none", border: `1px solid ${T.textFaint}`, borderRadius: "3px",
+            color: T.textSub, cursor: "pointer", padding: "1px 7px", fontSize: "13px", lineHeight: 1.2,
+          }}>+</button>
+        </div>
 
-        {/* Saved world entries */}
-        {worlds.map((w) => {
-          const active = currentWorldId === w.id;
-          const expanded = expandedId === w.id;
-          const addonCount = w.addons?.length ?? 0;
-          const isEditingThis = editingMeta === w.id;
-          return (
-            <div key={w.id}>
-              {/* Card row */}
-              <div
-                onClick={() => setExpandedId(expanded ? null : w.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "6px 8px",
-                  backgroundColor: expanded ? T.bg2 : T.bg3,
-                  border: active ? `1px solid ${T.accent}` : `1px solid ${T.borderDim}`,
-                  borderRadius: expanded ? "3px 3px 0 0" : "3px",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "3px",
-                  background: `linear-gradient(135deg, ${T.bg1} 0%, ${T.bg2} 100%)`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <span style={{ fontSize: "12px", color: T.border, fontWeight: "bold" }}>W</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: "12px",
-                    color: active ? T.accent : T.text,
-                    fontWeight: active ? "bold" : "normal",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}>
-                    {w.name}
-                  </div>
-                  <div style={{ fontSize: "11px", color: T.textFaint }}>
-                    {addonCount} addon{addonCount !== 1 ? "s" : ""}
-                  </div>
-                </div>
-                {active && (
-                  <span style={{ fontSize: "11px", color: T.accent, flexShrink: 0 }}>当前</span>
-                )}
-                <span style={{ color: T.textFaint, fontSize: "11px" }}>
-                  {expanded ? "\u25B2" : "\u25BC"}
-                </span>
-              </div>
+        {/* World cards */}
+        <div style={{
+          flex: 1, minHeight: 0, overflowY: "scroll", padding: "8px",
+          display: "flex", flexDirection: "column", gap: "8px",
+        }}>
+          {worlds.length === 0 ? (
+            <div style={{ color: T.textDim, fontSize: "11px", padding: "16px 8px", textAlign: "center" }}>
+              没有已保存的世界
+            </div>
+          ) : (
+            worlds.map((w) => {
+              const active = currentWorldId === w.id;
+              const expanded = expandedId === w.id;
+              const addonCount = w.addons?.length ?? 0;
+              const isEditingThis = editingMeta === w.id;
 
-              {/* Expanded detail panel */}
-              {expanded && (
-                <div style={{
-                  padding: "8px",
-                  backgroundColor: T.bg1,
-                  border: `1px solid ${T.borderDim}`,
-                  borderTop: "none",
-                  borderRadius: "0 0 3px 3px",
-                  fontSize: "11px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                }}>
-                  {isEditingThis ? (
-                    /* Metadata editing form */
-                    <>
-                      <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                        <span style={{ color: T.textDim, width: "32px" }}>名称</span>
-                        <input value={metaName} onChange={(e) => setMetaName(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+              return (
+                <div
+                  key={w.id}
+                  style={{
+                    borderRadius: "6px",
+                    border: `1px solid ${active ? T.accent : T.borderDim}`,
+                  }}
+                >
+                  {/* Card header */}
+                  <div
+                    onClick={() => handleCardClick(w)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "8px",
+                      padding: "8px 10px",
+                      backgroundColor: active ? `${T.accent}08` : T.bg1,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {w.cover ? (
+                      <img
+                        src={`/assets/world/${w.id}/covers/${w.cover}?t=${w.cover}`}
+                        alt=""
+                        style={{
+                          width: "64px", height: "64px", objectFit: "cover",
+                          borderRadius: "4px", border: `1px solid ${T.borderDim}`, flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: "64px", height: "64px", borderRadius: "4px",
+                        border: `1px solid ${T.borderDim}`, flexShrink: 0,
+                        backgroundColor: T.bg2, display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "24px", fontWeight: "bold", color: T.textDim,
+                      }}>{(w.name || w.id || "?")[0]}</div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: "13px",
+                        color: active ? T.accent : T.text, fontWeight: "bold",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {w.name}
                       </div>
-                      <div style={{ display: "flex", gap: "4px", alignItems: "flex-start" }}>
-                        <span style={{ color: T.textDim, width: "32px", paddingTop: "4px" }}>简介</span>
-                        <textarea
-                          value={metaDesc}
-                          onChange={(e) => setMetaDesc(e.target.value)}
-                          rows={2}
-                          style={{ ...inputStyle, flex: 1, resize: "vertical" }}
+                      <div style={{ fontSize: "11px", color: T.textSub, marginTop: "2px" }}>
+                        {w.id}
+                      </div>
+                      <div style={{ fontSize: "11px", color: T.textDim, marginTop: "2px" }}>
+                        {addonCount} addon{addonCount !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+
+                    {active && (
+                      <span style={{
+                        fontSize: "11px", padding: "1px 6px", borderRadius: "3px",
+                        backgroundColor: `${T.accent}20`, color: T.accent, border: `1px solid ${T.accent}40`,
+                        lineHeight: 1.4, fontWeight: "bold",
+                      }}>当前</span>
+                    )}
+                    <span style={{ color: T.textDim, fontSize: "11px", flexShrink: 0 }}>
+                      {expanded ? "\u25B2" : "\u25BC"}
+                    </span>
+                  </div>
+
+                  {/* Expanded panel */}
+                  {expanded && (
+                    <div style={{
+                      padding: "10px 12px",
+                      backgroundColor: T.bg0,
+                      borderTop: `1px solid ${T.borderDim}`,
+                      fontSize: "11px",
+                      display: "flex", flexDirection: "column", gap: "8px",
+                    }}>
+                      {/* Info */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        {w.description && (
+                          <div style={{ color: T.textSub }}>{w.description as string}</div>
+                        )}
+                        {w.addons && w.addons.length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", alignItems: "center", marginTop: "2px" }}>
+                            <span style={{ color: T.textDim, fontSize: "10px" }}>启用扩展</span>
+                            {w.addons.map(a => (
+                              <span key={`${a.id}@${a.version}`} style={{
+                                fontSize: "10px", padding: "1px 5px", borderRadius: "3px",
+                                backgroundColor: T.bg2, color: T.textSub,
+                                border: `1px solid ${T.borderDim}`,
+                              }}>
+                                {addonNames[a.id] || a.id}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                        {!active && (
+                          <ToggleBtn label="切换" active={false} onClick={() => handleSelectWorld(w.id)} />
+                        )}
+                        <ToggleBtn
+                          label="编辑信息"
+                          active={isEditingThis}
+                          onClick={() => {
+                            if (isEditingThis) { setEditingMeta(null); }
+                            else { startEditMeta(w); }
+                          }}
                         />
+                        <span style={{ flex: 1 }} />
+                        {active && (
+                          <button onClick={(e) => { e.stopPropagation(); setUnloadConfirm(true); }} style={{
+                            padding: "4px 10px", fontSize: "11px", cursor: "pointer",
+                            backgroundColor: T.bg1, color: T.textSub,
+                            border: `1px solid ${T.borderDim}`, borderRadius: "3px",
+                          }}>卸载</button>
+                        )}
+                        {!active && (
+                          <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(w); }} style={{
+                            padding: "4px 10px", fontSize: "11px", cursor: "pointer",
+                            backgroundColor: T.bg2, color: T.danger,
+                            border: `1px solid ${T.border}`, borderRadius: "3px",
+                          }}>[删除]</button>
+                        )}
                       </div>
-                      {metaMessage && <div style={{ color: T.danger, fontSize: "11px" }}>{metaMessage}</div>}
-                      <div style={{ display: "flex", gap: "4px" }}>
-                        <button onClick={() => handleSaveMeta(w.id)} style={{ ...smallBtnStyle, color: T.success }}>[保存]</button>
-                        <button onClick={() => setEditingMeta(null)} style={{ ...smallBtnStyle, color: T.textSub }}>[取消]</button>
-                      </div>
-                    </>
-                  ) : (
-                    /* Metadata display */
-                    <>
-                      <div style={{ color: T.textDim }}>ID: {w.id}</div>
-                      {(w as Record<string, unknown>).description && (
-                        <div style={{ color: T.textSub }}>{(w as Record<string, unknown>).description as string}</div>
-                      )}
-                      {w.addons && w.addons.length > 0 && (
-                        <div style={{ color: T.textDim }}>
-                          Addons: {w.addons.map(a => `${a.id}@${a.version}`).join(", ")}
+
+                      {/* Edit meta panel */}
+                      {isEditingThis && (
+                        <div style={{ borderLeft: `2px solid ${T.accent}`, paddingLeft: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <span style={{ color: T.textDim, minWidth: "32px" }}>名称</span>
+                            <input value={metaName} onChange={(e) => setMetaName(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "flex-start" }}>
+                            <span style={{ color: T.textDim, minWidth: "32px", paddingTop: "4px" }}>简介</span>
+                            <textarea
+                              value={metaDesc}
+                              onChange={(e) => setMetaDesc(e.target.value)}
+                              rows={2}
+                              style={{ ...inputStyle, flex: 1, resize: "vertical" }}
+                            />
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <span style={{ color: T.textDim, minWidth: "32px" }}>封面</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
+                              {metaCover && (
+                                <img src={`/assets/world/${w.id}/covers/${metaCover}?t=${metaCover}`} alt=""
+                                  style={{ width: "28px", height: "28px", objectFit: "cover", borderRadius: "3px", border: `1px solid ${T.borderDim}` }}
+                                />
+                              )}
+                              <span style={{ fontSize: "11px", color: T.textFaint, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {metaCover || "无"}
+                              </span>
+                              <input type="file" accept="image/*" ref={coverFileRef} style={{ display: "none" }}
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const result = await uploadAsset(file, "covers", `world-${w.id}`, { worldId: w.id });
+                                  if (result.success && result.filename) setMetaCover(result.filename);
+                                  e.target.value = "";
+                                }}
+                              />
+                              <button onClick={() => coverFileRef.current?.click()} style={{
+                                padding: "2px 8px", fontSize: "10px", cursor: "pointer",
+                                backgroundColor: T.bg2, color: T.textSub, border: `1px solid ${T.borderDim}`, borderRadius: "3px",
+                              }}>选择</button>
+                              {metaCover && (
+                                <button onClick={() => setMetaCover("")} style={{
+                                  padding: "2px 8px", fontSize: "10px", cursor: "pointer",
+                                  backgroundColor: T.bg2, color: T.danger, border: `1px solid ${T.borderDim}`, borderRadius: "3px",
+                                }}>移除</button>
+                              )}
+                            </div>
+                          </div>
+                          {metaMessage && <div style={{ color: T.danger, fontSize: "11px" }}>{metaMessage}</div>}
+                          <div style={{ display: "flex", gap: "4px" }}>
+                            <button onClick={() => handleSaveMeta(w.id)} style={{
+                              padding: "3px 10px", backgroundColor: T.bg2, border: `1px solid ${T.border}`,
+                              borderRadius: "3px", cursor: "pointer", fontSize: "11px", color: T.success,
+                            }}>[保存]</button>
+                            <button onClick={() => setEditingMeta(null)} style={{
+                              padding: "3px 10px", backgroundColor: T.bg2, border: `1px solid ${T.border}`,
+                              borderRadius: "3px", cursor: "pointer", fontSize: "11px", color: T.textSub,
+                            }}>[取消]</button>
+                          </div>
                         </div>
                       )}
-                      <div style={{ display: "flex", gap: "6px", marginTop: "4px", flexWrap: "wrap" }}>
-                        {!active && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleSelectWorld(w.id); }}
-                            style={{ ...smallBtnStyle, color: T.success }}
-                          >
-                            [切换]
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); startEditMeta(w); }}
-                          style={{ ...smallBtnStyle, color: T.accent }}
-                        >
-                          [编辑信息]
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(e, w.id)}
-                          style={{ ...smallBtnStyle, color: T.danger }}
-                        >
-                          [删除]
-                        </button>
-                      </div>
-                    </>
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

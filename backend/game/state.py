@@ -55,6 +55,8 @@ def list_available_worlds() -> list[dict[str, Any]]:
         result.append({
             "id": w["id"],
             "name": w["name"],
+            "description": w.get("description", ""),
+            "cover": w.get("cover", ""),
             "addons": w.get("addons", []),
             "playerCharacter": w.get("playerCharacter", ""),
         })

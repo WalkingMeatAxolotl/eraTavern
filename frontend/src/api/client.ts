@@ -110,7 +110,7 @@ export async function updateWorldMeta(worldId: string, data: { name?: string; de
   return res.json();
 }
 
-export async function updateAddonMeta(addonId: string, version: string, data: { name?: string; description?: string; author?: string; cover?: string }): Promise<{ success: boolean; message: string }> {
+export async function updateAddonMeta(addonId: string, version: string, data: { name?: string; description?: string; author?: string; cover?: string; categories?: string[] }): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/${encodeURIComponent(version)}/meta`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -119,8 +119,24 @@ export async function updateAddonMeta(addonId: string, version: string, data: { 
   return res.json();
 }
 
+export async function createAddon(data: { id: string; name: string; version?: string; description?: string; author?: string }): Promise<{ success: boolean; message: string }> {
+  const res = await fetch("/api/addon", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
 export async function deleteAddon(addonId: string, version: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/${encodeURIComponent(version)}`, {
+    method: "DELETE",
+  });
+  return res.json();
+}
+
+export async function deleteAddonAll(addonId: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}`, {
     method: "DELETE",
   });
   return res.json();
@@ -650,10 +666,18 @@ export async function saveDecorPresets(presets: DecorPreset[]): Promise<{ succes
 
 // --- Asset upload ---
 
-export async function uploadAsset(file: File, folder: "characters" | "backgrounds", name: string): Promise<{ success: boolean; filename?: string; message?: string }> {
+export async function uploadAsset(
+  file: File,
+  folder: "characters" | "backgrounds" | "covers",
+  name: string,
+  opts?: { addonId?: string; worldId?: string },
+): Promise<{ success: boolean; filename?: string; message?: string }> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(`/api/assets/upload?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}`, {
+  const params = new URLSearchParams({ folder, name });
+  if (opts?.addonId) params.set("addonId", opts.addonId);
+  if (opts?.worldId) params.set("worldId", opts.worldId);
+  const res = await fetch(`/api/assets/upload?${params.toString()}`, {
     method: "POST",
     body: formData,
   });
@@ -723,8 +747,39 @@ export async function forkAddon(addonId: string, baseVersion: string, worldId: s
   return res.json();
 }
 
+export async function copyAddonVersion(addonId: string, sourceVersion: string, newVersion: string, forkedFrom?: string): Promise<{ success: boolean; newVersion?: string; message?: string }> {
+  const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/copy`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sourceVersion, newVersion, forkedFrom: forkedFrom ?? null }),
+  });
+  return res.json();
+}
+
+export interface AddonVersionInfo {
+  version: string;
+  forkedFrom: string | null;
+  worldId: string | null;
+}
+
+export async function overwriteAddonVersion(addonId: string, sourceVersion: string, targetVersion: string): Promise<{ success: boolean; message?: string }> {
+  const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/overwrite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sourceVersion, targetVersion }),
+  });
+  return res.json();
+}
+
 export async function fetchAddonVersions(addonId: string): Promise<string[]> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/versions`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.versions ?? [];
+}
+
+export async function fetchAddonVersionsDetail(addonId: string): Promise<AddonVersionInfo[]> {
+  const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/versions?detail=true`);
   if (!res.ok) return [];
   const data = await res.json();
   return data.versions ?? [];
