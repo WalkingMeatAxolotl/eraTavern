@@ -307,6 +307,12 @@ def _evaluate_leaf(
         var_value = evaluate_variable(var_def, check_char, game_state)
         return _compare(var_value, cond.get("op", ">="), cond.get("value", 0))
 
+    if ctype == "worldVar":
+        key = cond.get("key", "")
+        wv = getattr(game_state, "world_variables", {})
+        val = wv.get(key, 0)
+        return _compare(val, cond.get("op", "=="), cond.get("value", 0))
+
     # Unknown condition type → pass
     return True
 
@@ -647,6 +653,7 @@ def simulate_npc_ticks(
     ticks = max(1, elapsed_minutes // TICK_MINUTES)
     current_days = game_state.time.total_days
     log: list[dict] = []
+    has_events = bool(getattr(game_state, "event_defs", {}))
     for _ in range(ticks):
         for npc_id, npc in list(game_state.characters.items()):
             if npc.get("isPlayer") or npc_id in skip:
@@ -662,6 +669,13 @@ def simulate_npc_ticks(
                     "totalDays": current_days,
                 }
                 log.append(entry)
+            # Evaluate events for this NPC after its tick
+            if has_events:
+                evaluate_events(
+                    game_state,
+                    scope_filter="each_character",
+                    char_filter=npc_id,
+                )
     # Store entries for LLM, trim to cache limit (60 game days)
     game_state.npc_full_log.extend(log)
     from .state import GameState
@@ -1188,6 +1202,13 @@ def _calc_modifier_bonus(
                     per = mod.get("per", 1)
                     if per > 0:
                         raw_bonus = (int(var_value) // per) * bonus
+        elif mtype == "worldVar":
+            key = mod.get("key", "")
+            wv = getattr(game_state, "world_variables", {})
+            val = wv.get(key, 0)
+            per = mod.get("per", 1)
+            if per > 0:
+                raw_bonus = (int(val) // per) * bonus
 
         if mode == "multiply":
             mul_total *= (1 + raw_bonus / 100)
@@ -1515,6 +1536,18 @@ def _apply_effects(
                         cell_name = cell_info.get("name", f"#{cell_id}")
                 summaries.append(f"{target_prefix}移动到 {cell_name or map_id}")
 
+        elif etype == "worldVar":
+            key = eff.get("key", "")
+            value = eff.get("value", 0)
+            wv = getattr(game_state, "world_variables", {})
+            if op == "set":
+                wv[key] = value
+                summaries.append(f"世界变量 {key} → {value}")
+            elif op == "add":
+                wv[key] = wv.get(key, 0) + value
+                summaries.append(f"世界变量 {key} {'+' if value >= 0 else ''}{value}")
+            continue
+
         elif etype == "experience":
             key = eff.get("key", "")
             amount = eff.get("value", 1)
@@ -1679,3 +1712,148 @@ def _execute_look(
         "success": True,
         "message": "\n".join(lines),
     }
+
+
+# ========================
+# Global event evaluation
+# ========================
+
+def _should_fire_event(
+    mode: str, state: dict, key: str, matched: bool,
+    current_time: int, event_def: dict,
+) -> bool:
+    """Determine whether an event should fire based on triggerMode."""
+    if mode == "once":
+        if key == "__global__":
+            if state.get("fired", False):
+                return False
+        else:
+            if key in state.get("fired_chars", []):
+                return False
+        return matched
+
+    if mode == "on_change":
+        last = state.get("last_match", {}).get(key, False)
+        return matched and not last
+
+    if mode == "while":
+        if not matched:
+            return False
+        cooldown = event_def.get("cooldown", 10)
+        last_trigger = state.get("last_trigger", {}).get(key, -999999)
+        return (current_time - last_trigger) >= cooldown
+
+    return False
+
+
+def _update_event_state(
+    mode: str, state: dict, key: str, matched: bool,
+    current_time: int, fired: bool,
+) -> None:
+    """Update event runtime state after evaluation."""
+    if mode == "on_change":
+        state.setdefault("last_match", {})[key] = matched
+
+    if mode == "while" and fired:
+        state.setdefault("last_trigger", {})[key] = current_time
+
+    if mode == "once" and fired:
+        if key == "__global__":
+            state["fired"] = True
+        else:
+            state.setdefault("fired_chars", [])
+            if key not in state["fired_chars"]:
+                state["fired_chars"].append(key)
+
+
+def evaluate_events(
+    game_state: Any,
+    scope_filter: str | None = None,
+    char_filter: str | None = None,
+) -> list[dict]:
+    """Evaluate global events.
+
+    scope_filter: only evaluate events with this targetScope ("each_character" / "none")
+    char_filter: only evaluate this character (used inside NPC tick)
+
+    Returns list of {event, charId, effects_summary, output} for each firing.
+    """
+    current_time = game_state.time.total_minutes
+    results: list[dict] = []
+
+    for event_def in game_state.event_defs.values():
+        if not event_def.get("enabled", True):
+            continue
+        mode = event_def["triggerMode"]
+        scope = event_def.get("targetScope", "none")
+        if scope_filter and scope != scope_filter:
+            continue
+
+        event_id = event_def["id"]
+        state = game_state.event_state.setdefault(event_id, {})
+
+        if scope == "each_character":
+            chars = (
+                {char_filter: game_state.characters[char_filter]}
+                if char_filter and char_filter in game_state.characters
+                else game_state.characters
+            )
+            for char_id, char in chars.items():
+                matched = _evaluate_conditions(
+                    event_def.get("conditions", []),
+                    char, game_state, char_id=char_id,
+                )
+                if _should_fire_event(mode, state, char_id, matched, current_time, event_def):
+                    summaries = _apply_effects(
+                        event_def.get("effects", []),
+                        char, game_state, char_id, None,
+                    )
+                    # Resolve output template
+                    tpl = _select_output_template(event_def, char, game_state, char_id, None)
+                    output = _resolve_template(tpl, char, None, game_state, None, summaries)
+                    results.append({
+                        "event": event_def["name"],
+                        "charId": char_id,
+                        "effectsSummary": summaries,
+                        "output": output,
+                    })
+                    _update_event_state(mode, state, char_id, matched, current_time, True)
+                else:
+                    _update_event_state(mode, state, char_id, matched, current_time, False)
+
+        elif scope == "none":
+            # No character context — only global conditions (time, weather, worldVar)
+            matched = _evaluate_global_conditions(
+                event_def.get("conditions", []), game_state
+            )
+            if _should_fire_event(mode, state, "__global__", matched, current_time, event_def):
+                summaries = _apply_effects(
+                    event_def.get("effects", []),
+                    {}, game_state, "", None,
+                )
+                tpl = _select_output_template(event_def, {}, game_state, "", None)
+                output = _resolve_template(tpl, {}, None, game_state, None, summaries)
+                results.append({
+                    "event": event_def["name"],
+                    "charId": None,
+                    "effectsSummary": summaries,
+                    "output": output,
+                })
+                _update_event_state(mode, state, "__global__", matched, current_time, True)
+            else:
+                _update_event_state(mode, state, "__global__", matched, current_time, False)
+
+    return results
+
+
+def _evaluate_global_conditions(
+    conditions: list, game_state: Any,
+) -> bool:
+    """Evaluate conditions that don't require a character context.
+
+    Only time, weather, and worldVar conditions are meaningful here.
+    Other condition types that need a character will pass by default.
+    """
+    # Use an empty dict as the "character" — leaf conditions that need
+    # character data will simply not match, which is correct for scope=none.
+    return _evaluate_conditions(conditions, {}, game_state)

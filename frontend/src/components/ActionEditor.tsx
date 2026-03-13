@@ -125,6 +125,7 @@ const CONDITION_TYPES: { value: ActionCondition["type"]; label: string }[] = [
   { value: "time", label: "时间" },
   { value: "basicInfo", label: "基本属性" },
   { value: "variable", label: "派生变量" },
+  { value: "worldVar", label: "世界变量" },
 ];
 
 const COST_TYPES: { value: ActionCost["type"]; label: string }[] = [
@@ -143,6 +144,7 @@ const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: "item", label: "物品" },
   { value: "clothing", label: "服装" },
   { value: "position", label: "位置" },
+  { value: "worldVar", label: "世界变量" },
 ];
 
 const OPS = [">=", "<=", ">", "<", "==", "!="];
@@ -209,6 +211,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   const itemList = Object.values(itemDefs);
   const npcList = Object.values(characters ?? {}).filter((c) => !c.isPlayer);
   const variableList = Object.values(definitions.variableDefs ?? {}).map((v) => ({ id: v.id, name: v.name || v.id }));
+  const worldVarList = Object.values(definitions.worldVariableDefs ?? {}).map((v) => ({ id: v.id, name: v.name || v.id }));
   const actionList = Object.values(definitions.actionDefs).map((a) => ({ id: a.id, name: a.name || a.id }));
   const categoryList = [...new Set(Object.values(definitions.actionDefs).map((a) => a.category).filter(Boolean))];
 
@@ -386,6 +389,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 traitCategories={traitCategories}
                 traitList={traitList}
                 variableList={variableList}
+                worldVarList={worldVarList}
                 label="↳ 权重修正"
               />
             </div>
@@ -417,7 +421,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 depth={0}
                 ctx={{
                   definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
-                  traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, variableList,
+                  traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, worldVarList,
                 }}
               />
             </div>
@@ -437,7 +441,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             <OutcomeEditor key={idx} outcome={outcome} onChange={(o) => updateOutcome(idx, o)}
               onRemove={() => removeOutcome(idx)} disabled={isReadOnly} definitions={definitions}
               resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
-              traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} variableList={variableList} actionList={actionList} categoryList={categoryList} />
+              traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} variableList={variableList} worldVarList={worldVarList} actionList={actionList} categoryList={categoryList} />
           ))}
         </div>
       </div>
@@ -460,7 +464,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             disabled={isReadOnly}
             ctx={{
               definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
-              traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList,
+              traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, worldVarList,
             }}
           />
           {showVarHelp && (
@@ -518,6 +522,7 @@ interface ConditionCtx {
   itemList: ItemInfo[];
   npcList: { id: string; name: string }[];
   variableList: { id: string; name: string }[];
+  worldVarList: { id: string; name: string }[];
 }
 
 // ─── Recursive condition item editor ───
@@ -683,7 +688,7 @@ function ConditionLeafEditor({
   disabled: boolean;
   ctx: ConditionCtx;
 }) {
-  const { resourceKeys, abilityKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList } = ctx;
+  const { resourceKeys, abilityKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, worldVarList } = ctx;
   const update = (patch: Partial<ActionCondition>) => onChange({ ...condition, ...patch });
 
   return (
@@ -693,7 +698,7 @@ function ConditionLeafEditor({
         {CONDITION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
       </select>
 
-      {!["location", "npcPresent", "time"].includes(condition.type) && (
+      {!["location", "npcPresent", "time", "worldVar"].includes(condition.type) && (
         <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }} value={condition.condTarget ?? "self"}
           onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })} disabled={disabled}>
           <option value="self">自身</option>
@@ -813,6 +818,21 @@ function ConditionLeafEditor({
             onChange={(e) => update({ varId: e.target.value })} disabled={disabled}>
             <option value="">选择变量</option>
             {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </select>
+          <select style={inputStyle} value={condition.op ?? ">="} onChange={(e) => update({ op: e.target.value })} disabled={disabled}>
+            {OPS.map((op) => <option key={op} value={op}>{op}</option>)}
+          </select>
+          <input type="number" style={{ ...inputStyle, width: "70px" }} value={condition.value ?? 0}
+            onChange={(e) => update({ value: Number(e.target.value) })} disabled={disabled} />
+        </>
+      )}
+
+      {condition.type === "worldVar" && (
+        <>
+          <select style={inputStyle} value={condition.key ?? ""}
+            onChange={(e) => update({ key: e.target.value })} disabled={disabled}>
+            <option value="">选择世界变量</option>
+            {worldVarList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
           <select style={inputStyle} value={condition.op ?? ">="} onChange={(e) => update({ op: e.target.value })} disabled={disabled}>
             {OPS.map((op) => <option key={op} value={op}>{op}</option>)}
@@ -951,7 +971,7 @@ function CostEditor({ cost, onChange, disabled, resourceKeys, basicInfoNumKeys, 
 
 // ─── Reusable modifier list (for weight modifiers and value modifiers) ───
 
-function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experienceKeys, traitCategories, traitList, variableList, label }: {
+function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experienceKeys, traitCategories, traitList, variableList, worldVarList, label }: {
   modifiers: ValueModifier[];
   onChange: (mods: ValueModifier[]) => void;
   disabled: boolean;
@@ -960,6 +980,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
   traitCategories: KeyLabel[];
   traitList: TraitInfo[];
   variableList: { id: string; name: string }[];
+  worldVarList: { id: string; name: string }[];
   label: string;
 }) {
   const add = () => onChange([...modifiers, { type: "ability", key: abilityKeys[0]?.key ?? "", per: 1000, bonus: 5 }]);
@@ -985,6 +1006,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
               else if (t === "experience") update(idx, { type: t, key: experienceKeys[0]?.key ?? "", per: 1, bonus: mod.bonus, bonusMode: mod.bonusMode });
               else if (t === "trait") update(idx, { type: t, key: traitCategories[0]?.key ?? "", value: "", bonus: mod.bonus, bonusMode: mod.bonusMode });
               else if (t === "variable") update(idx, { type: t, varId: variableList[0]?.id ?? "", per: 1, bonus: mod.bonus, bonusMode: mod.bonusMode });
+              else if (t === "worldVar") update(idx, { type: t, key: worldVarList[0]?.id ?? "", per: 1, bonus: mod.bonus, bonusMode: mod.bonusMode });
               else update(idx, { type: t, source: "target", per: 100, bonus: mod.bonus, bonusMode: mod.bonusMode });
             }} disabled={disabled}>
             <option value="ability">能力</option>
@@ -992,6 +1014,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
             <option value="trait">特质</option>
             <option value="favorability">好感度</option>
             <option value="variable">派生变量</option>
+            <option value="worldVar">世界变量</option>
           </select>
 
           {mod.type === "ability" && (
@@ -1060,6 +1083,19 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
             </>
           )}
 
+          {mod.type === "worldVar" && (
+            <>
+              <select style={inputStyle} value={mod.key ?? ""}
+                onChange={(e) => update(idx, { ...mod, key: e.target.value })} disabled={disabled}>
+                <option value="">选择世界变量</option>
+                {worldVarList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+              </select>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
+              <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
+                onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
+            </>
+          )}
+
           <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
             value={mod.bonusMode ?? "add"}
             onChange={(e) => update(idx, { ...mod, bonusMode: e.target.value as "add" | "multiply" })}
@@ -1095,11 +1131,12 @@ interface OutcomeEditorProps {
   itemList: ItemInfo[];
   npcList: { id: string; name: string }[];
   variableList: { id: string; name: string }[];
+  worldVarList: { id: string; name: string }[];
   actionList: { id: string; name: string }[];
   categoryList: string[];
 }
 
-function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, actionList, categoryList }: OutcomeEditorProps) {
+function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, worldVarList, actionList, categoryList }: OutcomeEditorProps) {
   const [showChain, setShowChain] = useState((outcome.suggestNext ?? []).length > 0);
   const [showOutTpl, setShowOutTpl] = useState(
     (outcome.outputTemplates ?? []).length > 0 || !!outcome.outputTemplate
@@ -1221,6 +1258,8 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
           experienceKeys={experienceKeys}
           traitCategories={traitCategories}
           traitList={traitList}
+          variableList={variableList}
+          worldVarList={worldVarList}
           label="↳ 权重修正"
         />
       </div>
@@ -1264,7 +1303,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                   <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
                     <EffectEditor effect={eff} onChange={(e) => updateEffect(effIdx, { ...e, target: group.target })} disabled={disabled}
                       resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
-                      traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} variableList={variableList} />
+                      traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} variableList={variableList} worldVarList={worldVarList} />
                     {!disabled && <button className="ae-del-btn" onClick={() => removeEffect(effIdx)} style={delBtnStyle}>x</button>}
                   </div>
                   {hasModifiers && (
@@ -1285,6 +1324,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                         traitCategories={traitCategories}
                         traitList={traitList}
                         variableList={variableList}
+                        worldVarList={worldVarList}
                         label="↳ 数值修正"
                       />
                     </div>
@@ -1417,7 +1457,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
               disabled={disabled}
               ctx={{
                 definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
-                traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList,
+                traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, worldVarList,
               }}
             />
           </div>
@@ -1441,9 +1481,10 @@ interface EffectEditorProps {
   traitList: TraitInfo[];
   itemList: ItemInfo[];
   variableList: { id: string; name: string }[];
+  worldVarList: { id: string; name: string }[];
 }
 
-function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, variableList }: EffectEditorProps) {
+function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, variableList, worldVarList }: EffectEditorProps) {
   const update = (patch: Partial<ActionEffect>) => onChange({ ...effect, ...patch });
 
   return (
@@ -1653,6 +1694,22 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
           </>
         );
       })()}
+
+      {effect.type === "worldVar" && (
+        <>
+          <select style={inputStyle} value={effect.key ?? ""}
+            onChange={(e) => update({ key: e.target.value })} disabled={disabled}>
+            <option value="">选择世界变量</option>
+            {worldVarList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </select>
+          <select style={inputStyle} value={effect.op ?? "add"} onChange={(e) => update({ op: e.target.value })} disabled={disabled}>
+            <option value="add">增加</option>
+            <option value="set">设为</option>
+          </select>
+          <input type="number" style={{ ...inputStyle, width: "70px" }} value={effect.value ?? 0}
+            onChange={(e) => update({ value: Number(e.target.value) })} disabled={disabled} />
+        </>
+      )}
 
     </>
   );

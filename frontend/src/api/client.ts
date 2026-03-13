@@ -1,4 +1,4 @@
-import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, DecorPreset, RawMapData, SessionInfo } from "../types/game";
+import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo } from "../types/game";
 
 const API_BASE = "/api/game";
 
@@ -474,6 +474,80 @@ export async function deleteVariableTag(tag: string): Promise<{ success: boolean
     method: "DELETE",
   });
   if (!res.ok) throw new Error(`Failed to delete variable tag: ${res.status}`);
+  return res.json();
+}
+
+// --- Event Definition CRUD ---
+
+export async function fetchEventDefs(): Promise<EventDefinition[]> {
+  const res = await fetch(`${API_BASE}/events`);
+  if (!res.ok) throw new Error(`Failed to fetch events: ${res.status}`);
+  const data = await res.json();
+  return data.events;
+}
+
+export async function createEventDef(data: Omit<EventDefinition, "source">): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to create event: ${res.status}`);
+  return res.json();
+}
+
+export async function saveEventDef(id: string, data: Omit<EventDefinition, "source">): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/events/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to save event: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteEventDef(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/events/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Failed to delete event: ${res.status}`);
+  return res.json();
+}
+
+// --- World Variable Definition CRUD ---
+
+export async function fetchWorldVariableDefs(): Promise<WorldVariableDefinition[]> {
+  const res = await fetch(`${API_BASE}/world-variables`);
+  if (!res.ok) throw new Error(`Failed to fetch world variables: ${res.status}`);
+  const data = await res.json();
+  return data.worldVariables;
+}
+
+export async function createWorldVariableDef(data: Omit<WorldVariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/world-variables`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to create world variable: ${res.status}`);
+  return res.json();
+}
+
+export async function saveWorldVariableDef(id: string, data: Omit<WorldVariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/world-variables/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to save world variable: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteWorldVariableDef(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/world-variables/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Failed to delete world variable: ${res.status}`);
   return res.json();
 }
 

@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from game.state import GameState, list_available_worlds, list_available_addons, list_available_games
-from game.action import get_available_actions, execute_action
+from game.action import get_available_actions, execute_action, evaluate_events
 from game.map_engine import compile_grid
 from game.character import namespace_id, to_local_id, get_addon_from_id
 from game.addon_loader import (
@@ -561,6 +561,17 @@ async def perform_action(req: ActionRequest):
     result = execute_action(game_state, _ensure_ns(req.characterId), action_data)
 
     if result.get("success"):
+        # Evaluate global events after player action
+        player_id = _ensure_ns(req.characterId)
+        # Evaluate each_character events for the player
+        event_results = evaluate_events(game_state, scope_filter="each_character", char_filter=player_id)
+        # Evaluate scope=none events (world-level triggers)
+        event_results += evaluate_events(game_state, scope_filter="none")
+        if event_results:
+            event_msgs = [r["output"] for r in event_results if r.get("output")]
+            if event_msgs:
+                existing_msg = result.get("message", "")
+                result["message"] = existing_msg + "\n" + "\n".join(event_msgs) if existing_msg else "\n".join(event_msgs)
         # Append to action log for LLM / save persistence
         game_state.action_log.append({
             "message": result.get("message", ""),
@@ -1131,6 +1142,125 @@ async def delete_variable_tag(tag: str):
     game_state.variable_tags.remove(tag)
     await _mark_dirty()
     return {"success": True, "message": f"Tag '{tag}' deleted"}
+
+
+# --- Event Definition CRUD ---
+
+
+@app.get("/api/game/events")
+async def get_events():
+    """Get all global event definitions."""
+    return {"events": list(game_state.event_defs.values())}
+
+
+@app.post("/api/game/events")
+async def create_event(body: dict = Body(...)):
+    """Create a new global event (in memory)."""
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    event_id = _ensure_ns(raw_id, source)
+    if not event_id:
+        return {"success": False, "message": "Missing event id"}
+    if event_id in game_state.event_defs:
+        return {"success": False, "message": f"Event '{event_id}' already exists"}
+    entry = {k: v for k, v in body.items() if k != "source"}
+    entry["id"] = event_id
+    entry["_local_id"] = to_local_id(event_id)
+    entry["source"] = source
+    game_state.event_defs[event_id] = entry
+    await _mark_dirty()
+    return {"success": True, "message": f"Event '{event_id}' created"}
+
+
+@app.put("/api/game/events/{event_id:path}")
+async def update_event(event_id: str, body: dict = Body(...)):
+    """Update a global event (in memory)."""
+    event_id = _ensure_ns(event_id)
+    ed = game_state.event_defs.get(event_id)
+    if not ed:
+        return {"success": False, "message": f"Event '{event_id}' not found"}
+    source = ed.get("source", "")
+    entry = {k: v for k, v in body.items() if k != "source"}
+    entry["id"] = event_id
+    entry["_local_id"] = to_local_id(event_id)
+    entry["source"] = source
+    game_state.event_defs[event_id] = entry
+    await _mark_dirty()
+    return {"success": True, "message": f"Event '{event_id}' updated"}
+
+
+@app.delete("/api/game/events/{event_id:path}")
+async def delete_event(event_id: str):
+    """Delete a global event (in memory)."""
+    event_id = _ensure_ns(event_id)
+    ed = game_state.event_defs.get(event_id)
+    if not ed:
+        return {"success": False, "message": f"Event '{event_id}' not found"}
+    del game_state.event_defs[event_id]
+    # Clean up event state
+    game_state.event_state.pop(event_id, None)
+    await _mark_dirty()
+    return {"success": True, "message": f"Event '{event_id}' deleted"}
+
+
+# --- World Variable Definition CRUD ---
+
+
+@app.get("/api/game/world-variables")
+async def get_world_variables():
+    """Get all world variable definitions."""
+    return {"worldVariables": list(game_state.world_variable_defs.values())}
+
+
+@app.post("/api/game/world-variables")
+async def create_world_variable(body: dict = Body(...)):
+    """Create a new world variable (in memory)."""
+    raw_id = body.get("id", "")
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    var_id = _ensure_ns(raw_id, source)
+    if not var_id:
+        return {"success": False, "message": "Missing variable id"}
+    if var_id in game_state.world_variable_defs:
+        return {"success": False, "message": f"World variable '{var_id}' already exists"}
+    entry = {k: v for k, v in body.items() if k != "source"}
+    entry["id"] = var_id
+    entry["_local_id"] = to_local_id(var_id)
+    entry["source"] = source
+    game_state.world_variable_defs[var_id] = entry
+    # Initialize runtime value
+    game_state.world_variables[var_id] = entry.get("default", 0)
+    await _mark_dirty()
+    return {"success": True, "message": f"World variable '{var_id}' created"}
+
+
+@app.put("/api/game/world-variables/{var_id:path}")
+async def update_world_variable(var_id: str, body: dict = Body(...)):
+    """Update a world variable definition (in memory)."""
+    var_id = _ensure_ns(var_id)
+    vd = game_state.world_variable_defs.get(var_id)
+    if not vd:
+        return {"success": False, "message": f"World variable '{var_id}' not found"}
+    source = vd.get("source", "")
+    entry = {k: v for k, v in body.items() if k != "source"}
+    entry["id"] = var_id
+    entry["_local_id"] = to_local_id(var_id)
+    entry["source"] = source
+    game_state.world_variable_defs[var_id] = entry
+    await _mark_dirty()
+    return {"success": True, "message": f"World variable '{var_id}' updated"}
+
+
+@app.delete("/api/game/world-variables/{var_id:path}")
+async def delete_world_variable(var_id: str):
+    """Delete a world variable definition (in memory)."""
+    var_id = _ensure_ns(var_id)
+    vd = game_state.world_variable_defs.get(var_id)
+    if not vd:
+        return {"success": False, "message": f"World variable '{var_id}' not found"}
+    del game_state.world_variable_defs[var_id]
+    game_state.world_variables.pop(var_id, None)
+    await _mark_dirty()
+    return {"success": True, "message": f"World variable '{var_id}' deleted"}
 
 
 # --- Map CRUD ---

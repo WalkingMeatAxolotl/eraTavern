@@ -243,7 +243,7 @@ export interface VariableDefinition {
 // --- Action definition types ---
 
 export interface ActionCondition {
-  type: "location" | "npcPresent" | "npcAbsent" | "resource" | "ability" | "trait" | "noTrait" | "favorability" | "hasItem" | "clothing" | "time" | "basicInfo" | "variable";
+  type: "location" | "npcPresent" | "npcAbsent" | "resource" | "ability" | "trait" | "noTrait" | "favorability" | "hasItem" | "clothing" | "time" | "basicInfo" | "variable" | "worldVar";
   condTarget?: "self" | "target";  // who to check: actor (default) or action target
   mapId?: string;
   cellIds?: number[];
@@ -275,7 +275,7 @@ export interface ActionCost {
 }
 
 export interface ActionEffect {
-  type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position" | "experience";
+  type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position" | "experience" | "worldVar";
   key?: string;
   op: string;
   value?: number | { varId: string; multiply?: number };
@@ -295,7 +295,7 @@ export interface ActionEffect {
 }
 
 export interface ValueModifier {
-  type: "ability" | "trait" | "favorability" | "experience" | "variable";
+  type: "ability" | "trait" | "favorability" | "experience" | "variable" | "worldVar";
   key?: string;       // ability key, trait category key, or experience key
   value?: string;     // trait value to match
   source?: string;    // favorability: "target" (default) or "self"
@@ -329,6 +329,34 @@ export interface ActionOutcome {
   suggestNext?: SuggestNext[];
   outputTemplate?: string;
   outputTemplates?: OutputTemplateEntry[];
+}
+
+// --- World variable types ---
+
+export interface WorldVariableDefinition {
+  id: string;
+  name: string;
+  description?: string;
+  type: "number" | "boolean";
+  default: number;
+  source: string;
+}
+
+// --- Global event types ---
+
+export interface EventDefinition {
+  id: string;
+  name: string;
+  description?: string;
+  triggerMode: "on_change" | "while" | "once";
+  cooldown?: number;
+  enabled?: boolean;
+  targetScope: "each_character" | "none";
+  conditions: ConditionItem[];
+  effects: ActionEffect[];
+  outputTemplate?: string;
+  outputTemplates?: OutputTemplateEntry[];
+  source: string;
 }
 
 export interface ActionDefinition {
@@ -392,6 +420,8 @@ export interface GameDefinitions {
   traitGroups: Record<string, TraitGroup>;
   actionDefs: Record<string, ActionDefinition>;
   variableDefs: Record<string, VariableDefinition>;
+  eventDefs: Record<string, EventDefinition>;
+  worldVariableDefs: Record<string, WorldVariableDefinition>;
   maps: Record<string, MapSummary>;
   characters: Record<string, { id: string; name: string; isPlayer: boolean }>;
 }

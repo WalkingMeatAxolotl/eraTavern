@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { AddonInfo } from "../types/game";
 import { fetchAddons, fetchAddonVersions, forkAddon } from "../api/client";
 import T from "../theme";
@@ -145,6 +145,68 @@ function modalBtnStyle(bg: string, color: string): React.CSSProperties {
   };
 }
 
+function DependencyModal({ action, addon, related, onChain, onOnly, onCancel }: {
+  action: "enable" | "disable";
+  addon: AddonInfo;
+  related: AddonInfo[];
+  onChain: () => void;
+  onOnly: () => void;
+  onCancel: () => void;
+}) {
+  const isEnable = action === "enable";
+  return (
+    <Overlay onClose={onCancel}>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>
+        {isEnable ? "依赖检查" : "依赖警告"}
+      </div>
+      <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>
+        {isEnable
+          ? <>启用 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> 需要以下依赖：</>
+          : <>以下 Add-on 依赖 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>：</>
+        }
+      </div>
+      <div style={{
+        display: "flex", flexDirection: "column", gap: "4px",
+        padding: "8px", backgroundColor: T.bg1, borderRadius: "4px",
+        maxHeight: "200px", overflowY: "auto",
+      }}>
+        {related.map(r => (
+          <div key={r.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+            <span style={{ color: isEnable ? T.accent : T.danger, fontWeight: "bold" }}>{r.name}</span>
+            <span style={{ color: T.textDim, fontSize: "11px" }}>({r.id})</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <button onClick={onChain}
+          style={{
+            ...modalBtnStyle(isEnable ? T.bg2 : T.dangerBg, isEnable ? T.success : T.danger),
+            width: "100%", textAlign: "center",
+          }}>
+          {isEnable
+            ? `全部启用 (${related.length + 1} 个)`
+            : `全部禁用 (${related.length + 1} 个)`
+          }
+        </button>
+        <button onClick={onOnly}
+          style={{
+            ...modalBtnStyle(T.bg2, T.accent),
+            width: "100%", textAlign: "center",
+          }}>
+          {isEnable ? `仅启用 ${addon.name}` : `仅禁用 ${addon.name}`}
+        </button>
+        <button onClick={onCancel}
+          style={{
+            ...modalBtnStyle("transparent", T.textSub),
+            width: "100%", textAlign: "center", border: `1px solid ${T.textFaint}`,
+          }}>
+          取消
+        </button>
+      </div>
+    </Overlay>
+  );
+}
+
 /* ── Version Branches ──────────────────────────────── */
 
 const VERSIONS_PER_PAGE = 5;
@@ -270,6 +332,10 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [forkPrompt, setForkPrompt] = useState<{ addon: AddonInfo } | null>(null);
   const [disablePrompt, setDisablePrompt] = useState<{ addon: AddonInfo } | null>(null);
+  const [depPrompt, setDepPrompt] = useState<{ addon: AddonInfo; missing: AddonInfo[]; action: "enable" } | null>(null);
+  const [depDisablePrompt, setDepDisablePrompt] = useState<{ addon: AddonInfo; dependents: AddonInfo[]; action: "disable" } | null>(null);
+  // Track pending version switch while dep prompt is shown
+  const pendingVersionSwitch = useRef<{ addonId: string; newVersion: string } | null>(null);
 
   const refresh = useCallback(() => {
     fetchAddons().then((addons) => {
@@ -300,11 +366,69 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
   const isStagedEnabled = (addonId: string) =>
     stagedAddons.some((a) => a.id === addonId);
 
+  // ── Dependency helpers ──
+
+  /** Recursively collect all missing dependencies for an addon */
+  const collectMissingDeps = (addon: AddonInfo, staged: { id: string }[]): AddonInfo[] => {
+    const stagedIds = new Set(staged.map(a => a.id));
+    const collected = new Map<string, AddonInfo>();
+    const visit = (a: AddonInfo) => {
+      for (const dep of a.dependencies ?? []) {
+        if (stagedIds.has(dep.id) || collected.has(dep.id)) continue;
+        const depAddon = allAddons.find(x => x.id === dep.id);
+        if (depAddon) {
+          collected.set(dep.id, depAddon);
+          visit(depAddon); // recurse into dependency's dependencies
+        }
+      }
+    };
+    visit(addon);
+    return Array.from(collected.values());
+  };
+
+  /** Find all staged addons that depend on the given addon (recursively) */
+  const collectDependents = (addonId: string, staged: { id: string }[]): AddonInfo[] => {
+    const toDisable = new Set<string>();
+    const visit = (id: string) => {
+      for (const s of staged) {
+        if (toDisable.has(s.id) || s.id === addonId) continue;
+        const info = allAddons.find(x => x.id === s.id);
+        if (info?.dependencies?.some(d => d.id === id)) {
+          toDisable.add(s.id);
+          visit(s.id); // recurse: addons depending on this dependent
+        }
+      }
+    };
+    visit(addonId);
+    return Array.from(toDisable).map(id => allAddons.find(x => x.id === id)!).filter(Boolean);
+  };
+
+  // ── Toggle handler ──
+
   const handleToggle = async (addon: AddonInfo) => {
     if (isStagedEnabled(addon.id)) {
-      setDisablePrompt({ addon });
+      // Disabling — check dependents
+      const dependents = collectDependents(addon.id, stagedAddons);
+      if (dependents.length > 0) {
+        setDepDisablePrompt({ addon, dependents, action: "disable" });
+      } else {
+        setDisablePrompt({ addon });
+      }
       return;
     }
+
+    // Enabling — check missing dependencies
+    const missing = collectMissingDeps(addon, stagedAddons);
+    if (missing.length > 0) {
+      setDepPrompt({ addon, missing, action: "enable" });
+    } else {
+      // No missing deps, proceed directly
+      await startEnableAddon(addon);
+    }
+  };
+
+  /** Start enabling an addon (check fork, show fork prompt if needed) */
+  const startEnableAddon = async (addon: AddonInfo) => {
     const versions = await fetchAddonVersions(addon.id);
     const baseVer = getBaseVersion(addon.version);
     const forkVersion = `${baseVer}-${worldId}`;
@@ -312,6 +436,81 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
       onStagedChange([...stagedAddons, { id: addon.id, version: forkVersion }]);
     } else {
       setForkPrompt({ addon: { ...addon, version: baseVer } });
+    }
+  };
+
+  /** Handle "chain enable" — auto-fork & enable all missing deps, then enable main addon */
+  /** Apply the main addon after deps are resolved (enable or version switch) */
+  const applyMainAddon = (addon: AddonInfo, newStaged: { id: string; version: string }[]) => {
+    const vsRef = pendingVersionSwitch.current;
+    if (vsRef) {
+      // Version switch: replace version in staged
+      pendingVersionSwitch.current = null;
+      onStagedChange(newStaged.map(a =>
+        a.id === vsRef.addonId ? { ...a, version: vsRef.newVersion } : a
+      ));
+    } else {
+      // New enable: add addon (already in newStaged or needs fork prompt)
+      onStagedChange(newStaged);
+    }
+  };
+
+  const handleChainEnable = async () => {
+    if (!depPrompt) return;
+    const { addon, missing } = depPrompt;
+    setDepPrompt(null);
+
+    // Auto-enable all deps: use existing fork or create one automatically
+    let newStaged = [...stagedAddons];
+    for (const dep of missing) {
+      if (newStaged.some(s => s.id === dep.id)) continue; // already staged
+      const versions = await fetchAddonVersions(dep.id);
+      const baseVer = getBaseVersion(dep.version);
+      const forkVersion = `${baseVer}-${worldId}`;
+      if (versions.includes(forkVersion)) {
+        newStaged = [...newStaged, { id: dep.id, version: forkVersion }];
+      } else {
+        const result = await forkAddon(dep.id, baseVer, worldId);
+        if (result.success && result.newVersion) {
+          newStaged = [...newStaged, { id: dep.id, version: result.newVersion }];
+        } else {
+          newStaged = [...newStaged, { id: dep.id, version: baseVer }];
+        }
+      }
+    }
+
+    if (pendingVersionSwitch.current) {
+      // Version switch: just apply with deps enabled
+      applyMainAddon(addon, newStaged);
+    } else {
+      // New enable: handle main addon fork
+      const versions = await fetchAddonVersions(addon.id);
+      const baseVer = getBaseVersion(addon.version);
+      const forkVersion = `${baseVer}-${worldId}`;
+      if (versions.includes(forkVersion)) {
+        newStaged = [...newStaged, { id: addon.id, version: forkVersion }];
+        onStagedChange(newStaged);
+      } else {
+        onStagedChange(newStaged);
+        setForkPrompt({ addon: { ...addon, version: baseVer } });
+      }
+    }
+    refresh();
+  };
+
+  /** Handle "enable/switch only this" — skip deps */
+  const handleEnableOnly = async () => {
+    if (!depPrompt) return;
+    const { addon } = depPrompt;
+    setDepPrompt(null);
+    if (pendingVersionSwitch.current) {
+      const vsRef = pendingVersionSwitch.current;
+      pendingVersionSwitch.current = null;
+      onStagedChange(stagedAddons.map(a =>
+        a.id === vsRef.addonId ? { ...a, version: vsRef.newVersion } : a
+      ));
+    } else {
+      await startEnableAddon(addon);
     }
   };
 
@@ -338,7 +537,39 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
     setDisablePrompt(null);
   };
 
-  const handleVersionSwitch = (addonId: string, newVersion: string) => {
+  /** Handle "chain disable" — disable addon + all its dependents */
+  const handleChainDisable = () => {
+    if (!depDisablePrompt) return;
+    const { addon, dependents } = depDisablePrompt;
+    const removeIds = new Set([addon.id, ...dependents.map(d => d.id)]);
+    onStagedChange(stagedAddons.filter(a => !removeIds.has(a.id)));
+    setDepDisablePrompt(null);
+  };
+
+  /** Handle "disable only this" — skip dependents */
+  const handleDisableOnly = () => {
+    if (!depDisablePrompt) return;
+    onStagedChange(stagedAddons.filter(a => a.id !== depDisablePrompt.addon.id));
+    setDepDisablePrompt(null);
+  };
+
+  const handleVersionSwitch = async (addonId: string, newVersion: string) => {
+    // Fetch all addons to get the target version's dependency info
+    const allVersions = await fetchAddons();
+    const targetAddon = allVersions.find(a => a.id === addonId && a.version === newVersion);
+    if (targetAddon) {
+      // Check dependencies of the new version against currently staged addons
+      // (exclude the addon being switched itself from staged for the check)
+      const stagedWithoutSelf = stagedAddons.filter(a => a.id !== addonId);
+      const missing = collectMissingDeps(targetAddon, stagedWithoutSelf);
+      if (missing.length > 0) {
+        // Reuse enable dep prompt — but the action is just switching version
+        setDepPrompt({ addon: targetAddon, missing, action: "enable" });
+        // Override handlers: chain enable deps, then switch version
+        pendingVersionSwitch.current = { addonId, newVersion };
+        return;
+      }
+    }
     onStagedChange(stagedAddons.map(a =>
       a.id === addonId ? { ...a, version: newVersion } : a
     ));
@@ -358,6 +589,28 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
           message={`确认禁用「${disablePrompt.addon.name}」？禁用后该 Add-on 的内容将从当前世界移除。`}
           confirmLabel="确认禁用" danger
           onConfirm={handleDisableConfirm} onCancel={() => setDisablePrompt(null)}
+        />
+      )}
+
+      {depPrompt && (
+        <DependencyModal
+          action="enable"
+          addon={depPrompt.addon}
+          related={depPrompt.missing}
+          onChain={handleChainEnable}
+          onOnly={handleEnableOnly}
+          onCancel={() => { setDepPrompt(null); pendingVersionSwitch.current = null; }}
+        />
+      )}
+
+      {depDisablePrompt && (
+        <DependencyModal
+          action="disable"
+          addon={depDisablePrompt.addon}
+          related={depDisablePrompt.dependents}
+          onChain={handleChainDisable}
+          onOnly={handleDisableOnly}
+          onCancel={() => setDepDisablePrompt(null)}
         />
       )}
 

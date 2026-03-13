@@ -1,6 +1,6 @@
 import T from "../theme";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "maps" | "settings";
+type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "settings";
 
 interface NavBarProps {
   navPage: NavPage | null;
@@ -22,6 +22,7 @@ const navItems: NavItem[] = [
   { key: "items", label: "物品" },
   { key: "actions", label: "行动" },
   { key: "variables", label: "变量" },
+  { key: "events", label: "事件" },
   { key: "maps", label: "地图" },
   { key: "settings", label: "设置" },
 ];

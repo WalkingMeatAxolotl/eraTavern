@@ -246,6 +246,58 @@ def save_variable_tags_file(data_dir: Path, tags: list[str]) -> None:
         json.dump(existing, f, ensure_ascii=False, indent=2)
 
 
+def load_event_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load global event definitions from addon directories, merged by id."""
+    result: dict[str, dict] = {}
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "events.json")
+        for e in data.get("events", []):
+            ns_id = namespace_id(addon_id, e["id"])
+            result[ns_id] = {**e, "id": ns_id, "_local_id": e["id"], "source": addon_id}
+    return result
+
+
+def load_world_variable_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load world variable definitions from addon directories, merged by id."""
+    result: dict[str, dict] = {}
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "events.json")
+        for v in data.get("worldVariables", []):
+            ns_id = namespace_id(addon_id, v["id"])
+            result[ns_id] = {**v, "id": ns_id, "_local_id": v["id"], "source": addon_id}
+    return result
+
+
+def save_event_defs_file(data_dir: Path, events_list: list[dict]) -> None:
+    """Write events to events.json (strips internal fields), preserving worldVariables."""
+    clean = []
+    for e in events_list:
+        entry = _strip_internal_fields(e)
+        entry["id"] = to_local_id(entry["id"])
+        clean.append(entry)
+    path = data_dir / "events.json"
+    existing = _load_json_safe(path)
+    existing["events"] = clean
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(existing, f, ensure_ascii=False, indent=2)
+
+
+def save_world_variable_defs_file(data_dir: Path, variables_list: list[dict]) -> None:
+    """Write world variables to events.json (strips internal fields), preserving events."""
+    clean = []
+    for v in variables_list:
+        entry = _strip_internal_fields(v)
+        entry["id"] = to_local_id(entry["id"])
+        clean.append(entry)
+    path = data_dir / "events.json"
+    existing = _load_json_safe(path)
+    existing["worldVariables"] = clean
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(existing, f, ensure_ascii=False, indent=2)
+
+
 def save_action_defs_file(data_dir: Path, actions_list: list[dict], addon_id: str = "") -> None:
     """Write game-specific actions.json (strips internal fields + de-namespaces refs)."""
     clean = []

@@ -28,11 +28,12 @@ import ClothingManager from "./components/ClothingManager";
 import ItemManager from "./components/ItemManager";
 import ActionManager from "./components/ActionManager";
 import VariableManager from "./components/VariableManager";
+import EventManager from "./components/EventManager";
 import MapManager from "./components/MapManager";
 import SettingsPage from "./components/SettingsPage";
 import FloatingActions from "./components/FloatingActions";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "maps" | "settings";
+type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "settings";
 
 export default function App() {
   const [config, setConfig] = useState<AppConfig>({ maxWidth: 1200 });
@@ -281,6 +282,7 @@ export default function App() {
     if (navPage === "items") return <>{addonTab}<ItemManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "actions") return <>{addonTab}<ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "variables") return <>{addonTab}<VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "events") return <>{addonTab}<EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "settings") {
       return <SettingsPage

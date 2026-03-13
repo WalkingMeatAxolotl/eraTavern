@@ -94,7 +94,8 @@ export default function CharacterManager({ selectedAddon, onEditingChange }: { s
       ),
       position: { mapId: firstMapId, cellId: 0 },
       restPosition: { mapId: firstMapId, cellId: 0 },
-    };
+      source: selectedAddon ?? "",
+    } as RawCharacterData;
 
     return (
       <CharacterEditor

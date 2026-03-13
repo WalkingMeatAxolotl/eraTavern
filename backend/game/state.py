@@ -17,6 +17,8 @@ from .character import (
     load_trait_groups,
     load_variable_defs,
     load_variable_tags,
+    load_event_defs,
+    load_world_variable_defs,
     load_characters,
     build_character_state,
     get_ability_defs,
@@ -101,6 +103,10 @@ class GameState:
         self.trait_groups: dict[str, dict] = {}
         self.variable_defs: dict[str, dict] = {}
         self.variable_tags: list[str] = []
+        self.event_defs: dict[str, dict] = {}
+        self.world_variable_defs: dict[str, dict] = {}
+        self.world_variables: dict[str, float] = {}
+        self.event_state: dict[str, dict] = {}
         self.character_data: dict[str, dict] = {}
         self.characters: dict[str, dict[str, Any]] = {}
         self.decor_presets: list[dict] = []
@@ -138,6 +144,10 @@ class GameState:
         self.trait_groups = {}
         self.variable_defs = {}
         self.variable_tags = []
+        self.event_defs = {}
+        self.world_variable_defs = {}
+        self.world_variables = {}
+        self.event_state = {}
         self.character_data = {}
         self.characters = {}
         self.decor_presets = []
@@ -151,6 +161,12 @@ class GameState:
         self.cell_action_index = {}
         self.no_location_actions = []
         self.time = GameTime()
+
+    def _init_world_variables(self) -> None:
+        """Initialize world_variables from definitions' defaults."""
+        self.world_variables = {}
+        for var_id, var_def in self.world_variable_defs.items():
+            self.world_variables[var_id] = var_def.get("default", 0)
 
     def _resolve_namespaces(self) -> None:
         """Resolve bare ID cross-references in character data and action defs.
@@ -192,6 +208,8 @@ class GameState:
         self.trait_groups = load_trait_groups(self.addon_dirs)
         self.variable_defs = load_variable_defs(self.addon_dirs)
         self.variable_tags = load_variable_tags(self.addon_dirs)
+        self.event_defs = load_event_defs(self.addon_dirs)
+        self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
         self.character_data = load_characters(self.addon_dirs)
 
         # Resolve bare ID cross-references
@@ -216,6 +234,8 @@ class GameState:
         self.npc_full_log = []
         self.npc_action_history = {}
         self.action_log = []
+        self._init_world_variables()
+        self.event_state = {}
 
     def load(self, game_id: str) -> None:
         """Legacy load method — loads a world by ID."""
@@ -256,6 +276,8 @@ class GameState:
         self.trait_groups = load_trait_groups(self.addon_dirs)
         self.variable_defs = load_variable_defs(self.addon_dirs)
         self.variable_tags = load_variable_tags(self.addon_dirs)
+        self.event_defs = load_event_defs(self.addon_dirs)
+        self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
         self.character_data = load_characters(self.addon_dirs)
 
         # Resolve bare ID cross-references
@@ -289,6 +311,8 @@ class GameState:
         self.npc_full_log = []
         self.npc_action_history = {}
         self.action_log = []
+        self._init_world_variables()
+        self.event_state = {}
         self.dirty = False
 
     def _persist_entity_files(self) -> None:
@@ -297,6 +321,7 @@ class GameState:
             save_clothing_defs_file, save_item_defs_file, save_item_tags_file,
             save_trait_defs_file, save_action_defs_file, save_trait_groups_file,
             save_variable_defs_file, save_variable_tags_file,
+            save_event_defs_file, save_world_variable_defs_file,
             save_character,
         )
         from .map_engine import save_map_file, save_decor_presets as _save_decor_presets
@@ -317,6 +342,10 @@ class GameState:
         for d in self.trait_groups.values():
             sources.add(d.get("source", ""))
         for d in self.variable_defs.values():
+            sources.add(d.get("source", ""))
+        for d in self.event_defs.values():
+            sources.add(d.get("source", ""))
+        for d in self.world_variable_defs.values():
             sources.add(d.get("source", ""))
         for d in self.character_data.values():
             sources.add(d.get("_source", ""))
@@ -383,6 +412,24 @@ class GameState:
             if src_variables:
                 save_variable_defs_file(target_dir, src_variables)
 
+            # Events
+            src_events = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.event_defs.values()
+                if d.get("source") == source
+            ]
+            if src_events:
+                save_event_defs_file(target_dir, src_events)
+
+            # World variables
+            src_world_vars = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.world_variable_defs.values()
+                if d.get("source") == source
+            ]
+            if src_world_vars:
+                save_world_variable_defs_file(target_dir, src_world_vars)
+
             # Characters
             for cid, cdata in self.character_data.items():
                 if cdata.get("_source") == source:
@@ -418,6 +465,173 @@ class GameState:
         # Save decor presets to first addon dir
         if self.decor_presets and self.addon_dirs:
             _save_decor_presets(self.addon_dirs[0][1], self.decor_presets)
+
+    def _update_addon_dependencies(self) -> None:
+        """Scan all entities for cross-addon references and update addon.json dependencies."""
+        from .character import NS_SEP, SYMBOLIC_REFS
+
+        active_addon_ids = {aid for aid, _ in self.addon_dirs}
+
+        def _extract_addon(ref_id: str) -> Optional[str]:
+            """Extract addon ID from a namespaced reference, or None."""
+            if not ref_id or ref_id in SYMBOLIC_REFS or NS_SEP not in ref_id:
+                return None
+            return ref_id.split(NS_SEP, 1)[0]
+
+        def _collect_refs_from_value(val: Any) -> set[str]:
+            """Extract addon IDs from a value that might be a namespaced ref."""
+            if isinstance(val, str):
+                a = _extract_addon(val)
+                return {a} if a else set()
+            return set()
+
+        def _scan_condition(cond: dict) -> set[str]:
+            refs: set[str] = set()
+            for key in ("traitId", "itemId", "npcId", "targetId", "key", "varId"):
+                refs |= _collect_refs_from_value(cond.get(key, ""))
+            # Recursive AND/OR groups
+            for group_key in ("and", "or"):
+                for sub in cond.get(group_key, []):
+                    refs |= _scan_condition(sub)
+            return refs
+
+        def _scan_effect(eff: dict) -> set[str]:
+            refs: set[str] = set()
+            for key in ("traitId", "itemId", "target", "favFrom", "favTo", "mapId", "key"):
+                refs |= _collect_refs_from_value(eff.get(key, ""))
+            # value could be {varId: "..."} object
+            val = eff.get("value")
+            if isinstance(val, dict):
+                refs |= _collect_refs_from_value(val.get("varId", ""))
+            return refs
+
+        def _scan_modifier(mod: dict) -> set[str]:
+            refs: set[str] = set()
+            refs |= _collect_refs_from_value(mod.get("varId", ""))
+            refs |= _collect_refs_from_value(mod.get("key", ""))
+            return refs
+
+        # Build: addon_id → set of referenced addon_ids
+        deps_map: dict[str, set[str]] = {aid: set() for aid in active_addon_ids}
+
+        # Scan actions
+        for action in self.action_defs.values():
+            src = action.get("source", "")
+            if src not in deps_map:
+                continue
+            refs = deps_map[src]
+            for cond in action.get("conditions", []):
+                refs |= _scan_condition(cond)
+            for cost in action.get("costs", []):
+                refs |= _collect_refs_from_value(cost.get("itemId", ""))
+            for outcome in action.get("outcomes", []):
+                for eff in outcome.get("effects", []):
+                    refs |= _scan_effect(eff)
+                for mod in outcome.get("weightModifiers", []):
+                    refs |= _scan_modifier(mod)
+                # suggestNext
+                for sn in outcome.get("suggestNext", []):
+                    refs |= _collect_refs_from_value(sn.get("actionId", ""))
+            # NPC weight modifiers
+            for mod in action.get("npcWeightModifiers", []):
+                refs |= _scan_modifier(mod)
+            # Output template conditions
+            for tpl in action.get("outputTemplates", []):
+                for cond in tpl.get("conditions", []):
+                    refs |= _scan_condition(cond)
+
+        # Scan events
+        for event in self.event_defs.values():
+            src = event.get("source", "")
+            if src not in deps_map:
+                continue
+            refs = deps_map[src]
+            for cond in event.get("conditions", []):
+                refs |= _scan_condition(cond)
+            for eff in event.get("effects", []):
+                refs |= _scan_effect(eff)
+
+        # Scan trait groups
+        for group in self.trait_groups.values():
+            src = group.get("source", "")
+            if src not in deps_map:
+                continue
+            refs = deps_map[src]
+            for trait_id in group.get("traits", []):
+                refs |= _collect_refs_from_value(trait_id)
+
+        # Scan characters
+        for cdata in self.character_data.values():
+            src = cdata.get("_source", "")
+            if src not in deps_map:
+                continue
+            refs = deps_map[src]
+            # traits
+            traits = cdata.get("traits", {})
+            if isinstance(traits, dict):
+                for cat_vals in traits.values():
+                    if isinstance(cat_vals, list):
+                        for tid in cat_vals:
+                            refs |= _collect_refs_from_value(tid)
+            # clothing
+            for slot_data in (cdata.get("clothing") or {}).values():
+                if isinstance(slot_data, dict):
+                    refs |= _collect_refs_from_value(slot_data.get("itemId", ""))
+            # inventory
+            for inv in cdata.get("inventory", []):
+                refs |= _collect_refs_from_value(inv.get("itemId", ""))
+            # favorability (keys are char IDs)
+            for target_id in (cdata.get("favorability") or {}).keys():
+                refs |= _collect_refs_from_value(target_id)
+            # position
+            refs |= _collect_refs_from_value((cdata.get("position") or {}).get("mapId", ""))
+            refs |= _collect_refs_from_value((cdata.get("restPosition") or {}).get("mapId", ""))
+
+        # Scan maps (connections)
+        for mdata in self.maps.values():
+            src = mdata.get("_source", "")
+            if src not in deps_map:
+                continue
+            refs = deps_map[src]
+            for cell in mdata.get("cells", []):
+                for conn in cell.get("connections", []):
+                    refs |= _collect_refs_from_value(conn.get("targetMap", ""))
+
+        # Scan variables
+        for vdef in self.variable_defs.values():
+            src = vdef.get("source", "")
+            if src not in deps_map:
+                continue
+            refs = deps_map[src]
+            for step in vdef.get("steps", []):
+                refs |= _collect_refs_from_value(step.get("key", ""))
+                refs |= _collect_refs_from_value(step.get("traitId", ""))
+                refs |= _collect_refs_from_value(step.get("varId", ""))
+
+        # Update addon.json for each addon
+        addon_dir_map: dict[str, Path] = {aid: apath for aid, apath in self.addon_dirs}
+        for addon_id, ref_addons in deps_map.items():
+            # Remove self-references
+            ref_addons.discard(addon_id)
+            # Only keep references to active addons
+            ref_addons &= active_addon_ids
+
+            target_dir = addon_dir_map.get(addon_id)
+            if not target_dir:
+                continue
+            meta_path = target_dir / "addon.json"
+            if not meta_path.exists():
+                continue
+            with open(meta_path, "r", encoding="utf-8") as f:
+                meta = json.load(f)
+
+            # Replace: only keep auto-detected dependencies
+            new_deps = [{"id": dep_id} for dep_id in sorted(ref_addons)]
+
+            if new_deps != meta.get("dependencies", []):
+                meta["dependencies"] = new_deps
+                with open(meta_path, "w", encoding="utf-8") as f:
+                    json.dump(meta, f, ensure_ascii=False, indent=2)
 
     def _snapshot_runtime(self) -> dict[str, Any]:
         """Snapshot runtime state (positions, resources, inventory, etc.)."""
@@ -513,6 +727,8 @@ class GameState:
             self.trait_groups = load_trait_groups(self.addon_dirs)
             self.variable_defs = load_variable_defs(self.addon_dirs)
             self.variable_tags = load_variable_tags(self.addon_dirs)
+            self.event_defs = load_event_defs(self.addon_dirs)
+            self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
             self.character_data = load_characters(self.addon_dirs)
             self._resolve_namespaces()
 
@@ -532,6 +748,7 @@ class GameState:
         """Rebuild + persist all entity files to their addon dirs + update world.json + clear dirty."""
         self.rebuild(new_addon_refs)
         self._persist_entity_files()
+        self._update_addon_dependencies()
 
         # Persist world config
         if self.world_id:
@@ -671,6 +888,7 @@ class GameState:
             "characters": display_characters,
             "template": template_ext,
             "dirty": self.dirty,
+            "worldVariables": self.world_variables,
         }
 
     def _build_char(self, char_id: str) -> dict[str, Any]:
@@ -724,6 +942,8 @@ class GameState:
             "traitGroups": self.trait_groups,
             "actionDefs": self.action_defs,
             "variableDefs": self.variable_defs,
+            "eventDefs": self.event_defs,
+            "worldVariableDefs": self.world_variable_defs,
             "maps": maps_summary,
             "characters": characters_summary,
         }
@@ -790,6 +1010,8 @@ class GameState:
             "npcActionHistory": self.npc_action_history,
             "npcFullLog": trimmed_npc_log,
             "actionLog": trimmed_action_log,
+            "worldVariables": dict(self.world_variables),
+            "eventState": dict(self.event_state),
         }
 
     def restore_save_data(self, runtime: dict[str, Any]) -> None:
@@ -845,3 +1067,12 @@ class GameState:
         self.npc_action_history = runtime.get("npcActionHistory", {})
         self.npc_full_log = runtime.get("npcFullLog", [])
         self.action_log = runtime.get("actionLog", [])
+
+        # Restore world variables (fill missing keys from defs' defaults)
+        saved_wv = runtime.get("worldVariables", {})
+        self._init_world_variables()  # start from defaults
+        for key, val in saved_wv.items():
+            if key in self.world_variables:
+                self.world_variables[key] = val
+        # Restore event state
+        self.event_state = runtime.get("eventState", {})
