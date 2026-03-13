@@ -42,7 +42,6 @@ export default function NavBar({
     color: active ? T.accent : T.textSub,
     border: "none",
     cursor: "pointer",
-    fontFamily: "monospace",
     fontSize: "13px",
     fontWeight: active ? "bold" : "normal",
   });
@@ -54,7 +53,6 @@ export default function NavBar({
     border: active ? `1px solid ${T.accentDim}44` : "1px solid transparent",
     borderRadius: "3px",
     cursor: "pointer",
-    fontFamily: "monospace",
     fontSize: "13px",
     fontWeight: active ? "bold" : "normal",
   });
@@ -94,7 +92,6 @@ export default function NavBar({
             <span
               style={{
                 color: T.textDim,
-                fontFamily: "monospace",
                 fontSize: "12px",
                 marginLeft: "4px",
                 maxWidth: "120px",

@@ -110,9 +110,15 @@ class GameState:
         self.npc_activities: dict[str, str] = {}
         self.npc_full_log: list[dict] = []
         self.npc_action_history: dict[str, list[dict]] = {}
+        self.action_log: list[dict] = []
         self.cell_action_index: dict[tuple, list[dict]] = {}
         self.no_location_actions: list[dict] = []
         self.time = GameTime()
+
+    # Log retention limits (in game days)
+    NPC_LOG_CACHE_DAYS = 60   # runtime buffer
+    NPC_LOG_SAVE_DAYS = 30    # persisted to save file
+    ACTION_LOG_SAVE_DAYS = 30
 
     def load_empty(self) -> None:
         """Initialize empty state with no world loaded."""
@@ -141,6 +147,7 @@ class GameState:
         self.npc_activities = {}
         self.npc_full_log = []
         self.npc_action_history = {}
+        self.action_log = []
         self.cell_action_index = {}
         self.no_location_actions = []
         self.time = GameTime()
@@ -208,6 +215,7 @@ class GameState:
         self.npc_activities = {}
         self.npc_full_log = []
         self.npc_action_history = {}
+        self.action_log = []
 
     def load(self, game_id: str) -> None:
         """Legacy load method — loads a world by ID."""
@@ -280,6 +288,7 @@ class GameState:
         self.npc_activities = {}
         self.npc_full_log = []
         self.npc_action_history = {}
+        self.action_log = []
         self.dirty = False
 
     def _persist_entity_files(self) -> None:
@@ -513,6 +522,9 @@ class GameState:
             self.action_defs, self.maps
         )
 
+        # Reset NPC goals — outcome snapshots may reference stale definitions
+        self.npc_goals = {}
+
         # Rebuild characters from current in-memory definitions
         self._rebuild_characters(snapshot)
 
@@ -715,3 +727,121 @@ class GameState:
             "maps": maps_summary,
             "characters": characters_summary,
         }
+
+    def snapshot_save_data(self) -> dict[str, Any]:
+        """Snapshot all mutable runtime state for saving to a slot."""
+        # Sync display state back to character_data first
+        for char_id, char_state in self.characters.items():
+            if char_id not in self.character_data:
+                continue
+            cd = self.character_data[char_id]
+            cd["position"] = char_state.get("position", {})
+            # resources
+            for key, res in char_state.get("resources", {}).items():
+                if "resources" not in cd:
+                    cd["resources"] = {}
+                cd["resources"][key] = {"value": res["value"], "max": res["max"]}
+            # abilities
+            for ab in char_state.get("abilities", []):
+                if "abilities" not in cd:
+                    cd["abilities"] = {}
+                cd["abilities"][ab["key"]] = ab["exp"]
+            # experiences
+            for exp in char_state.get("experiences", []):
+                if "experiences" not in cd:
+                    cd["experiences"] = {}
+                cd["experiences"][exp["key"]] = {
+                    "count": exp["count"], "first": exp["first"],
+                }
+            # inventory
+            cd["inventory"] = char_state.get("inventory", [])
+
+        characters: dict[str, Any] = {}
+        for char_id, cd in self.character_data.items():
+            characters[char_id] = {
+                "position": cd.get("position", {}),
+                "resources": cd.get("resources", {}),
+                "inventory": cd.get("inventory", []),
+                "abilities": cd.get("abilities", {}),
+                "experiences": cd.get("experiences", {}),
+                "clothing": cd.get("clothing", {}),
+                "traits": cd.get("traits", {}),
+                "favorability": cd.get("favorability", {}),
+                "basicInfo": cd.get("basicInfo", {}),
+            }
+
+        # Trim logs for save (30 game days)
+        current_days = self.time.total_days
+        cutoff_save = current_days - self.NPC_LOG_SAVE_DAYS
+        trimmed_npc_log = [
+            e for e in self.npc_full_log
+            if e.get("totalDays", 0) >= cutoff_save
+        ]
+        cutoff_action = current_days - self.ACTION_LOG_SAVE_DAYS
+        trimmed_action_log = [
+            e for e in self.action_log
+            if e.get("totalDays", 0) >= cutoff_action
+        ]
+
+        return {
+            "time": self.time.to_dict(),
+            "characters": characters,
+            "npcActivities": self.npc_activities,
+            "npcActionHistory": self.npc_action_history,
+            "npcFullLog": trimmed_npc_log,
+            "actionLog": trimmed_action_log,
+        }
+
+    def restore_save_data(self, runtime: dict[str, Any]) -> None:
+        """Restore runtime state from a save slot. Call after load_world()."""
+        # Restore time
+        t = runtime.get("time", {})
+        self.time = GameTime(
+            year=t.get("year", 1),
+            season=t.get("season", 0),
+            day=t.get("day", 1),
+            hour=t.get("hour", 6),
+            minute=t.get("minute", 0),
+        )
+        self.time.weather = t.get("weatherId", "sunny")
+        self.time.temperature = t.get("temperature", 20)
+
+        # Restore character data
+        saved_chars = runtime.get("characters", {})
+        for char_id, saved in saved_chars.items():
+            if char_id not in self.character_data:
+                continue
+            cd = self.character_data[char_id]
+            if "position" in saved:
+                cd["position"] = saved["position"]
+            if "resources" in saved:
+                cd["resources"] = saved["resources"]
+            if "inventory" in saved:
+                cd["inventory"] = saved["inventory"]
+            if "abilities" in saved:
+                cd["abilities"] = saved["abilities"]
+            if "experiences" in saved:
+                cd["experiences"] = saved["experiences"]
+            if "clothing" in saved:
+                cd["clothing"] = saved["clothing"]
+            if "traits" in saved:
+                cd["traits"] = saved["traits"]
+            if "favorability" in saved:
+                cd["favorability"] = saved["favorability"]
+            if "basicInfo" in saved:
+                cd["basicInfo"] = saved["basicInfo"]
+
+        # Rebuild display state from updated character_data
+        self.characters = {}
+        for char_id, char_data in self.character_data.items():
+            self.characters[char_id] = build_character_state(
+                char_data, self.template, self.clothing_defs, self.trait_defs,
+                self.item_defs,
+            )
+
+        # Restore NPC state (goals reset — NPC re-decides from current position)
+        self.npc_goals = {}
+        self.npc_activities = runtime.get("npcActivities", {})
+        self.npc_action_history = runtime.get("npcActionHistory", {})
+        self.npc_full_log = runtime.get("npcFullLog", [])
+        self.action_log = runtime.get("actionLog", [])

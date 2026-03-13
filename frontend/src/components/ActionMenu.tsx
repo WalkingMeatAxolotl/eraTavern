@@ -64,7 +64,6 @@ export default function ActionMenu({
     padding: "4px 8px",
     marginBottom: "2px",
     border: `1px solid ${T.border}`,
-    fontFamily: "monospace",
     fontSize: "13px",
   };
 
@@ -75,7 +74,6 @@ export default function ActionMenu({
     border: "none",
     borderBottom: activeTab === tab ? `2px solid ${T.accent}` : "2px solid transparent",
     cursor: "pointer",
-    fontFamily: "monospace",
     fontSize: "12px",
     fontWeight: activeTab === tab ? "bold" : "normal",
   });
@@ -83,7 +81,6 @@ export default function ActionMenu({
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "13px",
         color: T.text,
         backgroundColor: T.bg1,

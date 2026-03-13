@@ -10,8 +10,52 @@ import {
   uploadAsset,
 } from "../api/client";
 import T from "../theme";
+import ColorPicker from "./ColorPicker";
 
 type Tool = "none" | "blank" | "cell" | { preset: DecorPreset };
+
+function HelpTip({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  return (
+    <span
+      ref={ref}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        width: "14px", height: "14px", borderRadius: "50%",
+        backgroundColor: T.bg3, color: T.textDim, fontSize: "10px",
+        cursor: "help", userSelect: "none", flexShrink: 0,
+      }}
+    >
+      ?
+      {show && ref.current && (() => {
+        const rect = ref.current!.getBoundingClientRect();
+        return (
+          <span style={{
+            position: "fixed",
+            left: rect.left + rect.width / 2,
+            top: rect.top - 4,
+            transform: "translate(-50%, -100%)",
+            padding: "4px 10px",
+            backgroundColor: T.bg3,
+            color: T.text,
+            border: `1px solid ${T.borderLight}`,
+            borderRadius: "3px",
+            fontSize: "11px",
+            whiteSpace: "nowrap",
+            maxWidth: "350px",
+            pointerEvents: "none",
+            zIndex: 1000,
+          }}>
+            {text}
+          </span>
+        );
+      })()}
+    </span>
+  );
+}
 
 interface Props {
   mapId: string;
@@ -27,6 +71,8 @@ export default function MapEditor({ mapId, onBack }: Props) {
   const [saving, setSaving] = useState(false);
   const [mouseDown, setMouseDown] = useState(false);
   const [showPresetEditor, setShowPresetEditor] = useState(false);
+  const [showConnections, setShowConnections] = useState(true);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const reloadPresets = () => fetchDecorPresets().then(setPresets);
 
@@ -191,196 +237,232 @@ export default function MapEditor({ mapId, onBack }: Props) {
   }
 
   const btnStyle: React.CSSProperties = {
-    background: T.bg2,
-    border: `1px solid ${T.borderLight}`,
+    background: "transparent",
+    border: `1px solid ${T.border}`,
+    borderRadius: "3px",
     color: T.text,
-    padding: "3px 10px",
-    fontFamily: "monospace",
-    fontSize: "12px",
+    padding: "4px 12px",
+    fontSize: "13px",
     cursor: "pointer",
   };
 
   const inputStyle: React.CSSProperties = {
-    background: T.bg2,
+    background: T.bg3,
     border: `1px solid ${T.borderLight}`,
+    borderRadius: "3px",
     color: T.text,
     padding: "3px 6px",
-    fontFamily: "monospace",
-    fontSize: "12px",
+    fontSize: "13px",
+    outline: "none",
   };
 
   return (
     <div
-      style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+      style={{ fontSize: "13px", color: T.text, display: "flex", flexDirection: "column", gap: "6px" }}
       onMouseUp={() => setMouseDown(false)}
       onMouseLeave={() => setMouseDown(false)}
     >
-      {/* A. Title bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <span style={{ color: T.accent, fontSize: "15px", fontWeight: "bold" }}>
+      {/* ── Header ── */}
+      <div style={{ marginBottom: "2px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == 编辑: {mapData.name} ==
         </span>
-        <button onClick={onBack} style={btnStyle}>[返回]</button>
       </div>
 
-      {/* B. Meta info */}
-      <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-        <label style={{ fontSize: "12px", color: T.textSub }}>
-          名称
+      {/* ── Section: 地图属性 ── */}
+      <Section title="地图属性">
+        <Row label="名称">
           <input
             value={mapData.name}
             onChange={(e) => setMapData({ ...mapData, name: e.target.value })}
-            style={{ ...inputStyle, marginLeft: "4px", width: "120px" }}
+            style={{ ...inputStyle, width: "140px" }}
           />
-        </label>
-        <label style={{ fontSize: "12px", color: T.textSub }}>
-          背景色
-          <input
-            type="color"
+        </Row>
+        <Row label="背景色">
+          <ColorPicker
             value={mapData.defaultColor}
-            onChange={(e) => setMapData({ ...mapData, defaultColor: e.target.value })}
-            style={{ marginLeft: "4px", width: "32px", height: "22px", border: "none", cursor: "pointer" }}
+            onChange={(c) => setMapData({ ...mapData, defaultColor: c })}
           />
-        </label>
-      </div>
-
-      {/* C. Grid controls */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <button onClick={addRow} style={btnStyle}>[+行]</button>
-        <button onClick={removeRow} style={btnStyle}>[-行]</button>
-        <button onClick={addCol} style={btnStyle}>[+列]</button>
-        <button onClick={removeCol} style={btnStyle}>[-列]</button>
-        <span style={{ fontSize: "12px", color: T.textSub }}>{rows} x {cols}</span>
-      </div>
-
-      {/* D. Toolbar (decor presets) */}
-      <div style={{ display: "flex", gap: "3px", flexWrap: "wrap", alignItems: "center" }}>
-        <ToolButton
-          label="选择"
-          active={tool === "none"}
-          onClick={() => setTool("none")}
-          color={T.textSub}
-        />
-        <ToolButton
-          label="空白"
-          active={tool === "blank"}
-          onClick={() => setTool("blank")}
-          color={T.textDim}
-        />
-        <ToolButton
-          label="区格"
-          active={tool === "cell"}
-          onClick={() => setTool("cell")}
-          color="#4CAF50"
-        />
-        <span style={{ width: "8px" }} />
-        {presets.map((p, i) => (
-          <ToolButton
-            key={i}
-            label={p.text}
-            active={typeof tool === "object" && "preset" in tool && tool.preset.text === p.text && tool.preset.color === p.color}
-            onClick={() => setTool({ preset: p })}
-            color={p.color}
+        </Row>
+        <Row label="地图背景图">
+          <BgImagePicker
+            image={mapData.backgroundImage}
+            cellId={0}
+            mapId={mapId}
+            btnStyle={btnStyle}
+            onChange={(filename) => setMapData({ ...mapData, backgroundImage: filename })}
           />
-        ))}
-        <span style={{ width: "8px" }} />
-        <button
-          onClick={() => setShowPresetEditor((v) => !v)}
+          <HelpTip text="地图编辑网格的底层背景图片，叠加在背景色之上" />
+        </Row>
+        <Row label="默认场景背景">
+          <BgImagePicker
+            image={mapData.defaultBackgroundImage ?? undefined}
+            cellId={-1}
+            mapId={mapId}
+            btnStyle={btnStyle}
+            onChange={(filename) => setMapData({ ...mapData, defaultBackgroundImage: filename ?? null })}
+          />
+          <HelpTip text="当区格未设置自己的场景背景时，使用此默认背景" />
+        </Row>
+      </Section>
+
+      {/* ── Section: 网格编辑 ── */}
+      <Section title="网格编辑">
+        {/* Grid size + view controls */}
+        <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap", marginBottom: "6px" }}>
+          <span style={{ color: T.textSub, minWidth: "46px" }}>尺寸:</span>
+          <button onClick={addRow} style={{ ...btnStyle, padding: "2px 8px" }}>[+行]</button>
+          <button onClick={removeRow} style={{ ...btnStyle, padding: "2px 8px" }}>[-行]</button>
+          <button onClick={addCol} style={{ ...btnStyle, padding: "2px 8px" }}>[+列]</button>
+          <button onClick={removeCol} style={{ ...btnStyle, padding: "2px 8px" }}>[-列]</button>
+          <span style={{ color: T.textDim }}>{rows} × {cols}</span>
+          <span style={{ flex: 1 }} />
+          <button
+            onClick={() => setShowConnections((v) => !v)}
+            style={{
+              ...btnStyle,
+              padding: "2px 8px",
+              color: showConnections ? T.accent : T.textDim,
+              borderColor: showConnections ? T.accentDim : T.border,
+            }}
+          >
+            {showConnections ? "[隐藏连接]" : "[显示连接]"}
+          </button>
+        </div>
+
+        {/* Toolbar */}
+        <div style={{ display: "flex", gap: "3px", flexWrap: "wrap", alignItems: "center", marginBottom: "6px" }}>
+          <span style={{ color: T.textSub, marginRight: "4px" }}>工具:</span>
+          <ToolButton label="选择" active={tool === "none"} onClick={() => setTool("none")} color={T.textSub} />
+          <ToolButton label="空白" active={tool === "blank"} onClick={() => setTool("blank")} color={T.textDim} />
+          <ToolButton label="区格" active={tool === "cell"} onClick={() => setTool("cell")} color="#4CAF50" />
+          {presets.length > 0 && (
+            <>
+              <span style={{ width: "1px", height: "18px", background: T.border, margin: "0 4px" }} />
+              {presets.map((p, i) => (
+                <ToolButton
+                  key={i}
+                  label={p.text}
+                  active={typeof tool === "object" && "preset" in tool && tool.preset.text === p.text && tool.preset.color === p.color}
+                  onClick={() => setTool({ preset: p })}
+                  color={p.color}
+                />
+              ))}
+            </>
+          )}
+          <span style={{ width: "1px", height: "18px", background: T.border, margin: "0 4px" }} />
+          <button
+            onClick={() => setShowPresetEditor((v) => !v)}
+            style={{
+              ...btnStyle,
+              padding: "2px 8px",
+              color: showPresetEditor ? T.accent : T.textSub,
+              borderColor: showPresetEditor ? T.accentDim : T.border,
+            }}
+          >
+            {showPresetEditor ? "[收起预设]" : "[编辑预设]"}
+          </button>
+        </div>
+
+        {showPresetEditor && (
+          <div style={{ marginBottom: "6px" }}>
+            <PresetEditor
+              presets={presets}
+              inputStyle={inputStyle}
+              btnStyle={btnStyle}
+              onSaved={reloadPresets}
+            />
+          </div>
+        )}
+
+        {/* Grid canvas */}
+        <div
           style={{
-            ...btnStyle,
-            fontSize: "11px",
-            padding: "2px 8px",
-            color: showPresetEditor ? T.accent : T.textSub,
+            overflowX: "auto",
+            border: `1px solid ${T.border}`,
+            borderRadius: "3px",
+            background: mapData.defaultColor,
+            backgroundImage: mapData.backgroundImage ? `url(/assets/backgrounds/${mapData.backgroundImage})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            padding: "4px",
+            userSelect: "none",
           }}
         >
-          {showPresetEditor ? "[收起预设]" : "[编辑预设]"}
-        </button>
-      </div>
+          <div ref={gridRef} style={{ display: "inline-block", position: "relative" }}>
+            {mapData.grid.map((row, ri) => (
+              <div key={ri} style={{ display: "flex" }}>
+                {row.map((cell, ci) => {
+                  const cellId = cellPositions.get(`${ri},${ci}`);
+                  const isCell = cellId !== undefined;
+                  const isSelected = isCell && cellId === selectedCellId;
+                  let text = "";
+                  let color = mapData.defaultColor;
+                  if (typeof cell === "string") {
+                    text = cell;
+                  } else if (Array.isArray(cell) && cell.length === 2) {
+                    text = cell[0];
+                    color = cell[1];
+                  }
 
-      {showPresetEditor && (
-        <PresetEditor
-          presets={presets}
-          inputStyle={inputStyle}
-          btnStyle={btnStyle}
-          onSaved={reloadPresets}
-        />
-      )}
-
-      {/* E. Grid editing area */}
-      <div
-        style={{
-          overflowX: "auto",
-          border: `1px solid ${T.border}`,
-          background: mapData.defaultColor,
-          padding: "4px",
-          userSelect: "none",
-        }}
-      >
-        <div style={{ display: "inline-block" }}>
-          {mapData.grid.map((row, ri) => (
-            <div key={ri} style={{ display: "flex" }}>
-              {row.map((cell, ci) => {
-                const cellId = cellPositions.get(`${ri},${ci}`);
-                const isCell = cellId !== undefined;
-                const isSelected = isCell && cellId === selectedCellId;
-                let text = "";
-                let color = mapData.defaultColor;
-                if (typeof cell === "string") {
-                  text = cell;
-                } else if (Array.isArray(cell) && cell.length === 2) {
-                  text = cell[0];
-                  color = cell[1];
-                }
-
-                return (
-                  <div
-                    key={ci}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setMouseDown(true);
-                      handleGridClick(ri, ci);
-                    }}
-                    onMouseEnter={() => {
-                      if (mouseDown && tool !== "none" && tool !== "cell") {
+                  return (
+                    <div
+                      key={ci}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setMouseDown(true);
                         handleGridClick(ri, ci);
+                      }}
+                      onMouseEnter={() => {
+                        if (mouseDown && tool !== "none" && tool !== "cell") {
+                          handleGridClick(ri, ci);
+                        }
+                      }}
+                      style={{
+                        width: "1.2em",
+                        height: "1.2em",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "13px",
+                        color,
+                        background: isSelected
+                          ? "rgba(42, 74, 42, 0.6)"
+                          : isCell
+                            ? "rgba(26, 42, 26, 0.5)"
+                            : "rgba(15, 15, 26, 0.35)",
+                        border: isCell
+                          ? "1px dashed #4CAF50"
+                          : `1px solid ${T.bg2}`,
+                        cursor: "pointer",
+                        boxSizing: "border-box",
+                      }}
+                      title={
+                        isCell
+                          ? `区格 #${cellId} (${ri},${ci})`
+                          : `(${ri},${ci})`
                       }
-                    }}
-                    style={{
-                      width: "1.2em",
-                      height: "1.2em",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "13px",
-                      fontFamily: "monospace",
-                      color,
-                      background: isSelected
-                        ? "#2a4a2a"
-                        : isCell
-                          ? "#1a2a1a"
-                          : "#0f0f1a",
-                      border: isCell
-                        ? "1px dashed #4CAF50"
-                        : `1px solid ${T.bg2}`,
-                      cursor: "pointer",
-                      boxSizing: "border-box",
-                    }}
-                    title={
-                      isCell
-                        ? `区格 #${cellId} (${ri},${ci})`
-                        : `(${ri},${ci})`
-                    }
-                  >
-                    {text || "\u00A0"}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                    >
+                      {text || "\u00A0"}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+            {showConnections && (
+              <ConnectionOverlay
+                cells={mapData.cells}
+                gridRef={gridRef}
+                gridRows={rows}
+                gridCols={cols}
+                selectedCellId={selectedCellId}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      </Section>
 
-      {/* F. Cell editing panel */}
+      {/* ── Section: 区格编辑 ── */}
       {selectedCell && (
         <CellEditor
           cell={selectedCell}
@@ -398,6 +480,16 @@ export default function MapEditor({ mapId, onBack }: Props) {
               };
             });
           }}
+          onChangeCells={(updatedCells) => {
+            setMapData((prev) => {
+              if (!prev) return prev;
+              const updateMap = new Map(updatedCells.map((c) => [c.id, c]));
+              return {
+                ...prev,
+                cells: prev.cells.map((c) => updateMap.get(c.id) ?? c),
+              };
+            });
+          }}
           onUpdateGridText={(text, color) => {
             updateGrid(selectedCell.row, selectedCell.col, [text, color]);
           }}
@@ -410,38 +502,200 @@ export default function MapEditor({ mapId, onBack }: Props) {
         />
       )}
 
-      {/* G. Action bar */}
-      <div style={{ display: "flex", gap: "8px" }}>
+      {/* ── Footer actions ── */}
+      <div style={{
+        display: "flex", gap: "8px", alignItems: "center",
+        paddingTop: "8px", borderTop: `1px solid ${T.border}`, marginTop: "4px",
+      }}>
         <button
           onClick={handleSave}
           disabled={saving}
-          style={{
-            ...btnStyle,
-            background: T.bg2,
-            borderColor: T.border,
-            color: T.successDim,
-          }}
+          style={{ ...btnStyle, color: T.successDim }}
         >
-          {saving ? "保存中..." : "[保存]"}
+          {saving ? "[提交中...]" : "[确定]"}
         </button>
         <button
           onClick={handleDelete}
-          style={{
-            ...btnStyle,
-            background: T.dangerBg,
-            borderColor: `${T.danger}66`,
-            color: T.danger,
-          }}
+          style={{ ...btnStyle, color: T.danger }}
         >
-          [删除地图]
+          [删除]
         </button>
-        <button onClick={onBack} style={btnStyle}>[返回]</button>
+        <button onClick={onBack} style={{ ...btnStyle, color: T.textSub }}>
+          [返回列表]
+        </button>
       </div>
     </div>
   );
 }
 
+// --- Layout helpers ---
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: "4px" }}>
+      <div style={{
+        color: T.accent,
+        borderBottom: `1px solid ${T.border}`,
+        marginBottom: "6px",
+        paddingBottom: "2px",
+        fontWeight: "bold",
+      }}>
+        == {title} ==
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+      <span style={{ minWidth: "90px", color: T.textSub }}>{label}:</span>
+      {children}
+    </div>
+  );
+}
+
 // --- Sub-components ---
+
+function ConnectionOverlay({
+  cells,
+  gridRef,
+  gridRows,
+  gridCols,
+  selectedCellId,
+}: {
+  cells: MapCell[];
+  gridRef: React.RefObject<HTMLDivElement | null>;
+  gridRows: number;
+  gridCols: number;
+  selectedCellId: number | null;
+}) {
+  // Cell size: 1.2em at 13px font = 15.6px per cell
+  const CELL_PX = 15.6;
+  const cellW = CELL_PX;
+  const cellH = CELL_PX;
+  const w = gridCols * cellW;
+  const h = gridRows * cellH;
+
+  // Build cell position map: id → {row, col}
+  const cellMap = new Map<number, MapCell>();
+  for (const c of cells) cellMap.set(c.id, c);
+
+  // Center position of a cell in pixels
+  const cx = (c: MapCell) => c.col * cellW + cellW / 2;
+  const cy = (c: MapCell) => c.row * cellH + cellH / 2;
+
+  // Collect all connection lines (same-map only)
+  const lines: {
+    x1: number; y1: number; x2: number; y2: number;
+    dashed: boolean; highlight: boolean; key: string;
+  }[] = [];
+
+  for (const cell of cells) {
+    for (const conn of cell.connections) {
+      // Skip cross-map connections
+      if (conn.targetMap) continue;
+      const target = cellMap.get(conn.targetCell);
+      if (!target) continue;
+
+      const x1 = cx(cell);
+      const y1 = cy(cell);
+      const x2 = cx(target);
+      const y2 = cy(target);
+
+      const highlight = cell.id === selectedCellId || target.id === selectedCellId;
+
+      lines.push({
+        x1, y1, x2, y2,
+        dashed: !!conn.senseBlocked,
+        highlight,
+        key: `${cell.id}->${conn.targetCell}${conn.senseBlocked ? "s" : ""}`,
+      });
+    }
+  }
+
+  // Shorten lines so arrows don't overlap cell centers
+  const shortenLine = (x1: number, y1: number, x2: number, y2: number, shrink: number) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < shrink * 2) return { x1, y1, x2, y2 };
+    const ratio = shrink / len;
+    return {
+      x1: x1 + dx * ratio,
+      y1: y1 + dy * ratio,
+      x2: x2 - dx * ratio,
+      y2: y2 - dy * ratio,
+    };
+  };
+
+  // Offset parallel bidirectional lines slightly so they don't overlap
+  const offsetLine = (x1: number, y1: number, x2: number, y2: number, offset: number) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0) return { x1, y1, x2, y2 };
+    const nx = -dy / len * offset;
+    const ny = dx / len * offset;
+    return { x1: x1 + nx, y1: y1 + ny, x2: x2 + nx, y2: y2 + ny };
+  };
+
+  // Detect bidirectional pairs for offsetting
+  const pairSet = new Set<string>();
+  for (const line of lines) {
+    const rev = `${line.key.split("->")[1]?.split("s")[0]}->${line.key.split("->")[0]}`;
+    if (lines.some((l) => l.key.startsWith(rev))) {
+      pairSet.add(line.key);
+    }
+  }
+
+  return (
+    <svg
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: w,
+        height: h,
+        pointerEvents: "none",
+        overflow: "visible",
+      }}
+    >
+      <defs>
+        <marker id="arrow" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+          <polygon points="0,0 6,2.5 0,5" fill="#4CAF50" opacity="0.8" />
+        </marker>
+        <marker id="arrow-hi" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+          <polygon points="0,0 6,2.5 0,5" fill="#4CAF50" />
+        </marker>
+      </defs>
+      {lines.map((line) => {
+        const isBidi = pairSet.has(line.key);
+        const offset = isBidi ? 2.5 : 0;
+        const shifted = offsetLine(line.x1, line.y1, line.x2, line.y2, offset);
+        const shortened = shortenLine(shifted.x1, shifted.y1, shifted.x2, shifted.y2, cellW * 0.4);
+
+        const markerId = line.highlight ? "arrow-hi" : "arrow";
+
+        return (
+          <line
+            key={line.key}
+            x1={shortened.x1}
+            y1={shortened.y1}
+            x2={shortened.x2}
+            y2={shortened.y2}
+            stroke="#4CAF50"
+            strokeWidth={line.highlight ? 1.5 : 1}
+            strokeOpacity={line.highlight ? 0.9 : 0.5}
+            strokeDasharray={line.dashed ? "4,3" : undefined}
+            markerEnd={`url(#${markerId})`}
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 function ToolButton({
   label,
@@ -464,7 +718,6 @@ function ToolButton({
         alignItems: "center",
         justifyContent: "center",
         fontSize: "13px",
-        fontFamily: "monospace",
         color,
         background: active ? T.bg2 : T.bg3,
         border: active ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
@@ -489,9 +742,8 @@ function PresetEditor({
   btnStyle: React.CSSProperties;
   onSaved: () => void;
 }) {
-  const gamePresets = presets.filter((p) => p.source === "game");
   const [editing, setEditing] = useState<DecorPreset[]>(
-    gamePresets.map((p) => ({ text: p.text, color: p.color }))
+    presets.filter((p) => p.source === "game").map((p) => ({ text: p.text, color: p.color }))
   );
   const [newText, setNewText] = useState("");
   const [newColor, setNewColor] = useState("#FFFFFF");
@@ -504,7 +756,10 @@ function PresetEditor({
   }, [presets]);
 
   const handleSave = async () => {
-    await saveDecorPresets(editing);
+    // Merge: keep non-game presets unchanged, replace game presets with edited
+    const nonGame = presets.filter((p) => p.source !== "game");
+    const gameEdited = editing.map((p) => ({ ...p, source: "game" as const }));
+    await saveDecorPresets([...nonGame, ...gameEdited]);
     onSaved();
   };
 
@@ -519,17 +774,21 @@ function PresetEditor({
       style={{
         background: T.bg2,
         border: `1px solid ${T.border}`,
-        padding: "10px",
+        borderRadius: "3px",
+        padding: "8px 10px",
         display: "flex",
         flexDirection: "column",
-        gap: "8px",
+        gap: "6px",
       }}
     >
-      <div style={{ fontSize: "12px", color: T.textSub }}>
-        游戏预设:
+      <div style={{ color: T.textSub, fontWeight: "bold", fontSize: "12px" }}>
+        装饰性区隔预设
       </div>
       {editing.map((p, i) => (
-        <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+        <div key={i} style={{
+          display: "flex", gap: "6px", alignItems: "center",
+          paddingLeft: "4px", borderLeft: `2px solid ${T.border}`,
+        }}>
           <span
             style={{
               display: "inline-flex",
@@ -538,10 +797,11 @@ function PresetEditor({
               width: "2.2em",
               height: "2.2em",
               fontSize: "13px",
-              fontFamily: "monospace",
               color: p.color,
               background: T.bg3,
               border: `1px solid ${T.border}`,
+              borderRadius: "2px",
+              flexShrink: 0,
             }}
           >
             {p.text}
@@ -556,15 +816,13 @@ function PresetEditor({
             style={{ ...inputStyle, width: "50px" }}
             maxLength={2}
           />
-          <input
-            type="color"
+          <ColorPicker
             value={p.color}
-            onChange={(e) => {
+            onChange={(c) => {
               const next = [...editing];
-              next[i] = { ...next[i], color: e.target.value };
+              next[i] = { ...next[i], color: c };
               setEditing(next);
             }}
-            style={{ width: "32px", height: "22px", border: "none", cursor: "pointer" }}
           />
           <button
             onClick={() => setEditing(editing.filter((_, j) => j !== i))}
@@ -575,7 +833,10 @@ function PresetEditor({
         </div>
       ))}
 
-      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+      <div style={{
+        display: "flex", gap: "6px", alignItems: "center",
+        paddingTop: "4px", borderTop: `1px solid ${T.borderDim}`,
+      }}>
         <input
           value={newText}
           onChange={(e) => setNewText(e.target.value)}
@@ -583,26 +844,24 @@ function PresetEditor({
           style={{ ...inputStyle, width: "50px" }}
           maxLength={2}
         />
-        <input
-          type="color"
+        <ColorPicker
           value={newColor}
-          onChange={(e) => setNewColor(e.target.value)}
-          style={{ width: "32px", height: "22px", border: "none", cursor: "pointer" }}
+          onChange={(c) => setNewColor(c)}
         />
         <button
           onClick={handleAdd}
-          style={{ ...btnStyle, color: T.successDim, borderColor: T.successDim }}
+          style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
         >
           [+]
         </button>
+        <span style={{ flex: 1 }} />
+        <button
+          onClick={handleSave}
+          style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
+        >
+          [保存预设]
+        </button>
       </div>
-
-      <button
-        onClick={handleSave}
-        style={{ ...btnStyle, color: T.successDim, borderColor: T.successDim, alignSelf: "flex-start" }}
-      >
-        [保存预设]
-      </button>
     </div>
   );
 }
@@ -615,6 +874,7 @@ function CellEditor({
   inputStyle,
   btnStyle,
   onChange,
+  onChangeCells,
   onUpdateGridText,
   onDelete,
   onClose,
@@ -626,6 +886,7 @@ function CellEditor({
   inputStyle: React.CSSProperties;
   btnStyle: React.CSSProperties;
   onChange: (cell: MapCell) => void;
+  onChangeCells: (cells: MapCell[]) => void;
   onUpdateGridText: (text: string, color: string) => void;
   onDelete: () => void;
   onClose: () => void;
@@ -642,49 +903,29 @@ function CellEditor({
   }
 
   return (
-    <div
-      style={{
-        background: T.bg2,
-        border: `1px solid ${T.border}`,
-        padding: "10px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-      }}
-    >
-      <div style={{ color: T.accent, fontSize: "13px", fontWeight: "bold" }}>
-        区格编辑 #{cell.id}
-      </div>
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
-        <label style={{ fontSize: "12px", color: T.textSub }}>
-          ID
-          <input value={cell.id} disabled style={{ ...inputStyle, marginLeft: "4px", width: "50px", opacity: 0.6 }} />
-        </label>
-        <label style={{ fontSize: "12px", color: T.textSub }}>
-          名称
-          <input
-            value={cell.name ?? ""}
-            onChange={(e) => onChange({ ...cell, name: e.target.value })}
-            style={{ ...inputStyle, marginLeft: "4px", width: "120px" }}
-          />
-        </label>
-        <label style={{ fontSize: "12px", color: T.textSub }}>
-          显示文字
-          <input
-            value={displayText}
-            onChange={(e) => onUpdateGridText(e.target.value, displayColor)}
-            style={{ ...inputStyle, marginLeft: "4px", width: "60px" }}
-          />
-        </label>
-        <label style={{ fontSize: "12px", color: T.textSub }}>
-          颜色
-          <input
-            type="color"
-            value={displayColor}
-            onChange={(e) => onUpdateGridText(displayText, e.target.value)}
-            style={{ marginLeft: "4px", width: "32px", height: "22px", border: "none", cursor: "pointer" }}
-          />
-        </label>
+    <Section title={`区格编辑 #${cell.id} — ${cell.name ?? ""}`}>
+      {/* Basic properties */}
+      <Row label="名称">
+        <input
+          value={cell.name ?? ""}
+          onChange={(e) => onChange({ ...cell, name: e.target.value })}
+          style={{ ...inputStyle, width: "140px" }}
+        />
+      </Row>
+      <Row label="显示文字">
+        <input
+          value={displayText}
+          onChange={(e) => onUpdateGridText(e.target.value, displayColor)}
+          style={{ ...inputStyle, width: "60px" }}
+        />
+      </Row>
+      <Row label="颜色">
+        <ColorPicker
+          value={displayColor}
+          onChange={(c) => onUpdateGridText(displayText, c)}
+        />
+      </Row>
+      <Row label="场景背景">
         <BgImagePicker
           image={cell.backgroundImage}
           cellId={cell.id}
@@ -692,181 +933,225 @@ function CellEditor({
           btnStyle={btnStyle}
           onChange={(filename) => onChange({ ...cell, backgroundImage: filename })}
         />
-      </div>
+        <HelpTip text="玩家在此区格时显示的场景背景图，未设置则使用地图默认背景" />
+      </Row>
 
       {/* Tags */}
-      <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ fontSize: "12px", color: T.textSub }}>标签:</span>
-        {(cell.tags ?? []).map((tag, i) => (
-          <span key={i} style={{
-            display: "inline-flex", alignItems: "center", gap: "3px",
-            padding: "1px 6px", fontSize: "11px",
-            backgroundColor: "#1a3a2a", border: "1px solid #3a6a3a", borderRadius: "3px", color: "#8f8",
-          }}>
-            {tag}
-            <button onClick={() => {
-              const next = (cell.tags ?? []).filter((_, j) => j !== i);
-              onChange({ ...cell, tags: next });
-            }} style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", padding: 0, fontSize: "11px" }}>×</button>
-          </span>
-        ))}
-        <input
-          placeholder="+ 标签"
-          style={{ ...inputStyle, width: "70px", fontSize: "11px" }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const val = (e.target as HTMLInputElement).value.trim();
-              if (val && !(cell.tags ?? []).includes(val)) {
-                onChange({ ...cell, tags: [...(cell.tags ?? []), val] });
+      <Row label="标签">
+        <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
+          {(cell.tags ?? []).map((tag, i) => (
+            <span key={i} style={{
+              display: "inline-flex", alignItems: "center", gap: "3px",
+              padding: "1px 6px", fontSize: "11px",
+              backgroundColor: "#1a3a2a", border: "1px solid #3a6a3a", borderRadius: "3px", color: "#8f8",
+            }}>
+              {tag}
+              <button onClick={() => {
+                const next = (cell.tags ?? []).filter((_, j) => j !== i);
+                onChange({ ...cell, tags: next });
+              }} style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", padding: 0, fontSize: "11px" }}>×</button>
+            </span>
+          ))}
+          <input
+            placeholder="+ 标签"
+            style={{ ...inputStyle, width: "70px", fontSize: "11px" }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const val = (e.target as HTMLInputElement).value.trim();
+                if (val && !(cell.tags ?? []).includes(val)) {
+                  onChange({ ...cell, tags: [...(cell.tags ?? []), val] });
+                }
+                (e.target as HTMLInputElement).value = "";
               }
-              (e.target as HTMLInputElement).value = "";
-            }
-          }}
-        />
-      </div>
+            }}
+          />
+        </div>
+      </Row>
 
       {/* Connections */}
-      <div style={{ fontSize: "12px", color: T.textSub }}>连接:</div>
-      {cell.connections.map((conn, i) => {
-        const targetMapId = conn.targetMap ?? currentMapId;
-        // Get cells for the target map
-        const targetMapCells =
-          targetMapId === currentMapId
-            ? mapData.cells
-            : []; // For cross-map, we don't have cells loaded
-        return (
-          <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-            <select
-              value={targetMapId}
-              onChange={(e) => {
-                const newConns = [...cell.connections];
-                if (e.target.value === currentMapId) {
-                  newConns[i] = { targetCell: newConns[i].targetCell };
-                } else {
-                  newConns[i] = { ...newConns[i], targetMap: e.target.value };
-                }
-                onChange({ ...cell, connections: newConns });
-              }}
-              style={{ ...inputStyle, width: "130px" }}
-            >
-              {allMaps.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-            {targetMapId === currentMapId ? (
+      <div style={{ marginTop: "4px", borderTop: `1px solid ${T.borderDim}`, paddingTop: "6px" }}>
+        <div style={{ color: T.textSub, marginBottom: "4px", fontWeight: "bold" }}>连接</div>
+        {cell.connections.map((conn, i) => {
+          const targetMapId = conn.targetMap ?? currentMapId;
+          const targetMapCells =
+            targetMapId === currentMapId
+              ? mapData.cells
+              : [];
+          return (
+            <div key={i} style={{
+              display: "flex", gap: "6px", alignItems: "center", marginBottom: "4px",
+              paddingLeft: "4px", borderLeft: `2px solid ${T.border}`,
+            }}>
               <select
-                value={conn.targetCell}
+                value={targetMapId}
                 onChange={(e) => {
                   const newConns = [...cell.connections];
-                  newConns[i] = { ...newConns[i], targetCell: Number(e.target.value) };
+                  if (e.target.value === currentMapId) {
+                    newConns[i] = { targetCell: newConns[i].targetCell };
+                  } else {
+                    newConns[i] = { ...newConns[i], targetMap: e.target.value };
+                  }
                   onChange({ ...cell, connections: newConns });
                 }}
                 style={{ ...inputStyle, width: "130px" }}
               >
-                {targetMapCells
-                  .filter((c) => c.id !== cell.id)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      #{c.id} {c.name ?? ""}
-                    </option>
-                  ))}
+                {allMaps.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
               </select>
-            ) : (
+              {targetMapId === currentMapId ? (
+                <select
+                  value={conn.targetCell}
+                  onChange={(e) => {
+                    const newConns = [...cell.connections];
+                    newConns[i] = { ...newConns[i], targetCell: Number(e.target.value) };
+                    onChange({ ...cell, connections: newConns });
+                  }}
+                  style={{ ...inputStyle, width: "130px" }}
+                >
+                  {targetMapCells
+                    .filter((c) => c.id !== cell.id)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        #{c.id} {c.name ?? ""}
+                      </option>
+                    ))}
+                </select>
+              ) : (
+                <input
+                  type="number"
+                  value={conn.targetCell}
+                  onChange={(e) => {
+                    const newConns = [...cell.connections];
+                    newConns[i] = { ...newConns[i], targetCell: Number(e.target.value) };
+                    onChange({ ...cell, connections: newConns });
+                  }}
+                  placeholder="区格ID"
+                  style={{ ...inputStyle, width: "80px" }}
+                />
+              )}
               <input
                 type="number"
-                value={conn.targetCell}
+                step={5}
+                min={5}
+                value={conn.travelTime ?? 10}
                 onChange={(e) => {
                   const newConns = [...cell.connections];
-                  newConns[i] = { ...newConns[i], targetCell: Number(e.target.value) };
+                  const val = Math.max(5, Math.round(Number(e.target.value) / 5) * 5);
+                  newConns[i] = { ...newConns[i], travelTime: val };
                   onChange({ ...cell, connections: newConns });
                 }}
-                placeholder="区格ID"
-                style={{ ...inputStyle, width: "80px" }}
+                title="移动耗时(分)"
+                style={{ ...inputStyle, width: "50px" }}
               />
-            )}
-            <input
-              type="number"
-              step={5}
-              min={5}
-              value={conn.travelTime ?? 10}
-              onChange={(e) => {
-                const newConns = [...cell.connections];
-                const val = Math.max(5, Math.round(Number(e.target.value) / 5) * 5);
-                newConns[i] = { ...newConns[i], travelTime: val };
-                onChange({ ...cell, connections: newConns });
-              }}
-              title="移动耗时(分)"
-              style={{ ...inputStyle, width: "50px" }}
-            />
-            <span style={{ color: T.textDim, fontSize: "10px" }}>分</span>
-            <label style={{ display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" }} title="感知阻断：勾选后NPC无法通过此连接感知对面的角色">
-              <input
-                type="checkbox"
-                checked={!!conn.senseBlocked}
-                onChange={(e) => {
-                  const newConns = [...cell.connections];
-                  if (e.target.checked) {
-                    newConns[i] = { ...newConns[i], senseBlocked: true };
-                  } else {
-                    const { senseBlocked: _, ...rest } = newConns[i];
-                    newConns[i] = rest;
-                  }
+              <span style={{ color: T.textDim, fontSize: "11px" }}>分</span>
+              <label style={{ display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={!conn.senseBlocked}
+                  onChange={(e) => {
+                    const newConns = [...cell.connections];
+                    newConns[i] = { ...newConns[i], senseBlocked: !e.target.checked };
+                    onChange({ ...cell, connections: newConns });
+                  }}
+                  style={{ margin: 0 }}
+                />
+                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>感知</span>
+              </label>
+              <HelpTip text="勾选后，NPC可以通过此连接察觉到对面的角色" />
+              <button
+                onClick={() => {
+                  const newConns = cell.connections.filter((_, j) => j !== i);
                   onChange({ ...cell, connections: newConns });
                 }}
-                style={{ margin: 0 }}
-              />
-              <span style={{ color: T.accent, fontSize: "10px", whiteSpace: "nowrap" }}>隔感知</span>
-            </label>
-            <button
-              onClick={() => {
-                const newConns = cell.connections.filter((_, j) => j !== i);
-                onChange({ ...cell, connections: newConns });
-              }}
-              style={{ ...btnStyle, color: T.danger, borderColor: `${T.danger}66`, padding: "2px 6px" }}
-            >
-              x
-            </button>
-          </div>
-        );
-      })}
-      <div style={{ display: "flex", gap: "8px" }}>
-        <button
-          onClick={() => {
-            // Default: connect to first other cell in same map
-            const otherCell = mapData.cells.find((c) => c.id !== cell.id);
-            const targetCell = otherCell?.id ?? 1;
-            onChange({
-              ...cell,
-              connections: [...cell.connections, { targetCell }],
-            });
-          }}
-          style={{ ...btnStyle, color: T.successDim, borderColor: T.successDim }}
-        >
-          [+连接]
-        </button>
+                style={{ ...btnStyle, color: T.danger, borderColor: `${T.danger}66`, padding: "2px 6px" }}
+              >
+                x
+              </button>
+            </div>
+          );
+        })}
+        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+          <button
+            onClick={() => {
+              const otherCell = mapData.cells.find((c) => c.id !== cell.id);
+              const targetCell = otherCell?.id ?? 1;
+              onChange({
+                ...cell,
+                connections: [...cell.connections, { targetCell, senseBlocked: true }],
+              });
+            }}
+            style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
+          >
+            [+单向连接]
+          </button>
+          <button
+            onClick={() => {
+              const otherCell = mapData.cells.find((c) => c.id !== cell.id);
+              if (!otherCell) return;
+              const targetId = otherCell.id;
+              const hasForward = cell.connections.some(
+                (c) => c.targetCell === targetId && !c.targetMap
+              );
+              const updatedCurrent = hasForward ? cell : {
+                ...cell,
+                connections: [...cell.connections, { targetCell: targetId, senseBlocked: true }],
+              };
+              const targetCellData = mapData.cells.find((c) => c.id === targetId);
+              if (!targetCellData) {
+                onChange(updatedCurrent);
+                return;
+              }
+              const hasReverse = targetCellData.connections.some(
+                (c) => c.targetCell === cell.id && !c.targetMap
+              );
+              if (hasReverse) {
+                onChange(updatedCurrent);
+              } else {
+                const updatedTarget = {
+                  ...targetCellData,
+                  connections: [...targetCellData.connections, { targetCell: cell.id, senseBlocked: true }],
+                };
+                onChangeCells([updatedCurrent, updatedTarget]);
+              }
+            }}
+            style={{ ...btnStyle, padding: "2px 8px", color: T.accent, borderColor: T.accentDim }}
+          >
+            [+双向连接]
+          </button>
+        </div>
+      </div>
+
+      {/* Cell action bar */}
+      <div style={{
+        display: "flex", gap: "8px", marginTop: "6px",
+        paddingTop: "6px", borderTop: `1px solid ${T.borderDim}`,
+      }}>
         <button
           onClick={onDelete}
-          style={{ ...btnStyle, color: T.danger, borderColor: `${T.danger}66` }}
+          style={{ ...btnStyle, color: T.danger }}
         >
           [删除区格]
         </button>
-        <button onClick={onClose} style={btnStyle}>
-          [完成]
+        <button onClick={onClose} style={{ ...btnStyle, color: T.textSub }}>
+          [关闭]
         </button>
       </div>
-    </div>
+    </Section>
   );
 }
 
 function BgImagePicker({
+  label,
   image,
   cellId,
   mapId,
   btnStyle: btn,
   onChange,
 }: {
+  label?: string;
   image?: string;
   cellId: number;
   mapId: string;
@@ -888,20 +1173,22 @@ function BgImagePicker({
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      <span style={{ fontSize: "12px", color: T.textSub }}>背景图</span>
+      {label && <span style={{ fontSize: "13px", color: T.textSub }}>{label}</span>}
       {image && (
         <img
           src={`/assets/backgrounds/${image}?t=${Date.now()}`}
           alt=""
-          style={{ height: "28px", width: "48px", objectFit: "cover", borderRadius: "2px", border: `1px solid ${T.border}` }}
+          style={{ height: "24px", width: "42px", objectFit: "cover", borderRadius: "2px", border: `1px solid ${T.border}` }}
         />
       )}
-      <span style={{ fontSize: "11px", color: T.textDim }}>{image ?? "无"}</span>
-      <button onClick={() => fileRef.current?.click()} style={{ ...btn, fontSize: "11px", padding: "2px 6px", color: T.accent }}>
+      <span style={{ fontSize: "11px", color: T.textDim, maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {image ?? "无"}
+      </span>
+      <button onClick={() => fileRef.current?.click()} style={{ ...btn, padding: "2px 8px", color: T.accent }}>
         [选择]
       </button>
       {image && (
-        <button onClick={() => onChange(undefined)} style={{ ...btn, fontSize: "11px", padding: "2px 6px", color: T.danger }}>
+        <button onClick={() => onChange(undefined)} style={{ ...btn, padding: "2px 8px", color: T.danger }}>
           [清除]
         </button>
       )}

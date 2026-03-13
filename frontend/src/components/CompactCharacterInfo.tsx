@@ -24,7 +24,6 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
     border: "none",
     borderBottom: active ? `2px solid ${T.accent}` : "2px solid transparent",
     cursor: "pointer",
-    fontFamily: "monospace",
     fontSize: "12px",
     fontWeight: active ? "bold" : "normal",
   });
@@ -32,7 +31,6 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "13px",
         color: T.text,
         backgroundColor: T.bg1,

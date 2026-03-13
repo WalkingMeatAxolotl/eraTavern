@@ -48,6 +48,7 @@ export interface RawMapData {
   name: string;
   defaultColor: string;
   defaultBackgroundImage?: string;
+  backgroundImage?: string;
   grid: RawGridCell[][];
   cells: MapCell[];
 }

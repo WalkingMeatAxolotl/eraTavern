@@ -75,7 +75,6 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "13px",
         color: T.text,
         backgroundColor: T.bg2,
@@ -156,7 +155,6 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
                     color: T.danger,
                     cursor: "pointer",
                     padding: "0 2px",
-                    fontFamily: "monospace",
                     fontSize: "12px",
                     lineHeight: 1,
                   }}
@@ -190,7 +188,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: `1px solid ${T.border}`, paddingTop: "12px" }}>
         {!isReadOnly && (
           <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
-            [{saving ? "保存中..." : "保存"}]
+            [{saving ? "提交中..." : "确定"}]
           </button>
         )}
         {!isReadOnly && !isNew && (
@@ -227,7 +225,6 @@ function inputStyle(color?: string): React.CSSProperties {
     border: `1px solid ${T.borderLight}`,
     borderRadius: "3px",
     padding: "3px 6px",
-    fontFamily: "monospace",
     fontSize: "13px",
     outline: "none",
   };
@@ -240,7 +237,6 @@ function selectStyle(): React.CSSProperties {
     border: `1px solid ${T.borderLight}`,
     borderRadius: "3px",
     padding: "3px 6px",
-    fontFamily: "monospace",
     fontSize: "13px",
     outline: "none",
     cursor: "pointer",
@@ -255,7 +251,6 @@ function btnStyle(color: string): React.CSSProperties {
     border: `1px solid ${T.border}`,
     borderRadius: "3px",
     cursor: "pointer",
-    fontFamily: "monospace",
     fontSize: "13px",
   };
 }

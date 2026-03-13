@@ -1,130 +1,260 @@
-import { useState, useEffect } from "react";
-import { fetchBackups, restoreBackup } from "../api/client";
+import { useState, useEffect, useCallback } from "react";
 import T from "../theme";
+import { fetchSaves, createSave, loadSave, deleteSave, renameSave, type SaveSlotMeta } from "../api/client";
+
+const MAX_SLOTS = 10;
 
 interface Props {
   worldId: string;
+  addonRefs: { id: string; version: string }[];
   onRestart: () => void;
   onWorldChanged: () => void;
   settingsBtnStyle: React.CSSProperties;
 }
 
-export default function SettingsPage({ worldId, onRestart, onWorldChanged, settingsBtnStyle }: Props) {
-  const [backups, setBackups] = useState<string[]>([]);
-  const [restoring, setRestoring] = useState(false);
-  const [message, setMessage] = useState("");
+const btnBase: React.CSSProperties = {
+  padding: "3px 10px",
+  backgroundColor: T.bg2,
+  border: `1px solid ${T.border}`,
+  borderRadius: "3px",
+  cursor: "pointer",
+  fontSize: "11px",
+  color: T.text,
+};
 
-  useEffect(() => {
-    if (worldId) {
-      fetchBackups().then(setBackups);
-    } else {
-      setBackups([]);
-    }
+const inputStyle: React.CSSProperties = {
+  background: T.bg3,
+  border: `1px solid ${T.border}`,
+  borderRadius: "2px",
+  padding: "4px 6px",
+  color: T.text,
+  fontSize: "12px",
+  outline: "none",
+  boxSizing: "border-box" as const,
+};
+
+export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldChanged, settingsBtnStyle }: Props) {
+  const [saves, setSaves] = useState<SaveSlotMeta[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!worldId) return;
+    try {
+      const list = await fetchSaves();
+      setSaves(list);
+    } catch { /* ignore */ }
   }, [worldId]);
 
-  const handleRestore = async (timestamp: string) => {
-    if (!confirm(`确认回滚到 ${timestamp}？当前运行时状态将被替换。`)) return;
-    setRestoring(true);
-    setMessage("");
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    setLoading(true);
     try {
-      const result = await restoreBackup(timestamp);
-      setMessage(result.success ? "已回滚" : result.message);
-      if (result.success) {
-        onWorldChanged();
-        fetchBackups().then(setBackups);
-      }
-    } catch (e) {
-      setMessage(`回滚失败: ${e}`);
-    } finally {
-      setRestoring(false);
+      const ts = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15);
+      const slotId = `save_${ts}`;
+      const res = await createSave(slotId, newName.trim());
+      if (!res.success) { alert(res.message); return; }
+      setCreating(false);
+      setNewName("");
+      await refresh();
+    } finally { setLoading(false); }
+  };
+
+  const handleLoad = async (slotId: string) => {
+    if (!confirm("当前未保存的进度将丢失，确定要读取存档吗？")) return;
+    setLoading(true);
+    try {
+      const res = await loadSave(slotId);
+      if (!res.success) { alert(res.message); return; }
+    } finally { setLoading(false); }
+  };
+
+  const handleDelete = async (slotId: string) => {
+    if (!confirm("确定要删除此存档吗？")) return;
+    await deleteSave(slotId);
+    await refresh();
+  };
+
+  const handleRename = async (slotId: string) => {
+    if (!renameValue.trim()) return;
+    await renameSave(slotId, renameValue.trim());
+    setRenamingId(null);
+    setRenameValue("");
+    await refresh();
+  };
+
+  const addonMismatch = (saveRefs: { id: string; version: string }[]): boolean => {
+    if (!saveRefs || !addonRefs) return false;
+    const current = new Set(addonRefs.map(a => `${a.id}@${a.version}`));
+    const saved = new Set(saveRefs.map(a => `${a.id}@${a.version}`));
+    if (current.size !== saved.size) return true;
+    for (const s of saved) {
+      if (!current.has(s)) return true;
     }
+    return false;
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontFamily: "monospace", fontSize: "13px", color: T.text }}>
-      <div style={{ color: T.accent, fontSize: "15px", fontWeight: "bold" }}>
-        == 世界设置 ==
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: T.text }}>
 
-      {/* Restart */}
-      <div>
-        <button
-          onClick={onRestart}
-          style={{
-            ...settingsBtnStyle,
-            background: T.dangerBg,
-            color: T.danger,
-            borderColor: `${T.danger}66`,
-          }}
-        >
-          [重新开始游戏]
-        </button>
-        <span style={{ marginLeft: "8px", fontSize: "12px", color: T.textDim }}>
-          重新加载所有数据，重置时间和角色状态
-        </span>
-      </div>
-
-      {/* Backup & Rollback */}
+      {/* Save management */}
       {worldId && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ color: T.accent, fontSize: "14px", fontWeight: "bold" }}>
-            -- 备份与回滚 --
-          </div>
-          <div style={{ color: T.textSub, fontSize: "12px", lineHeight: "1.6" }}>
-            每次 [保存变更] 时自动创建备份（保留最近 5 份）。
-            <br />
-            回滚将恢复世界设置（addon 列表、实体定义）到备份时的状态。
-            <br />
-            <span style={{ color: T.textDim }}>注意：回滚不影响运行时存档数据（位置、库存等）。</span>
-          </div>
+        <>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+            == 存档管理 ==
+          </span>
 
-          {backups.length === 0 ? (
-            <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>
-              暂无备份
+          {/* Create save */}
+          {!creating ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <button
+                onClick={() => setCreating(true)}
+                disabled={loading || saves.length >= MAX_SLOTS}
+                style={{
+                  ...btnBase,
+                  color: saves.length >= MAX_SLOTS ? T.textFaint : T.successDim,
+                  borderColor: saves.length >= MAX_SLOTS ? T.border : `${T.success}66`,
+                  opacity: saves.length >= MAX_SLOTS ? 0.5 : 1,
+                  cursor: saves.length >= MAX_SLOTS ? "not-allowed" : "pointer",
+                }}
+              >
+                [创建存档]
+              </button>
+              {saves.length >= MAX_SLOTS && (
+                <span style={{ fontSize: "11px", color: T.textDim }}>
+                  已达上限 {MAX_SLOTS} 个
+                </span>
+              )}
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {backups.map((ts) => (
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <input
+                autoFocus
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") setCreating(false); }}
+                placeholder="存档名称"
+                style={{ ...inputStyle, flex: 1, maxWidth: 200 }}
+              />
+              <button
+                onClick={handleCreate}
+                disabled={loading || !newName.trim()}
+                style={{ ...btnBase, opacity: !newName.trim() ? 0.5 : 1 }}
+              >
+                确定
+              </button>
+              <button onClick={() => { setCreating(false); setNewName(""); }} style={btnBase}>
+                取消
+              </button>
+            </div>
+          )}
+
+          {/* Save list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            {saves.map(s => {
+              const mismatch = addonMismatch(s.addonRefs);
+              const isRenaming = renamingId === s.slotId;
+              return (
                 <div
-                  key={ts}
+                  key={s.slotId}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "6px 10px",
-                    backgroundColor: T.bg3,
-                    border: `1px solid ${T.borderDim}`,
+                    padding: "7px 12px",
+                    backgroundColor: T.bg1,
                     borderRadius: "3px",
                   }}
                 >
-                  <span style={{ color: T.textSub, fontSize: "12px" }}>{ts}</span>
-                  <button
-                    onClick={() => handleRestore(ts)}
-                    disabled={restoring}
-                    style={{
-                      padding: "3px 10px",
-                      backgroundColor: T.bg2,
-                      color: T.accent,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "3px",
-                      cursor: restoring ? "not-allowed" : "pointer",
-                      fontFamily: "monospace",
-                      fontSize: "11px",
-                    }}
-                  >
-                    [回滚]
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                  {/* Left: name + metadata */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {isRenaming ? (
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                        <input
+                          autoFocus
+                          value={renameValue}
+                          onChange={e => setRenameValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") handleRename(s.slotId); if (e.key === "Escape") setRenamingId(null); }}
+                          style={{ ...inputStyle, flex: 1, maxWidth: 180 }}
+                        />
+                        <button onClick={() => handleRename(s.slotId)} style={btnBase}>确定</button>
+                        <button onClick={() => setRenamingId(null)} style={btnBase}>取消</button>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: "13px" }}>{s.name}</div>
+                        <div style={{ fontSize: "11px", color: T.textDim, marginTop: "2px" }}>
+                          {s.gameTimeDisplay}
+                          <span style={{ margin: "0 4px", color: T.textFaint }}>&middot;</span>
+                          {s.timestamp?.replace("T", " ")}
+                          {mismatch && (
+                            <span style={{ color: T.danger, marginLeft: "6px" }} title="存档的扩展版本与当前不一致">
+                              [版本不匹配]
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
 
-          {message && (
-            <span style={{ color: message === "已回滚" ? T.success : T.accent, fontSize: "12px" }}>
-              {message}
+                  {/* Right: action buttons */}
+                  {!isRenaming && (
+                    <div style={{ display: "flex", gap: "4px", marginLeft: "8px", flexShrink: 0 }}>
+                      <button onClick={() => handleLoad(s.slotId)} disabled={loading} style={btnBase}>
+                        [读取]
+                      </button>
+                      <button
+                        onClick={() => { setRenamingId(s.slotId); setRenameValue(s.name); }}
+                        style={btnBase}
+                      >
+                        [重命名]
+                      </button>
+                      <button
+                        onClick={() => handleDelete(s.slotId)}
+                        style={{ ...btnBase, color: T.danger, borderColor: `${T.danger}66` }}
+                      >
+                        [删除]
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {saves.length === 0 && (
+              <div style={{ color: T.textDim, fontSize: "11px", padding: "4px 0" }}>暂无存档</div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Restart — destructive, placed last */}
+      {worldId && (
+        <>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+            == 世界设置 ==
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              onClick={onRestart}
+              style={{
+                ...btnBase,
+                background: T.dangerBg,
+                color: T.danger,
+                borderColor: `${T.danger}66`,
+              }}
+            >
+              [重新开始游戏]
+            </button>
+            <span style={{ fontSize: "11px", color: T.textDim }}>
+              重新加载所有数据，重置时间和角色状态
             </span>
-          )}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

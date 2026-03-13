@@ -64,7 +64,6 @@ const inputStyle: React.CSSProperties = {
   color: T.text,
   border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
-  fontFamily: "monospace",
   fontSize: "12px",
 };
 
@@ -128,7 +127,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       const result = isNew
         ? await createTraitDef(data)
         : await saveTraitDef(id, data);
-      setMessage(result.success ? "已保存" : result.message);
+      setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         // Return to list after creating
         setTimeout(onBack, 500);
@@ -166,7 +165,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
   };
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
@@ -398,7 +397,6 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                     border: "none",
                     color: T.danger,
                     cursor: "pointer",
-                    fontFamily: "monospace",
                     fontSize: "14px",
                     padding: "0 4px",
                   }}
@@ -419,7 +417,6 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 border: `1px solid ${T.border}`,
                 borderRadius: "3px",
                 cursor: "pointer",
-                fontFamily: "monospace",
                 fontSize: "12px",
                 alignSelf: "flex-start",
               }}
@@ -443,11 +440,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
-              fontFamily: "monospace",
               fontSize: "13px",
             }}
           >
-            [保存]
+            [确定]
           </button>
         )}
         {!isReadOnly && !isNew && (
@@ -461,7 +457,6 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
-              fontFamily: "monospace",
               fontSize: "13px",
             }}
           >
@@ -477,14 +472,13 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
             border: `1px solid ${T.border}`,
             borderRadius: "3px",
             cursor: "pointer",
-            fontFamily: "monospace",
             fontSize: "13px",
           }}
         >
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>
+          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>
             {message}
           </span>
         )}

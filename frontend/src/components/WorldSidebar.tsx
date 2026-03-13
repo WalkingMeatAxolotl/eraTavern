@@ -127,7 +127,6 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
     border: `1px solid ${T.border}`,
     borderRadius: "2px",
     color: T.text,
-    fontFamily: "monospace",
     fontSize: "12px",
     boxSizing: "border-box",
   };
@@ -137,7 +136,6 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
     backgroundColor: "transparent",
     color: T.textSub,
     border: `1px solid ${T.border}`,
-    fontFamily: "monospace",
     fontSize: "12px",
     cursor: "pointer",
   };
@@ -148,7 +146,6 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
     border: `1px solid ${T.border}`,
     borderRadius: "3px",
     cursor: "pointer",
-    fontFamily: "monospace",
     fontSize: "11px",
   };
 
@@ -219,7 +216,7 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
       {/* World list */}
       <div style={{
         flex: 1,
-        overflowY: "auto",
+        overflowY: "scroll",
         padding: "8px",
         display: "flex",
         flexDirection: "column",
@@ -276,14 +273,14 @@ export default function WorldSidebar({ currentWorldId, currentAddons, onWorldCha
                   }}>
                     {w.name}
                   </div>
-                  <div style={{ fontSize: "10px", color: T.textFaint }}>
+                  <div style={{ fontSize: "11px", color: T.textFaint }}>
                     {addonCount} addon{addonCount !== 1 ? "s" : ""}
                   </div>
                 </div>
                 {active && (
-                  <span style={{ fontSize: "10px", color: T.accent, flexShrink: 0 }}>当前</span>
+                  <span style={{ fontSize: "11px", color: T.accent, flexShrink: 0 }}>当前</span>
                 )}
-                <span style={{ color: T.textFaint, fontSize: "10px" }}>
+                <span style={{ color: T.textFaint, fontSize: "11px" }}>
                   {expanded ? "\u25B2" : "\u25BC"}
                 </span>
               </div>

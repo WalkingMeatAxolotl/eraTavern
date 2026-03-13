@@ -4,11 +4,13 @@ import type { GameDefinitions, RawCharacterData } from "../types/game";
 import { fetchDefinitions, fetchCharacterConfigs, patchCharacter } from "../api/client";
 import CharacterEditor from "./CharacterEditor";
 
-export default function CharacterManager({ selectedAddon }: { selectedAddon: string | null }) {
+export default function CharacterManager({ selectedAddon, onEditingChange }: { selectedAddon: string | null; onEditingChange?: (editing: boolean) => void }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [characters, setCharacters] = useState<RawCharacterData[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
+
+  useEffect(() => { onEditingChange?.(editingId !== null); }, [editingId, onEditingChange]);
 
   const loadData = useCallback(async () => {
     const [defs, chars] = await Promise.all([
@@ -59,7 +61,7 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
 
   if (!definitions) {
     return (
-      <div style={{ color: T.textDim, fontFamily: "monospace", padding: "20px", textAlign: "center" }}>
+      <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>
         加载中...
       </div>
     );
@@ -114,7 +116,6 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "13px",
         color: T.text,
         padding: "12px 0",
@@ -134,7 +135,6 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
               border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: "pointer",
-              fontFamily: "monospace",
               fontSize: "13px",
             }}
           >
@@ -168,7 +168,6 @@ export default function CharacterManager({ selectedAddon }: { selectedAddon: str
                   border: "none",
                   color: T.text,
                   cursor: "pointer",
-                  fontFamily: "monospace",
                   fontSize: "13px",
                   textAlign: "left",
                   padding: 0,

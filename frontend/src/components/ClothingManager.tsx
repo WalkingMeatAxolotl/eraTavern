@@ -19,12 +19,20 @@ const SLOT_LABELS: Record<string, string> = {
   accessory3: "装饰品3",
 };
 
-export default function ClothingManager({ selectedAddon }: { selectedAddon: string | null }) {
+const hoverStyles = `
+  .cm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
+  .cm-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
+  .cm-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
+`;
+
+export default function ClothingManager({ selectedAddon, onEditingChange }: { selectedAddon: string | null; onEditingChange?: (editing: boolean) => void }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [clothing, setClothing] = useState<ClothingDefinition[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  useEffect(() => { onEditingChange?.(editingId !== null); }, [editingId, onEditingChange]);
 
   const loadData = useCallback(async () => {
     const [defs, clothingList] = await Promise.all([
@@ -61,7 +69,7 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
 
   if (!definitions) {
     return (
-      <div style={{ color: T.textDim, fontFamily: "monospace", padding: "20px", textAlign: "center" }}>
+      <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>
         加载中...
       </div>
     );
@@ -114,18 +122,19 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "13px",
         color: T.text,
         padding: "12px 0",
       }}
     >
+      <style>{hoverStyles}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == 服装列表 ==
         </span>
         {!readOnly && (
           <button
+            className="cm-action-btn"
             onClick={handleNew}
             style={{
               padding: "4px 12px",
@@ -134,7 +143,6 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
               border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: "pointer",
-              fontFamily: "monospace",
               fontSize: "13px",
             }}
           >
@@ -150,6 +158,7 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
           return (
             <div key={slotKey}>
               <button
+                className="cm-cat-btn"
                 onClick={() => toggleCollapse(slotKey)}
                 style={{
                   width: "100%",
@@ -159,17 +168,20 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
                   color: T.textSub,
                   border: "none",
                   cursor: "pointer",
-                  fontFamily: "monospace",
                   fontSize: "13px",
                   borderRadius: "3px",
+                  transition: "background-color 0.1s, color 0.1s",
                 }}
               >
-                {isCollapsed ? "\u25B6" : "\u25BC"} {SLOT_LABELS[slotKey] ?? slotKey} ({items.length})
+                <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+                  {isCollapsed ? "\u25B6" : "\u25BC"}
+                </span> {SLOT_LABELS[slotKey] ?? slotKey} ({items.length})
               </button>
               {!isCollapsed && items.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
                   {items.map((c) => (
                     <button
+                      className="cm-item"
                       key={c.id}
                       onClick={() => handleEdit(c.id)}
                       style={{
@@ -180,8 +192,8 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
                         border: `1px solid ${T.border}`,
                         borderRadius: "3px",
                         cursor: "pointer",
-                        fontFamily: "monospace",
                         fontSize: "12px",
+                        transition: "background-color 0.15s, border-color 0.15s",
                       }}
                     >
                       {c.name || c.id}
@@ -199,6 +211,7 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
         {grouped["__other__"] && grouped["__other__"].length > 0 && (
           <div>
             <button
+              className="cm-cat-btn"
               onClick={() => toggleCollapse("__other__")}
               style={{
                 width: "100%",
@@ -208,17 +221,20 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
                 color: T.textSub,
                 border: "none",
                 cursor: "pointer",
-                fontFamily: "monospace",
                 fontSize: "13px",
                 borderRadius: "3px",
+                transition: "background-color 0.1s, color 0.1s",
               }}
             >
-              {collapsed["__other__"] ? "\u25B6" : "\u25BC"} 未分类 ({grouped["__other__"].length})
+              <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+                {collapsed["__other__"] ? "\u25B6" : "\u25BC"}
+              </span> 未分类 ({grouped["__other__"].length})
             </button>
             {!collapsed["__other__"] && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
                 {grouped["__other__"].map((c) => (
                   <button
+                    className="cm-item"
                     key={c.id}
                     onClick={() => handleEdit(c.id)}
                     style={{
@@ -229,8 +245,8 @@ export default function ClothingManager({ selectedAddon }: { selectedAddon: stri
                       border: `1px solid ${T.border}`,
                       borderRadius: "3px",
                       cursor: "pointer",
-                      fontFamily: "monospace",
                       fontSize: "12px",
+                      transition: "background-color 0.15s, border-color 0.15s",
                     }}
                   >
                     {c.name || c.id}

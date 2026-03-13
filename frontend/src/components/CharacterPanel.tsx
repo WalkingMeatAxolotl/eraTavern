@@ -28,7 +28,6 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
     border: "none",
     borderBottom: activeTab === tab ? `2px solid ${T.accent}` : "2px solid transparent",
     cursor: "pointer",
-    fontFamily: "monospace",
     fontSize: "12px",
     fontWeight: activeTab === tab ? "bold" : "normal",
   });
@@ -36,7 +35,6 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "13px",
         color: T.text,
         backgroundColor: T.bg1,

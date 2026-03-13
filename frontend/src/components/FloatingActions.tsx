@@ -46,7 +46,6 @@ export default function FloatingActions({
     border: `1px solid ${T.border}`,
     borderRadius: "3px",
     cursor: busy ? "not-allowed" : "pointer",
-    fontFamily: "monospace",
     fontSize: "12px",
     opacity: busy ? 0.6 : 1,
     backgroundColor: T.bg2,
@@ -67,7 +66,6 @@ export default function FloatingActions({
         border: `1px solid ${T.border}`,
         borderRadius: "6px",
         zIndex: 90,
-        fontFamily: "monospace",
         fontSize: "12px",
         boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
       }}

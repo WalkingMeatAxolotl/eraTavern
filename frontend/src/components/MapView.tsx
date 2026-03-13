@@ -56,7 +56,6 @@ export default function MapView({ map, playerCellId, onCellClick }: MapViewProps
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "14px",
         backgroundColor: map.defaultColor,
         padding: "12px",

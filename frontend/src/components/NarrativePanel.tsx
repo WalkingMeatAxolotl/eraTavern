@@ -15,7 +15,6 @@ export default function NarrativePanel({ messages }: NarrativePanelProps) {
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "13px",
         color: T.text,
         backgroundColor: T.bg1,

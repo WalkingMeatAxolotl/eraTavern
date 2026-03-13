@@ -4,12 +4,20 @@ import type { ActionDefinition, GameDefinitions } from "../types/game";
 import { fetchActionDefs, fetchDefinitions } from "../api/client";
 import ActionEditor from "./ActionEditor";
 
-export default function ActionManager({ selectedAddon }: { selectedAddon: string | null }) {
+const hoverStyles = `
+  .am-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
+  .am-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
+  .am-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
+`;
+
+export default function ActionManager({ selectedAddon, onEditingChange }: { selectedAddon: string | null; onEditingChange?: (editing: boolean) => void }) {
   const [actions, setActions] = useState<ActionDefinition[]>([]);
   const [defs, setDefs] = useState<GameDefinitions | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
+
+  useEffect(() => { onEditingChange?.(editingId !== null); }, [editingId, onEditingChange]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const loadData = useCallback(async () => {
@@ -64,7 +72,7 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
 
   if (loading || !defs) {
     return (
-      <div style={{ color: T.textDim, fontFamily: "monospace", padding: "20px", textAlign: "center" }}>
+      <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>
         加载中...
       </div>
     );
@@ -100,18 +108,19 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
   return (
     <div
       style={{
-        fontFamily: "monospace",
         fontSize: "13px",
         color: T.text,
         padding: "12px 0",
       }}
     >
+      <style>{hoverStyles}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == 行动列表 ==
         </span>
         {!readOnly && (
           <button
+            className="am-action-btn"
             onClick={handleNew}
             style={{
               padding: "4px 12px",
@@ -120,7 +129,6 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
               border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: "pointer",
-              fontFamily: "monospace",
               fontSize: "13px",
             }}
           >
@@ -137,6 +145,7 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
           return (
             <div key={cat}>
               <button
+                className="am-cat-btn"
                 onClick={() => toggleCollapse(cat)}
                 style={{
                   width: "100%",
@@ -146,17 +155,20 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
                   color: T.textSub,
                   border: "none",
                   cursor: "pointer",
-                  fontFamily: "monospace",
                   fontSize: "13px",
                   borderRadius: "3px",
+                  transition: "background-color 0.1s, color 0.1s",
                 }}
               >
-                {isCollapsed ? "\u25B6" : "\u25BC"} {displayCat} ({catActions.length})
+                <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+                  {isCollapsed ? "\u25B6" : "\u25BC"}
+                </span> {displayCat} ({catActions.length})
               </button>
               {!isCollapsed && catActions.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
                   {catActions.map((action) => (
                     <button
+                      className="am-item"
                       key={action.id}
                       onClick={() => handleEdit(action.id)}
                       style={{
@@ -167,8 +179,8 @@ export default function ActionManager({ selectedAddon }: { selectedAddon: string
                         border: `1px solid ${T.border}`,
                         borderRadius: "3px",
                         cursor: "pointer",
-                        fontFamily: "monospace",
                         fontSize: "12px",
+                        transition: "background-color 0.15s, border-color 0.15s",
                       }}
                     >
                       {action.name || action.id}

@@ -62,7 +62,6 @@ const inputStyle: React.CSSProperties = {
   color: T.text,
   border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
-  fontFamily: "monospace",
   fontSize: "12px",
 };
 
@@ -126,7 +125,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
       const result = isNew
         ? await createClothingDef(data)
         : await saveClothingDef(id, data);
-      setMessage(result.success ? "已保存" : result.message);
+      setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
       }
@@ -159,7 +158,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
   const occlusionOptions = slots.filter((s) => s !== slot && !occlusion.includes(s));
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
@@ -216,7 +215,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
       {/* Occlusion */}
       <div style={{ marginBottom: "16px" }}>
         <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>遮挡槽位</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
+        <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
           {occlusion.map((s) => (
             <span
               key={s}
@@ -241,7 +240,6 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                     color: T.danger,
                     cursor: "pointer",
                     padding: "0 2px",
-                    fontFamily: "monospace",
                     fontSize: "12px",
                     lineHeight: 1,
                   }}
@@ -273,7 +271,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
       {/* Effects */}
       <div style={{ marginBottom: "16px" }}>
         <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>效果</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexDirection: "column", gap: "4px" }}>
           {effects.map((eff, idx) => (
             <div
               key={idx}
@@ -338,7 +336,6 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                     border: "none",
                     color: T.danger,
                     cursor: "pointer",
-                    fontFamily: "monospace",
                     fontSize: "14px",
                     padding: "0 4px",
                   }}
@@ -348,25 +345,24 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               )}
             </div>
           ))}
+          {!isReadOnly && (
+            <button
+              onClick={addEffect}
+              style={{
+                marginTop: "6px",
+                padding: "3px 10px",
+                backgroundColor: T.bg2,
+                color: T.successDim,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+            >
+              [+ 添加效果]
+            </button>
+          )}
         </div>
-        {!isReadOnly && (
-          <button
-            onClick={addEffect}
-            style={{
-              marginTop: "6px",
-              padding: "3px 10px",
-              backgroundColor: T.bg2,
-              color: T.successDim,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "12px",
-            }}
-          >
-            [+ 添加效果]
-          </button>
-        )}
       </div>
 
       {/* Action bar */}
@@ -382,11 +378,10 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
-              fontFamily: "monospace",
               fontSize: "13px",
             }}
           >
-            [保存]
+            [确定]
           </button>
         )}
         {!isReadOnly && !isNew && (
@@ -400,7 +395,6 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               border: `1px solid ${T.border}`,
               borderRadius: "3px",
               cursor: saving ? "not-allowed" : "pointer",
-              fontFamily: "monospace",
               fontSize: "13px",
             }}
           >
@@ -416,14 +410,13 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             border: `1px solid ${T.border}`,
             borderRadius: "3px",
             cursor: "pointer",
-            fontFamily: "monospace",
             fontSize: "13px",
           }}
         >
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>
+          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>
             {message}
           </span>
         )}

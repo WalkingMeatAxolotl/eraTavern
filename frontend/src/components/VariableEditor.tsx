@@ -45,7 +45,6 @@ const inputStyle: React.CSSProperties = {
   color: T.text,
   border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
-  fontFamily: "monospace",
   fontSize: "12px",
 };
 
@@ -66,7 +65,6 @@ const btnBase: React.CSSProperties = {
   border: `1px solid ${T.border}`,
   borderRadius: "3px",
   cursor: "pointer",
-  fontFamily: "monospace",
   fontSize: "12px",
 };
 
@@ -206,7 +204,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         ? await createVariableDef(data)
         : await saveVariableDef(variable.id, data);
       if (result.success) {
-        setMessage("已保存");
+        setMessage("已确定");
         if (isNew) setTimeout(onBack, 500);
       } else {
         setMessage(result.message);
@@ -298,7 +296,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
   };
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
@@ -311,14 +309,14 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           )}
           {!isReadOnly && (
             <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim, opacity: saving ? 0.6 : 1 }}>
-              {saving ? "保存中..." : "[保存]"}
+              {saving ? "提交中..." : "[确定]"}
             </button>
           )}
         </div>
       </div>
 
       {message && (
-        <div style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px", marginBottom: "8px" }}>
+        <div style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px", marginBottom: "8px" }}>
           {message}
         </div>
       )}
@@ -373,7 +371,6 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                 border: `1px solid ${tags.includes(tag) ? T.accentDim : T.border}`,
                 borderRadius: "3px",
                 cursor: isReadOnly ? "default" : "pointer",
-                fontFamily: "monospace",
                 fontSize: "11px",
               }}
             >
@@ -401,38 +398,40 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       {/* Steps editor */}
       <div style={{ marginBottom: "12px" }}>
         <div style={{ ...labelStyle, marginBottom: "6px" }}>计算步骤</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          {steps.map((step, i) => (
-            <StepRow
-              key={i}
-              step={step}
-              index={i}
-              isFirst={i === 0}
-              isLast={i === steps.length - 1}
-              readOnly={isReadOnly}
-              allVariables={allVariables}
-              currentVarId={variable.id}
-              definitions={definitions}
-              onChange={(patch) => updateStep(i, patch)}
-              onRemove={() => removeStep(i)}
-              onMove={moveStep}
-            />
-          ))}
+        <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {steps.map((step, i) => (
+              <StepRow
+                key={i}
+                step={step}
+                index={i}
+                isFirst={i === 0}
+                isLast={i === steps.length - 1}
+                readOnly={isReadOnly}
+                allVariables={allVariables}
+                currentVarId={variable.id}
+                definitions={definitions}
+                onChange={(patch) => updateStep(i, patch)}
+                onRemove={() => removeStep(i)}
+                onMove={moveStep}
+              />
+            ))}
+          </div>
+          {!isReadOnly && (
+            <button
+              onClick={addStep}
+              style={{
+                ...btnBase,
+                color: T.successDim,
+                marginTop: "6px",
+                width: "100%",
+                textAlign: "center",
+              }}
+            >
+              [+ 添加步骤]
+            </button>
+          )}
         </div>
-        {!isReadOnly && (
-          <button
-            onClick={addStep}
-            style={{
-              ...btnBase,
-              color: T.successDim,
-              marginTop: "6px",
-              width: "100%",
-              textAlign: "center",
-            }}
-          >
-            [+ 添加步骤]
-          </button>
-        )}
       </div>
 
       {/* Test panel */}
@@ -455,7 +454,6 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             color: testOpen ? T.accent : T.textSub,
             border: "none",
             cursor: "pointer",
-            fontFamily: "monospace",
             fontSize: "13px",
           }}
         >
@@ -579,7 +577,6 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
     border: "none",
     color: T.textDim,
     cursor: readOnly ? "default" : "pointer",
-    fontFamily: "monospace",
     fontSize: "12px",
     padding: "2px 4px",
     lineHeight: 1,
@@ -794,7 +791,7 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
                   <option key={d.id} value={d.id}>{d.name} ({d.id})</option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "10px", whiteSpace: "nowrap" }} title="拥有=1, 没有=0">1/0</span>
+              <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }} title="拥有=1, 没有=0">1/0</span>
             </>
           );
         })()}

@@ -12,7 +12,6 @@ const tabBase: React.CSSProperties = {
   borderBottom: "none",
   borderRadius: "4px 4px 0 0",
   cursor: "pointer",
-  fontFamily: "monospace",
   fontSize: "12px",
   background: "none",
 };

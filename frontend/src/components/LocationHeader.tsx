@@ -78,7 +78,6 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
           position: "absolute",
           top: "10px",
           left: "12px",
-          fontFamily: "monospace",
           fontSize: "13px",
           color: T.text,
           textShadow: "1px 1px 3px rgba(0,0,0,0.9)",
@@ -120,7 +119,6 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
                 borderRadius: "4px",
                 padding: "6px 10px",
                 cursor: "pointer",
-                fontFamily: "monospace",
                 fontSize: "18px",
                 zIndex: 3,
               }}
@@ -165,7 +163,6 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
                 borderRadius: "4px",
                 padding: "6px 10px",
                 cursor: "pointer",
-                fontFamily: "monospace",
                 fontSize: "18px",
                 zIndex: 3,
               }}

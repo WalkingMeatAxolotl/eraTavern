@@ -18,7 +18,7 @@ from game.map_engine import compile_grid
 from game.character import namespace_id, to_local_id, get_addon_from_id
 from game.addon_loader import (
     ADDONS_DIR, get_addon_dir, fork_addon_version, list_addon_versions,
-    build_addon_dirs, list_backups as _list_backups, restore_backup as _restore_backup,
+    build_addon_dirs,
 )
 
 CONFIG_PATH = Path(__file__).parent.parent / "config.json"
@@ -246,6 +246,9 @@ async def delete_world(world_id: str):
     if not world_dir.exists():
         return {"success": False, "message": f"World '{world_id}' not found"}
     _shutil.rmtree(world_dir)
+    # Also clean up saves for this world
+    from game.save_manager import delete_world_saves
+    delete_world_saves(world_id)
     return {"success": True, "message": f"World '{world_id}' deleted"}
 
 
@@ -373,6 +376,96 @@ async def restart_game():
     return {"success": True, "message": f"World '{game_state.world_name}' restarted"}
 
 
+# ── Save Slot endpoints ──
+
+@app.get("/api/saves")
+async def list_saves_endpoint():
+    """List all save slots for the current world."""
+    from game.save_manager import list_saves
+    if not game_state.world_id:
+        return {"saves": []}
+    saves = list_saves(game_state.world_id)
+    return {"saves": saves}
+
+
+@app.post("/api/saves")
+async def create_save_endpoint(body: dict = Body(...)):
+    """Create or overwrite a save slot."""
+    from game.save_manager import create_save, list_saves, MAX_SLOTS
+    from datetime import datetime
+    if not game_state.world_id:
+        return {"success": False, "message": "No world loaded"}
+    slot_id = body.get("slotId", "")
+    name = body.get("name", "")
+    if not slot_id:
+        slot_id = "save_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    if not name:
+        name = slot_id
+
+    # Check slot limit (only for new saves)
+    existing = list_saves(game_state.world_id)
+    existing_ids = {m["slotId"] for m in existing}
+    if slot_id not in existing_ids and len(existing) >= MAX_SLOTS:
+        return {"success": False, "message": f"Maximum {MAX_SLOTS} save slots reached"}
+
+    runtime = game_state.snapshot_save_data()
+    time_dict = game_state.time.to_dict()
+    meta_info = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "worldId": game_state.world_id,
+        "worldName": game_state.world_name,
+        "gameTimeDisplay": time_dict.get("displayText", ""),
+        "addonRefs": game_state.addon_refs,
+    }
+    meta = create_save(game_state.world_id, slot_id, name, runtime, meta_info)
+    return {"success": True, "meta": meta}
+
+
+@app.post("/api/saves/{slot_id:path}/load")
+async def load_save_endpoint(slot_id: str):
+    """Load a save slot: reload world then restore runtime."""
+    from game.save_manager import load_save
+    if not game_state.world_id:
+        return {"success": False, "message": "No world loaded"}
+    save_data = load_save(game_state.world_id, slot_id)
+    if save_data is None:
+        return {"success": False, "message": f"Save '{slot_id}' not found"}
+    # Reload world from disk (resets everything)
+    game_state.load_world(game_state.world_id)
+    # Restore runtime from save
+    game_state.restore_save_data(save_data["runtime"])
+    state = game_state.get_full_state()
+    await manager.broadcast({"type": "game_changed", "data": state})
+    return {"success": True, "message": f"Save '{slot_id}' loaded"}
+
+
+@app.delete("/api/saves/{slot_id:path}")
+async def delete_save_endpoint(slot_id: str):
+    """Delete a save slot."""
+    from game.save_manager import delete_save
+    if not game_state.world_id:
+        return {"success": False, "message": "No world loaded"}
+    ok = delete_save(game_state.world_id, slot_id)
+    if not ok:
+        return {"success": False, "message": f"Save '{slot_id}' not found"}
+    return {"success": True, "message": f"Save '{slot_id}' deleted"}
+
+
+@app.patch("/api/saves/{slot_id:path}")
+async def rename_save_endpoint(slot_id: str, body: dict = Body(...)):
+    """Rename a save slot."""
+    from game.save_manager import rename_save
+    if not game_state.world_id:
+        return {"success": False, "message": "No world loaded"}
+    name = body.get("name", "")
+    if not name:
+        return {"success": False, "message": "Name is required"}
+    ok = rename_save(game_state.world_id, slot_id, name)
+    if not ok:
+        return {"success": False, "message": f"Save '{slot_id}' not found"}
+    return {"success": True, "message": f"Save renamed to '{name}'"}
+
+
 @app.get("/assets/{path:path}")
 async def serve_asset(path: str):
     """Serve static assets. Path format: {addonId}/{subfolder}/{filename}."""
@@ -468,6 +561,24 @@ async def perform_action(req: ActionRequest):
     result = execute_action(game_state, _ensure_ns(req.characterId), action_data)
 
     if result.get("success"):
+        # Append to action log for LLM / save persistence
+        game_state.action_log.append({
+            "message": result.get("message", ""),
+            "actionId": result.get("actionId", ""),
+            "actionName": result.get("actionName", ""),
+            "outcomeGrade": result.get("outcomeGrade"),
+            "outcomeLabel": result.get("outcomeLabel"),
+            "effectsSummary": result.get("effectsSummary", []),
+            "npcLog": result.get("npcLog", []),
+            "totalDays": game_state.time.total_days,
+        })
+        # Trim action log to retention limit (30 game days)
+        cutoff = game_state.time.total_days - game_state.ACTION_LOG_SAVE_DAYS
+        if game_state.action_log and game_state.action_log[0].get("totalDays", 0) < cutoff:
+            game_state.action_log = [
+                e for e in game_state.action_log
+                if e.get("totalDays", 0) >= cutoff
+            ]
         # Broadcast updated state to all WebSocket clients
         state = game_state.get_full_state()
         await manager.broadcast({"type": "state_update", "data": state})
@@ -1199,31 +1310,6 @@ async def apply_changes(body: dict = Body({})):
     """Legacy: redirects to save."""
     return await save_session(body)
 
-
-@app.get("/api/session/backups")
-async def get_backups():
-    """List available backups for current world."""
-    if not game_state.world_id:
-        return {"backups": []}
-    return {"backups": _list_backups(game_state.world_id)}
-
-
-@app.post("/api/session/restore-backup")
-async def restore_backup_endpoint(body: dict = Body(...)):
-    """Restore a world backup by timestamp."""
-    if not game_state.world_id:
-        return {"success": False, "message": "No world loaded"}
-    timestamp = body.get("timestamp", "")
-    if not timestamp:
-        return {"success": False, "message": "Missing timestamp"}
-    ok = _restore_backup(game_state.world_id, timestamp)
-    if not ok:
-        return {"success": False, "message": f"Backup '{timestamp}' not found"}
-    # Reload world from disk after restore
-    game_state.load_world(game_state.world_id)
-    state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
-    return {"success": True, "message": f"Restored backup from {timestamp}"}
 
 
 # --- WebSocket ---

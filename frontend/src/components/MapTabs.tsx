@@ -35,7 +35,6 @@ export default function MapTabs({
               border: `1px solid ${T.border}`,
               borderBottom: isActive ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
               cursor: "pointer",
-              fontFamily: "monospace",
               fontSize: "13px",
             }}
           >
@@ -54,7 +53,6 @@ export default function MapTabs({
           border: `1px solid ${T.border}`,
           borderRadius: "4px",
           cursor: "pointer",
-          fontFamily: "monospace",
           fontSize: "12px",
         }}
       >

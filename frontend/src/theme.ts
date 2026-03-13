@@ -40,6 +40,11 @@ const T = {
   actionMove: "#0ff",
   actionLook: "#6ec6ff",
   actionConfigured: "#ff0",
+  // ── Typography ──
+  fontMono: '"Consolas", "Menlo", "Monaco", "Courier New", monospace',
+  fontBase: 13,        // px — default body size
+  fontSm: 12,          // px — secondary text, chips, tags
+  fontXs: 11,          // px — smallest readable (labels, hints)
 } as const;
 
 export default T;

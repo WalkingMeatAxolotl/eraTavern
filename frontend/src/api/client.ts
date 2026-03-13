@@ -127,21 +127,6 @@ export async function deleteAddon(addonId: string, version: string): Promise<{ s
 }
 
 
-export async function fetchBackups(): Promise<string[]> {
-  const res = await fetch("/api/session/backups");
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.backups ?? [];
-}
-
-export async function restoreBackup(timestamp: string): Promise<{ success: boolean; message: string }> {
-  const res = await fetch("/api/session/restore-backup", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ timestamp }),
-  });
-  return res.json();
-}
 
 /** @deprecated Use fetchWorlds */
 export const fetchGames = fetchWorlds;
@@ -599,6 +584,57 @@ export async function uploadAsset(file: File, folder: "characters" | "background
     body: formData,
   });
   if (!res.ok) throw new Error(`Failed to upload asset: ${res.status}`);
+  return res.json();
+}
+
+// --- Save Slot APIs ---
+
+export interface SaveSlotMeta {
+  slotId: string;
+  name: string;
+  timestamp: string;
+  worldId: string;
+  worldName: string;
+  gameTimeDisplay: string;
+  addonRefs: { id: string; version: string }[];
+}
+
+export async function fetchSaves(): Promise<SaveSlotMeta[]> {
+  const res = await fetch("/api/saves");
+  if (!res.ok) throw new Error(`Failed to fetch saves: ${res.status}`);
+  const data = await res.json();
+  return data.saves ?? [];
+}
+
+export async function createSave(slotId: string, name: string): Promise<{ success: boolean; meta?: SaveSlotMeta; message?: string }> {
+  const res = await fetch("/api/saves", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slotId, name }),
+  });
+  return res.json();
+}
+
+export async function loadSave(slotId: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`/api/saves/${encodeURIComponent(slotId)}/load`, {
+    method: "POST",
+  });
+  return res.json();
+}
+
+export async function deleteSave(slotId: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`/api/saves/${encodeURIComponent(slotId)}`, {
+    method: "DELETE",
+  });
+  return res.json();
+}
+
+export async function renameSave(slotId: string, name: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`/api/saves/${encodeURIComponent(slotId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
   return res.json();
 }
 

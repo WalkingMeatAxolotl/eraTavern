@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 import { fetchMapsRaw, createMap } from "../api/client";
 import MapEditor from "./MapEditor";
 
-export default function MapManager({ selectedAddon }: { selectedAddon: string | null }) {
+export default function MapManager({ selectedAddon, onEditingChange }: { selectedAddon: string | null; onEditingChange?: (editing: boolean) => void }) {
   const [maps, setMaps] = useState<{ id: string; name: string; source?: string }[]>([]);
   const [editingMapId, setEditingMapId] = useState<string | null>(null);
+
+  useEffect(() => { onEditingChange?.(editingMapId !== null); }, [editingMapId, onEditingChange]);
+
   const [creating, setCreating] = useState(false);
   const [newId, setNewId] = useState("");
   const [newName, setNewName] = useState("");
@@ -22,7 +25,9 @@ export default function MapManager({ selectedAddon }: { selectedAddon: string | 
 
   const handleCreate = async () => {
     if (!newId.trim() || !newName.trim()) return;
-    const result = await createMap(newId.trim(), newName.trim(), newRows, newCols);
+    // Prefix with addon namespace so backend assigns correct source
+    const fullId = selectedAddon ? `${selectedAddon}.${newId.trim()}` : newId.trim();
+    const result = await createMap(fullId, newName.trim(), newRows, newCols);
     if (result.success) {
       setCreating(false);
       setNewId("");
@@ -30,6 +35,8 @@ export default function MapManager({ selectedAddon }: { selectedAddon: string | 
       setNewRows(15);
       setNewCols(40);
       loadMaps();
+      // Enter editor for the newly created map
+      setEditingMapId(fullId);
     } else {
       alert(result.message);
     }
@@ -55,7 +62,6 @@ export default function MapManager({ selectedAddon }: { selectedAddon: string | 
     border: `1px solid ${T.border}`,
     color: T.text,
     padding: "4px 8px",
-    fontFamily: "monospace",
     fontSize: "13px",
   };
 
@@ -75,7 +81,6 @@ export default function MapManager({ selectedAddon }: { selectedAddon: string | 
               border: `1px solid ${T.borderLight}`,
               color: T.text,
               padding: "8px 16px",
-              fontFamily: "monospace",
               fontSize: "13px",
               cursor: "pointer",
             }}
@@ -92,7 +97,6 @@ export default function MapManager({ selectedAddon }: { selectedAddon: string | 
               border: `1px solid ${T.success}`,
               color: "#8f8",
               padding: "8px 16px",
-              fontFamily: "monospace",
               fontSize: "13px",
               cursor: "pointer",
             }}
@@ -161,7 +165,6 @@ export default function MapManager({ selectedAddon }: { selectedAddon: string | 
                 border: `1px solid ${T.success}`,
                 color: "#8f8",
                 padding: "4px 12px",
-                fontFamily: "monospace",
                 cursor: "pointer",
               }}
             >
@@ -174,7 +177,6 @@ export default function MapManager({ selectedAddon }: { selectedAddon: string | 
                 border: `1px solid ${T.borderLight}`,
                 color: T.textSub,
                 padding: "4px 12px",
-                fontFamily: "monospace",
                 cursor: "pointer",
               }}
             >

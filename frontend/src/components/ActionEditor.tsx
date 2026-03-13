@@ -27,7 +27,6 @@ const inputStyle: React.CSSProperties = {
   color: T.text,
   border: `1px solid ${T.borderLight}`,
   borderRadius: "3px",
-  fontFamily: "monospace",
   fontSize: "12px",
 };
 
@@ -37,21 +36,13 @@ const labelStyle: React.CSSProperties = {
   marginBottom: "2px",
 };
 
-const sectionBase: React.CSSProperties = {
-  marginBottom: "12px",
-  padding: "8px 8px 8px 10px",
-  backgroundColor: T.bg3,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-};
-
 // Color-coded sections for visual distinction
 const SEC = {
-  basic:    { color: "#6ec6ff", border: "3px solid #6ec6ff" },
-  weight:   { color: "#e9a045", border: "3px solid #e9a045" },
-  cond:     { color: "#c78dff", border: "3px solid #c78dff" },
-  outcome:  { color: "#e94560", border: "3px solid #e94560" },
-  template: { color: "#7ecf7e", border: "3px solid #7ecf7e" },
+  basic:    { color: "#6ec6ff", bg: "#6ec6ff0a" },
+  weight:   { color: "#e9a045", bg: "#e9a0450a" },
+  cond:     { color: "#c78dff", bg: "#c78dff0a" },
+  outcome:  { color: "#e94560", bg: "#e945600a" },
+  template: { color: "#7ecf7e", bg: "#7ecf7e0a" },
 };
 
 // Alternating row style for list items — makes [x] buttons clearly belong to their row
@@ -63,10 +54,30 @@ const listRowStyle = (idx: number, last: boolean): React.CSSProperties => ({
   borderRadius: "2px",
 });
 
+// Section wrapper: colored left border + very subtle tinted background
 const sectionStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
-  ...sectionBase,
-  borderLeft: SEC[sec].border,
+  marginBottom: "16px",
+  padding: "0 0 8px 0",
+  borderLeft: `3px solid ${SEC[sec].color}`,
+  backgroundColor: SEC[sec].bg,
+  borderRadius: "0 4px 4px 0",
 });
+
+// Section title bar — colored background strip that anchors the section
+const sectionTitleStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
+  padding: "5px 10px",
+  marginBottom: "8px",
+  backgroundColor: `${SEC[sec].color}15`,
+  borderBottom: `1px solid ${SEC[sec].color}25`,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+});
+
+// Section content area with left padding
+const sectionContent: React.CSSProperties = {
+  padding: "0 10px",
+};
 
 const smallBtnStyle = (color: string): React.CSSProperties => ({
   padding: "2px 8px",
@@ -75,9 +86,30 @@ const smallBtnStyle = (color: string): React.CSSProperties => ({
   border: `1px solid ${T.border}`,
   borderRadius: "3px",
   cursor: "pointer",
-  fontFamily: "monospace",
   fontSize: "11px",
 });
+
+// Green-tinted add button — more discoverable than generic buttons
+const addBtnStyle: React.CSSProperties = {
+  padding: "2px 8px",
+  backgroundColor: "#0a1a0a",
+  color: T.successDim,
+  border: `1px solid #2a4a2a`,
+  borderRadius: "3px",
+  cursor: "pointer",
+  fontSize: "11px",
+};
+
+// Red-tinted delete button
+const delBtnStyle: React.CSSProperties = {
+  padding: "2px 8px",
+  backgroundColor: "#1a0a0a",
+  color: T.danger,
+  border: `1px solid #4a2a2a`,
+  borderRadius: "3px",
+  cursor: "pointer",
+  fontSize: "11px",
+};
 
 // Condition type labels
 const CONDITION_TYPES: { value: ActionCondition["type"]; label: string }[] = [
@@ -126,6 +158,22 @@ function isNotGroup(item: ConditionItem): item is { not: ConditionItem } {
 }
 
 const MAX_UI_DEPTH = 4;
+
+// Inject hover styles once
+const AE_STYLE_ID = "ae-hover-styles";
+if (typeof document !== "undefined" && !document.getElementById(AE_STYLE_ID)) {
+  const style = document.createElement("style");
+  style.id = AE_STYLE_ID;
+  style.textContent = `
+    .ae-btn:hover { filter: brightness(1.3); }
+    .ae-add-btn:hover { background-color: #1a2a1a !important; border-color: #4a8a4a !important; }
+    .ae-del-btn:hover { background-color: #2a1414 !important; border-color: #c05050 !important; }
+    .ae-input:hover { border-color: #555 !important; }
+    .ae-input:focus { border-color: #888 !important; outline: none; }
+    .ae-sec-title { letter-spacing: 0.5px; }
+  `;
+  document.head.appendChild(style);
+}
 
 export default function ActionEditor({ action, isNew, definitions, onBack, addonCrud }: Props) {
   const [id, setId] = useState(action.id);
@@ -217,7 +265,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       const result = isNew
         ? await createActionDef(data)
         : await saveActionDef(id, data);
-      setMessage(result.success ? "已保存" : result.message);
+      setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
       }
@@ -244,7 +292,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   };
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
@@ -254,180 +302,196 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       </div>
 
       {/* Basic info */}
-      <div style={{ ...sectionStyle("basic"), display: "flex", flexDirection: "column", gap: "8px" }}>
-        <div style={{ color: SEC.basic.color, fontSize: "12px", fontWeight: "bold" }}>基本信息</div>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
-            <input style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-              value={id} onChange={(e) => setId(e.target.value)} disabled={!isNew || isReadOnly} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>名称</div>
-            <input style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-              value={name} onChange={(e) => setName(e.target.value)} disabled={isReadOnly} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>分类</div>
-            <select style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-              value={categoryList.includes(category) ? category : "__custom__"}
-              onChange={(e) => { if (e.target.value !== "__custom__") setCategory(e.target.value); }}
-              disabled={isReadOnly}>
-              {categoryList.map((c) => <option key={c} value={c}>{c}</option>)}
-              <option value="__custom__">自定义...</option>
-            </select>
-            {!categoryList.includes(category) && (
-              <input style={{ ...inputStyle, width: "100%", boxSizing: "border-box", marginTop: "2px" }}
-                value={category} onChange={(e) => setCategory(e.target.value)} disabled={isReadOnly}
-                placeholder="输入新分类" />
-            )}
-          </div>
+      <div style={sectionStyle("basic")}>
+        <div style={sectionTitleStyle("basic")}>
+          <span className="ae-sec-title" style={{ color: SEC.basic.color, fontSize: "12px", fontWeight: "bold" }}>基本信息</span>
         </div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
-          <div>
-            <div style={labelStyle}>目标类型</div>
-            <select style={inputStyle} value={targetType}
-              onChange={(e) => setTargetType(e.target.value as ActionDefinition["targetType"])} disabled={isReadOnly}>
-              <option value="none">无目标</option>
-              <option value="npc">NPC</option>
-              <option value="self">自身</option>
-            </select>
+        <div style={{ ...sectionContent, display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>ID</div>
+              <input className="ae-input" style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                value={id} onChange={(e) => setId(e.target.value)} disabled={!isNew || isReadOnly} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>名称</div>
+              <input className="ae-input" style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                value={name} onChange={(e) => setName(e.target.value)} disabled={isReadOnly} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>分类</div>
+              <select className="ae-input" style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                value={categoryList.includes(category) ? category : "__custom__"}
+                onChange={(e) => { if (e.target.value !== "__custom__") setCategory(e.target.value); }}
+                disabled={isReadOnly}>
+                {categoryList.map((c) => <option key={c} value={c}>{c}</option>)}
+                <option value="__custom__">自定义...</option>
+              </select>
+              {!categoryList.includes(category) && (
+                <input className="ae-input" style={{ ...inputStyle, width: "100%", boxSizing: "border-box", marginTop: "2px" }}
+                  value={category} onChange={(e) => setCategory(e.target.value)} disabled={isReadOnly}
+                  placeholder="输入新分类" />
+              )}
+            </div>
           </div>
-          <div>
-            <div style={labelStyle}>时间消耗(分)</div>
-            <input type="number" step={5} min={0} style={{ ...inputStyle, width: "80px" }}
-              value={timeCost} onChange={(e) => setTimeCost(Math.max(0, Math.round(Number(e.target.value) / 5) * 5))} disabled={isReadOnly} />
+          <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+            <div>
+              <div style={labelStyle}>目标类型</div>
+              <select className="ae-input" style={inputStyle} value={targetType}
+                onChange={(e) => setTargetType(e.target.value as ActionDefinition["targetType"])} disabled={isReadOnly}>
+                <option value="none">无目标</option>
+                <option value="npc">NPC</option>
+                <option value="self">自身</option>
+              </select>
+            </div>
+            <div>
+              <div style={labelStyle}>时间消耗(分)</div>
+              <input className="ae-input" type="number" step={5} min={0} style={{ ...inputStyle, width: "80px" }}
+                value={timeCost} onChange={(e) => setTimeCost(Math.max(0, Math.round(Number(e.target.value) / 5) * 5))} disabled={isReadOnly} />
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isReadOnly ? "default" : "pointer", paddingBottom: "4px" }}>
+              <input type="checkbox" checked={triggerLLM} onChange={(e) => setTriggerLLM(e.target.checked)} disabled={isReadOnly} />
+              <span style={{ fontSize: "12px" }}>触发LLM</span>
+            </label>
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isReadOnly ? "default" : "pointer", paddingBottom: "4px" }}>
-            <input type="checkbox" checked={triggerLLM} onChange={(e) => setTriggerLLM(e.target.checked)} disabled={isReadOnly} />
-            <span style={{ fontSize: "12px" }}>触发LLM</span>
-          </label>
         </div>
       </div>
 
       {/* NPC Weight */}
       <div style={sectionStyle("weight")}>
-        <div style={{ color: SEC.weight.color, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>NPC 权重</div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-          <div>
-            <div style={labelStyle}>基础权重</div>
-            <input type="number" style={{ ...inputStyle, width: "80px" }}
-              value={npcWeight} onChange={(e) => setNpcWeight(Number(e.target.value))} disabled={isReadOnly} />
-            <div style={{ color: T.textDim, fontSize: "10px", marginTop: "2px" }}>0 = NPC不会执行此行动</div>
-          </div>
-          <div style={{
-            flex: 1,
-            paddingLeft: "8px",
-            borderLeft: "2px solid #333",
-            backgroundColor: T.bg1,
-            borderRadius: "0 3px 3px 0",
-          }}>
-            <ModifierListEditor
-              modifiers={npcWeightModifiers}
-              onChange={setNpcWeightModifiers}
-              disabled={isReadOnly}
-              abilityKeys={abilityKeys}
-              experienceKeys={experienceKeys}
-              traitCategories={traitCategories}
-              traitList={traitList}
-              variableList={variableList}
-              label="↳ 权重修正"
-            />
+        <div style={sectionTitleStyle("weight")}>
+          <span className="ae-sec-title" style={{ color: SEC.weight.color, fontSize: "12px", fontWeight: "bold" }}>NPC 权重</span>
+        </div>
+        <div style={sectionContent}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+            <div>
+              <div style={labelStyle}>基础权重</div>
+              <input className="ae-input" type="number" style={{ ...inputStyle, width: "80px" }}
+                value={npcWeight} onChange={(e) => setNpcWeight(Number(e.target.value))} disabled={isReadOnly} />
+              <div style={{ color: T.textDim, fontSize: "11px", marginTop: "2px" }}>0 = NPC不会执行此行动</div>
+            </div>
+            <div style={{
+              flex: 1,
+              paddingLeft: "8px",
+              borderLeft: "2px solid #333",
+              backgroundColor: T.bg1,
+              borderRadius: "0 3px 3px 0",
+            }}>
+              <ModifierListEditor
+                modifiers={npcWeightModifiers}
+                onChange={setNpcWeightModifiers}
+                disabled={isReadOnly}
+                abilityKeys={abilityKeys}
+                experienceKeys={experienceKeys}
+                traitCategories={traitCategories}
+                traitList={traitList}
+                variableList={variableList}
+                label="↳ 权重修正"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Conditions */}
       <div style={sectionStyle("cond")}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-          <span style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>显示条件 (AND)</span>
+        <div style={sectionTitleStyle("cond")}>
+          <span className="ae-sec-title" style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>显示条件 (AND)</span>
           {!isReadOnly && (
             <div style={{ display: "flex", gap: "4px" }}>
-              <button onClick={addCondition} style={smallBtnStyle(T.successDim)}>[+ 条件]</button>
-              <button onClick={addOrGroup} style={smallBtnStyle(T.successDim)}>[+ OR]</button>
-              <button onClick={addAndGroup} style={smallBtnStyle(T.successDim)}>[+ AND]</button>
+              <button className="ae-add-btn" onClick={addCondition} style={addBtnStyle}>[+ 条件]</button>
+              <button className="ae-add-btn" onClick={addOrGroup} style={addBtnStyle}>[+ OR]</button>
+              <button className="ae-add-btn" onClick={addAndGroup} style={addBtnStyle}>[+ AND]</button>
             </div>
           )}
         </div>
-        {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无条件（始终显示）</div>}
-        {conditions.map((item, idx) => (
-          <div key={idx} style={listRowStyle(idx, idx === conditions.length - 1)}>
-            <ConditionItemEditor
-              item={item}
-              onChange={(newItem) => updateCondition(idx, newItem)}
-              onRemove={() => removeCondition(idx)}
-              disabled={isReadOnly}
-              depth={0}
-              ctx={{
-                definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
-                traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, variableList,
-              }}
-            />
-          </div>
-        ))}
+        <div style={sectionContent}>
+          {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无条件（始终显示）</div>}
+          {conditions.map((item, idx) => (
+            <div key={idx} style={listRowStyle(idx, idx === conditions.length - 1)}>
+              <ConditionItemEditor
+                item={item}
+                onChange={(newItem) => updateCondition(idx, newItem)}
+                onRemove={() => removeCondition(idx)}
+                disabled={isReadOnly}
+                depth={0}
+                ctx={{
+                  definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
+                  traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, variableList,
+                }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Outcomes */}
       <div style={sectionStyle("outcome")}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-          <span style={{ color: SEC.outcome.color, fontSize: "12px", fontWeight: "bold" }}>结果分级</span>
-          {!isReadOnly && <button onClick={addOutcome} style={smallBtnStyle(T.successDim)}>[+ 结果]</button>}
+        <div style={sectionTitleStyle("outcome")}>
+          <span className="ae-sec-title" style={{ color: SEC.outcome.color, fontSize: "12px", fontWeight: "bold" }}>结果分级</span>
+          {!isReadOnly && <button className="ae-add-btn" onClick={addOutcome} style={addBtnStyle}>[+ 结果]</button>}
         </div>
-        {outcomes.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无结果（固定成功）</div>}
-        {outcomes.map((outcome, idx) => (
-          <OutcomeEditor key={idx} outcome={outcome} onChange={(o) => updateOutcome(idx, o)}
-            onRemove={() => removeOutcome(idx)} disabled={isReadOnly} definitions={definitions}
-            resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
-            traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} variableList={variableList} actionList={actionList} categoryList={categoryList} />
-        ))}
+        <div style={sectionContent}>
+          {outcomes.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无结果（固定成功）</div>}
+          {outcomes.map((outcome, idx) => (
+            <OutcomeEditor key={idx} outcome={outcome} onChange={(o) => updateOutcome(idx, o)}
+              onRemove={() => removeOutcome(idx)} disabled={isReadOnly} definitions={definitions}
+              resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
+              traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} variableList={variableList} actionList={actionList} categoryList={categoryList} />
+          ))}
+        </div>
       </div>
 
       {/* Output templates */}
       <div style={sectionStyle("template")}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-          <span style={{ color: SEC.template.color, fontSize: "12px", fontWeight: "bold" }}>行为模板</span>
-          <button onClick={() => setShowVarHelp((v) => !v)}
-            style={{ ...smallBtnStyle(showVarHelp ? T.danger : T.textSub), fontSize: "11px" }}>
-            [?]
-          </button>
+        <div style={sectionTitleStyle("template")}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span className="ae-sec-title" style={{ color: SEC.template.color, fontSize: "12px", fontWeight: "bold" }}>行为模板</span>
+            <button className="ae-btn" onClick={() => setShowVarHelp((v) => !v)}
+              style={{ ...smallBtnStyle(showVarHelp ? T.danger : T.textSub), fontSize: "11px" }}>
+              [?]
+            </button>
+          </div>
         </div>
-        <TemplateListEditor
-          templates={outputTemplates}
-          onChange={setOutputTemplates}
-          disabled={isReadOnly}
-          ctx={{
-            definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
-            traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList,
-          }}
-        />
-        {showVarHelp && (
-          <TemplateVarHelp
-            resourceKeys={resourceKeys} abilityKeys={abilityKeys}
-            basicInfoNumKeys={basicInfoNumKeys} traitCategories={traitCategories}
-            clothingSlots={clothingSlots}
+        <div style={sectionContent}>
+          <TemplateListEditor
+            templates={outputTemplates}
+            onChange={setOutputTemplates}
+            disabled={isReadOnly}
+            ctx={{
+              definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
+              traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList,
+            }}
           />
-        )}
+          {showVarHelp && (
+            <TemplateVarHelp
+              resourceKeys={resourceKeys} abilityKeys={abilityKeys}
+              basicInfoNumKeys={basicInfoNumKeys} traitCategories={traitCategories}
+              clothingSlots={clothingSlots}
+            />
+          )}
+        </div>
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", padding: "4px 0", borderTop: `1px solid ${T.border}`, marginTop: "4px", paddingTop: "12px" }}>
         {!isReadOnly && (
-          <button onClick={handleSave} disabled={saving}
-            style={{ ...smallBtnStyle(T.successDim), padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
-            [保存]
+          <button className="ae-add-btn" onClick={handleSave} disabled={saving}
+            style={{ ...addBtnStyle, padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
+            [确定]
           </button>
         )}
         {!isReadOnly && !isNew && (
-          <button onClick={handleDelete} disabled={saving}
-            style={{ ...smallBtnStyle(T.danger), padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
+          <button className="ae-del-btn" onClick={handleDelete} disabled={saving}
+            style={{ ...delBtnStyle, padding: "5px 16px", fontSize: "13px", cursor: saving ? "not-allowed" : "pointer" }}>
             [删除]
           </button>
         )}
-        <button onClick={onBack}
+        <button className="ae-btn" onClick={onBack}
           style={{ ...smallBtnStyle(T.textSub), padding: "5px 16px", fontSize: "13px" }}>
           [返回列表]
         </button>
-        {message && <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>}
+        {message && <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>}
       </div>
     </div>
   );
@@ -529,7 +593,7 @@ function ConditionItemEditor({
         </span>
       )}
       <ConditionLeafEditor condition={leaf} onChange={(c) => isNot ? onChange({ not: c }) : onChange(c)} disabled={disabled} ctx={ctx} />
-      {!disabled && <button onClick={onRemove} style={smallBtnStyle(T.danger)}>x</button>}
+      {!disabled && <button className="ae-del-btn" onClick={onRemove} style={delBtnStyle}>x</button>}
     </div>
   );
 }
@@ -574,7 +638,7 @@ function ConditionGroupEditor({
         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
           {!disabled && onToggleNot && (
             <button onClick={onToggleNot}
-              style={{ ...smallBtnStyle(isNot ? "#e9a045" : T.textDim), fontSize: "10px", padding: "1px 4px" }}
+              style={{ ...smallBtnStyle(isNot ? "#e9a045" : T.textDim), fontSize: "11px", padding: "1px 4px" }}
               title={isNot ? "取消 NOT" : "添加 NOT"}>
               {isNot ? "NOT" : "NOT"}
             </button>
@@ -584,15 +648,15 @@ function ConditionGroupEditor({
         <div style={{ display: "flex", gap: "4px" }}>
           {!disabled && depth + 1 < MAX_UI_DEPTH && (
             <>
-              <button onClick={addLeaf} style={smallBtnStyle(T.successDim)}>[+条件]</button>
-              <button onClick={addOr} style={smallBtnStyle(T.successDim)}>[+OR]</button>
-              <button onClick={addAnd} style={smallBtnStyle(T.successDim)}>[+AND]</button>
+              <button className="ae-add-btn" onClick={addLeaf} style={addBtnStyle}>[+条件]</button>
+              <button className="ae-add-btn" onClick={addOr} style={addBtnStyle}>[+OR]</button>
+              <button className="ae-add-btn" onClick={addAnd} style={addBtnStyle}>[+AND]</button>
             </>
           )}
           {!disabled && depth + 1 >= MAX_UI_DEPTH && (
-            <button onClick={addLeaf} style={smallBtnStyle(T.successDim)}>[+条件]</button>
+            <button className="ae-add-btn" onClick={addLeaf} style={addBtnStyle}>[+条件]</button>
           )}
-          {!disabled && <button onClick={onRemove} style={smallBtnStyle(T.danger)}>x</button>}
+          {!disabled && <button className="ae-del-btn" onClick={onRemove} style={delBtnStyle}>x</button>}
         </div>
       </div>
       {items.map((child, idx) => (
@@ -630,7 +694,7 @@ function ConditionLeafEditor({
       </select>
 
       {!["location", "npcPresent", "time"].includes(condition.type) && (
-        <select style={{ ...inputStyle, width: "auto", fontSize: "10px" }} value={condition.condTarget ?? "self"}
+        <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }} value={condition.condTarget ?? "self"}
           onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })} disabled={disabled}>
           <option value="self">自身</option>
           <option value="target">目标</option>
@@ -835,7 +899,7 @@ function LocationCondEditor({
                 <input type="checkbox" checked={isManual} onChange={() => toggleCell(c.id)}
                   disabled={disabled || isTagged} style={{ margin: 0, width: "12px", height: "12px" }} />
                 {c.name ?? `#${c.id}`}
-                {isTagged && <span style={{ fontSize: "9px", color: "#4a8aaa" }}>(tag)</span>}
+                {isTagged && <span style={{ fontSize: "11px", color: "#4a8aaa" }}>(tag)</span>}
               </label>
             );
           })}
@@ -909,8 +973,8 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
   return (
     <div style={{ marginBottom: "4px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ color: T.textSub, fontSize: "10px" }}>{label}</span>
-        {!disabled && <button onClick={add} style={smallBtnStyle(T.textSub)}>[+]</button>}
+        <span style={{ color: T.textSub, fontSize: "11px" }}>{label}</span>
+        {!disabled && <button className="ae-add-btn" onClick={add} style={addBtnStyle}>[+]</button>}
       </div>
       {modifiers.map((mod, idx) => (
         <div key={idx} style={{ ...listRowStyle(idx, idx === modifiers.length - 1), display: "flex", gap: "4px", alignItems: "center", marginTop: "2px", flexWrap: "wrap" }}>
@@ -936,7 +1000,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })} disabled={disabled}>
                 {abilityKeys.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
               </select>
-              <span style={{ color: T.textSub, fontSize: "10px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1000}
                 onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
             </>
@@ -948,7 +1012,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })} disabled={disabled}>
                 {experienceKeys.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
               </select>
-              <span style={{ color: T.textSub, fontSize: "10px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
                 onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
             </>
@@ -977,7 +1041,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
                 <option value="target">目标→自身</option>
                 <option value="self">自身→目标</option>
               </select>
-              <span style={{ color: T.textSub, fontSize: "10px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 100}
                 onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
             </>
@@ -990,13 +1054,13 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
                 <option value="">选择变量</option>
                 {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
               </select>
-              <span style={{ color: T.textSub, fontSize: "10px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
                 onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
             </>
           )}
 
-          <select style={{ ...inputStyle, width: "auto", fontSize: "10px" }}
+          <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
             value={mod.bonusMode ?? "add"}
             onChange={(e) => update(idx, { ...mod, bonusMode: e.target.value as "add" | "multiply" })}
             disabled={disabled}>
@@ -1005,7 +1069,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
           </select>
           <input type="number" style={{ ...inputStyle, width: "60px" }} value={mod.bonus}
             onChange={(e) => update(idx, { ...mod, bonus: Number(e.target.value) })} disabled={disabled} />
-          {!disabled && <button onClick={() => remove(idx)} style={smallBtnStyle(T.danger)}>x</button>}
+          {!disabled && <button className="ae-del-btn" onClick={() => remove(idx)} style={delBtnStyle}>x</button>}
         </div>
       ))}
     </div>
@@ -1099,7 +1163,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
       <span style={{ fontSize: "11px", fontWeight: "bold" }}>
         <span style={{ color, marginRight: "4px" }}>|</span>
         <span style={{ color: T.textSub }}>{label}</span>
-        {count !== null && <span style={{ color: T.textDim, fontSize: "10px", marginLeft: "4px" }}>({count})</span>}
+        {count !== null && <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "4px" }}>({count})</span>}
       </span>
       {rightContent}
     </div>
@@ -1117,7 +1181,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
       <span style={{ fontSize: "11px", fontWeight: "bold" }}>
         <span style={{ color, marginRight: "4px" }}>{isOpen ? "\u25BC" : "\u25B6"}</span>
         <span style={{ color: T.textSub }}>{label}</span>
-        {count > 0 && <span style={{ color: T.textDim, fontSize: "10px", marginLeft: "4px" }}>({count})</span>}
+        {count > 0 && <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "4px" }}>({count})</span>}
       </span>
       <div onClick={(e) => e.stopPropagation()}>{rightContent}</div>
     </div>
@@ -1137,7 +1201,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
         <span style={{ color: T.textSub, fontSize: "11px" }}>权重:</span>
         <input type="number" style={{ ...inputStyle, width: "50px" }} value={outcome.weight}
           onChange={(e) => update({ weight: Math.max(0, Number(e.target.value)) })} disabled={disabled} />
-        {!disabled && <button onClick={onRemove} style={{ ...smallBtnStyle(T.danger), marginLeft: "auto" }}>x</button>}
+        {!disabled && <button className="ae-del-btn" onClick={onRemove} style={{ ...delBtnStyle, marginLeft: "auto" }}>x</button>}
       </div>
 
       {/* Weight modifiers */}
@@ -1164,7 +1228,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
       {/* Effects grouped by target */}
       <div style={{ marginBottom: "8px" }}>
         {subHeader("效果", "#6ec6ff", outcome.effects.length,
-          !disabled && <button onClick={addTargetGroup} style={smallBtnStyle(T.successDim)}>[+ 目标组]</button>
+          !disabled && <button className="ae-add-btn" onClick={addTargetGroup} style={addBtnStyle}>[+ 目标组]</button>
         )}
         {targetGroups.length === 0 && <div style={{ color: T.textDim, fontSize: "11px", paddingLeft: "12px" }}>无效果</div>}
         {targetGroups.map((group) => (
@@ -1187,7 +1251,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                 {npcList.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
               </select>
               {!disabled && (
-                <button onClick={() => addEffectForTarget(group.target)} style={{ ...smallBtnStyle(T.successDim), marginLeft: "auto" }}>
+                <button className="ae-add-btn" onClick={() => addEffectForTarget(group.target)} style={{ ...addBtnStyle, marginLeft: "auto" }}>
                   [+ 效果]
                 </button>
               )}
@@ -1201,7 +1265,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                     <EffectEditor effect={eff} onChange={(e) => updateEffect(effIdx, { ...e, target: group.target })} disabled={disabled}
                       resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
                       traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} variableList={variableList} />
-                    {!disabled && <button onClick={() => removeEffect(effIdx)} style={smallBtnStyle(T.danger)}>x</button>}
+                    {!disabled && <button className="ae-del-btn" onClick={() => removeEffect(effIdx)} style={delBtnStyle}>x</button>}
                   </div>
                   {hasModifiers && (
                     <div style={{
@@ -1240,7 +1304,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
               onClick={() => update({
                 suggestNext: [...(outcome.suggestNext ?? []), { actionId: actionList[0]?.id ?? "", bonus: 50, decay: 60 }],
               })}
-              style={smallBtnStyle(T.successDim)}
+              style={addBtnStyle}
             >
               [+]
             </button>
@@ -1264,7 +1328,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                   borderRadius: "0 3px 3px 0",
                 }}>
                   <select
-                    style={{ ...inputStyle, width: "auto", fontSize: "10px", color: mode === "category" ? "#e9a045" : "#6ec6ff" }}
+                    style={{ ...inputStyle, width: "auto", fontSize: "11px", color: mode === "category" ? "#e9a045" : "#6ec6ff" }}
                     value={mode}
                     onChange={(e) => {
                       if (e.target.value === "category") {
@@ -1304,7 +1368,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                       ))}
                     </select>
                   )}
-                  <span style={{ color: "#e9a045", fontSize: "10px", whiteSpace: "nowrap" }}>+</span>
+                  <span style={{ color: "#e9a045", fontSize: "11px", whiteSpace: "nowrap" }}>+</span>
                   <input
                     type="number"
                     style={{ ...inputStyle, width: "45px" }}
@@ -1313,7 +1377,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                     disabled={disabled}
                     title="权重加成"
                   />
-                  <span style={{ color: T.textDim, fontSize: "10px", whiteSpace: "nowrap" }}>/</span>
+                  <span style={{ color: T.textDim, fontSize: "11px", whiteSpace: "nowrap" }}>/</span>
                   <input
                     type="number"
                     style={{ ...inputStyle, width: "45px" }}
@@ -1322,14 +1386,15 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                     disabled={disabled}
                     title="衰减时间(分钟)"
                   />
-                  <span style={{ color: T.textDim, fontSize: "10px" }}>分</span>
+                  <span style={{ color: T.textDim, fontSize: "11px" }}>分</span>
                   {!disabled && (
                     <button
+                      className="ae-del-btn"
                       onClick={() => {
                         const next = (outcome.suggestNext ?? []).filter((_, i) => i !== snIdx);
                         update({ suggestNext: next.length > 0 ? next : undefined });
                       }}
-                      style={smallBtnStyle(T.danger)}
+                      style={delBtnStyle}
                     >
                       x
                     </button>
@@ -1420,7 +1485,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
                   <option value="">选择变量</option>
                   {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                 </select>
-                <span style={{ color: T.textSub, fontSize: "10px" }}>×</span>
+                <span style={{ color: T.textSub, fontSize: "11px" }}>×</span>
                 <input type="number" step="0.1" style={{ ...inputStyle, width: "55px" }} value={varVal?.multiply ?? 1}
                   onChange={(e) => update({ value: { ...varVal!, multiply: Number(e.target.value) } as any })} disabled={disabled} />
               </>
@@ -1445,7 +1510,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
             <option value="">选择</option>
             {experienceKeys.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
           </select>
-          <span style={{ color: T.textSub, fontSize: "10px" }}>+</span>
+          <span style={{ color: T.textSub, fontSize: "11px" }}>+</span>
           <input type="number" style={{ ...inputStyle, width: "50px" }} value={effect.value ?? 1}
             onChange={(e) => update({ value: Number(e.target.value) })} disabled={disabled} />
         </>
@@ -1453,15 +1518,15 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
 
       {effect.type === "favorability" && (
         <>
-          <span style={{ color: T.textSub, fontSize: "10px" }}>源:</span>
+          <span style={{ color: T.textSub, fontSize: "11px" }}>源:</span>
           <select style={inputStyle} value={effect.favFrom ?? "{{targetId}}"}
             onChange={(e) => update({ favFrom: e.target.value })} disabled={disabled}>
             <option value="self">自身</option>
             <option value="{{targetId}}">目标</option>
             <option value="{{player}}">Player</option>
           </select>
-          <span style={{ color: T.textSub, fontSize: "10px" }}>→</span>
-          <span style={{ color: T.textSub, fontSize: "10px" }}>对象:</span>
+          <span style={{ color: T.textSub, fontSize: "11px" }}>→</span>
+          <span style={{ color: T.textSub, fontSize: "11px" }}>对象:</span>
           <select style={inputStyle} value={effect.favTo ?? "self"}
             onChange={(e) => update({ favTo: e.target.value })} disabled={disabled}>
             <option value="self">自身</option>
@@ -1491,7 +1556,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
                       <option value="">选择变量</option>
                       {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                     </select>
-                    <span style={{ color: T.textSub, fontSize: "10px" }}>×</span>
+                    <span style={{ color: T.textSub, fontSize: "11px" }}>×</span>
                     <input type="number" step="0.1" style={{ ...inputStyle, width: "55px" }} value={varVal?.multiply ?? 1}
                       onChange={(e) => update({ value: { ...varVal!, multiply: Number(e.target.value) } as any })} disabled={disabled} />
                   </>
@@ -1615,10 +1680,10 @@ function TemplateListEditor({ templates, onChange, disabled, ctx }: {
       <div>
         <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
           {!disabled && templates.length === 0 && (
-            <button onClick={add} style={smallBtnStyle(T.successDim)}>[+ 模板]</button>
+            <button className="ae-add-btn" onClick={add} style={addBtnStyle}>[+ 模板]</button>
           )}
           {templates.length === 1 && !disabled && (
-            <button onClick={add} style={smallBtnStyle(T.successDim)}>[+ 分支]</button>
+            <button className="ae-add-btn" onClick={add} style={addBtnStyle}>[+ 分支]</button>
           )}
         </div>
         {templates.length === 1 && (
@@ -1627,7 +1692,7 @@ function TemplateListEditor({ templates, onChange, disabled, ctx }: {
               value={templates[0].text}
               onChange={(e) => update(0, { ...templates[0], text: e.target.value })}
               disabled={disabled} placeholder="{{player}} ..." />
-            {!disabled && <button onClick={() => remove(0)} style={smallBtnStyle(T.danger)}>x</button>}
+            {!disabled && <button className="ae-del-btn" onClick={() => remove(0)} style={delBtnStyle}>x</button>}
           </div>
         )}
       </div>
@@ -1638,8 +1703,8 @@ function TemplateListEditor({ templates, onChange, disabled, ctx }: {
   return (
     <div>
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
-        {!disabled && <button onClick={add} style={smallBtnStyle(T.successDim)}>[+ 分支]</button>}
-        <span style={{ color: T.textDim, fontSize: "10px" }}>满足条件的模板中随机选择（按权重）</span>
+        {!disabled && <button className="ae-add-btn" onClick={add} style={addBtnStyle}>[+ 分支]</button>}
+        <span style={{ color: T.textDim, fontSize: "11px" }}>满足条件的模板中随机选择（按权重）</span>
       </div>
       {templates.map((entry, idx) => (
         <div key={idx} style={{
@@ -1647,12 +1712,12 @@ function TemplateListEditor({ templates, onChange, disabled, ctx }: {
           border: `1px solid ${T.border}`, borderRadius: "3px", padding: "4px 6px",
         }}>
           <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
-            <span style={{ color: "#6ec6ff", fontSize: "10px", fontWeight: "bold" }}>#{idx + 1}</span>
-            <span style={{ color: T.textSub, fontSize: "10px" }}>权重:</span>
+            <span style={{ color: "#6ec6ff", fontSize: "11px", fontWeight: "bold" }}>#{idx + 1}</span>
+            <span style={{ color: T.textSub, fontSize: "11px" }}>权重:</span>
             <input type="number" style={{ ...inputStyle, width: "50px" }} value={entry.weight ?? 1}
               onChange={(e) => update(idx, { ...entry, weight: Math.max(0, Number(e.target.value)) })}
               disabled={disabled} />
-            {!disabled && <button onClick={() => remove(idx)} style={{ ...smallBtnStyle(T.danger), marginLeft: "auto" }}>x</button>}
+            {!disabled && <button className="ae-del-btn" onClick={() => remove(idx)} style={{ ...delBtnStyle, marginLeft: "auto" }}>x</button>}
           </div>
           <textarea style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: "32px", resize: "vertical", marginBottom: "2px" }}
             value={entry.text}
@@ -1695,9 +1760,9 @@ function TemplateConditionsEditor({ conditions, onChange, disabled, ctx }: {
       marginTop: "2px",
     }}>
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
-        <span style={{ color: T.textSub, fontSize: "10px" }}>↳ 条件</span>
-        {!disabled && <button onClick={addCond} style={smallBtnStyle(T.textSub)}>[+]</button>}
-        {conditions.length === 0 && <span style={{ color: T.textDim, fontSize: "10px" }}>无条件（始终可选）</span>}
+        <span style={{ color: T.textSub, fontSize: "11px" }}>↳ 条件</span>
+        {!disabled && <button className="ae-add-btn" onClick={addCond} style={addBtnStyle}>[+]</button>}
+        {conditions.length === 0 && <span style={{ color: T.textDim, fontSize: "11px" }}>无条件（始终可选）</span>}
       </div>
       {conditions.map((item, idx) => (
         <div key={idx} style={{ marginBottom: "2px" }}>
@@ -1724,7 +1789,7 @@ function TemplateVarHelp({ resourceKeys, abilityKeys, basicInfoNumKeys, traitCat
   traitCategories: KeyLabel[];
   clothingSlots: string[];
 }) {
-  const s: React.CSSProperties = { color: "#0ff", fontSize: "11px", fontFamily: "monospace" };
+  const s: React.CSSProperties = { color: "#0ff", fontSize: "11px" };
   const d: React.CSSProperties = { color: T.textSub, fontSize: "11px" };
   const row = (v: string, desc: string) => (
     <div key={v} style={{ display: "flex", gap: "8px", marginBottom: "1px" }}>

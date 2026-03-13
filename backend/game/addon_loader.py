@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import shutil
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +15,7 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent
 ADDONS_DIR = _BACKEND_DIR.parent / "addons"
 DATA_DIR = _BACKEND_DIR / "data"
 WORLDS_DIR = DATA_DIR / "worlds"
+SAVES_DIR = DATA_DIR / "saves"
 TEMPLATE_PATH = DATA_DIR / "character_template.json"
 
 
@@ -224,82 +224,3 @@ def find_addon_for_asset(
     return None
 
 
-MAX_BACKUPS = 5
-
-
-def create_backup(world_id: str) -> str | None:
-    """Create a backup snapshot of the world's save directory.
-
-    Returns the backup name (timestamp) or None if nothing to backup.
-    """
-    world_dir = WORLDS_DIR / world_id
-    save_dir = world_dir / "save"
-
-    # Nothing to backup if no save dir
-    if not save_dir.exists():
-        return None
-
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    backups_dir = world_dir / "backups"
-    backup_path = backups_dir / timestamp
-    backup_path.mkdir(parents=True, exist_ok=True)
-
-    # Copy save/ contents to backup
-    shutil.copytree(str(save_dir), str(backup_path / "save"), dirs_exist_ok=True)
-
-    # Also backup world.json
-    world_json = world_dir / "world.json"
-    if world_json.exists():
-        shutil.copy2(str(world_json), str(backup_path / "world.json"))
-
-    # Prune old backups
-    _prune_backups(backups_dir)
-
-    return timestamp
-
-
-def _prune_backups(backups_dir: Path) -> None:
-    """Keep only the most recent MAX_BACKUPS backups."""
-    if not backups_dir.exists():
-        return
-    backups = sorted(
-        (d for d in backups_dir.iterdir() if d.is_dir()),
-        key=lambda d: d.name,
-        reverse=True,
-    )
-    for old in backups[MAX_BACKUPS:]:
-        shutil.rmtree(str(old))
-
-
-def list_backups(world_id: str) -> list[str]:
-    """List available backup timestamps for a world."""
-    backups_dir = WORLDS_DIR / world_id / "backups"
-    if not backups_dir.exists():
-        return []
-    return sorted(
-        (d.name for d in backups_dir.iterdir() if d.is_dir()),
-        reverse=True,
-    )
-
-
-def restore_backup(world_id: str, timestamp: str) -> bool:
-    """Restore a world backup. Returns True on success."""
-    world_dir = WORLDS_DIR / world_id
-    backup_path = world_dir / "backups" / timestamp
-    if not backup_path.exists():
-        return False
-
-    # Restore save/
-    save_backup = backup_path / "save"
-    if save_backup.exists():
-        save_dir = world_dir / "save"
-        if save_dir.exists():
-            shutil.rmtree(str(save_dir))
-        shutil.copytree(str(save_backup), str(save_dir))
-
-    # Restore world.json if present in backup
-    world_json_backup = backup_path / "world.json"
-    if world_json_backup.exists():
-        shutil.copy2(str(world_json_backup), str(world_dir / "world.json"))
-
-    return True

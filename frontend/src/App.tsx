@@ -10,8 +10,6 @@ import {
   performAction,
   restartGame,
   connectWebSocket,
-  fetchBackups,
-  restoreBackup,
 } from "./api/client";
 import type { AppConfig } from "./api/client";
 import LocationHeader from "./components/LocationHeader";
@@ -64,6 +62,7 @@ export default function App() {
 
   const [addonListKey, setAddonListKey] = useState(0);
   const [selectedAddonTab, setSelectedAddonTab] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -249,7 +248,7 @@ export default function App() {
 
   if (!gameState) {
     return (
-      <div style={{ color: T.text, fontFamily: "monospace", padding: "20px", backgroundColor: T.bg0, minHeight: "100vh" }}>
+      <div style={{ color: T.text, fontFamily: T.fontMono, fontSize: `${T.fontBase}px`, padding: "20px", backgroundColor: T.bg0, minHeight: "100vh" }}>
         加载中...
       </div>
     );
@@ -262,14 +261,13 @@ export default function App() {
 
   const settingsBtnStyle: React.CSSProperties = {
     padding: "8px 16px",
-    fontFamily: "monospace",
     fontSize: "13px",
     cursor: "pointer",
     border: `1px solid ${T.border}`,
   };
 
   const renderNavPage = () => {
-    const addonTab = currentWorldId ? (
+    const addonTab = currentWorldId && !editorOpen ? (
       <AddonTabBar
         addons={stagedAddons}
         selectedAddon={selectedAddonTab}
@@ -277,16 +275,17 @@ export default function App() {
       />
     ) : null;
 
-    if (navPage === "characters") return <>{addonTab}<CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
-    if (navPage === "traits") return <>{addonTab}<TraitManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
-    if (navPage === "clothing") return <>{addonTab}<ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
-    if (navPage === "items") return <>{addonTab}<ItemManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
-    if (navPage === "actions") return <>{addonTab}<ActionManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
-    if (navPage === "variables") return <>{addonTab}<VariableManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
-    if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} /></>;
+    if (navPage === "characters") return <>{addonTab}<CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "traits") return <>{addonTab}<TraitManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "clothing") return <>{addonTab}<ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "items") return <>{addonTab}<ItemManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "actions") return <>{addonTab}<ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "variables") return <>{addonTab}<VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "settings") {
       return <SettingsPage
         worldId={currentWorldId}
+        addonRefs={currentAddons}
         onRestart={async () => {
           if (!confirm("确认重新开始游戏？所有运行时状态将重置。")) return;
           const result = await restartGame();
@@ -329,7 +328,7 @@ export default function App() {
                 border: `1px solid ${T.border}`,
                 borderBottom: topView === "location" ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
                 cursor: "pointer",
-                fontFamily: "monospace",
+
                 fontSize: "13px",
               }}
             >
@@ -346,7 +345,7 @@ export default function App() {
                   border: `1px solid ${T.border}`,
                   borderBottom: topView === m.id ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
                   cursor: "pointer",
-                  fontFamily: "monospace",
+  
                   fontSize: "13px",
                 }}
               >
@@ -430,13 +429,17 @@ export default function App() {
     <div
       style={{
         display: "flex",
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "hidden",
         backgroundColor: T.bg0,
+        fontFamily: T.fontMono,
+        fontSize: `${T.fontBase}px`,
+        color: T.text,
       }}
     >
       <NavBar
         navPage={navPage}
-        onNavChange={(p) => setNavPage(p)}
+        onNavChange={(p) => { setNavPage(p); setEditorOpen(false); }}
         worldName={currentWorldId ? (currentWorldName || currentWorldId) : ""}
         maxWidth={config.maxWidth}
         leftOpen={leftOpen}
@@ -447,7 +450,7 @@ export default function App() {
 
       {/* Left area: sidebar or spacer */}
       {leftOpen ? (
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>
           <WorldSidebar
             currentWorldId={currentWorldId}
             currentAddons={currentAddons}
@@ -464,10 +467,11 @@ export default function App() {
           flex: `0 1 ${config.maxWidth}px`,
           maxWidth: config.maxWidth,
           width: "100%",
+          height: "100vh",
+          overflowY: "scroll",
           display: "flex",
           flexDirection: "column",
           color: T.text,
-          fontFamily: "monospace",
           padding: "8px",
           paddingTop: 48,
           gap: "8px",
@@ -480,7 +484,7 @@ export default function App() {
 
       {/* Right area: sidebar or spacer */}
       {rightOpen ? (
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>
           <AddonSidebar
             key={addonListKey}
             enabledAddons={currentAddons}

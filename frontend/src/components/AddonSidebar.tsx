@@ -70,7 +70,7 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
           backgroundColor: T.bg2, border: `1px solid ${T.textFaint}`, borderRadius: "8px",
           padding: "24px", width: "380px", maxWidth: "90vw",
           display: "flex", flexDirection: "column", gap: "16px",
-          fontFamily: "monospace", boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
         }}
       >
         {children}
@@ -103,7 +103,7 @@ function ForkModal({ addon, worldId, onChoice, onCancel }: {
 }) {
   const choiceBtn: React.CSSProperties = {
     width: "100%", padding: "12px 14px", borderRadius: "6px", cursor: "pointer",
-    fontFamily: "monospace", fontSize: "12px", textAlign: "left", border: "none",
+    fontSize: "12px", textAlign: "left", border: "none",
   };
   return (
     <Overlay onClose={onCancel}>
@@ -141,7 +141,7 @@ function ForkModal({ addon, worldId, onChoice, onCancel }: {
 function modalBtnStyle(bg: string, color: string): React.CSSProperties {
   return {
     padding: "7px 16px", backgroundColor: bg, color, border: `1px solid ${T.textFaint}`,
-    borderRadius: "4px", cursor: "pointer", fontFamily: "monospace", fontSize: "12px",
+    borderRadius: "4px", cursor: "pointer", fontSize: "12px",
   };
 }
 
@@ -178,7 +178,7 @@ function VersionBranches({ addonId, committedVersion, selectedVersion, onSwitch 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-      <div style={{ color: T.textSub, fontSize: "10px", marginBottom: "2px", fontWeight: "bold" }}>
+      <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "2px", fontWeight: "bold" }}>
         切换版本
       </div>
       {paged.map((ver) => {
@@ -226,7 +226,7 @@ function VersionBranches({ addonId, committedVersion, selectedVersion, onSwitch 
       {totalPages > 1 && (
         <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "center", marginTop: "4px" }}>
           <PagerBtn disabled={page === 0} onClick={() => setPage(p => p - 1)}>&lt;</PagerBtn>
-          <span style={{ color: T.textSub, fontSize: "10px" }}>{page + 1} / {totalPages}</span>
+          <span style={{ color: T.textSub, fontSize: "11px" }}>{page + 1} / {totalPages}</span>
           <PagerBtn disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>&gt;</PagerBtn>
         </div>
       )}
@@ -237,7 +237,7 @@ function VersionBranches({ addonId, committedVersion, selectedVersion, onSwitch 
 function Tag({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span style={{
-      fontSize: "9px", padding: "1px 6px", borderRadius: "3px",
+      fontSize: "11px", padding: "1px 6px", borderRadius: "3px",
       backgroundColor: `${color}20`, color, border: `1px solid ${color}40`,
       lineHeight: 1.4, fontWeight: "bold",
     }}>
@@ -255,7 +255,7 @@ function PagerBtn({ disabled, onClick, children }: { disabled: boolean; onClick:
         color: disabled ? T.border : T.textSub,
         cursor: disabled ? "default" : "pointer",
         padding: "2px 8px", borderRadius: "3px",
-        fontFamily: "monospace", fontSize: "10px",
+        fontSize: "11px",
       }}
     >
       {children}
@@ -378,7 +378,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
         {/* Addon cards */}
         <div style={{
-          flex: 1, overflowY: "auto", padding: "8px",
+          flex: 1, overflowY: "scroll", padding: "8px",
           display: "flex", flexDirection: "column", gap: "8px",
         }}>
           {allAddons.length === 0 ? (
@@ -429,16 +429,16 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                         display: "flex", alignItems: "center", gap: "6px",
                         marginTop: "3px",
                       }}>
-                        <span style={{ fontSize: "10px", color: T.textDim }}>{addon.id}</span>
-                        <span style={{ color: T.textFaint, fontSize: "10px" }}>/</span>
-                        <span style={{ fontSize: "10px", color: T.text }}>
+                        <span style={{ fontSize: "11px", color: T.textDim }}>{addon.id}</span>
+                        <span style={{ color: T.textFaint, fontSize: "11px" }}>/</span>
+                        <span style={{ fontSize: "11px", color: T.text }}>
                           v{displayVersion}
                         </span>
                         {isFork && <Tag color="#6ab">分支</Tag>}
                       </div>
                     </div>
 
-                    <span style={{ color: T.textDim, fontSize: "10px", flexShrink: 0 }}>
+                    <span style={{ color: T.textDim, fontSize: "11px", flexShrink: 0 }}>
                       {expanded ? "\u25B2" : "\u25BC"}
                     </span>
                   </div>
@@ -496,7 +496,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "flex", gap: "8px", fontSize: "10px" }}>
+    <div style={{ display: "flex", gap: "8px", fontSize: "11px" }}>
       <span style={{ color: T.textSub, width: "30px", flexShrink: 0 }}>{label}</span>
       <span style={{ color: T.text }}>{value}</span>
     </div>

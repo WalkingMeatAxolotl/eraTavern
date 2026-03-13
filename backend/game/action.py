@@ -645,6 +645,7 @@ def simulate_npc_ticks(
     if exclude_ids:
         skip.update(exclude_ids)
     ticks = max(1, elapsed_minutes // TICK_MINUTES)
+    current_days = game_state.time.total_days
     log: list[dict] = []
     for _ in range(ticks):
         for npc_id, npc in list(game_state.characters.items()):
@@ -658,10 +659,18 @@ def simulate_npc_ticks(
                     "text": tick_log,
                     "mapId": pos.get("mapId", ""),
                     "cellId": pos.get("cellId", 0),
+                    "totalDays": current_days,
                 }
                 log.append(entry)
-    # Store all entries for LLM
+    # Store entries for LLM, trim to cache limit (60 game days)
     game_state.npc_full_log.extend(log)
+    from .state import GameState
+    cutoff = current_days - GameState.NPC_LOG_CACHE_DAYS
+    if game_state.npc_full_log and game_state.npc_full_log[0].get("totalDays", 0) < cutoff:
+        game_state.npc_full_log = [
+            e for e in game_state.npc_full_log
+            if e.get("totalDays", 0) >= cutoff
+        ]
     return log
 
 
