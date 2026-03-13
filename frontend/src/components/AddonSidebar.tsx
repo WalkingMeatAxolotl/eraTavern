@@ -300,8 +300,6 @@ function VersionSwitchList({ addonId, selectedVersion, onSwitch }: {
     fetchAddonVersionsDetail(addonId).then(setVersions);
   }, [addonId]);
 
-  if (versions.length <= 1) return null;
-
   const grouped = groupVersions(versions);
 
   return (
@@ -309,7 +307,9 @@ function VersionSwitchList({ addonId, selectedVersion, onSwitch }: {
       <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "2px", fontWeight: "bold" }}>
         切换版本
       </div>
-      {grouped.map(({ info: vi, indent }) => {
+      {versions.length === 0 ? (
+        <div style={{ fontSize: "11px", color: T.textFaint, padding: "2px 0" }}>无版本</div>
+      ) : grouped.map(({ info: vi, indent }) => {
         const ver = vi.version;
         const isCurrent = ver === selectedVersion;
         const isBase = !vi.forkedFrom;

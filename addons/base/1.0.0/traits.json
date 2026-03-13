@@ -551,7 +551,8 @@
         "vampire",
         "halfelf",
         "golem"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-gender",
@@ -560,7 +561,8 @@
       "traits": [
         "man",
         "woman"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-build",
@@ -571,7 +573,8 @@
         "short-body",
         "strong-body",
         "slender"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-constitution",
@@ -582,7 +585,8 @@
         "agile-body",
         "longevity",
         "nightvision"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-appearance",
@@ -593,7 +597,8 @@
         "imposing",
         "scarred",
         "heterochromia"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-features",
@@ -604,7 +609,8 @@
         "tail",
         "wings",
         "pointed-ears"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-will",
@@ -613,7 +619,8 @@
       "traits": [
         "brave",
         "timid"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-mood",
@@ -622,7 +629,8 @@
       "traits": [
         "cheerful",
         "gloomy"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-thinking",
@@ -631,7 +639,8 @@
       "traits": [
         "rational",
         "emotional"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-temper",
@@ -640,7 +649,8 @@
       "traits": [
         "gentle",
         "cold"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-diligence",
@@ -649,7 +659,8 @@
       "traits": [
         "diligent",
         "lazy"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-honesty",
@@ -658,7 +669,8 @@
       "traits": [
         "honest",
         "cunning"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-pride",
@@ -667,7 +679,8 @@
       "traits": [
         "prideful",
         "humble"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-combat",
@@ -679,7 +692,8 @@
         "riding",
         "tactics",
         "trap-making"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-magic",
@@ -689,7 +703,8 @@
         "magic-talent",
         "enchanting",
         "alchemy"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-craft",
@@ -699,7 +714,8 @@
         "cooking-skill",
         "smithing",
         "herbalism"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-social",
@@ -709,7 +725,8 @@
         "persuasion",
         "music",
         "taming"
-      ]
+      ],
+      "exclusive": true
     },
     {
       "id": "grp-class",
@@ -726,7 +743,8 @@
         "outlaw",
         "clergy",
         "artisan"
-      ]
+      ],
+      "exclusive": true
     }
   ]
 }
