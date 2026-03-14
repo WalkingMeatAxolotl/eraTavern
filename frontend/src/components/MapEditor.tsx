@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import type { DecorPreset, RawMapData, RawGridCell, MapCell } from "../types/game";
+import type { DecorPreset, RawMapData, RawMapGrid, MapCell } from "../types/game";
 import {
   fetchMapRaw,
   fetchDecorPresets,
@@ -83,7 +83,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
   }, [mapId]);
 
   const updateGrid = useCallback(
-    (row: number, col: number, value: RawGridCell) => {
+    (row: number, col: number, value: RawMapGrid) => {
       setMapData((prev) => {
         if (!prev) return prev;
         const newGrid = prev.grid.map((r) => [...r]);
@@ -276,6 +276,14 @@ export default function MapEditor({ mapId, onBack }: Props) {
             value={mapData.name}
             onChange={(e) => setMapData({ ...mapData, name: e.target.value })}
             style={{ ...inputStyle, width: "140px" }}
+          />
+        </Row>
+        <Row label="简介">
+          <input
+            value={mapData.description ?? ""}
+            onChange={(e) => setMapData({ ...mapData, description: e.target.value || undefined })}
+            style={{ ...inputStyle, width: "200px" }}
+            placeholder="地图简介（可选）"
           />
         </Row>
         <Row label="背景色">
@@ -910,6 +918,14 @@ function CellEditor({
           value={cell.name ?? ""}
           onChange={(e) => onChange({ ...cell, name: e.target.value })}
           style={{ ...inputStyle, width: "140px" }}
+        />
+      </Row>
+      <Row label="简介">
+        <input
+          value={cell.description ?? ""}
+          onChange={(e) => onChange({ ...cell, description: e.target.value || undefined })}
+          style={{ ...inputStyle, width: "200px" }}
+          placeholder="区格简介（可选）"
         />
       </Row>
       <Row label="显示文字">

@@ -1,6 +1,6 @@
 // --- Map types ---
 
-export interface GridCell {
+export interface MapGrid {
   text: string;
   color: string;
   cellId: number | null;
@@ -19,6 +19,7 @@ export interface MapCell {
   row: number;
   col: number;
   name?: string;
+  description?: string;
   tags?: string[];
   backgroundImage?: string;
   connections: { targetCell: number; targetMap?: string; travelTime?: number; senseBlocked?: boolean }[];
@@ -27,9 +28,10 @@ export interface MapCell {
 export interface GameMap {
   id: string;
   name: string;
+  description?: string;
   defaultColor: string;
   defaultBackgroundImage: string | null;
-  grid: GridCell[][];
+  grid: MapGrid[][];
   cells: MapCell[];
 }
 
@@ -41,15 +43,16 @@ export interface DecorPreset {
   source?: string;
 }
 
-export type RawGridCell = string | [string, string];
+export type RawMapGrid = string | [string, string];
 
 export interface RawMapData {
   id: string;
   name: string;
+  description?: string;
   defaultColor: string;
   defaultBackgroundImage?: string;
   backgroundImage?: string;
-  grid: RawGridCell[][];
+  grid: RawMapGrid[][];
   cells: MapCell[];
 }
 

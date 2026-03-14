@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { GameMap, GridCell } from "../types/game";
+import type { GameMap, MapGrid } from "../types/game";
 
 interface MapViewProps {
   map: GameMap;
@@ -9,7 +9,7 @@ interface MapViewProps {
 
 export default function MapView({ map, playerCellId, onCellClick }: MapViewProps) {
   const renderCell = useCallback(
-    (cell: GridCell, rowIdx: number, colIdx: number) => {
+    (cell: MapGrid, rowIdx: number, colIdx: number) => {
       const isPlayerHere = cell.cellId !== null && cell.cellId === playerCellId;
       const isMovable = cell.cellId !== null && !isPlayerHere;
 

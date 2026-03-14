@@ -56,6 +56,7 @@ const rowBg = (idx: number) => idx % 2 === 0 ? T.bg1 : T.bg2;
 const CONDITION_TYPES: { value: ActionCondition["type"]; label: string }[] = [
   { value: "location", label: "地点" },
   { value: "npcPresent", label: "NPC在场" },
+  { value: "npcAbsent", label: "NPC不在场" },
   { value: "resource", label: "资源" },
   { value: "ability", label: "能力" },
   { value: "trait", label: "持有特质" },
@@ -71,8 +72,8 @@ const CONDITION_TYPES: { value: ActionCondition["type"]; label: string }[] = [
 
 const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: "resource", label: "资源" },
-  { value: "ability", label: "能力" },
-  { value: "experience", label: "经验" },
+  { value: "ability", label: "能力(经验值)" },
+  { value: "experience", label: "经历记录" },
   { value: "basicInfo", label: "基本属性" },
   { value: "favorability", label: "好感度" },
   { value: "trait", label: "特质" },
@@ -411,7 +412,7 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
   };
   const removeEffect = (idx: number) => setEffects(effects.filter((_, i) => i !== idx));
 
-  const condCtx = { resourceKeys, abilityKeys, basicInfoNumKeys, traitCategories, mapList, traitList, itemList, npcList, variableList, wvList, clothingSlots };
+  const condCtx = { resourceKeys, abilityKeys, basicInfoNumKeys, traitCategories, mapList, traitList, itemList, npcList, variableList, wvList, clothingSlots, definitions };
 
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
@@ -457,8 +458,8 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
           {triggerMode === "while" && (
             <>
               <label style={{ color: T.textSub, fontSize: "11px" }}>冷却(分钟)</label>
-              <input style={{ ...inputStyle, width: "60px" }} type="number" value={cooldown}
-                onChange={e => setCooldown(Number(e.target.value))} />
+              <input style={{ ...inputStyle, width: "60px" }} type="number" step={5} value={cooldown}
+                onChange={e => setCooldown(Math.max(5, Math.ceil(Number(e.target.value) / 5) * 5))} />
             </>
           )}
           <button onClick={() => setShowTriggerHelp(v => !v)}
@@ -577,6 +578,7 @@ type CondCtx = {
   variableList: { id: string; name: string }[];
   wvList: { id: string; name: string }[];
   clothingSlots: string[];
+  definitions: GameDefinitions | null;
 };
 
 function ConditionItemEditor({ item, onChange, onRemove, ctx, depth }: {
@@ -678,11 +680,11 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
         </>
       )}
 
-      {/* NPC present */}
-      {condition.type === "npcPresent" && (
+      {/* NPC present / absent */}
+      {(condition.type === "npcPresent" || condition.type === "npcAbsent") && (
         <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.npcId ?? ""}
           onChange={e => update({ npcId: e.target.value || undefined })}>
-          <option value="">任意NPC</option>
+          <option value="">{condition.type === "npcPresent" ? "任意NPC" : "任意NPC都不在"}</option>
           {ctx.npcList.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
         </select>
       )}
@@ -754,21 +756,32 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       )}
 
       {/* Clothing */}
-      {condition.type === "clothing" && (
-        <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.slot ?? ""}
-            onChange={e => update({ slot: e.target.value })}>
-            <option value="">槽位</option>
-            {ctx.clothingSlots.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.state ?? "worn"}
-            onChange={e => update({ state: e.target.value })}>
-            <option value="worn">穿着</option>
-            <option value="halfWorn">半穿</option>
-            <option value="empty">空</option>
-          </select>
-        </>
-      )}
+      {condition.type === "clothing" && (() => {
+        const slotClothing = condition.slot && ctx.definitions
+          ? Object.values(ctx.definitions.clothingDefs).filter(c => c.slot === condition.slot)
+          : [];
+        return (
+          <>
+            <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.slot ?? ""}
+              onChange={e => update({ slot: e.target.value, itemId: undefined })}>
+              <option value="">槽位</option>
+              {ctx.clothingSlots.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.itemId ?? ""}
+              onChange={e => update({ itemId: e.target.value || undefined })}>
+              <option value="">任意衣物</option>
+              {slotClothing.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.state ?? ""}
+              onChange={e => update({ state: e.target.value || undefined })}>
+              <option value="">任意状态</option>
+              <option value="worn">穿着</option>
+              <option value="halfWorn">半穿</option>
+              <option value="empty">空</option>
+            </select>
+          </>
+        );
+      })()}
 
       {/* Time */}
       {condition.type === "time" && (
@@ -787,6 +800,11 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
             <option value="夏">夏</option>
             <option value="秋">秋</option>
             <option value="冬">冬</option>
+          </select>
+          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.dayOfWeek ?? ""}
+            onChange={e => update({ dayOfWeek: e.target.value || undefined })}>
+            <option value="">任意星期</option>
+            {["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </>
       )}
@@ -889,8 +907,8 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
         <>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.op}
             onChange={e => update({ op: e.target.value })}>
-            <option value="addTrait">添加</option>
-            <option value="removeTrait">移除</option>
+            <option value="add">添加</option>
+            <option value="remove">移除</option>
           </select>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.key ?? ""}
             onChange={e => update({ key: e.target.value })}>
@@ -911,8 +929,8 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
         <>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.op}
             onChange={e => update({ op: e.target.value })}>
-            <option value="addItem">给予</option>
-            <option value="removeItem">移除</option>
+            <option value="add">给予</option>
+            <option value="remove">移除</option>
           </select>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.itemId ?? ""}
             onChange={e => update({ itemId: e.target.value })}>

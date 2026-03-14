@@ -6,7 +6,7 @@ import random
 from typing import Any
 
 SEASONS = ["春", "夏", "秋", "冬"]
-WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
+WEEKDAYS = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
 
 WEATHER_TABLE = {
     "sunny":  {"name": "晴天", "icon": "☀"},

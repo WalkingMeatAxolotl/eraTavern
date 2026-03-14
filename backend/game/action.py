@@ -185,7 +185,7 @@ def _evaluate_leaf(
         return _check_npc_present(char, game_state, cond.get("npcId"))
 
     if ctype == "npcAbsent":
-        return not _check_npc_present(char, game_state, None)
+        return not _check_npc_present(char, game_state, cond.get("npcId"))
 
     # Time is global, not character-specific
     if ctype == "time":
@@ -198,6 +198,9 @@ def _evaluate_leaf(
             return False
         season = cond.get("season")
         if season is not None and time.season_name != season:
+            return False
+        day_of_week = cond.get("dayOfWeek")
+        if day_of_week is not None and time.weekday != day_of_week:
             return False
         return True
 
@@ -288,12 +291,19 @@ def _evaluate_leaf(
 
     if ctype == "clothing":
         slot = cond.get("slot", "")
-        expected_state = cond.get("state", "worn")
+        expected_state = cond.get("state")
+        expected_item = cond.get("itemId")
         for cl in check_char.get("clothing", []):
             if cl["slot"] == slot:
-                if expected_state == "empty":
-                    return cl.get("itemId") is None
-                return cl.get("state") == expected_state
+                if expected_item:
+                    if cl.get("itemId") != expected_item:
+                        return False
+                if expected_state:
+                    if expected_state == "empty":
+                        return cl.get("itemId") is None
+                    return cl.get("state") == expected_state
+                # No state specified, just check item match (already passed above)
+                return True
         return False
 
     if ctype == "variable":
@@ -499,6 +509,28 @@ def _resolve_template(
                     return ", ".join(vals) if vals else "无"
             return ""
 
+        if category == "favorability":
+            fav_data = c.get("favorability", [])
+            if isinstance(fav_data, list):
+                for fav in fav_data:
+                    if fav["id"] == key:
+                        return str(fav["value"])
+            elif isinstance(fav_data, dict):
+                return str(fav_data.get(key, 0))
+            return "0"
+
+        if category == "inventory":
+            for inv in c.get("inventory", []):
+                if inv["itemId"] == key:
+                    return str(inv.get("amount", 0))
+            return "0"
+
+        if category == "experience":
+            for exp_entry in c.get("experiences", []):
+                if exp_entry["key"] == key:
+                    return str(exp_entry.get("count", 0))
+            return "0"
+
         return ""
 
     def _replace_var(m: re.Match) -> str:
@@ -544,6 +576,12 @@ def _resolve_template(
 
 TICK_MINUTES = 5
 DISTANCE_PENALTY = 0.5  # desire reduction per minute of travel distance
+
+
+def _snap_to_tick(minutes: int | float) -> int:
+    """Snap a minute value up to the nearest multiple of TICK_MINUTES."""
+    import math
+    return max(TICK_MINUTES, math.ceil(minutes / TICK_MINUTES) * TICK_MINUTES)
 
 
 def _split_conditions(conditions: list) -> tuple[dict | None, dict | None, list]:
@@ -624,7 +662,7 @@ def _build_suggest_map(game_state: Any, npc_id: str) -> tuple[dict[str, float], 
     for record in game_state.npc_action_history.get(npc_id, []):
         elapsed = current_time - record.get("completedAt", 0)
         for s in record.get("suggestNext", []):
-            decay = s.get("decay", 0)
+            decay = _snap_to_tick(s.get("decay", 0))
             if decay > 0 and elapsed < decay:
                 bonus = s.get("bonus", 0) * (1 - elapsed / decay)
                 aid = s.get("actionId", "")
@@ -821,8 +859,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
                     desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
                     effective = desire - distance * DISTANCE_PENALTY
                     if effective > 0:
-                        jitter = effective * random.uniform(-0.1, 0.1)
-                        candidates.append((effective + jitter, action_def, distance, cell_key, tid))
+                        candidates.append((effective, action_def, distance, cell_key, tid))
             else:
                 # === No-target location action ===
                 add, mul = _calc_modifier_bonus(
@@ -833,8 +870,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
                 desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
                 effective = desire - distance * DISTANCE_PENALTY
                 if effective > 0:
-                    jitter = effective * random.uniform(-0.1, 0.1)
-                    candidates.append((effective + jitter, action_def, distance, cell_key, None))
+                    candidates.append((effective, action_def, distance, cell_key, None))
 
     # ========== B. No-location actions ==========
     no_location_actions = getattr(game_state, "no_location_actions", [])
@@ -871,8 +907,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
                     desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
                     effective = desire - cell_dist * DISTANCE_PENALTY
                     if effective > 0:
-                        jitter = effective * random.uniform(-0.1, 0.1)
-                        candidates.append((effective + jitter, action_def, cell_dist, cell_key, tid))
+                        candidates.append((effective, action_def, cell_dist, cell_key, tid))
         else:
             # No target, no location — evaluate at current position (distance=0)
             if not _evaluate_conditions(conditions, npc, game_state, char_id=npc_id):
@@ -884,16 +919,19 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
             desire = (npc_weight + add) * mul
             desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
             if desire > 0:
-                jitter = desire * random.uniform(-0.1, 0.1)
-                candidates.append((desire + jitter, action_def, 0, pos_key, None))
+                candidates.append((desire, action_def, 0, pos_key, None))
 
-    # 4. Select best candidate
+    # 4. Select from top-N candidates by weighted random
+    NPC_TOP_N = 5
     if not candidates:
         game_state.npc_activities[npc_id] = "待机中"
         return None
 
     candidates.sort(key=lambda x: -x[0])
-    _, best_def, best_dist, target_pos, target_npc_id = candidates[0]
+    top = candidates[:NPC_TOP_N]
+    weights = [c[0] for c in top]
+    chosen = random.choices(top, weights=weights, k=1)[0]
+    _, best_def, best_dist, target_pos, target_npc_id = chosen
 
     if best_dist == 0:
         return _npc_start_action(game_state, npc_id, best_def, target_npc_id)
@@ -931,8 +969,8 @@ def _npc_start_action(
         return None
     _apply_costs(costs, npc)
 
-    time_cost = action_def.get("timeCost", TICK_MINUTES)
-    busy_ticks = max(1, time_cost // TICK_MINUTES)
+    time_cost = _snap_to_tick(action_def.get("timeCost", TICK_MINUTES))
+    busy_ticks = time_cost // TICK_MINUTES
 
     # Roll outcome now
     outcomes = action_def.get("outcomes", [])
@@ -1085,7 +1123,7 @@ def _execute_configured(
         game_state.npc_goals.pop(target_id, None)
 
     # Advance time — exclude target NPC from tick simulation
-    time_cost = action_def.get("timeCost", 0)
+    time_cost = _snap_to_tick(action_def.get("timeCost", 0))
     npc_log_raw: list[dict] = []
     if time_cost > 0:
         game_state.time.advance(time_cost)
@@ -1433,7 +1471,7 @@ def _apply_effects(
             item_id = eff.get("itemId", "")
             amount = eff.get("amount", 1)
             inventory = target_char.setdefault("inventory", [])
-            if op == "addItem":
+            if op in ("add", "addItem"):
                 found = False
                 for inv in inventory:
                     if inv["itemId"] == item_id:
@@ -1449,7 +1487,7 @@ def _apply_effects(
                         "amount": amount,
                     })
                 summaries.append(f"{target_prefix}获得 {item_id} x{amount}")
-            elif op == "removeItem":
+            elif op in ("remove", "removeItem"):
                 for inv in inventory:
                     if inv["itemId"] == item_id:
                         inv["amount"] -= amount
@@ -1470,7 +1508,7 @@ def _apply_effects(
             else:
                 t_char_data = game_state.character_data.get(trait_target, {})
             traits = t_char_data.get("traits", {})
-            if op == "addTrait":
+            if op in ("add", "addTrait"):
                 vals = traits.get(key, [])
                 if trait_id not in vals:
                     # Check exclusive trait groups: remove other members
@@ -1483,7 +1521,7 @@ def _apply_effects(
                     vals.append(trait_id)
                     traits[key] = vals
                 summaries.append(f"{target_prefix}获得特质 [{trait_id}]")
-            elif op == "removeTrait":
+            elif op in ("remove", "removeTrait"):
                 vals = traits.get(key, [])
                 if trait_id in vals:
                     vals.remove(trait_id)
@@ -1503,7 +1541,7 @@ def _apply_effects(
                 cl_char_data = game_state.character_data.get(cl_target, {})
             cl = cl_char_data.get("clothing", {})
             if slot in cl:
-                if new_state == "empty":
+                if op == "remove" or new_state == "empty":
                     item_name = cl[slot].get("itemId", slot)
                     cl[slot] = {"itemId": None, "state": "none"}
                     summaries.append(f"{target_prefix}移除 [{item_name}]")
@@ -1746,7 +1784,7 @@ def _should_fire_event(
     if mode == "while":
         if not matched:
             return False
-        cooldown = event_def.get("cooldown", 10)
+        cooldown = _snap_to_tick(event_def.get("cooldown", 10))
         last_trigger = state.get("last_trigger", {}).get(key, -999999)
         return (current_time - last_trigger) >= cooldown
 

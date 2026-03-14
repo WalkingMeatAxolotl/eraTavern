@@ -115,6 +115,7 @@ const delBtnStyle: React.CSSProperties = {
 const CONDITION_TYPES: { value: ActionCondition["type"]; label: string }[] = [
   { value: "location", label: "地点" },
   { value: "npcPresent", label: "NPC在场" },
+  { value: "npcAbsent", label: "NPC不在场" },
   { value: "resource", label: "资源" },
   { value: "ability", label: "能力" },
   { value: "trait", label: "持有特质" },
@@ -136,8 +137,8 @@ const COST_TYPES: { value: ActionCost["type"]; label: string }[] = [
 
 const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: "resource", label: "资源" },
-  { value: "ability", label: "能力" },
-  { value: "experience", label: "经验" },
+  { value: "ability", label: "能力(经验值)" },
+  { value: "experience", label: "经历记录" },
   { value: "basicInfo", label: "基本属性" },
   { value: "favorability", label: "好感度" },
   { value: "trait", label: "特质" },
@@ -698,7 +699,7 @@ function ConditionLeafEditor({
         {CONDITION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
       </select>
 
-      {!["location", "npcPresent", "time", "worldVar"].includes(condition.type) && (
+      {!["location", "npcPresent", "npcAbsent", "time", "worldVar"].includes(condition.type) && (
         <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }} value={condition.condTarget ?? "self"}
           onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })} disabled={disabled}>
           <option value="self">自身</option>
@@ -710,10 +711,10 @@ function ConditionLeafEditor({
         <LocationCondEditor condition={condition} onChange={update} disabled={disabled} mapList={mapList} />
       )}
 
-      {condition.type === "npcPresent" && (
+      {(condition.type === "npcPresent" || condition.type === "npcAbsent") && (
         <select style={inputStyle} value={condition.npcId ?? ""}
           onChange={(e) => update({ npcId: e.target.value || undefined })} disabled={disabled}>
-          <option value="">任意NPC</option>
+          <option value="">{condition.type === "npcPresent" ? "任意NPC" : "任意NPC都不在"}</option>
           {npcList.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
         </select>
       )}
@@ -780,22 +781,33 @@ function ConditionLeafEditor({
         </>
       )}
 
-      {condition.type === "clothing" && (
-        <>
-          <select style={inputStyle} value={condition.slot ?? ""}
-            onChange={(e) => update({ slot: e.target.value })} disabled={disabled}>
-            <option value="">选择槽位</option>
-            {clothingSlots.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select style={inputStyle} value={condition.state ?? "worn"}
-            onChange={(e) => update({ state: e.target.value })} disabled={disabled}>
-            <option value="worn">穿着</option>
-            <option value="halfWorn">半穿</option>
-            <option value="none">脱下</option>
-            <option value="empty">无衣物</option>
-          </select>
-        </>
-      )}
+      {condition.type === "clothing" && (() => {
+        const slotClothing = condition.slot
+          ? Object.values(ctx.definitions.clothingDefs).filter((c) => c.slot === condition.slot)
+          : [];
+        return (
+          <>
+            <select style={inputStyle} value={condition.slot ?? ""}
+              onChange={(e) => update({ slot: e.target.value, itemId: undefined })} disabled={disabled}>
+              <option value="">选择槽位</option>
+              {clothingSlots.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select style={inputStyle} value={condition.itemId ?? ""}
+              onChange={(e) => update({ itemId: e.target.value || undefined })} disabled={disabled}>
+              <option value="">任意衣物</option>
+              {slotClothing.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <select style={inputStyle} value={condition.state ?? ""}
+              onChange={(e) => update({ state: e.target.value || undefined })} disabled={disabled}>
+              <option value="">任意状态</option>
+              <option value="worn">穿着</option>
+              <option value="halfWorn">半穿</option>
+              <option value="none">脱下</option>
+              <option value="empty">无衣物</option>
+            </select>
+          </>
+        );
+      })()}
 
       {condition.type === "time" && (
         <>
@@ -806,9 +818,16 @@ function ConditionLeafEditor({
           <input type="number" style={{ ...inputStyle, width: "50px" }} value={condition.hourMax ?? ""}
             onChange={(e) => update({ hourMax: e.target.value ? Number(e.target.value) : undefined })} disabled={disabled}
             placeholder="时止" min={0} max={23} />
-          <input style={{ ...inputStyle, width: "50px" }} value={condition.season ?? ""}
-            onChange={(e) => update({ season: e.target.value || undefined })} disabled={disabled}
-            placeholder="季节" />
+          <select style={{ ...inputStyle, width: "auto" }} value={condition.season ?? ""}
+            onChange={(e) => update({ season: e.target.value || undefined })} disabled={disabled}>
+            <option value="">任意季节</option>
+            {["春", "夏", "秋", "冬"].map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select style={{ ...inputStyle, width: "auto" }} value={condition.dayOfWeek ?? ""}
+            onChange={(e) => update({ dayOfWeek: e.target.value || undefined })} disabled={disabled}>
+            <option value="">任意星期</option>
+            {["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
         </>
       )}
 
@@ -1422,7 +1441,8 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                     type="number"
                     style={{ ...inputStyle, width: "45px" }}
                     value={sn.decay}
-                    onChange={(e) => updateSn({ decay: Math.max(1, Number(e.target.value)) })}
+                    step={5}
+                    onChange={(e) => updateSn({ decay: Math.max(5, Math.ceil(Number(e.target.value) / 5) * 5) })}
                     disabled={disabled}
                     title="衰减时间(分钟)"
                   />
@@ -1620,8 +1640,8 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
       {effect.type === "trait" && (
         <>
           <select style={inputStyle} value={effect.op} onChange={(e) => update({ op: e.target.value })} disabled={disabled}>
-            <option value="addTrait">添加</option>
-            <option value="removeTrait">移除</option>
+            <option value="add">添加</option>
+            <option value="remove">移除</option>
           </select>
           <select style={inputStyle} value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })} disabled={disabled}>
@@ -1640,8 +1660,8 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
       {effect.type === "item" && (
         <>
           <select style={inputStyle} value={effect.op} onChange={(e) => update({ op: e.target.value })} disabled={disabled}>
-            <option value="addItem">添加</option>
-            <option value="removeItem">移除</option>
+            <option value="add">添加</option>
+            <option value="remove">移除</option>
           </select>
           <select style={inputStyle} value={effect.itemId ?? ""}
             onChange={(e) => update({ itemId: e.target.value })} disabled={disabled}>
@@ -1656,7 +1676,8 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
       {effect.type === "clothing" && (
         <>
           <select style={inputStyle} value={effect.op} onChange={(e) => update({ op: e.target.value })} disabled={disabled}>
-            <option value="setState">设置状态</option>
+            <option value="set">设置状态</option>
+            <option value="remove">脱下</option>
           </select>
           <select style={inputStyle} value={effect.slot ?? ""}
             onChange={(e) => update({ slot: e.target.value })} disabled={disabled}>
