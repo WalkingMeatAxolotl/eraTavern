@@ -22,7 +22,7 @@ export interface MapCell {
   description?: string;
   tags?: string[];
   backgroundImage?: string;
-  connections: { targetCell: number; targetMap?: string; travelTime?: number; senseBlocked?: boolean }[];
+  connections: { targetCell: number; targetMap?: string; travelTime?: number; senseBlocked?: boolean; senseOnly?: boolean }[];
 }
 
 export interface GameMap {

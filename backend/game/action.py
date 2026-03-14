@@ -1665,23 +1665,11 @@ def _execute_move(
     if target_cell is None:
         return {"success": False, "message": "未指定目标方格"}
 
-    if not validate_move(
+    travel_time = validate_move(
         game_state.maps, pos["mapId"], pos["cellId"], target_map, target_cell
-    ):
+    )
+    if travel_time is None:
         return {"success": False, "message": "无法移动到目标方格"}
-
-    # Look up travel time from the connection
-    travel_time = 10  # default
-    current_map_data = game_state.maps.get(pos["mapId"])
-    if current_map_data:
-        current_cell = current_map_data["cell_index"].get(pos["cellId"])
-        if current_cell:
-            effective_target_map = target_map or pos["mapId"]
-            for conn in current_cell.get("connections", []):
-                conn_map = conn.get("targetMap", pos["mapId"])
-                if conn_map == effective_target_map and conn["targetCell"] == target_cell:
-                    travel_time = conn.get("travelTime", 10)
-                    break
 
     # Update position
     new_map_id = target_map or pos["mapId"]

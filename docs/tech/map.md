@@ -57,6 +57,7 @@ interface MapCell {
     targetMap?: string;
     travelTime?: number;
     senseBlocked?: boolean;
+    senseOnly?: boolean;
   }[];
 }
 ```
@@ -66,6 +67,19 @@ interface MapCell {
 连接定义在 `MapCell.connections` 数组中，每条连接是**单向**的——从所属 cell 指向 `targetCell`。双向通行 = 两个 cell 各创建一条指向对方的连接。
 
 不存在独立的 `Connection` 类型；`from` 隐含在所属 cell。
+
+### 连接属性组合
+
+| `senseBlocked` | `senseOnly` | 可通行 | 可感知 | 用途 |
+|:-:|:-:|:-:|:-:|------|
+| — | — | ✓ | ✓ | 普通连接（默认） |
+| `true` | — | ✓ | ✗ | 可走但不可感知（隔音门、楼层间） |
+| — | `true` | ✗ | ✓ | 不可走但可感知（玻璃墙、阳台俯瞰） |
+| `true` | `true` | ✗ | ✗ | 无意义，`senseOnly` 时 `senseBlocked` 被忽略 |
+
+- `senseOnly` 连接被 `validate_move()`、`build_distance_matrix()`、`get_connections()` 跳过
+- `senseOnly` 连接正常参与 `build_sense_matrix()`（除非同时 `senseBlocked`）
+- 默认值：同地图连接 `senseBlocked: false`；跨地图连接 `senseBlocked: true`
 
 ### DecorPreset（装饰预设）
 
@@ -190,13 +204,13 @@ NPC 决策系统使用 distance_matrix 计算到目标的移动成本。
 
 ## 移动验证
 
-### `validate_move(character, target_map, target_cell)`
+### `validate_move(maps, current_map_id, current_cell_id, target_map_id, target_cell_id) → Optional[int]`
 
 验证角色是否可以移动到目标位置：
 
-1. 检查角色当前位置 `(current_map, current_cell)` 的 connections 中是否有指向 `(target_map, target_cell)` 的连接
-2. 验证通过后返回该 connection 的 `travelTime`
-3. 验证失败返回错误
+1. 检查 `current_cell` 的 connections 中是否有指向 `(target_map_id, target_cell_id)` 的连接
+2. 验证目标 cell 存在
+3. 验证通过返回该 connection 的 `travelTime`（默认 10），失败返回 `None`
 
 ## 副作用
 

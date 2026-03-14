@@ -70,10 +70,14 @@ export default function FloatingActions({
         boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
       }}
     >
+      <span style={{ color: T.textDim, fontSize: "11px", whiteSpace: "nowrap" }}>
+        有未保存的配置改动
+      </span>
       <button
         onClick={onRevert}
         disabled={busy}
         style={{ ...btnStyle, color: T.textSub }}
+        title="放弃所有未保存的修改，恢复到上次保存的状态"
       >
         [撤销变更]
       </button>
@@ -81,6 +85,7 @@ export default function FloatingActions({
         onClick={handleSave}
         disabled={busy}
         style={{ ...btnStyle, color: T.accent }}
+        title="保存修改到扩展文件并应用到当前游戏"
       >
         {busy ? "保存中..." : "[保存变更]"}
       </button>

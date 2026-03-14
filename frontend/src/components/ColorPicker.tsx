@@ -34,6 +34,8 @@ interface Props {
 export default function ColorPicker({ value, onChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [recent, setRecent] = useState<string[]>(loadRecent);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   // Sync recent across multiple ColorPicker instances via storage event
   useEffect(() => {
@@ -44,10 +46,23 @@ export default function ColorPicker({ value, onChange }: Props) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const handleNativeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const color = e.target.value;
-    onChange(color);
-    setRecent(pushRecent(color));
+  // Native 'change' event fires only when picker closes (final color chosen)
+  // React's onChange fires on every input change, so we use native event instead
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const handleChange = (e: Event) => {
+      const color = (e.target as HTMLInputElement).value;
+      onChangeRef.current(color);
+      setRecent(pushRecent(color));
+    };
+    el.addEventListener("change", handleChange);
+    return () => el.removeEventListener("change", handleChange);
+  }, []);
+
+  // React onChange (= native input event) for live preview while dragging
+  const handleLivePreview = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
   }, [onChange]);
 
   const handleSwatchClick = useCallback((color: string) => {
@@ -111,7 +126,7 @@ export default function ColorPicker({ value, onChange }: Props) {
         ref={inputRef}
         type="color"
         value={value}
-        onChange={handleNativeChange}
+        onChange={handleLivePreview}
         style={{ position: "absolute", width: 0, height: 0, opacity: 0, pointerEvents: "none" }}
       />
     </div>

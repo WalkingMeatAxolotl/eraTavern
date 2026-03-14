@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 def load_map_collection(data_dir_or_addons: "Path | AddonDirs") -> dict:
     """Load maps from addon directories (or legacy single data_dir).
@@ -77,19 +77,21 @@ def validate_move(
     maps: dict[str, dict],
     current_map_id: str,
     current_cell_id: int,
-    target_map_id: str | None,
+    target_map_id: Optional[str],
     target_cell_id: int,
-) -> bool:
-    """Check if a move from current position to target is valid."""
+) -> Optional[int]:
+    """Check if a move is valid. Returns travelTime (int) on success, None on failure."""
     current_map = maps.get(current_map_id)
     if not current_map:
-        return False
+        return None
 
     current_cell = current_map["cell_index"].get(current_cell_id)
     if not current_cell:
-        return False
+        return None
 
     for conn in current_cell.get("connections", []):
+        if conn.get("senseOnly"):
+            continue
         conn_map = conn.get("targetMap", current_map_id)
         conn_cell = conn["targetCell"]
         effective_target_map = target_map_id or current_map_id
@@ -97,9 +99,9 @@ def validate_move(
             # Verify target cell exists
             target_map = maps.get(effective_target_map)
             if target_map and target_cell_id in target_map["cell_index"]:
-                return True
+                return conn.get("travelTime", 10)
 
-    return False
+    return None
 
 
 def build_distance_matrix(maps: dict[str, dict]) -> dict[tuple, dict[tuple, tuple]]:
@@ -120,6 +122,8 @@ def build_distance_matrix(maps: dict[str, dict]) -> dict[tuple, dict[tuple, tupl
             all_nodes.append(node)
             neighbors: list[tuple[tuple[str, int], int]] = []
             for conn in cell_data.get("connections", []):
+                if conn.get("senseOnly"):
+                    continue
                 target_map = conn.get("targetMap", map_id)
                 target_cell = conn["targetCell"]
                 travel_time = conn.get("travelTime", 10)
@@ -342,6 +346,8 @@ def get_connections(
 
     connections = []
     for conn in cell.get("connections", []):
+        if conn.get("senseOnly"):
+            continue
         target_map_id = conn.get("targetMap", map_id)
         target_cell_id = conn["targetCell"]
         target_map = maps.get(target_map_id)

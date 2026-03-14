@@ -192,7 +192,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
     }
   };
 
-  const addRow = () => {
+  const addRowBottom = () => {
     setMapData((prev) => {
       if (!prev) return prev;
       const cols = prev.grid[0]?.length ?? 1;
@@ -200,25 +200,81 @@ export default function MapEditor({ mapId, onBack }: Props) {
     });
   };
 
-  const removeRow = () => {
+  const addRowTop = () => {
     setMapData((prev) => {
-      if (!prev || prev.grid.length <= 1) return prev;
-      return { ...prev, grid: prev.grid.slice(0, -1) };
+      if (!prev) return prev;
+      const cols = prev.grid[0]?.length ?? 1;
+      return {
+        ...prev,
+        grid: [Array(cols).fill(""), ...prev.grid],
+        cells: prev.cells.map((c) => ({ ...c, row: c.row + 1 })),
+      };
     });
   };
 
-  const addCol = () => {
+  const removeRowBottom = () => {
+    setMapData((prev) => {
+      if (!prev || prev.grid.length <= 1) return prev;
+      const lastRow = prev.grid.length - 1;
+      return {
+        ...prev,
+        grid: prev.grid.slice(0, -1),
+        cells: prev.cells.filter((c) => c.row !== lastRow),
+      };
+    });
+  };
+
+  const removeRowTop = () => {
+    setMapData((prev) => {
+      if (!prev || prev.grid.length <= 1) return prev;
+      return {
+        ...prev,
+        grid: prev.grid.slice(1),
+        cells: prev.cells.filter((c) => c.row !== 0).map((c) => ({ ...c, row: c.row - 1 })),
+      };
+    });
+  };
+
+  const addColRight = () => {
     setMapData((prev) => {
       if (!prev) return prev;
       return { ...prev, grid: prev.grid.map((row) => [...row, ""]) };
     });
   };
 
-  const removeCol = () => {
+  const addColLeft = () => {
+    setMapData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        grid: prev.grid.map((row) => ["", ...row]),
+        cells: prev.cells.map((c) => ({ ...c, col: c.col + 1 })),
+      };
+    });
+  };
+
+  const removeColRight = () => {
     setMapData((prev) => {
       if (!prev) return prev;
       if ((prev.grid[0]?.length ?? 0) <= 1) return prev;
-      return { ...prev, grid: prev.grid.map((row) => row.slice(0, -1)) };
+      const lastCol = (prev.grid[0]?.length ?? 1) - 1;
+      return {
+        ...prev,
+        grid: prev.grid.map((row) => row.slice(0, -1)),
+        cells: prev.cells.filter((c) => c.col !== lastCol),
+      };
+    });
+  };
+
+  const removeColLeft = () => {
+    setMapData((prev) => {
+      if (!prev) return prev;
+      if ((prev.grid[0]?.length ?? 0) <= 1) return prev;
+      return {
+        ...prev,
+        grid: prev.grid.map((row) => row.slice(1)),
+        cells: prev.cells.filter((c) => c.col !== 0).map((c) => ({ ...c, col: c.col - 1 })),
+      };
     });
   };
 
@@ -319,10 +375,16 @@ export default function MapEditor({ mapId, onBack }: Props) {
         {/* Grid size + view controls */}
         <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap", marginBottom: "6px" }}>
           <span style={{ color: T.textSub, minWidth: "46px" }}>尺寸:</span>
-          <button onClick={addRow} style={{ ...btnStyle, padding: "2px 8px" }}>[+行]</button>
-          <button onClick={removeRow} style={{ ...btnStyle, padding: "2px 8px" }}>[-行]</button>
-          <button onClick={addCol} style={{ ...btnStyle, padding: "2px 8px" }}>[+列]</button>
-          <button onClick={removeCol} style={{ ...btnStyle, padding: "2px 8px" }}>[-列]</button>
+          <span style={{ color: T.textDim }}>行:</span>
+          <button onClick={addRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>[↑+]</button>
+          <button onClick={removeRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>[↑-]</button>
+          <button onClick={addRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>[↓+]</button>
+          <button onClick={removeRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>[↓-]</button>
+          <span style={{ color: T.textDim }}>列:</span>
+          <button onClick={addColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>[←+]</button>
+          <button onClick={removeColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>[←-]</button>
+          <button onClick={addColRight} style={{ ...btnStyle, padding: "2px 8px" }}>[→+]</button>
+          <button onClick={removeColRight} style={{ ...btnStyle, padding: "2px 8px" }}>[→-]</button>
           <span style={{ color: T.textDim }}>{rows} × {cols}</span>
           <span style={{ flex: 1 }} />
           <button
@@ -336,6 +398,13 @@ export default function MapEditor({ mapId, onBack }: Props) {
           >
             {showConnections ? "[隐藏连接]" : "[显示连接]"}
           </button>
+          {showConnections && (
+            <span style={{ display: "inline-flex", gap: "8px", fontSize: "11px" }}>
+              <span style={{ color: "#4CAF50" }}>■ 全通</span>
+              <span style={{ color: "#e9a045" }}>■ 阻断感知</span>
+              <span style={{ color: "#5b9bd5" }}>■ 仅感知</span>
+            </span>
+          )}
         </div>
 
         {/* Toolbar */}
@@ -594,10 +663,13 @@ function ConnectionOverlay({
   const cx = (c: MapCell) => c.col * cellW + cellW / 2;
   const cy = (c: MapCell) => c.row * cellH + cellH / 2;
 
+  // Connection colors: green=normal, gold=senseBlocked, blue=senseOnly
+  const CONN_COLORS = { normal: "#4CAF50", blocked: "#e9a045", senseOnly: "#5b9bd5" } as const;
+
   // Collect all connection lines (same-map only)
   const lines: {
     x1: number; y1: number; x2: number; y2: number;
-    dashed: boolean; highlight: boolean; key: string;
+    connType: "normal" | "blocked" | "senseOnly"; highlight: boolean; key: string;
   }[] = [];
 
   for (const cell of cells) {
@@ -613,12 +685,13 @@ function ConnectionOverlay({
       const y2 = cy(target);
 
       const highlight = cell.id === selectedCellId || target.id === selectedCellId;
+      const connType = conn.senseOnly ? "senseOnly" : conn.senseBlocked ? "blocked" : "normal";
 
       lines.push({
         x1, y1, x2, y2,
-        dashed: !!conn.senseBlocked,
+        connType,
         highlight,
-        key: `${cell.id}->${conn.targetCell}${conn.senseBlocked ? "s" : ""}`,
+        key: `${cell.id}->${conn.targetCell}${conn.senseBlocked ? "s" : ""}${conn.senseOnly ? "o" : ""}`,
       });
     }
   }
@@ -650,10 +723,16 @@ function ConnectionOverlay({
   };
 
   // Detect bidirectional pairs for offsetting
+  const edgeSet = new Set(lines.map((l) => {
+    const [from, rest] = l.key.split("->");
+    const to = rest?.replace(/[so]/g, "");
+    return `${from}->${to}`;
+  }));
   const pairSet = new Set<string>();
   for (const line of lines) {
-    const rev = `${line.key.split("->")[1]?.split("s")[0]}->${line.key.split("->")[0]}`;
-    if (lines.some((l) => l.key.startsWith(rev))) {
+    const [from, rest] = line.key.split("->");
+    const to = rest?.replace(/[so]/g, "");
+    if (edgeSet.has(`${to}->${from}`)) {
       pairSet.add(line.key);
     }
   }
@@ -671,12 +750,16 @@ function ConnectionOverlay({
       }}
     >
       <defs>
-        <marker id="arrow" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
-          <polygon points="0,0 6,2.5 0,5" fill="#4CAF50" opacity="0.8" />
-        </marker>
-        <marker id="arrow-hi" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
-          <polygon points="0,0 6,2.5 0,5" fill="#4CAF50" />
-        </marker>
+        {(["normal", "blocked", "senseOnly"] as const).map((t) => (
+          <g key={t}>
+            <marker id={`arrow-${t}`} markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+              <polygon points="0,0 6,2.5 0,5" fill={CONN_COLORS[t]} opacity="0.8" />
+            </marker>
+            <marker id={`arrow-${t}-hi`} markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+              <polygon points="0,0 6,2.5 0,5" fill={CONN_COLORS[t]} />
+            </marker>
+          </g>
+        ))}
       </defs>
       {lines.map((line) => {
         const isBidi = pairSet.has(line.key);
@@ -684,7 +767,8 @@ function ConnectionOverlay({
         const shifted = offsetLine(line.x1, line.y1, line.x2, line.y2, offset);
         const shortened = shortenLine(shifted.x1, shifted.y1, shifted.x2, shifted.y2, cellW * 0.4);
 
-        const markerId = line.highlight ? "arrow-hi" : "arrow";
+        const color = CONN_COLORS[line.connType];
+        const markerId = line.highlight ? `arrow-${line.connType}-hi` : `arrow-${line.connType}`;
 
         return (
           <line
@@ -693,10 +777,9 @@ function ConnectionOverlay({
             y1={shortened.y1}
             x2={shortened.x2}
             y2={shortened.y2}
-            stroke="#4CAF50"
+            stroke={color}
             strokeWidth={line.highlight ? 1.5 : 1}
             strokeOpacity={line.highlight ? 0.9 : 0.5}
-            strokeDasharray={line.dashed ? "4,3" : undefined}
             markerEnd={`url(#${markerId})`}
           />
         );
@@ -1001,11 +1084,15 @@ function CellEditor({
               <select
                 value={targetMapId}
                 onChange={(e) => {
+                  const newMapId = e.target.value === currentMapId ? undefined : e.target.value;
+                  const curTarget = cell.connections[i].targetCell;
+                  if (cell.connections.some((c, j) => j !== i && c.targetCell === curTarget && (c.targetMap ?? currentMapId) === (newMapId ?? currentMapId))) return;
                   const newConns = [...cell.connections];
-                  if (e.target.value === currentMapId) {
-                    newConns[i] = { targetCell: newConns[i].targetCell };
+                  if (!newMapId) {
+                    const { targetMap: _, senseBlocked: __, ...rest } = newConns[i];
+                    newConns[i] = rest;
                   } else {
-                    newConns[i] = { ...newConns[i], targetMap: e.target.value };
+                    newConns[i] = { ...newConns[i], targetMap: newMapId, senseBlocked: newConns[i].senseBlocked ?? true };
                   }
                   onChange({ ...cell, connections: newConns });
                 }}
@@ -1028,7 +1115,7 @@ function CellEditor({
                   style={{ ...inputStyle, width: "130px" }}
                 >
                   {targetMapCells
-                    .filter((c) => c.id !== cell.id)
+                    .filter((c) => c.id !== cell.id && (c.id === conn.targetCell || !cell.connections.some((cn, j) => j !== i && cn.targetCell === c.id && (cn.targetMap ?? currentMapId) === currentMapId)))
                     .map((c) => (
                       <option key={c.id} value={c.id}>
                         #{c.id} {c.name ?? ""}
@@ -1040,8 +1127,11 @@ function CellEditor({
                   type="number"
                   value={conn.targetCell}
                   onChange={(e) => {
+                    const newTarget = Number(e.target.value);
+                    const newMap = cell.connections[i].targetMap;
+                    if (cell.connections.some((c, j) => j !== i && c.targetCell === newTarget && c.targetMap === newMap)) return;
                     const newConns = [...cell.connections];
-                    newConns[i] = { ...newConns[i], targetCell: Number(e.target.value) };
+                    newConns[i] = { ...newConns[i], targetCell: newTarget };
                     onChange({ ...cell, connections: newConns });
                   }}
                   placeholder="区格ID"
@@ -1067,6 +1157,7 @@ function CellEditor({
                 <input
                   type="checkbox"
                   checked={!conn.senseBlocked}
+                  disabled={!!conn.senseOnly}
                   onChange={(e) => {
                     const newConns = [...cell.connections];
                     newConns[i] = { ...newConns[i], senseBlocked: !e.target.checked };
@@ -1074,9 +1165,22 @@ function CellEditor({
                   }}
                   style={{ margin: 0 }}
                 />
-                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>感知</span>
+                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>可感知</span>
               </label>
-              <HelpTip text="勾选后，NPC可以通过此连接察觉到对面的角色" />
+              <label style={{ display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={!!conn.senseOnly}
+                  onChange={(e) => {
+                    const newConns = [...cell.connections];
+                    newConns[i] = { ...newConns[i], senseOnly: e.target.checked || undefined, senseBlocked: e.target.checked ? undefined : newConns[i].senseBlocked };
+                    onChange({ ...cell, connections: newConns });
+                  }}
+                  style={{ margin: 0 }}
+                />
+                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>仅感知</span>
+              </label>
+              <HelpTip text="可感知: NPC可透过此连接察觉对面角色。仅感知: NPC可感知但不可通行（如玻璃墙、阳台）" />
               <button
                 onClick={() => {
                   const newConns = cell.connections.filter((_, j) => j !== i);
@@ -1092,11 +1196,13 @@ function CellEditor({
         <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
           <button
             onClick={() => {
-              const otherCell = mapData.cells.find((c) => c.id !== cell.id);
-              const targetCell = otherCell?.id ?? 1;
+              const connectedIds = new Set(cell.connections.filter((c) => !c.targetMap).map((c) => c.targetCell));
+              const target = mapData.cells.find((c) => c.id !== cell.id && !connectedIds.has(c.id))
+                ?? mapData.cells.find((c) => c.id !== cell.id);
+              if (!target) return;
               onChange({
                 ...cell,
-                connections: [...cell.connections, { targetCell, senseBlocked: true }],
+                connections: [...cell.connections, { targetCell: target.id }],
               });
             }}
             style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
@@ -1105,15 +1211,14 @@ function CellEditor({
           </button>
           <button
             onClick={() => {
-              const otherCell = mapData.cells.find((c) => c.id !== cell.id);
-              if (!otherCell) return;
-              const targetId = otherCell.id;
-              const hasForward = cell.connections.some(
-                (c) => c.targetCell === targetId && !c.targetMap
-              );
-              const updatedCurrent = hasForward ? cell : {
+              const connectedIds = new Set(cell.connections.filter((c) => !c.targetMap).map((c) => c.targetCell));
+              const target = mapData.cells.find((c) => c.id !== cell.id && !connectedIds.has(c.id))
+                ?? mapData.cells.find((c) => c.id !== cell.id);
+              if (!target) return;
+              const targetId = target.id;
+              const updatedCurrent = {
                 ...cell,
-                connections: [...cell.connections, { targetCell: targetId, senseBlocked: true }],
+                connections: [...cell.connections, { targetCell: targetId }],
               };
               const targetCellData = mapData.cells.find((c) => c.id === targetId);
               if (!targetCellData) {
@@ -1128,7 +1233,7 @@ function CellEditor({
               } else {
                 const updatedTarget = {
                   ...targetCellData,
-                  connections: [...targetCellData.connections, { targetCell: cell.id, senseBlocked: true }],
+                  connections: [...targetCellData.connections, { targetCell: cell.id }],
                 };
                 onChangeCells([updatedCurrent, updatedTarget]);
               }
