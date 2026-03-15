@@ -49,6 +49,8 @@ tavernGame/
 │   │   ├── character.py               角色加载, namespace, trait/ability/clothing logic
 │   │   ├── action.py                  行动执行, 条件求值, NPC 决策
 │   │   ├── map_engine.py              地图加载, grid 编译, distance/sense matrix
+│   │   ├── time_system.py             游戏时间 (GameTime), 天气, 季节
+│   │   ├── variable_engine.py         衍生变量求值, 循环检测, 调试追踪
 │   │   └── save_manager.py            存档 CRUD
 │   └── data/
 │       └── character_template.json    全局角色模板
@@ -58,21 +60,16 @@ tavernGame/
 │   ├── api/client.ts                REST API 客户端 (所有 fetch 函数)
 │   ├── types/game.ts                TypeScript 类型定义
 │   ├── theme.ts                     主题色彩常量 (T.bg0, T.accent, etc.)
-│   └── components/
-│       ├── NavBar.tsx                 顶部导航
-│       ├── WorldSidebar.tsx           左侧世界管理
-│       ├── AddonSidebar.tsx           右侧扩展管理
-│       ├── FloatingActions.tsx        底部浮动操作栏
-│       ├── CharacterEditor.tsx        角色编辑器
-│       ├── MapEditor.tsx              地图编辑器
-│       ├── ActionEditor.tsx           行动编辑器
-│       ├── TraitEditor.tsx            特质编辑器
-│       ├── TraitGroupEditor.tsx       特质组编辑器
-│       ├── ItemEditor.tsx             物品编辑器
-│       ├── ClothingEditor.tsx         服装编辑器
-│       ├── VariableEditor.tsx         衍生变量编辑器
-│       ├── EventEditor.tsx            事件编辑器
-│       └── SettingsPage.tsx           设置页（含存档管理）
+│   └── components/                  30 个组件
+│       ├── 布局: NavBar, WorldSidebar, AddonSidebar, FloatingActions, AddonTabBar
+│       ├── 编辑器: CharacterEditor, MapEditor, ActionEditor, TraitEditor,
+│       │          TraitGroupEditor, ItemEditor, ClothingEditor, VariableEditor
+│       ├── 管理器: ActionManager, CharacterManager, ClothingManager, EventManager,
+│       │          ItemManager, MapManager, TraitManager, VariableManager
+│       ├── 游戏UI: CharacterPanel, CompactCharacterInfo, ActionMenu,
+│       │          MapView, MapTabs, LocationHeader, NarrativePanel
+│       ├── 通用: ColorPicker
+│       └── 设置: SettingsPage
 │
 ├── docs/                           文档
 │   ├── user/                         用户文档
@@ -109,7 +106,7 @@ tavernGame/
 
 1. 读取 `worlds/{worldId}/world.json` 获取 `addon_refs`
 2. `build_addon_dirs(addon_refs)` → 构建 `[(addon_id, Path)]` 列表
-3. 按顺序加载所有实体：maps, characters, traits, clothing, items, actions, variables, events, world_variables
+3. 按顺序加载所有实体：maps → template → clothing → items → item_tags → traits → actions → trait_groups → variables → variable_tags → events → world_variables → characters（最后，依赖其他 defs）
 4. 每个加载函数遍历 addon_dirs，后加载的覆盖先加载的（load order）
 5. `_resolve_namespaces()`: 给所有 ID 加上 `addonId.` 前缀
 6. `_rebuild_characters(snapshot)`: 从定义重建角色运行时状态
@@ -174,26 +171,54 @@ tavernGame/
 
 ### REST API (`main.py`)
 
-所有数据读写通过 REST：
-- `GET /api/game/state` — 获取完整游戏状态
-- `GET /api/addons` — 获取所有已安装扩展
-- `GET /api/worlds` — 获取所有世界列表
-- `POST /api/worlds` — 创建世界
-- `POST /api/session/save` — 保存变更（触发 save_all）
-- `PUT /api/addon/{id}/{ver}/meta` — 更新扩展元数据
-- `POST /api/assets/upload` — 上传资产文件
-- `GET /assets/{path}` — 静态资产 serve
-- 各实体的 CRUD 端点...
+共 86 个端点，按模块分类：
+
+| 模块 | 端点前缀 | 说明 | 详见 |
+|------|---------|------|------|
+| 世界/会话 | `/api/worlds`, `/api/session` | 世界 CRUD、切换、保存 | world.md |
+| 扩展包 | `/api/addon`, `/api/addons` | addon CRUD、fork、版本管理 | addon.md |
+| 游戏状态 | `/api/game/state`, `/api/game/action` | 状态获取、行动执行 | action.md |
+| 角色 | `/api/game/characters` | 角色配置 CRUD | character.md |
+| 特质/变量 | `/api/game/traits`, `/api/game/variables` | 特质/组/变量 CRUD + 求值 | trait.md |
+| 物品/服装 | `/api/game/items`, `/api/game/clothing` | 物品/服装 CRUD + 标签 | item.md |
+| 行动/事件 | `/api/game/actions`, `/api/game/events` | 行动/事件 CRUD | action.md |
+| 地图 | `/api/game/maps` | 地图 CRUD + 装饰预设 | map.md |
+| 世界变量 | `/api/game/world-variables` | 世界变量 CRUD | — |
+| 存档 | `/api/saves` | 存档 CRUD + 加载 | — |
+| 资产 | `/api/assets`, `/assets` | 上传 + 静态 serve | — |
 
 ### WebSocket (`main.py: /ws`)
 
-实时推送游戏事件：
-- 行动执行结果 (`action_result`)
-- NPC 行动日志 (`npc_log`)
-- 状态变更通知 (`state_update`)
-- 时间推进 (`time_advance`)
+服务器主动推送，前端通过 `client.ts` 连接接收：
 
-前端通过 `client.ts` 的 WebSocket 连接接收推送，更新 UI。
+| 事件类型 | 触发场景 | 携带数据 |
+|---------|---------|---------|
+| `state_update` | 实体 CRUD（行动执行、地图保存等） | 全量游戏状态 |
+| `game_changed` | 世界切换/重启/加载存档/保存变更 | 全量游戏状态 |
+| `dirty_update` | 任何编辑操作 | `{ dirty: true }` |
+
+- 连接建立时立即发送一次 `state_update` 作为初始状态
+- `state_update` 与 `game_changed` 携带相同数据（全量状态），区别在语义——前端据此决定是否重置 UI 状态
+- 行动结果（output 文本、NPC 日志）通过 REST API `POST /api/game/action` 的响应返回，不走 WebSocket
+- 支持 ping/pong 保活
+
+### 前后端职责分工
+
+**后端**（游戏逻辑 + 数据持久化）：
+- 行动执行（条件检查、费用扣除、效果应用、输出渲染）
+- NPC 决策（per-tick 模拟）
+- 时间推进、能力衰减、全局事件评估
+- 角色状态编译（`build_character_state()`：原始数据 → 运行时状态）
+- 地图寻路（distance_matrix / sense_matrix）
+- 命名空间处理、数据读写
+
+**前端**（UI 展示 + 编辑器）：
+- 从后端推送的全量状态渲染 UI（角色面板、地图视图、行动列表）
+- 各实体编辑器（编辑后调 REST API 提交）
+- 行动交互（选行动/目标 → 调 API → 展示结果文本）
+- dirty 状态管理（显示/隐藏保存悬浮面板）
+
+**关键原则**：前端不做游戏逻辑计算；每次变更后后端推送完整状态，前端整体替换。
 
 ### 资产 Serve 路由 (`GET /assets/{path}`)
 
@@ -240,29 +265,50 @@ tavernGame/
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| **世界与配置** | | |
 | `world_id` | `str` | 当前世界 ID |
+| `world_name` | `str` | 当前世界名称 |
 | `addon_refs` | `list[dict]` | 当前启用的 addon 引用 `[{id, version}]` |
 | `addon_dirs` | `list[tuple[str, Path]]` | 加载的 addon 目录 `[(addon_id, path)]` |
+| `template` | `dict` | 角色模板（basicInfo/resources/traits/inventory 定义） |
+| `player_character` | `str` | 玩家角色 ID |
+| `dirty` | `bool` | 是否有未保存修改 |
+| **实体定义** | | |
 | `maps` | `dict[str, dict]` | 地图数据（已编译 grid） |
 | `characters` / `character_data` | `dict` | 角色运行时状态 / 原始数据 |
 | `trait_defs` | `dict[str, dict]` | 特质定义 |
+| `trait_groups` | `dict[str, dict]` | 特质组 |
 | `clothing_defs` | `dict[str, dict]` | 服装定义 |
 | `item_defs` | `dict[str, dict]` | 物品定义 |
 | `action_defs` | `dict[str, dict]` | 行动定义 |
-| `trait_groups` | `dict[str, dict]` | 特质组 |
 | `variable_defs` | `dict[str, dict]` | 衍生变量 |
 | `event_defs` | `dict[str, dict]` | 全局事件 |
 | `world_variable_defs` | `dict[str, dict]` | 世界变量定义 |
-| `distance_matrix` | `dict` | 地图距离矩阵 |
-| `sense_matrix` | `dict` | 地图感知矩阵 |
-| `cell_action_index` | `dict` | cell → 可用行动索引 |
-| `dirty` | `bool` | 是否有未保存修改 |
-| `game_time` | `dict` | 游戏内时间 |
-| `npc_goals` | `dict` | NPC 当前目标 |
+| `decor_presets` | `list[dict]` | 地图装饰预设 |
+| **标签** | | |
+| `item_tags` | `list[str]` | 物品标签列表 |
+| `variable_tags` | `list[str]` | 变量标签列表 |
+| **运行时状态** | | |
+| `time` | `GameTime` | 游戏内时间 |
+| `world_variables` | `dict[str, Any]` | 世界变量当前值 |
+| `event_state` | `dict` | 全局事件触发状态 |
+| `npc_goals` | `dict[str, dict]` | NPC 当前目标（移动/执行中的行动） |
+| `npc_activities` | `dict[str, str]` | NPC 当前活动描述 |
+| `npc_full_log` | `list[dict]` | NPC 行动完整日志（LLM 用，60 天缓存） |
+| `npc_action_history` | `dict[str, list[dict]]` | NPC 行动历史（suggestNext 用） |
+| `decay_accumulators` | `dict[str, dict[str, int]]` | 能力衰减累积时间 |
+| `action_log` | `list[dict]` | 玩家行动日志 |
+| **预计算索引** | | |
+| `distance_matrix` | `dict` | 地图距离矩阵（Dijkstra） |
+| `sense_matrix` | `dict` | 地图感知矩阵（跳过 senseBlocked） |
+| `cell_action_index` | `dict` | cell → 可用行动索引（NPC 决策用） |
+| `no_location_actions` | `list[dict]` | 无位置要求的行动列表 |
 
 ## 启动流程
 
 1. `main.py` 读取 `config.json` 获取端口和 `lastWorldId`
-2. `@app.on_event("startup")` 触发 `game_state.load_world(lastWorldId)`
+2. `lifespan` 上下文管理器触发 `game_state.load_world(lastWorldId)`
 3. 如果世界不存在，自动创建 `default` 世界
 4. 加载完成后前端连接 WebSocket，获取初始状态

@@ -677,7 +677,7 @@ export async function uploadAsset(
   const params = new URLSearchParams({ folder, name });
   if (opts?.addonId) params.set("addonId", opts.addonId);
   if (opts?.worldId) params.set("worldId", opts.worldId);
-  const res = await fetch(`/api/assets/upload?${params.toString()}`, {
+  const res = await fetch(`/api/assets?${params.toString()}`, {
     method: "POST",
     body: formData,
   });
@@ -759,7 +759,6 @@ export async function copyAddonVersion(addonId: string, sourceVersion: string, n
 export interface AddonVersionInfo {
   version: string;
   forkedFrom: string | null;
-  worldId: string | null;
 }
 
 export async function overwriteAddonVersion(addonId: string, sourceVersion: string, targetVersion: string): Promise<{ success: boolean; message?: string }> {

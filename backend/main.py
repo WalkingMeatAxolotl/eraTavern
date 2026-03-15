@@ -421,11 +421,6 @@ async def delete_addon(addon_id: str, version: str):
 
     shutil.rmtree(version_dir)
 
-    # Clean up parent dir if no more versions
-    addon_dir = ADDONS_DIR / addon_id
-    if addon_dir.exists() and not any(addon_dir.iterdir()):
-        addon_dir.rmdir()
-
     return {"success": True, "message": f"Addon '{addon_id}@{version}' deleted"}
 
 
@@ -434,23 +429,6 @@ async def delete_addon(addon_id: str, version: str):
 async def get_games():
     """Legacy: list worlds as games."""
     return {"games": list_available_worlds()}
-
-
-class SelectGameRequest(BaseModel):
-    gameId: str
-
-
-@app.post("/api/games/select")
-async def select_game(req: SelectGameRequest):
-    """Legacy: switch world."""
-    worlds = list_available_worlds()
-    world_ids = [w["id"] for w in worlds]
-    if req.gameId not in world_ids:
-        return {"success": False, "message": f"Game '{req.gameId}' not found"}
-    game_state.load_world(req.gameId)
-    state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
-    return {"success": True, "message": f"Switched to {game_state.world_name}"}
 
 
 @app.post("/api/game/restart")
@@ -607,7 +585,7 @@ async def serve_asset(path: str):
     return {"error": "File not found"}
 
 
-@app.post("/api/assets/upload")
+@app.post("/api/assets")
 async def upload_asset(
     file: UploadFile = File(...),
     folder: str = Query(...),
@@ -801,12 +779,19 @@ async def patch_character_config(character_id: str, body: dict = Body(...)):
             if cd.get("isPlayer"):
                 cd["isPlayer"] = False
 
+    # Prevent freezing the player character
+    if body.get("active") is False and char.get("isPlayer"):
+        return {"success": False, "message": "请先切换玩家角色后再冻结该角色"}
+
     for key in ("isPlayer", "active"):
         if key in body:
             char[key] = body[key]
 
-    # Rebuild runtime for all affected characters
-    for cid in game_state.character_data:
+    # Rebuild runtime characters (active only)
+    game_state.characters = {}
+    for cid, cd in game_state.character_data.items():
+        if cd.get("active", True) is False:
+            continue
         game_state.characters[cid] = game_state._build_char(cid)
     await _mark_dirty()
     return {"success": True, "message": f"Character '{character_id}' updated"}
@@ -1562,13 +1547,6 @@ async def _broadcast_state():
 
 
 # --- Apply Changes & Backup ---
-
-
-@app.post("/api/session/apply-changes")
-async def apply_changes(body: dict = Body({})):
-    """Legacy: redirects to save."""
-    return await save_session(body)
-
 
 
 # --- WebSocket ---

@@ -26,9 +26,12 @@
 interface ItemDefinition {
   id: string;              // bare ID (磁盘) 或 namespaced ID (内存)
   name: string;            // 显示名称
-  description?: string;    // 描述
-  tags?: string[];         // 分类标签，用于 ItemManager 分组视图
-  source?: string;         // 所属 addon ID (加载时附加)
+  description: string;     // 描述
+  tags: string[];          // 分类标签，用于 ItemManager 分组视图
+  maxStack: number;        // 最大堆叠数量
+  sellable: boolean;       // 是否可出售
+  price: number;           // 价格
+  source: string;          // 所属 addon ID (加载时自动附加)
 }
 ```
 
@@ -38,20 +41,31 @@ interface ItemDefinition {
 interface ClothingDefinition {
   id: string;              // bare ID (磁盘) 或 namespaced ID (内存)
   name: string;            // 显示名称
-  description?: string;    // 描述
   slot: string;            // 所占槽位 (对应 character_template 的 clothingSlots)
-  occlude?: string[];      // 穿着时遮挡的其他槽位
-  states?: string[];       // 可用状态列表，如 ["worn", "halfWorn"]
-  effects?: Effect[];      // 穿着时产生的效果（同 trait effects 机制）
-  source?: string;         // 所属 addon ID (加载时附加)
+  occlusion: string[];     // 穿着时遮挡的其他槽位
+  effects?: TraitEffect[]; // 穿着时产生的效果（同 trait effects 机制）
+  source: string;          // 所属 addon ID (加载时附加)
 }
 ```
 
 ### InventoryItem — 库存条目
 
+角色原始数据（磁盘存储）：
+
 ```typescript
 interface InventoryItem {
   itemId: string;          // 物品 ID (namespaced)
+  amount: number;          // 持有数量
+}
+```
+
+运行时状态（`build_character_state()` 后，从 itemDefs 填充）：
+
+```typescript
+interface InventoryItemState {
+  itemId: string;          // 物品 ID (namespaced)
+  name: string;            // 显示名称（从 itemDef 解析）
+  tags: string[];          // 分类标签（从 itemDef 解析）
   amount: number;          // 持有数量
 }
 ```
@@ -66,13 +80,25 @@ interface InventoryItem {
 
 ```typescript
 interface ClothingSlot {
-  slot: string;            // 槽位名称
-  itemId: string;          // 服装 ID
-  name: string;            // 服装显示名称
-  state: string;           // 当前状态 ("worn" | "halfWorn" 等)
-  occluded: boolean;       // 是否被其他服装遮挡
+  slot: string;                        // 槽位名称
+  slotLabel: string;                   // 槽位显示名称
+  occluded: boolean;                   // 是否被其他服装遮挡
+  itemId: string | null;               // 服装 ID（空槽位为 null）
+  itemName: string | null;             // 服装显示名称（空槽位为 null）
+  state: "worn" | "halfWorn" | "none" | null;  // 当前状态（空槽位为 null）
 }
 ```
+
+**服装状态与效果**:
+
+| state | 含义 | 效果 |
+|-------|------|------|
+| `"worn"` | 正常穿着 | ✓ 生效 |
+| `"halfWorn"` | 半脱 | ✓ 生效 |
+| `"none"` | 脱下（衣物仍在角色身上） | ✗ 不生效 |
+| `null` / `itemId: null` | 槽位无衣物 | — |
+
+`occlusion` 仅影响前端显示（被遮挡显示为「？？？」），不影响效果计算。
 
 ---
 
@@ -100,8 +126,9 @@ interface ClothingSlot {
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `GET` | `/api/game/item-tags` | 获取所有标签定义 |
-| `PUT` | `/api/game/item-tags` | 更新标签定义（全量替换） |
+| `GET` | `/api/game/item-tags` | 获取所有标签 |
+| `POST` | `/api/game/item-tags` | 添加单个标签 |
+| `DELETE` | `/api/game/item-tags/{tag}` | 删除单个标签 |
 
 标签用于 ItemManager 的 byTag 分组视图，标签定义存储在 `items.json` 中。
 

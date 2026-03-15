@@ -183,7 +183,13 @@ export default function CharacterManager({ selectedAddon, onEditingChange }: { s
                   on={isActive}
                   onColor="#e89a19"
                   label="启用"
-                  onClick={() => handleToggleActive(char.id, isActive)}
+                  onClick={() => {
+                    if (char.isPlayer && isActive) {
+                      alert("请先切换玩家角色后再冻结该角色");
+                      return;
+                    }
+                    handleToggleActive(char.id, isActive);
+                  }}
                 />
                 <ToggleSwitch
                   on={char.isPlayer}

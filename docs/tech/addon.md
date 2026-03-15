@@ -67,8 +67,7 @@ TEMPLATE_PATH = DATA_DIR / "character_template.json"
   "id": "era-koumakan",
   "version": "1.0.0",
   "dependencies": [{ "id": "base" }],
-  "_forkedFrom": "1.0.0",     // 仅 fork 版本
-  "_worldId": "t7"             // 仅 fork 版本
+  "_forkedFrom": "1.0.0"      // 仅分支版本，标记基础版本
 }
 ```
 
@@ -119,7 +118,6 @@ interface AddonInfo {
 interface AddonVersionInfo {
   version: string;
   forkedFrom: string | null;
-  worldId: string | null;
 }
 ```
 
@@ -152,7 +150,7 @@ interface AddonVersionInfo {
   "addons": [
     { "id": "base", "name": "基础包", "version": "1.0.0", "description": "...", "author": "system", "categories": [...] },
     { "id": "era-koumakan", "name": "ERA红魔馆", "version": "1.0.0", ... },
-    { "id": "era-koumakan", "name": "ERA红魔馆", "version": "1.0.0-t7", "_forkedFrom": "1.0.0", "_worldId": "t7", ... }
+    { "id": "era-koumakan", "name": "ERA红魔馆", "version": "1.0.0-t7", "_forkedFrom": "1.0.0", ... }
   ]
 }
 ```
@@ -177,7 +175,7 @@ interface AddonVersionInfo {
 {
   "versions": [
     { "version": "1.0.0", "forkedFrom": null, "worldId": null },
-    { "version": "1.0.0-t7", "forkedFrom": "1.0.0", "worldId": "t7" }
+    { "version": "1.0.0-t7", "forkedFrom": "1.0.0" }
   ]
 }
 ```
@@ -232,7 +230,6 @@ interface AddonVersionInfo {
 2. 更新 fork 目录中的 addon.json:
    - `version` → `"{baseVersion}-{worldId}"`
    - 添加 `_forkedFrom: "{baseVersion}"`
-   - 添加 `_worldId: "{worldId}"`
 3. 幂等：若目标已存在，直接返回已有的 fork 版本号
 
 **Response:** `{ "success": true, "newVersion": "1.0.0-my-world" }`
@@ -250,7 +247,7 @@ interface AddonVersionInfo {
 ```
 
 `forkedFrom` 可选：
-- `null` / 不传: 新版本视为独立版本（移除 `_forkedFrom` 和 `_worldId`）
+- `null` / 不传: 新版本视为独立版本（移除 `_forkedFrom`）
 - 传值: 标记为从某个版本 fork
 
 **行为:**
@@ -275,7 +272,7 @@ interface AddonVersionInfo {
 **行为:**
 1. 删除目标版本中除 addon.json 外的所有文件和目录
 2. 从源版本复制除 addon.json 外的所有文件和目录到目标
-3. 目标的 addon.json（version, _forkedFrom, _worldId 等）保持不变
+3. 目标的 addon.json（version, _forkedFrom 等）保持不变
 
 后端: `overwrite_addon_version(addon_id, source_version, target_version)`
 
@@ -286,7 +283,7 @@ interface AddonVersionInfo {
 
 **限制:** 不能删除当前世界正在使用的版本（检查 `game_state.addon_refs`）。
 
-**副作用:** 如果删除后该 addon 目录下没有任何子目录了，会删除整个 addon 目录。
+删除版本不会自动清理 addon 根目录。即使所有版本都删光，`about/` 和 `assets/` 仍保留，用户可以再创建新版本。如需彻底删除，使用 `DELETE /api/addon/{addon_id}`。
 
 #### `DELETE /api/addon/{addon_id}`
 删除整个扩展包（所有版本 + about + assets）。
@@ -320,6 +317,21 @@ interface AddonVersionInfo {
 传 addons 可以在保存时同时更新 addon 列表。
 
 **后端调用:** `game_state.save_all(new_addon_refs=...)`
+
+#### `POST /api/session/save-as`
+从当前内存状态创建新世界，自动 fork 所有 addon 版本。
+
+**Request:**
+```json
+{ "id": "new-world", "name": "新世界" }
+```
+
+**行为:**
+1. 为每个当前启用的 addon 创建 fork（基于其 base version）
+2. 创建 world.json，addon_refs 指向新 fork 版本
+3. 切换到新世界
+
+**Response:** `{ "success": true, "message": "World '新世界' created and saved" }`
 
 ### 素材
 
@@ -519,7 +531,15 @@ getForkWorldId("1.0.0") → null
 - 保存时先 `_persist_entity_files()`（写回当前内存数据到各 addon 目录）
 - 然后 `rebuild()` 用新的 addon 列表重新加载
 - 被禁用 addon 中定义的实体从内存中消失
-- 其他 addon 中引用该 addon 实体的地方可能产生悬空引用
+- 其他 addon 中引用该 addon 实体的地方产生**悬空引用**
+
+#### ⚠️ 悬空引用设计说明
+
+悬空引用是**有意保留**的，不要清理。原因：
+
+- 悬空引用是"软引用"——addon 不在时静默失效，重新启用后自动恢复
+- 如果清理引用（删除角色身上来自被禁用 addon 的 trait/item），重新启用时这些引用不会回来，造成数据永久丢失（依赖爆炸）
+- 代码中所有引用查找都使用 `.get()` + `if not found: continue/skip` 的优雅降级模式，悬空引用不会导致运行时错误
 
 ### 删除 Addon 版本
 - 直接 `shutil.rmtree(version_dir)`

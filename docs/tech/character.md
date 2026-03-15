@@ -46,11 +46,11 @@ interface RawCharacterData {
   id: string;                    // bare local ID (磁盘) 或 namespaced ID (内存)
   template: string;              // 模板 ID (目前未被 backend 消费)
   isPlayer: boolean;
-  active?: boolean;
+  active?: boolean;              // 冻结/解冻（默认 true，false 时不参与游戏）
   portrait?: string | null;      // 立绘文件名
   basicInfo: Record<string, string | number>;
   resources?: Record<string, { value: number; max: number }>;
-  clothing: Record<string, { itemId: string; state: "worn" | "halfWorn" }>;
+  clothing: Record<string, { itemId: string; state: "worn" | "halfWorn" | "none" }>;
   traits: Record<string, string[]>;           // category -> trait ID list
   abilities: Record<string, number>;          // ability key -> exp value
   experiences?: Record<string, { count: number; first?: {...} }>;
@@ -64,6 +64,27 @@ interface RawCharacterData {
 加载后 backend 会附加内部字段:
 - `_local_id`: 原始 bare ID
 - `_source`: 所属 addon ID
+
+### 角色冻结（active 字段）
+
+`active` 字段控制角色是否参与游戏循环：
+
+- `active: true`（默认）— 正常参与游戏
+- `active: false`（冻结）— 角色数据完整保留在 `character_data` 中，但不加入 `GameState.characters`
+
+**冻结时不参与的系统**：
+- NPC 决策（不执行 tick、不被选为行动目标）
+- NPC 感知（不出现在 sense_matrix 查询结果中）
+- 能力衰减（不累积衰减时间）
+- 前端显示（不出现在游戏状态中）
+- 行动条件检查（npcPresent/npcAbsent 中不可见）
+
+**冻结时保留的**：
+- 完整的 `character_data`（位置、装备、好感度等）
+- 编辑器中仍可见和编辑
+- 解冻后从 `character_data` 重建运行时状态，一切恢复
+
+**限制**：玩家角色不可冻结，需先切换玩家角色。
 
 ---
 
@@ -184,10 +205,14 @@ def exp_to_grade(exp: int) -> str:
 
 ## 命名空间保存
 
-`save_character()` 写入磁盘时调用 `strip_character_namespaces()`:
-- 所有 namespaced ID 转回 bare ID (`to_local_id()`)
+`save_character()` 写入磁盘时：
 - 移除 `_` 前缀的内部字段
+- 调用 `strip_character_namespaces(data, addon_id)` 处理嵌套引用：
+  - 同 addon 引用 → 去命名空间前缀（bare ID）
+  - 跨 addon 引用 → 保留命名空间（确保加载时能正确解析）
 - 覆盖写入 `characters/{localId}.json`
+
+其他实体（action、trait group）保存时也遵循同样的跨 addon 感知逻辑，通过 `_strip_ref(ref, addon_id)` 统一处理。
 
 `delete_character()` 直接删除对应 JSON 文件。
 
@@ -206,7 +231,7 @@ def exp_to_grade(exp: int) -> str:
 | PATCH | `/api/game/characters/config/{id}` | 部分更新 (isPlayer, active) |
 | DELETE | `/api/game/characters/config/{id}` | 删除角色，清理好感度引用 |
 | GET | `/api/game/definitions` | 获取模板+所有定义（编辑器用） |
-| POST | `/api/upload-asset` | 上传立绘等资源文件 |
+| POST | `/api/assets` | 上传立绘等资源文件 |
 
 路径中 `{id}` 使用 `:path` converter 以支持包含 `.` 的 namespaced ID。
 

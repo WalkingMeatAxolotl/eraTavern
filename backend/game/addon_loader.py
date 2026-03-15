@@ -191,7 +191,7 @@ def fork_addon_version(addon_id: str, base_version: str, world_id: str) -> str:
             meta = json.load(f)
         meta["version"] = fork_version
         meta["_forkedFrom"] = base_version
-        meta["_worldId"] = world_id
+        meta.pop("_worldId", None)
         with open(meta_path, "w", encoding="utf-8") as f:
             json.dump(meta, f, ensure_ascii=False, indent=2)
     return fork_version
@@ -298,7 +298,6 @@ def list_addon_versions_detail(addon_id: str) -> list[dict]:
         result.append({
             "version": d.name,
             "forkedFrom": meta.get("_forkedFrom"),
-            "worldId": meta.get("_worldId"),
         })
     return result
 

@@ -953,9 +953,10 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
           </select>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.state ?? "worn"}
             onChange={e => update({ state: e.target.value })}>
-            <option value="worn">穿上</option>
+            <option value="worn">穿着</option>
             <option value="halfWorn">半穿</option>
-            <option value="empty">脱下</option>
+            <option value="none">脱下</option>
+            <option value="empty">无衣物</option>
           </select>
         </>
       )}

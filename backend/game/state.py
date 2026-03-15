@@ -221,6 +221,8 @@ class GameState:
 
         self.characters = {}
         for char_id, char_data in self.character_data.items():
+            if char_data.get("active", True) is False:
+                continue
             self.characters[char_id] = build_character_state(
                 char_data, self.template, self.clothing_defs, self.trait_defs,
                 self.item_defs,
@@ -295,9 +297,11 @@ class GameState:
                 self.player_character, self.character_data, ""
             )
 
-        # Build character states
+        # Build character states (active only)
         self.characters = {}
         for char_id, char_data in self.character_data.items():
+            if char_data.get("active", True) is False:
+                continue
             self.characters[char_id] = build_character_state(
                 char_data, self.template, self.clothing_defs, self.trait_defs,
                 self.item_defs,
@@ -397,7 +401,7 @@ class GameState:
                 if d.get("source") == source
             ]
             if src_actions:
-                save_action_defs_file(target_dir, src_actions)
+                save_action_defs_file(target_dir, src_actions, source)
 
             # Trait groups
             src_groups = [
@@ -406,7 +410,7 @@ class GameState:
                 if d.get("source") == source
             ]
             if src_groups:
-                save_trait_groups_file(target_dir, src_groups)
+                save_trait_groups_file(target_dir, src_groups, source)
 
             # Variables
             src_variables = [
@@ -438,7 +442,7 @@ class GameState:
             # Characters
             for cid, cdata in self.character_data.items():
                 if cdata.get("_source") == source:
-                    save_character(target_dir, cdata)
+                    save_character(target_dir, cdata, source)
 
             # Maps
             src_maps = {
@@ -687,6 +691,8 @@ class GameState:
             if char_id in snapshot["inventories"]:
                 char_data["inventory"] = snapshot["inventories"][char_id]
 
+            if char_data.get("active", True) is False:
+                continue
             self.characters[char_id] = build_character_state(
                 char_data, self.template, self.clothing_defs, self.trait_defs,
                 self.item_defs,
@@ -822,9 +828,11 @@ class GameState:
                 # Sync inventory
                 char_data["inventory"] = self.characters[char_id].get("inventory", [])
 
-        # Rebuild character display states
+        # Rebuild character display states (active only)
         display_characters = {}
         for char_id, char_data in self.character_data.items():
+            if char_data.get("active", True) is False:
+                continue
             display_characters[char_id] = build_character_state(
                 char_data, self.template, self.clothing_defs, self.trait_defs,
                 self.item_defs,
@@ -1059,9 +1067,11 @@ class GameState:
             if "basicInfo" in saved:
                 cd["basicInfo"] = saved["basicInfo"]
 
-        # Rebuild display state from updated character_data
+        # Rebuild display state from updated character_data (active only)
         self.characters = {}
         for char_id, char_data in self.character_data.items():
+            if char_data.get("active", True) is False:
+                continue
             self.characters[char_id] = build_character_state(
                 char_data, self.template, self.clothing_defs, self.trait_defs,
                 self.item_defs,

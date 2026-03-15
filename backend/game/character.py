@@ -70,6 +70,19 @@ def _strip_internal_fields(entry: dict) -> dict:
     """Remove internal fields (_local_id, source) for file storage."""
     return {k: v for k, v in entry.items() if k not in ("source", "_local_id")}
 
+
+def _strip_ref(ref: str, addon_id: str) -> str:
+    """Strip namespace from a reference, keeping cross-addon prefixes.
+
+    Same-addon refs → bare ID; cross-addon refs → keep namespace.
+    """
+    if not ref or ref in SYMBOLIC_REFS or NS_SEP not in ref:
+        return ref
+    prefix, local = ref.split(NS_SEP, 1)
+    if not addon_id or prefix == addon_id:
+        return local
+    return ref
+
 SLOT_LABELS = {
     "hat": "帽子",
     "upperBody": "上半身",
@@ -128,7 +141,7 @@ def _to_addon_dirs(data_dir_or_addons: Path | AddonDirs) -> AddonDirs:
 def load_trait_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     """Load trait definitions from addon directories (or legacy data_dir), merged by id.
 
-    Keys and 'id' fields are namespaced as 'addon_id:local_id'.
+    Keys and 'id' fields are namespaced as 'addon_id.local_id'.
     """
     result: dict[str, dict] = {}
     addon_dirs = _to_addon_dirs(data_dir_or_addons)
@@ -338,7 +351,7 @@ def save_clothing_defs_file(data_dir: Path, clothing_list: list[dict]) -> None:
 def load_characters(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     """Load all character JSON files from addon directories.
 
-    Character IDs are namespaced as 'addon_id:local_id'.
+    Character IDs are namespaced as 'addon_id.local_id'.
     Cross-references (traits, items, etc.) are NOT resolved here —
     call namespace_character_data() after all defs are loaded.
     """
@@ -360,10 +373,11 @@ def load_characters(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     return characters
 
 
-def save_character(data_dir: Path, char_data: dict) -> None:
+def save_character(data_dir: Path, char_data: dict, addon_id: str = "") -> None:
     """Save a character JSON file to data/characters/.
 
     Strips namespace from character ID and cross-references for file storage.
+    Same-addon refs → bare ID; cross-addon refs → keep namespace.
     """
     chars_dir = data_dir / "characters"
     chars_dir.mkdir(parents=True, exist_ok=True)
@@ -371,7 +385,7 @@ def save_character(data_dir: Path, char_data: dict) -> None:
     path = chars_dir / f"{local_id}.json"
     clean = {k: v for k, v in char_data.items() if not k.startswith("_")}
     clean["id"] = local_id
-    clean = strip_character_namespaces(clean)
+    clean = strip_character_namespaces(clean, addon_id)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(clean, f, ensure_ascii=False, indent=2)
 
@@ -462,6 +476,9 @@ def apply_clothing_effects(
         item_id = slot_data.get("itemId") if isinstance(slot_data, dict) else None
         if not item_id:
             continue
+        state = slot_data.get("state") if isinstance(slot_data, dict) else None
+        if state not in ("worn", "halfWorn"):
+            continue  # "none" or missing state = no effect
         clothing_def = clothing_defs.get(item_id)
         if not clothing_def:
             continue
@@ -529,14 +546,14 @@ def save_trait_defs_file(data_dir: Path, traits_list: list[dict]) -> None:
         json.dump(existing, f, ensure_ascii=False, indent=2)
 
 
-def save_trait_groups_file(data_dir: Path, groups_list: list[dict]) -> None:
+def save_trait_groups_file(data_dir: Path, groups_list: list[dict], addon_id: str = "") -> None:
     """Write game-specific traitGroups in traits.json (strips internal fields), preserving traits."""
     clean = []
     for g in groups_list:
         entry = _strip_internal_fields(g)
         entry["id"] = to_local_id(entry["id"])
-        # Strip namespace from trait references in the group
-        entry["traits"] = [to_local_id(tid) for tid in entry.get("traits", [])]
+        # Strip namespace from trait references, keeping cross-addon refs
+        entry["traits"] = [_strip_ref(tid, addon_id) for tid in entry.get("traits", [])]
         clean.append(entry)
     path = data_dir / "traits.json"
     existing = _load_json_safe(path)
@@ -874,14 +891,18 @@ def namespace_character_data(
         )
 
 
-def strip_character_namespaces(char_data: dict) -> dict:
-    """Strip namespace prefixes from character data for file storage."""
+def strip_character_namespaces(char_data: dict, addon_id: str = "") -> dict:
+    """Strip namespace prefixes from character data for file storage.
+
+    Same-addon refs → bare ID; cross-addon refs → keep namespace.
+    """
+    s = lambda ref: _strip_ref(ref, addon_id)
     result = {**char_data}
 
     # Traits
     if "traits" in result:
         result["traits"] = {
-            k: [to_local_id(tid) for tid in v]
+            k: [s(tid) for tid in v]
             for k, v in result["traits"].items()
         }
 
@@ -890,7 +911,7 @@ def strip_character_namespaces(char_data: dict) -> dict:
         new_cl: dict[str, Any] = {}
         for slot, data in result["clothing"].items():
             if isinstance(data, dict) and data.get("itemId"):
-                new_cl[slot] = {**data, "itemId": to_local_id(data["itemId"])}
+                new_cl[slot] = {**data, "itemId": s(data["itemId"])}
             else:
                 new_cl[slot] = data
         result["clothing"] = new_cl
@@ -898,33 +919,33 @@ def strip_character_namespaces(char_data: dict) -> dict:
     # Inventory
     if "inventory" in result:
         result["inventory"] = [
-            {**inv, "itemId": to_local_id(inv["itemId"])} if inv.get("itemId") else inv
+            {**inv, "itemId": s(inv["itemId"])} if inv.get("itemId") else inv
             for inv in result["inventory"]
         ]
 
     # Favorability
     if isinstance(result.get("favorability"), dict):
         result["favorability"] = {
-            to_local_id(k): v for k, v in result["favorability"].items()
+            s(k): v for k, v in result["favorability"].items()
         }
 
     # Abilities
     if isinstance(result.get("abilities"), dict):
         result["abilities"] = {
-            to_local_id(k): v for k, v in result["abilities"].items()
+            s(k): v for k, v in result["abilities"].items()
         }
 
     # Experiences
     if isinstance(result.get("experiences"), dict):
         result["experiences"] = {
-            to_local_id(k): v for k, v in result["experiences"].items()
+            s(k): v for k, v in result["experiences"].items()
         }
 
     # Position
     if result.get("position", {}).get("mapId"):
-        result["position"] = {**result["position"], "mapId": to_local_id(result["position"]["mapId"])}
+        result["position"] = {**result["position"], "mapId": s(result["position"]["mapId"])}
     if result.get("restPosition", {}).get("mapId"):
-        result["restPosition"] = {**result["restPosition"], "mapId": to_local_id(result["restPosition"]["mapId"])}
+        result["restPosition"] = {**result["restPosition"], "mapId": s(result["restPosition"]["mapId"])}
 
     return result
 
@@ -990,23 +1011,15 @@ def _strip_action_refs(action: dict, addon_id: str = "") -> None:
 
     Same-addon refs are stripped to bare IDs; cross-addon refs keep namespace.
     """
-    def _strip(ref: str) -> str:
-        if not ref or ref in SYMBOLIC_REFS or NS_SEP not in ref:
-            return ref
-        prefix, local = ref.split(NS_SEP, 1)
-        if not addon_id or prefix == addon_id:
-            return local
-        return ref  # keep cross-addon namespace
-
     for cond in action.get("conditions", []):
         for field in ("traitId", "itemId", "npcId", "targetId"):
             if cond.get(field):
-                cond[field] = _strip(cond[field])
+                cond[field] = _strip_ref(cond[field], addon_id)
     for cost in action.get("costs", []):
         if cost.get("itemId"):
-            cost["itemId"] = _strip(cost["itemId"])
+            cost["itemId"] = _strip_ref(cost["itemId"], addon_id)
     for outcome in action.get("outcomes", []):
         for eff in outcome.get("effects", []):
             for field in ("traitId", "itemId", "target", "favFrom", "favTo", "mapId"):
                 if eff.get(field):
-                    eff[field] = _strip(eff[field])
+                    eff[field] = _strip_ref(eff[field], addon_id)
