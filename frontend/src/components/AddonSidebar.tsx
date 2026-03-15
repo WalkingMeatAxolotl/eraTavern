@@ -734,7 +734,7 @@ function NewVersionModal({ addonId, sourceVersion, existingVersions, onCreated, 
         setError(result.message ?? "创建失败");
       }
     } catch (e) {
-      setError(String(e));
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
     }

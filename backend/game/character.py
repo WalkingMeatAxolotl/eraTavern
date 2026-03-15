@@ -24,6 +24,15 @@ SYMBOLIC_REFS = {"self", "{{targetId}}", "{{player}}", ""}
 NS_SEP = "."  # namespace separator: addonId.localId
 
 
+def validate_local_id(local_id: str) -> str | None:
+    """Validate a local ID. Returns error message if invalid, None if OK."""
+    if not local_id:
+        return "ID 不能为空"
+    if NS_SEP in local_id:
+        return f"ID 不能包含 '{NS_SEP}'"
+    return None
+
+
 def namespace_id(addon_id: str, local_id: str) -> str:
     """Create a namespaced ID: 'addon_id.local_id'."""
     if NS_SEP in local_id:
@@ -966,7 +975,7 @@ def namespace_action_refs(
     for action in action_defs.values():
         addon_id = action.get("source", "")
         for cond in action.get("conditions", []):
-            _ns_cond(cond, trait_defs, item_defs, character_defs, addon_id)
+            _ns_cond(cond, trait_defs, item_defs, character_defs, addon_id, map_defs)
         for cost in action.get("costs", []):
             if cost.get("itemId") and cost["itemId"] not in SYMBOLIC_REFS:
                 cost["itemId"] = resolve_ref(cost["itemId"], item_defs, addon_id)
@@ -976,8 +985,11 @@ def namespace_action_refs(
 
 
 def _ns_cond(cond: dict, trait_defs: dict, item_defs: dict,
-             character_defs: dict, default_addon: str) -> None:
+             character_defs: dict, default_addon: str,
+             map_defs: Optional[dict] = None) -> None:
     """Namespace references in a single action condition."""
+    if cond.get("mapId") and cond["mapId"] not in SYMBOLIC_REFS and map_defs is not None:
+        cond["mapId"] = resolve_ref(cond["mapId"], map_defs, default_addon)
     if cond.get("traitId") and cond["traitId"] not in SYMBOLIC_REFS:
         cond["traitId"] = resolve_ref(cond["traitId"], trait_defs, default_addon)
     if cond.get("itemId") and cond["itemId"] not in SYMBOLIC_REFS:
@@ -1012,7 +1024,7 @@ def _strip_action_refs(action: dict, addon_id: str = "") -> None:
     Same-addon refs are stripped to bare IDs; cross-addon refs keep namespace.
     """
     for cond in action.get("conditions", []):
-        for field in ("traitId", "itemId", "npcId", "targetId"):
+        for field in ("mapId", "traitId", "itemId", "npcId", "targetId"):
             if cond.get(field):
                 cond[field] = _strip_ref(cond[field], addon_id)
     for cost in action.get("costs", []):

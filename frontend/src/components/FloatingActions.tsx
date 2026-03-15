@@ -34,7 +34,7 @@ export default function FloatingActions({
       setMessage(result.success ? result.message : result.message);
       onApplied();
     } catch (e) {
-      setMessage(`保存失败: ${e}`);
+      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
     } finally {
       setBusy(false);
       setTimeout(() => setMessage(""), 3000);

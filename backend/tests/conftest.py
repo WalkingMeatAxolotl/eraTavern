@@ -30,8 +30,27 @@ class MockTime:
             self.day += 1
 
     @property
+    def total_days(self):
+        return (self.year - 1) * 120 + self.season * 30 + self.day
+
+    @property
+    def total_minutes(self):
+        return self.total_days * 24 * 60 + self.hour * 60 + self.minute
+
+    @property
+    def weekday(self):
+        WEEKDAYS = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+        return WEEKDAYS[(self.total_days - 1) % 7]
+
+    @property
     def weather(self):
         return "晴"
+
+    def to_dict(self):
+        return {
+            "year": self.year, "season": self.season, "day": self.day,
+            "hour": self.hour, "minute": self.minute,
+        }
 
     def __str__(self):
         return f"{self.year}年{self.season_name}{self.day}日{self.hour:02d}:{self.minute:02d}"
@@ -51,7 +70,19 @@ class MockGameState:
         self.npc_goals: dict = {}
         self.npc_activities: dict = {}
         self.npc_full_log: list = []
+        self.npc_action_history: dict = {}
+        self.decay_accumulators: dict = {}
         self.distance_matrix: dict = {}
+        self.sense_matrix: dict = {}
+        self.cell_action_index: dict = {}
+        self.no_location_actions: list = []
+        self.event_defs: dict = {}
+        self.event_state: dict = {}
+        self.world_variables: dict = {}
+        self.variable_defs: dict = {}
+        self.clothing_defs: dict = {}
+        self.trait_groups: dict = {}
+        self.action_log: list = []
 
 
 def make_character(

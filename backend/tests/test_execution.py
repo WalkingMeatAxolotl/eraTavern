@@ -1,18 +1,48 @@
-"""Tests for action execution flow (_execute_configured, _roll_outcome)."""
+"""Tests for action execution flow (_execute_configured, _roll_outcome, move, look)."""
 
 from __future__ import annotations
 
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from game.action import execute_action, _roll_outcome
+from game.action import execute_action, _roll_outcome, _snap_to_tick
 from tests.conftest import MockGameState, make_character, make_char_data
+
+
+def _add_connection(game_state, from_map, from_cell, to_map, to_cell, travel_time=5, sense_only=False):
+    """Helper: add a connection between cells in the mock map."""
+    cell_info = game_state.maps[from_map]["cell_index"][from_cell]
+    if "connections" not in cell_info:
+        cell_info["connections"] = []
+    conn = {"targetCell": to_cell, "travelTime": travel_time}
+    if to_map != from_map:
+        conn["targetMap"] = to_map
+    if sense_only:
+        conn["senseOnly"] = True
+    cell_info["connections"].append(conn)
 
 
 def _setup_action(game_state, action_def):
     """Register an action def and return it."""
     game_state.action_defs[action_def["id"]] = action_def
     return action_def
+
+
+class TestSnapToTick:
+    def test_already_multiple(self):
+        assert _snap_to_tick(10) == 10
+
+    def test_rounds_up(self):
+        assert _snap_to_tick(7) == 10
+
+    def test_zero_becomes_five(self):
+        assert _snap_to_tick(0) == 5
+
+    def test_one_becomes_five(self):
+        assert _snap_to_tick(1) == 5
+
+    def test_exact_five(self):
+        assert _snap_to_tick(5) == 5
 
 
 class TestRollOutcome:
@@ -215,3 +245,160 @@ class TestExecuteConfigured:
         })
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "simple"})
         assert result["success"]
+
+    def test_result_fields_complete(self, game_state):
+        """Result should contain actionId, actionName, outcomeGrade, outcomeLabel, effectsSummary."""
+        _setup_action(game_state, {
+            "id": "punch",
+            "name": "攻击",
+            "conditions": [],
+            "costs": [],
+            "timeCost": 0,
+            "outcomes": [{
+                "grade": "hit", "label": "命中", "weight": 100,
+                "effects": [{"type": "resource", "key": "stamina", "op": "add", "value": -100, "target": "self"}],
+            }],
+        })
+        result = execute_action(game_state, "player", {"type": "configured", "actionId": "punch"})
+        assert result["success"]
+        assert result["actionId"] == "punch"
+        assert result["actionName"] == "攻击"
+        assert result["outcomeGrade"] == "hit"
+        assert result["outcomeLabel"] == "命中"
+        assert "effectsSummary" in result
+
+    def test_message_auto_appends_outcome_label(self, game_state):
+        """Message should auto-append [outcome_label] and effects summary."""
+        _setup_action(game_state, {
+            "id": "drink",
+            "name": "喝酒",
+            "conditions": [],
+            "costs": [],
+            "timeCost": 0,
+            "outcomes": [{
+                "grade": "s", "label": "微醺", "weight": 100,
+                "effects": [{"type": "resource", "key": "stamina", "op": "add", "value": 50, "target": "self"}],
+            }],
+        })
+        result = execute_action(game_state, "player", {"type": "configured", "actionId": "drink"})
+        assert "[微醺]" in result["message"]
+
+    def test_npc_target_interrupts_goal(self, game_state):
+        """Targeting an NPC should clear their npc_goals entry."""
+        game_state.npc_goals["npc1"] = {"actionId": "patrol", "remaining": 10}
+        _setup_action(game_state, {
+            "id": "talk",
+            "name": "交谈",
+            "conditions": [],
+            "costs": [],
+            "timeCost": 0,
+            "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
+        })
+        execute_action(game_state, "player", {"type": "configured", "actionId": "talk", "targetId": "npc1"})
+        assert "npc1" not in game_state.npc_goals
+
+    def test_time_cost_snapped_to_tick(self, game_state):
+        """timeCost not multiple of 5 should be snapped up to nearest 5."""
+        _setup_action(game_state, {
+            "id": "quick",
+            "name": "快速行动",
+            "conditions": [],
+            "costs": [],
+            "timeCost": 3,  # should snap to 5
+            "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
+        })
+        old_minute = game_state.time.minute
+        execute_action(game_state, "player", {"type": "configured", "actionId": "quick"})
+        assert game_state.time.minute == old_minute + 5
+
+
+class TestExecuteMove:
+    def test_basic_move(self, game_state):
+        """Move to a connected cell updates position."""
+        _add_connection(game_state, "tavern", 1, "tavern", 2, travel_time=5)
+        result = execute_action(game_state, "player", {
+            "type": "move", "targetCell": 2,
+        })
+        assert result["success"]
+        assert game_state.characters["player"]["position"]["cellId"] == 2
+        assert "大厅" in result["message"]
+
+    def test_move_no_connection(self, game_state):
+        """Move to unconnected cell should fail."""
+        result = execute_action(game_state, "player", {
+            "type": "move", "targetCell": 3,
+        })
+        assert not result["success"]
+
+    def test_move_no_target_cell(self, game_state):
+        """Move without targetCell should fail."""
+        result = execute_action(game_state, "player", {"type": "move"})
+        assert not result["success"]
+
+    def test_move_unknown_character(self, game_state):
+        """Move with unknown character should fail."""
+        result = execute_action(game_state, "nobody", {
+            "type": "move", "targetCell": 2,
+        })
+        assert not result["success"]
+
+    def test_move_advances_time(self, game_state):
+        """Move should advance time by travelTime."""
+        _add_connection(game_state, "tavern", 1, "tavern", 2, travel_time=10)
+        old_minute = game_state.time.minute
+        execute_action(game_state, "player", {"type": "move", "targetCell": 2})
+        assert game_state.time.minute == old_minute + 10
+
+    def test_move_sense_only_blocked(self, game_state):
+        """senseOnly connections are not traversable."""
+        _add_connection(game_state, "tavern", 1, "tavern", 2, sense_only=True)
+        result = execute_action(game_state, "player", {
+            "type": "move", "targetCell": 2,
+        })
+        assert not result["success"]
+
+    def test_move_returns_new_position(self, game_state):
+        """Result should contain newPosition field."""
+        _add_connection(game_state, "tavern", 1, "tavern", 2)
+        result = execute_action(game_state, "player", {"type": "move", "targetCell": 2})
+        assert result["newPosition"]["mapId"] == "tavern"
+        assert result["newPosition"]["cellId"] == 2
+
+
+class TestExecuteLook:
+    def test_look_sees_npc(self, game_state):
+        """Look at a cell with an NPC shows their activity."""
+        game_state.npc_activities["npc1"] = "正在打扫"
+        result = execute_action(game_state, "player", {
+            "type": "look", "targetCell": 1,
+        })
+        assert result["success"]
+        assert "Sakuya" in result["message"]
+        assert "正在打扫" in result["message"]
+
+    def test_look_empty_cell(self, game_state):
+        """Look at a cell with no NPC reports empty."""
+        result = execute_action(game_state, "player", {
+            "type": "look", "targetCell": 2,
+        })
+        assert result["success"]
+        assert "没有人" in result["message"]
+
+    def test_look_no_target_cell(self, game_state):
+        """Look without targetCell should fail."""
+        result = execute_action(game_state, "player", {"type": "look"})
+        assert not result["success"]
+
+    def test_look_shows_cell_name(self, game_state):
+        """Look result includes cell name."""
+        result = execute_action(game_state, "player", {
+            "type": "look", "targetCell": 1,
+        })
+        assert "吧台" in result["message"]
+
+    def test_look_unknown_character(self, game_state):
+        """Look with unknown character should fail."""
+        result = execute_action(game_state, "nobody", {
+            "type": "look", "targetCell": 1,
+        })
+        assert not result["success"]

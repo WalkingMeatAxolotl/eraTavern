@@ -2,20 +2,35 @@ import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, R
 
 const API_BASE = "/api/game";
 
+/**
+ * Unified response handler.
+ * - On HTTP error: reads body for {message} and throws with it.
+ * - On success: returns parsed JSON.
+ */
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body.message) msg = body.message;
+    } catch { /* body not JSON, use status */ }
+    throw new Error(msg);
+  }
+  return handleResponse(res);
+}
+
 export interface AppConfig {
   maxWidth: number;
 }
 
 export async function fetchConfig(): Promise<AppConfig> {
   const res = await fetch("/api/config");
-  if (!res.ok) throw new Error(`Failed to fetch config: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchWorlds(): Promise<WorldInfo[]> {
   const res = await fetch("/api/worlds");
-  if (!res.ok) throw new Error(`Failed to fetch worlds: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<{ worlds: WorldInfo[] }>(res);
   return data.worlds;
 }
 
@@ -25,29 +40,25 @@ export async function selectWorld(worldId: string): Promise<{ success: boolean; 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ worldId }),
   });
-  if (!res.ok) throw new Error(`Failed to select world: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Session & Addon APIs ---
 
 export async function fetchSession(): Promise<SessionInfo> {
   const res = await fetch("/api/session");
-  if (!res.ok) throw new Error(`Failed to fetch session: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchAddons(): Promise<AddonInfo[]> {
   const res = await fetch("/api/addons");
-  if (!res.ok) throw new Error(`Failed to fetch addons: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.addons ?? [];
 }
 
 export async function unloadWorld(): Promise<{ success: boolean }> {
   const res = await fetch("/api/worlds/unload", { method: "POST" });
-  if (!res.ok) throw new Error(`Failed to unload world: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function updateSessionAddons(addons: { id: string; version: string }[]): Promise<{ success: boolean }> {
@@ -56,8 +67,7 @@ export async function updateSessionAddons(addons: { id: string; version: string 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ addons }),
   });
-  if (!res.ok) throw new Error(`Failed to update addons: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function createWorld(id: string, name: string, addons: { id: string; version: string }[]): Promise<{ success: boolean; message: string }> {
@@ -66,12 +76,12 @@ export async function createWorld(id: string, name: string, addons: { id: string
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id, name, addons }),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function updateWorld(worldId: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/worlds/${worldId}`, { method: "PUT" });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveSession(
@@ -84,7 +94,7 @@ export async function saveSession(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveSessionAs(id: string, name: string): Promise<{ success: boolean; message: string }> {
@@ -93,12 +103,12 @@ export async function saveSessionAs(id: string, name: string): Promise<{ success
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id, name }),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteWorld(worldId: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/worlds/${worldId}`, { method: "DELETE" });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function updateWorldMeta(worldId: string, data: { name?: string; description?: string; cover?: string }): Promise<{ success: boolean; message: string }> {
@@ -107,7 +117,7 @@ export async function updateWorldMeta(worldId: string, data: { name?: string; de
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function updateAddonMeta(addonId: string, version: string, data: { name?: string; description?: string; author?: string; cover?: string; categories?: string[] }): Promise<{ success: boolean; message: string }> {
@@ -116,7 +126,7 @@ export async function updateAddonMeta(addonId: string, version: string, data: { 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function createAddon(data: { id: string; name: string; version?: string; description?: string; author?: string }): Promise<{ success: boolean; message: string }> {
@@ -125,21 +135,21 @@ export async function createAddon(data: { id: string; name: string; version?: st
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteAddon(addonId: string, version: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/${encodeURIComponent(version)}`, {
     method: "DELETE",
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteAddonAll(addonId: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}`, {
     method: "DELETE",
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 
@@ -151,21 +161,18 @@ export async function selectGame(gameId: string) { return selectWorld(gameId); }
 
 export async function restartGame(): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/restart`, { method: "POST" });
-  if (!res.ok) throw new Error(`Failed to restart game: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchGameState(): Promise<GameState> {
   const res = await fetch(`${API_BASE}/state`);
-  if (!res.ok) throw new Error(`Failed to fetch state: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchActions(characterId: string, targetId?: string | null): Promise<{ actions: GameAction[] }> {
   const params = targetId ? `?target_id=${encodeURIComponent(targetId)}` : "";
   const res = await fetch(`${API_BASE}/available-actions/${characterId}${params}`);
-  if (!res.ok) throw new Error(`Failed to fetch actions: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function performAction(
@@ -181,29 +188,25 @@ export async function performAction(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ characterId, type, actionId, targetCell, targetMap, targetId }),
   });
-  if (!res.ok) throw new Error(`Failed to perform action: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Character config CRUD ---
 
 export async function fetchDefinitions(): Promise<GameDefinitions> {
   const res = await fetch(`${API_BASE}/definitions`);
-  if (!res.ok) throw new Error(`Failed to fetch definitions: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchCharacterConfigs(): Promise<RawCharacterData[]> {
   const res = await fetch(`${API_BASE}/characters/config`);
-  if (!res.ok) throw new Error(`Failed to fetch character configs: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.characters;
 }
 
 export async function fetchCharacterConfig(id: string): Promise<RawCharacterData> {
   const res = await fetch(`${API_BASE}/characters/config/${id}`);
-  if (!res.ok) throw new Error(`Failed to fetch character config: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveCharacterConfig(id: string, data: RawCharacterData): Promise<{ success: boolean; message: string }> {
@@ -212,8 +215,7 @@ export async function saveCharacterConfig(id: string, data: RawCharacterData): P
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save character config: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function createCharacter(data: RawCharacterData): Promise<{ success: boolean; message: string }> {
@@ -222,8 +224,7 @@ export async function createCharacter(data: RawCharacterData): Promise<{ success
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create character: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function patchCharacter(id: string, fields: Record<string, unknown>): Promise<{ success: boolean; message: string }> {
@@ -232,24 +233,21 @@ export async function patchCharacter(id: string, fields: Record<string, unknown>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(fields),
   });
-  if (!res.ok) throw new Error(`Failed to patch character: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteCharacter(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/characters/config/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete character: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Trait CRUD ---
 
 export async function fetchTraitDefs(): Promise<TraitDefinition[]> {
   const res = await fetch(`${API_BASE}/traits`);
-  if (!res.ok) throw new Error(`Failed to fetch traits: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.traits;
 }
 
@@ -259,8 +257,7 @@ export async function createTraitDef(data: Omit<TraitDefinition, "source">): Pro
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create trait: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveTraitDef(id: string, data: Omit<TraitDefinition, "source">): Promise<{ success: boolean; message: string }> {
@@ -269,24 +266,21 @@ export async function saveTraitDef(id: string, data: Omit<TraitDefinition, "sour
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save trait: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteTraitDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/traits/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete trait: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Clothing CRUD ---
 
 export async function fetchClothingDefs(): Promise<ClothingDefinition[]> {
   const res = await fetch(`${API_BASE}/clothing`);
-  if (!res.ok) throw new Error(`Failed to fetch clothing: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.clothing;
 }
 
@@ -296,8 +290,7 @@ export async function createClothingDef(data: Omit<ClothingDefinition, "source">
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create clothing: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveClothingDef(id: string, data: Omit<ClothingDefinition, "source">): Promise<{ success: boolean; message: string }> {
@@ -306,24 +299,21 @@ export async function saveClothingDef(id: string, data: Omit<ClothingDefinition,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save clothing: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteClothingDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/clothing/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete clothing: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Item CRUD ---
 
 export async function fetchItemDefs(): Promise<ItemDefinition[]> {
   const res = await fetch(`${API_BASE}/items`);
-  if (!res.ok) throw new Error(`Failed to fetch items: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.items;
 }
 
@@ -333,8 +323,7 @@ export async function createItemDef(data: Omit<ItemDefinition, "source">): Promi
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create item: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveItemDef(id: string, data: Omit<ItemDefinition, "source">): Promise<{ success: boolean; message: string }> {
@@ -343,24 +332,21 @@ export async function saveItemDef(id: string, data: Omit<ItemDefinition, "source
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save item: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteItemDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/items/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete item: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Item Tag pool ---
 
 export async function fetchItemTags(): Promise<string[]> {
   const res = await fetch(`${API_BASE}/item-tags`);
-  if (!res.ok) throw new Error(`Failed to fetch item tags: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.tags;
 }
 
@@ -370,24 +356,21 @@ export async function createItemTag(tag: string): Promise<{ success: boolean; me
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ tag }),
   });
-  if (!res.ok) throw new Error(`Failed to create item tag: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteItemTag(tag: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/item-tags/${encodeURIComponent(tag)}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete item tag: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Action Definition CRUD ---
 
 export async function fetchActionDefs(): Promise<ActionDefinition[]> {
   const res = await fetch(`${API_BASE}/actions`);
-  if (!res.ok) throw new Error(`Failed to fetch actions: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.actions;
 }
 
@@ -397,8 +380,7 @@ export async function createActionDef(data: Omit<ActionDefinition, "source">): P
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create action: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveActionDef(id: string, data: Omit<ActionDefinition, "source">): Promise<{ success: boolean; message: string }> {
@@ -407,24 +389,21 @@ export async function saveActionDef(id: string, data: Omit<ActionDefinition, "so
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save action: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteActionDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/actions/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete action: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Variable CRUD ---
 
 export async function fetchVariableDefs(): Promise<VariableDefinition[]> {
   const res = await fetch(`${API_BASE}/variables`);
-  if (!res.ok) throw new Error(`Failed to fetch variables: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.variables;
 }
 
@@ -434,8 +413,7 @@ export async function createVariableDef(data: Omit<VariableDefinition, "source">
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create variable: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveVariableDef(id: string, data: Omit<VariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
@@ -444,16 +422,14 @@ export async function saveVariableDef(id: string, data: Omit<VariableDefinition,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save variable: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteVariableDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/variables/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete variable: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function evaluateVariable(id: string, characterId: string): Promise<{ success: boolean; result?: number; steps?: Array<{ index: number; label: string; op: string; type: string; stepValue: number; accumulated: number }>; message?: string }> {
@@ -462,16 +438,14 @@ export async function evaluateVariable(id: string, characterId: string): Promise
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ characterId }),
   });
-  if (!res.ok) throw new Error(`Failed to evaluate variable: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Variable Tag pool ---
 
 export async function fetchVariableTags(): Promise<string[]> {
   const res = await fetch(`${API_BASE}/variable-tags`);
-  if (!res.ok) throw new Error(`Failed to fetch variable tags: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.tags;
 }
 
@@ -481,24 +455,21 @@ export async function createVariableTag(tag: string): Promise<{ success: boolean
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ tag }),
   });
-  if (!res.ok) throw new Error(`Failed to create variable tag: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteVariableTag(tag: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/variable-tags/${encodeURIComponent(tag)}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete variable tag: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Event Definition CRUD ---
 
 export async function fetchEventDefs(): Promise<EventDefinition[]> {
   const res = await fetch(`${API_BASE}/events`);
-  if (!res.ok) throw new Error(`Failed to fetch events: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.events;
 }
 
@@ -508,8 +479,7 @@ export async function createEventDef(data: Omit<EventDefinition, "source">): Pro
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create event: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveEventDef(id: string, data: Omit<EventDefinition, "source">): Promise<{ success: boolean; message: string }> {
@@ -518,24 +488,21 @@ export async function saveEventDef(id: string, data: Omit<EventDefinition, "sour
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save event: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteEventDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/events/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete event: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- World Variable Definition CRUD ---
 
 export async function fetchWorldVariableDefs(): Promise<WorldVariableDefinition[]> {
   const res = await fetch(`${API_BASE}/world-variables`);
-  if (!res.ok) throw new Error(`Failed to fetch world variables: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.worldVariables;
 }
 
@@ -545,8 +512,7 @@ export async function createWorldVariableDef(data: Omit<WorldVariableDefinition,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create world variable: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveWorldVariableDef(id: string, data: Omit<WorldVariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
@@ -555,24 +521,21 @@ export async function saveWorldVariableDef(id: string, data: Omit<WorldVariableD
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save world variable: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteWorldVariableDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/world-variables/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete world variable: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Trait Group CRUD ---
 
 export async function fetchTraitGroups(): Promise<TraitGroup[]> {
   const res = await fetch(`${API_BASE}/trait-groups`);
-  if (!res.ok) throw new Error(`Failed to fetch trait groups: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.traitGroups;
 }
 
@@ -582,8 +545,7 @@ export async function createTraitGroup(data: Omit<TraitGroup, "source">): Promis
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to create trait group: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveTraitGroup(id: string, data: Omit<TraitGroup, "source">): Promise<{ success: boolean; message: string }> {
@@ -592,31 +554,27 @@ export async function saveTraitGroup(id: string, data: Omit<TraitGroup, "source"
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save trait group: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteTraitGroup(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/trait-groups/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete trait group: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Map CRUD ---
 
 export async function fetchMapsRaw(): Promise<{ id: string; name: string }[]> {
   const res = await fetch(`${API_BASE}/maps/raw`);
-  if (!res.ok) throw new Error(`Failed to fetch maps: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.maps;
 }
 
 export async function fetchMapRaw(mapId: string): Promise<RawMapData> {
   const res = await fetch(`${API_BASE}/maps/raw/${mapId}`);
-  if (!res.ok) throw new Error(`Failed to fetch map: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function createMap(id: string, name: string, rows: number, cols: number): Promise<{ success: boolean; message: string }> {
@@ -625,8 +583,7 @@ export async function createMap(id: string, name: string, rows: number, cols: nu
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id, name, rows, cols }),
   });
-  if (!res.ok) throw new Error(`Failed to create map: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function saveMapRaw(mapId: string, data: RawMapData): Promise<{ success: boolean; message: string }> {
@@ -635,22 +592,19 @@ export async function saveMapRaw(mapId: string, data: RawMapData): Promise<{ suc
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Failed to save map: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteMap(mapId: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/maps/${mapId}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete map: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchDecorPresets(): Promise<DecorPreset[]> {
   const res = await fetch(`${API_BASE}/decor-presets`);
-  if (!res.ok) throw new Error(`Failed to fetch decor presets: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.presets;
 }
 
@@ -660,8 +614,7 @@ export async function saveDecorPresets(presets: DecorPreset[]): Promise<{ succes
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ presets }),
   });
-  if (!res.ok) throw new Error(`Failed to save decor presets: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Asset upload ---
@@ -681,8 +634,7 @@ export async function uploadAsset(
     method: "POST",
     body: formData,
   });
-  if (!res.ok) throw new Error(`Failed to upload asset: ${res.status}`);
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Save Slot APIs ---
@@ -699,8 +651,7 @@ export interface SaveSlotMeta {
 
 export async function fetchSaves(): Promise<SaveSlotMeta[]> {
   const res = await fetch("/api/saves");
-  if (!res.ok) throw new Error(`Failed to fetch saves: ${res.status}`);
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.saves ?? [];
 }
 
@@ -710,21 +661,21 @@ export async function createSave(slotId: string, name: string): Promise<{ succes
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ slotId, name }),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function loadSave(slotId: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/saves/${encodeURIComponent(slotId)}/load`, {
     method: "POST",
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function deleteSave(slotId: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/saves/${encodeURIComponent(slotId)}`, {
     method: "DELETE",
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function renameSave(slotId: string, name: string): Promise<{ success: boolean; message: string }> {
@@ -733,7 +684,7 @@ export async function renameSave(slotId: string, name: string): Promise<{ succes
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name }),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 // --- Addon version management ---
@@ -744,7 +695,7 @@ export async function forkAddon(addonId: string, baseVersion: string, worldId: s
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ baseVersion, worldId }),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function copyAddonVersion(addonId: string, sourceVersion: string, newVersion: string, forkedFrom?: string): Promise<{ success: boolean; newVersion?: string; message?: string }> {
@@ -753,7 +704,7 @@ export async function copyAddonVersion(addonId: string, sourceVersion: string, n
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sourceVersion, newVersion, forkedFrom: forkedFrom ?? null }),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export interface AddonVersionInfo {
@@ -767,20 +718,20 @@ export async function overwriteAddonVersion(addonId: string, sourceVersion: stri
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sourceVersion, targetVersion }),
   });
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchAddonVersions(addonId: string): Promise<string[]> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/versions`);
   if (!res.ok) return [];
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.versions ?? [];
 }
 
 export async function fetchAddonVersionsDetail(addonId: string): Promise<AddonVersionInfo[]> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/versions?detail=true`);
   if (!res.ok) return [];
-  const data = await res.json();
+  const data = await handleResponse<Record<string, any>>(res);
   return data.versions ?? [];
 }
 

@@ -179,6 +179,14 @@ class TestItemEffects:
         assert char["inventory"][0]["itemId"] == "potion"
         assert char["inventory"][0]["amount"] == 3
 
+    def test_add_item_new_op(self, game_state):
+        """New op name 'add' should work same as legacy 'addItem'."""
+        game_state.item_defs["gem"] = {"name": "宝石", "tags": []}
+        char = game_state.characters["player"]
+        effects = [{"type": "item", "op": "add", "itemId": "gem", "amount": 2, "target": "self"}]
+        _apply_effects(effects, char, game_state, "player", None)
+        assert any(i["itemId"] == "gem" and i["amount"] == 2 for i in char["inventory"])
+
     def test_add_item_stacks(self, game_state):
         char = game_state.characters["player"]
         char["inventory"] = [{"itemId": "potion", "name": "药水", "tags": [], "amount": 2}]
@@ -213,6 +221,13 @@ class TestTraitEffects:
         _apply_effects(effects, char, game_state, "player", None)
         traits = game_state.character_data["player"]["traits"]
         assert "strong" in traits.get("bodyTrait", [])
+
+    def test_add_trait_new_op(self, game_state):
+        """New op name 'add' should work same as legacy 'addTrait'."""
+        effects = [{"type": "trait", "key": "bodyTrait", "traitId": "agile", "op": "add", "target": "self"}]
+        char = game_state.characters["player"]
+        _apply_effects(effects, char, game_state, "player", None)
+        assert "agile" in game_state.character_data["player"]["traits"].get("bodyTrait", [])
 
     def test_remove_trait(self, game_state):
         game_state.character_data["player"]["traits"]["bodyTrait"] = ["strong", "fast"]
@@ -305,3 +320,69 @@ class TestTargetPrefixSummaries:
         effects = [{"type": "resource", "key": "stamina", "op": "add", "value": 10, "target": "{{targetId}}"}]
         summaries = _apply_effects(effects, char, game_state, "player", "npc1")
         assert summaries[0].startswith("[Sakuya]")
+
+
+# ========================
+# Clothing effects
+# ========================
+
+class TestClothingEffects:
+    def test_set_clothing_state(self, game_state):
+        game_state.character_data["player"]["clothing"] = {"hat": {"itemId": "wizard_hat", "state": "worn"}}
+        char = game_state.characters["player"]
+        effects = [{"type": "clothing", "slot": "hat", "state": "halfWorn", "op": "set", "target": "self"}]
+        _apply_effects(effects, char, game_state, "player", None)
+        assert game_state.character_data["player"]["clothing"]["hat"]["state"] == "halfWorn"
+
+    def test_remove_clothing(self, game_state):
+        game_state.character_data["player"]["clothing"] = {"hat": {"itemId": "wizard_hat", "state": "worn"}}
+        char = game_state.characters["player"]
+        effects = [{"type": "clothing", "slot": "hat", "op": "remove", "target": "self"}]
+        _apply_effects(effects, char, game_state, "player", None)
+        hat = game_state.character_data["player"]["clothing"].get("hat", {})
+        # remove should clear the slot (state=empty or itemId removed)
+        assert hat.get("state") in ("empty", None) or hat.get("itemId") is None
+
+
+# ========================
+# Position effects
+# ========================
+
+class TestPositionEffects:
+    def test_change_position(self, game_state):
+        char = game_state.characters["player"]
+        effects = [{"type": "position", "mapId": "tavern", "cellId": 3, "target": "self"}]
+        _apply_effects(effects, char, game_state, "player", None)
+        assert char["position"]["cellId"] == 3
+
+    def test_change_position_map(self, game_state):
+        game_state.maps["forest"] = {
+            "id": "forest", "name": "森林",
+            "cells": [{"id": 1, "name": "入口"}],
+            "cell_index": {1: {"name": "入口"}},
+        }
+        char = game_state.characters["player"]
+        effects = [{"type": "position", "mapId": "forest", "cellId": 1, "target": "self"}]
+        _apply_effects(effects, char, game_state, "player", None)
+        assert char["position"]["mapId"] == "forest"
+        assert char["position"]["cellId"] == 1
+
+
+# ========================
+# WorldVar effects
+# ========================
+
+class TestWorldVarEffects:
+    def test_add_world_var(self, game_state):
+        game_state.world_variables["counter"] = 10
+        char = game_state.characters["player"]
+        effects = [{"type": "worldVar", "key": "counter", "op": "add", "value": 5, "target": "self"}]
+        _apply_effects(effects, char, game_state, "player", None)
+        assert game_state.world_variables["counter"] == 15
+
+    def test_set_world_var(self, game_state):
+        game_state.world_variables["counter"] = 10
+        char = game_state.characters["player"]
+        effects = [{"type": "worldVar", "key": "counter", "op": "set", "value": 99, "target": "self"}]
+        _apply_effects(effects, char, game_state, "player", None)
+        assert game_state.world_variables["counter"] == 99

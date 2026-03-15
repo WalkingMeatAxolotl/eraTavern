@@ -62,6 +62,22 @@ manager = ConnectionManager()
 game_state: Optional[GameState] = None
 
 
+def _validate_id(raw_id: str) -> Optional[str]:
+    """Validate a user-provided entity ID. Returns error message or None.
+
+    Accepts both bare IDs ('sword') and namespaced IDs ('base.sword').
+    Validates only the local part (after the first dot).
+    """
+    from game.character import NS_SEP
+    if not raw_id:
+        return "ID 不能为空"
+    # Extract local part: 'base.sword' → 'sword', 'sword' → 'sword'
+    local = raw_id.split(NS_SEP, 1)[1] if NS_SEP in raw_id else raw_id
+    if NS_SEP in local:
+        return f"ID 不能包含 '{NS_SEP}'"
+    return None
+
+
 def _ensure_ns(entity_id: str, source: str = "") -> str:
     """Ensure an entity ID is namespaced. Auto-prefix with source if bare."""
     from game.character import NS_SEP
@@ -224,6 +240,8 @@ class CreateWorldRequest(BaseModel):
 async def create_world(req: CreateWorldRequest):
     """Create a new world. Addon versions will be forked on first load."""
     from game.addon_loader import save_world_config, WORLDS_DIR
+    if err := _validate_id(req.id):
+        return {"success": False, "message": err}
     world_dir = WORLDS_DIR / req.id
     if world_dir.exists():
         return {"success": False, "message": f"World '{req.id}' already exists"}
@@ -360,6 +378,8 @@ async def create_addon(body: dict = Body(...)):
     addon_id = body.get("id", "").strip()
     name = body.get("name", "").strip()
     version = body.get("version", "1.0.0").strip()
+    if err := _validate_id(addon_id):
+        return {"success": False, "message": err}
     if not addon_id:
         return {"success": False, "message": "缺少 addon ID"}
     if not name:
@@ -750,6 +770,8 @@ async def update_character_config(character_id: str, body: dict = Body(...)):
 async def create_character_config(body: dict = Body(...)):
     """Create a new character (in memory). Builds runtime state."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     char_id = _ensure_ns(raw_id, source)
     if not char_id:
@@ -827,6 +849,8 @@ async def get_traits():
 async def create_trait(body: dict = Body(...)):
     """Create a new game trait (in memory)."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     trait_id = _ensure_ns(raw_id, source)
     if not trait_id:
@@ -889,6 +913,8 @@ async def get_clothing():
 async def create_clothing(body: dict = Body(...)):
     """Create a new game clothing item (in memory)."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     item_id = _ensure_ns(raw_id, source)
     if not item_id:
@@ -955,6 +981,8 @@ async def get_items():
 async def create_item(body: dict = Body(...)):
     """Create a new game item (in memory)."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     item_id = _ensure_ns(raw_id, source)
     if not item_id:
@@ -1044,6 +1072,8 @@ async def get_actions_defs():
 async def create_action_def(body: dict = Body(...)):
     """Create a new game action (in memory)."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     action_id = _ensure_ns(raw_id, source)
     if not action_id:
@@ -1101,6 +1131,8 @@ async def get_trait_groups():
 async def create_trait_group(body: dict = Body(...)):
     """Create a new game trait group (in memory)."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     group_id = _ensure_ns(raw_id, source)
     if not group_id:
@@ -1158,6 +1190,8 @@ async def get_variables():
 async def create_variable(body: dict = Body(...)):
     """Create a new derived variable (in memory)."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     var_id = _ensure_ns(raw_id, source)
     if not var_id:
@@ -1271,6 +1305,8 @@ async def get_events():
 async def create_event(body: dict = Body(...)):
     """Create a new global event (in memory)."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     event_id = _ensure_ns(raw_id, source)
     if not event_id:
@@ -1330,6 +1366,8 @@ async def get_world_variables():
 async def create_world_variable(body: dict = Body(...)):
     """Create a new world variable (in memory)."""
     raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return {"success": False, "message": err}
     source = body.get("source") or get_addon_from_id(raw_id) or ""
     var_id = _ensure_ns(raw_id, source)
     if not var_id:

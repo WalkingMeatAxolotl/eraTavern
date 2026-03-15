@@ -188,3 +188,83 @@ class TestResolveTemplate:
         char = game_state.characters["player"]
         result = _resolve_template("{{weather}}", char, None, game_state, None, [])
         assert result == "晴"
+
+    def test_outcome_grade(self, game_state):
+        char = game_state.characters["player"]
+        outcome = {"label": "大成功", "grade": "S"}
+        result = _resolve_template("Grade: {{outcomeGrade}}", char, None, game_state, outcome, [])
+        assert result == "Grade: S"
+
+    def test_ability_var(self, game_state):
+        char = game_state.characters["player"]  # technique exp=3000, grade=D
+        result = _resolve_template("{{self.ability.technique}}", char, None, game_state, None, [])
+        assert result == "D"
+
+    def test_ability_exp_var(self, game_state):
+        char = game_state.characters["player"]
+        result = _resolve_template("{{self.abilityExp.technique}}", char, None, game_state, None, [])
+        assert result == "3000"
+
+    def test_favorability_var(self, game_state):
+        char = game_state.characters["player"]
+        char["favorability"] = [{"id": "npc1", "name": "Sakuya", "value": 200}]
+        result = _resolve_template("{{self.favorability.npc1}}", char, None, game_state, None, [])
+        assert result == "200"
+
+    def test_inventory_var(self, game_state):
+        char = game_state.characters["player"]
+        char["inventory"] = [{"itemId": "potion", "name": "药水", "tags": [], "amount": 5}]
+        result = _resolve_template("{{self.inventory.potion}}", char, None, game_state, None, [])
+        assert result == "5"
+
+    def test_inventory_missing(self, game_state):
+        char = game_state.characters["player"]
+        result = _resolve_template("{{self.inventory.potion}}", char, None, game_state, None, [])
+        assert result == "0"
+
+    def test_experience_var(self, game_state):
+        char = game_state.characters["player"]
+        char["experiences"] = [{"key": "kiss", "label": "接吻", "count": 3, "first": None}]
+        result = _resolve_template("{{self.experience.kiss}}", char, None, game_state, None, [])
+        assert result == "3"
+
+    def test_clothing_var(self, game_state):
+        char = game_state.characters["player"]
+        char["clothing"] = [{"slot": "上衣", "itemId": "shirt1", "itemName": "白衬衫", "state": "worn"}]
+        result = _resolve_template("{{self.clothing.上衣}}", char, None, game_state, None, [])
+        assert result == "白衬衫"
+
+    def test_clothing_half_worn(self, game_state):
+        char = game_state.characters["player"]
+        char["clothing"] = [{"slot": "上衣", "itemId": "shirt1", "itemName": "白衬衫", "state": "halfWorn"}]
+        result = _resolve_template("{{self.clothing.上衣}}", char, None, game_state, None, [])
+        assert result == "白衬衫(半穿)"
+
+    def test_clothing_empty_slot(self, game_state):
+        char = game_state.characters["player"]
+        char["clothing"] = [{"slot": "上衣", "itemId": "", "state": "empty"}]
+        result = _resolve_template("{{self.clothing.上衣}}", char, None, game_state, None, [])
+        assert result == "无"
+
+    def test_trait_var(self, game_state):
+        char = game_state.characters["player"]  # traits: [{"key": "race", "values": ["human"]}]
+        result = _resolve_template("{{self.trait.race}}", char, None, game_state, None, [])
+        assert result == "human"
+
+    def test_trait_var_multiple_values(self, game_state):
+        char = game_state.characters["player"]
+        char["traits"] = [{"key": "hobby", "label": "爱好", "values": ["读书", "钓鱼"]}]
+        result = _resolve_template("{{self.trait.hobby}}", char, None, game_state, None, [])
+        assert result == "读书, 钓鱼"
+
+    def test_target_resource_var(self, game_state):
+        char = game_state.characters["player"]
+        target = game_state.characters["npc1"]
+        result = _resolve_template("{{target.resource.stamina}}", char, target, game_state, None, [])
+        assert result == "1000"
+
+    def test_target_ability_var(self, game_state):
+        char = game_state.characters["player"]
+        target = game_state.characters["npc1"]
+        result = _resolve_template("{{target.ability.technique}}", char, target, game_state, None, [])
+        assert result == "D"

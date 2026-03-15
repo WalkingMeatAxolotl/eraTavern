@@ -133,7 +133,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         setTimeout(onBack, 500);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e}`);
+      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
     } finally {
       setSaving(false);
     }
@@ -151,7 +151,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         setMessage(result.message);
       }
     } catch (e) {
-      setMessage(`删除失败: ${e}`);
+      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
     } finally {
       setSaving(false);
     }
@@ -247,10 +247,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
             <div style={{ flex: 1 }}>
               <div style={labelStyle}>默认经验值</div>
               <input
-                type="number"
+                type="number" min={0}
                 style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
                 value={defaultValue}
-                onChange={(e) => setDefaultValue(Number(e.target.value))}
+                onChange={(e) => setDefaultValue(Math.max(0, Number(e.target.value)))}
                 disabled={isReadOnly}
               />
             </div>
@@ -282,10 +282,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 <div style={{ flex: 1 }}>
                   <div style={labelStyle}>每隔(游戏分钟)</div>
                   <input
-                    type="number"
+                    type="number" min={5} step={5}
                     style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
                     value={decay.intervalMinutes}
-                    onChange={(e) => setDecay({ ...decay, intervalMinutes: Number(e.target.value) })}
+                    onChange={(e) => setDecay({ ...decay, intervalMinutes: Math.max(5, Number(e.target.value)) })}
                     disabled={isReadOnly}
                   />
                 </div>
@@ -304,10 +304,14 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 <div style={{ flex: 1 }}>
                   <div style={labelStyle}>下降量{decay.type === "percentage" ? "(%)" : ""}</div>
                   <input
-                    type="number"
+                    type="number" min={1} max={decay.type === "percentage" ? 100 : undefined}
                     style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
                     value={decay.amount}
-                    onChange={(e) => setDecay({ ...decay, amount: Number(e.target.value) })}
+                    onChange={(e) => {
+                      let v = Math.max(1, Number(e.target.value));
+                      if (decay.type === "percentage") v = Math.min(100, v);
+                      setDecay({ ...decay, amount: v });
+                    }}
                     disabled={isReadOnly}
                   />
                 </div>

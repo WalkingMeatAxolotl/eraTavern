@@ -274,7 +274,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
         setTimeout(onBack, 500);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e}`);
+      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
     } finally {
       setSaving(false);
     }
@@ -289,7 +289,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       if (result.success) onBack();
       else setMessage(result.message);
     } catch (e) {
-      setMessage(`删除失败: ${e}`);
+      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
     } finally {
       setSaving(false);
     }
@@ -370,8 +370,8 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
             <div>
               <div style={labelStyle}>基础权重</div>
-              <input className="ae-input" type="number" style={{ ...inputStyle, width: "80px" }}
-                value={npcWeight} onChange={(e) => setNpcWeight(Number(e.target.value))} disabled={isReadOnly} />
+              <input className="ae-input" type="number" min={0} style={{ ...inputStyle, width: "80px" }}
+                value={npcWeight} onChange={(e) => setNpcWeight(Math.max(0, Number(e.target.value)))} disabled={isReadOnly} />
               <div style={{ color: T.textDim, fontSize: "11px", marginTop: "2px" }}>0 = NPC不会执行此行动</div>
             </div>
             <div style={{
@@ -812,11 +812,11 @@ function ConditionLeafEditor({
       {condition.type === "time" && (
         <>
           <input type="number" style={{ ...inputStyle, width: "50px" }} value={condition.hourMin ?? ""}
-            onChange={(e) => update({ hourMin: e.target.value ? Number(e.target.value) : undefined })} disabled={disabled}
+            onChange={(e) => update({ hourMin: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })} disabled={disabled}
             placeholder="时起" min={0} max={23} />
           <span style={{ color: T.textDim }}>~</span>
           <input type="number" style={{ ...inputStyle, width: "50px" }} value={condition.hourMax ?? ""}
-            onChange={(e) => update({ hourMax: e.target.value ? Number(e.target.value) : undefined })} disabled={disabled}
+            onChange={(e) => update({ hourMax: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })} disabled={disabled}
             placeholder="时止" min={0} max={23} />
           <select style={{ ...inputStyle, width: "auto" }} value={condition.season ?? ""}
             onChange={(e) => update({ season: e.target.value || undefined })} disabled={disabled}>
@@ -982,7 +982,7 @@ function CostEditor({ cost, onChange, disabled, resourceKeys, basicInfoNumKeys, 
           {itemList.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
         </select>
       )}
-      <input type="number" style={{ ...inputStyle, width: "70px" }} value={cost.amount}
+      <input type="number" min={0} style={{ ...inputStyle, width: "70px" }} value={cost.amount}
         onChange={(e) => update({ amount: Math.max(0, Number(e.target.value)) })} disabled={disabled} />
     </div>
   );
@@ -1044,7 +1044,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
               </select>
               <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1000}
-                onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
+                onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })} min={1} disabled={disabled} />
             </>
           )}
 
@@ -1056,7 +1056,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
               </select>
               <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
-                onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
+                onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })} min={1} disabled={disabled} />
             </>
           )}
 
@@ -1085,7 +1085,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
               </select>
               <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 100}
-                onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
+                onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })} min={1} disabled={disabled} />
             </>
           )}
 
@@ -1098,7 +1098,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
               </select>
               <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
-                onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
+                onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })} min={1} disabled={disabled} />
             </>
           )}
 
@@ -1111,7 +1111,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, abilityKeys, experi
               </select>
               <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
-                onChange={(e) => update(idx, { ...mod, per: Number(e.target.value) })} disabled={disabled} />
+                onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })} min={1} disabled={disabled} />
             </>
           )}
 
@@ -1255,7 +1255,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
         <input style={{ ...inputStyle, width: "60px" }} value={outcome.label}
           onChange={(e) => update({ label: e.target.value })} disabled={disabled} placeholder="标签" />
         <span style={{ color: T.textSub, fontSize: "11px" }}>权重:</span>
-        <input type="number" style={{ ...inputStyle, width: "50px" }} value={outcome.weight}
+        <input type="number" min={0} style={{ ...inputStyle, width: "50px" }} value={outcome.weight}
           onChange={(e) => update({ weight: Math.max(0, Number(e.target.value)) })} disabled={disabled} />
         {!disabled && <button className="ae-del-btn" onClick={onRemove} style={{ ...delBtnStyle, marginLeft: "auto" }}>x</button>}
       </div>
@@ -1792,7 +1792,7 @@ function TemplateListEditor({ templates, onChange, disabled, ctx }: {
           <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
             <span style={{ color: "#6ec6ff", fontSize: "11px", fontWeight: "bold" }}>#{idx + 1}</span>
             <span style={{ color: T.textSub, fontSize: "11px" }}>权重:</span>
-            <input type="number" style={{ ...inputStyle, width: "50px" }} value={entry.weight ?? 1}
+            <input type="number" min={0} style={{ ...inputStyle, width: "50px" }} value={entry.weight ?? 1}
               onChange={(e) => update(idx, { ...entry, weight: Math.max(0, Number(e.target.value)) })}
               disabled={disabled} />
             {!disabled && <button className="ae-del-btn" onClick={() => remove(idx)} style={{ ...delBtnStyle, marginLeft: "auto" }}>x</button>}

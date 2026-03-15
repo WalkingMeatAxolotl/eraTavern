@@ -208,24 +208,24 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             <Row key={field.key} label={field.label}>
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <input
-                  type="number"
+                  type="number" min={0}
                   value={res.value}
                   onChange={(e) => {
                     updateField("resources", {
                       ...data.resources,
-                      [field.key]: { ...res, value: Number(e.target.value) },
+                      [field.key]: { ...res, value: Math.max(0, Number(e.target.value)) },
                     });
                   }}
                   style={{ ...inputStyle(), width: "80px" }}
                 />
                 <span style={{ color: T.textSub }}>/</span>
                 <input
-                  type="number"
+                  type="number" min={0}
                   value={res.max}
                   onChange={(e) => {
                     updateField("resources", {
                       ...data.resources,
-                      [field.key]: { ...res, max: Number(e.target.value) },
+                      [field.key]: { ...res, max: Math.max(0, Number(e.target.value)) },
                     });
                   }}
                   style={{ ...inputStyle(), width: "80px" }}
@@ -409,10 +409,10 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               <div key={field.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ minWidth: "80px" }}>{field.label}:</span>
                 <input
-                  type="number"
+                  type="number" min={0}
                   value={exp}
                   onChange={(e) => {
-                    updateField("abilities", { ...data.abilities, [field.key]: Number(e.target.value) });
+                    updateField("abilities", { ...data.abilities, [field.key]: Math.max(0, Number(e.target.value)) });
                   }}
                   style={{ ...inputStyle(), width: "70px" }}
                 />
@@ -434,7 +434,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 <div key={field.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <span style={{ minWidth: "80px" }}>{field.label}:</span>
                   <input
-                    type="number"
+                    type="number" min={0}
                     value={count}
                     onChange={(e) => {
                       const newCount = Math.max(0, Number(e.target.value));

@@ -156,6 +156,38 @@ class TestNpcPresenceCondition:
 
 
 # ========================
+# NPC absent conditions
+# ========================
+
+class TestNpcAbsentCondition:
+    def test_npc_absent_any(self, game_state):
+        """npcAbsent with no npcId: true when no NPC at same cell."""
+        game_state.characters["npc1"]["position"]["cellId"] = 2
+        char = game_state.characters["player"]
+        cond = [{"type": "npcAbsent"}]
+        assert _evaluate_conditions(cond, char, game_state, char_id="player")
+
+    def test_npc_absent_any_fail(self, game_state):
+        """npcAbsent fails when NPC is at same cell."""
+        char = game_state.characters["player"]
+        cond = [{"type": "npcAbsent"}]
+        assert not _evaluate_conditions(cond, char, game_state, char_id="player")
+
+    def test_npc_absent_specific(self, game_state):
+        """npcAbsent with npcId: true when specific NPC not at same cell."""
+        game_state.characters["npc1"]["position"]["cellId"] = 2
+        char = game_state.characters["player"]
+        cond = [{"type": "npcAbsent", "npcId": "npc1"}]
+        assert _evaluate_conditions(cond, char, game_state, char_id="player")
+
+    def test_npc_absent_specific_fail(self, game_state):
+        """Specific NPC is present → npcAbsent fails."""
+        char = game_state.characters["player"]
+        cond = [{"type": "npcAbsent", "npcId": "npc1"}]
+        assert not _evaluate_conditions(cond, char, game_state, char_id="player")
+
+
+# ========================
 # Time conditions
 # ========================
 
@@ -182,6 +214,87 @@ class TestTimeCondition:
         game_state.time.season = 2  # 秋
         char = game_state.characters["player"]
         cond = [{"type": "time", "season": "春"}]
+        assert not _evaluate_conditions(cond, char, game_state, char_id="player")
+
+    def test_day_of_week(self, game_state):
+        char = game_state.characters["player"]
+        weekday = game_state.time.weekday
+        cond = [{"type": "time", "dayOfWeek": weekday}]
+        assert _evaluate_conditions(cond, char, game_state, char_id="player")
+
+    def test_day_of_week_mismatch(self, game_state):
+        char = game_state.characters["player"]
+        cond = [{"type": "time", "dayOfWeek": "星期日"}]
+        # Force a day that's not Sunday
+        game_state.time.day = 2  # should be 星期二
+        weekday = game_state.time.weekday
+        if weekday == "星期日":
+            game_state.time.day = 3
+        assert not _evaluate_conditions(cond, char, game_state, char_id="player")
+
+
+# ========================
+# Clothing conditions
+# ========================
+
+class TestClothingCondition:
+    def test_clothing_slot_state(self, game_state):
+        """Check clothing slot has specific state."""
+        game_state.characters["player"]["clothing"] = [
+            {"slot": "hat", "itemId": "wizard_hat", "itemName": "巫师帽",
+             "state": "worn", "occluded": False, "slotLabel": "帽子"},
+        ]
+        char = game_state.characters["player"]
+        cond = [{"type": "clothing", "slot": "hat", "state": "worn"}]
+        assert _evaluate_conditions(cond, char, game_state, char_id="player")
+
+    def test_clothing_wrong_state(self, game_state):
+        game_state.characters["player"]["clothing"] = [
+            {"slot": "hat", "itemId": "wizard_hat", "itemName": "巫师帽",
+             "state": "none", "occluded": False, "slotLabel": "帽子"},
+        ]
+        char = game_state.characters["player"]
+        cond = [{"type": "clothing", "slot": "hat", "state": "worn"}]
+        assert not _evaluate_conditions(cond, char, game_state, char_id="player")
+
+
+# ========================
+# Variable conditions
+# ========================
+
+class TestVariableCondition:
+    def test_variable_check(self, game_state):
+        game_state.variable_defs["power"] = {
+            "id": "power", "steps": [{"type": "constant", "value": 50}],
+        }
+        char = game_state.characters["player"]
+        cond = [{"type": "variable", "varId": "power", "op": ">=", "value": 30}]
+        assert _evaluate_conditions(cond, char, game_state, char_id="player")
+
+    def test_variable_check_fail(self, game_state):
+        game_state.variable_defs["power"] = {
+            "id": "power", "steps": [{"type": "constant", "value": 10}],
+        }
+        char = game_state.characters["player"]
+        cond = [{"type": "variable", "varId": "power", "op": ">=", "value": 30}]
+        assert not _evaluate_conditions(cond, char, game_state, char_id="player")
+
+
+# ========================
+# WorldVar conditions
+# ========================
+
+class TestWorldVarCondition:
+    def test_world_var_check(self, game_state):
+        game_state.world_variables["questDone"] = 1
+        char = game_state.characters["player"]
+        cond = [{"type": "worldVar", "key": "questDone", "op": "==", "value": 1}]
+        assert _evaluate_conditions(cond, char, game_state, char_id="player")
+
+    def test_world_var_check_fail(self, game_state):
+        game_state.world_variables["questDone"] = 0
+        char = game_state.characters["player"]
+        cond = [{"type": "worldVar", "key": "questDone", "op": "==", "value": 1}]
         assert not _evaluate_conditions(cond, char, game_state, char_id="player")
 
 

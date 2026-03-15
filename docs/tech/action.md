@@ -80,6 +80,9 @@ interface ActionCondition {
 
   // variable
   varId?: string;           // 衍生变量 ID
+
+  // worldVar（使用 key 字段，不是 varId）
+  // key?: string;          // 世界变量名（复用上方 key 字段）
 }
 
 // 逻辑组合 — 用键名区分，非 type 字段
@@ -407,13 +410,18 @@ no_location_actions: [action_def, ...]
 
 #### `simulate_npc_ticks(game_state, elapsed_minutes, exclude_id?, exclude_ids?) → list[dict]`
 
-按 `TICK_MINUTES = 5` 分片推进 NPC 模拟：
+按 `TICK_MINUTES = 5` 分片推进模拟，**时间在每个 tick 开始时递增**（per-tick 推进，非一次性推进）：
 
 1. 总 tick 数 = `elapsed_minutes / TICK_MINUTES`
-2. 每个 tick 遍历所有非排除角色，调用 `_npc_tick`
-3. `_npc_tick` 内部：完成进行中的行动 → 移动一格 → 选择新行动
-4. 每个 tick 后调用 `evaluate_events`（全局事件检查）
-5. 返回 NPC 日志列表，经 `filter_visible_npc_log` 过滤为玩家可见范围
+2. 每个 tick：
+   1. `game_state.time.advance(TICK_MINUTES)` — 推进 5 分钟
+   2. `apply_ability_decay` — 所有角色能力衰减
+   3. 遍历所有非排除角色，调用 `_npc_tick`
+   4. `_npc_tick` 内部：完成进行中的行动 → 移动一格 → 选择新行动
+   5. `evaluate_events` — 全局事件检查（per-character + global）
+3. 返回 NPC 日志列表，经 `filter_visible_npc_log` 过滤为玩家可见范围
+
+> 调用方（`_execute_configured`、`_execute_move`）不再自行调用 `time.advance`，时间推进完全由 `simulate_npc_ticks` 内部管理。
 
 ### Suggest Bonus 计算
 
@@ -461,21 +469,22 @@ execute_action(game_state, character_id, action_request)
     │   ├── _check_costs — 检查资源是否足够
     │   └── _apply_costs — 扣除资源
     │
-    ├── 3. 结果选择
+    ├── 3. 中断目标 NPC
+    │   └── 清除 target NPC 的 npc_goals（如有 targetId）
+    │
+    ├── 4. 时间推进 + NPC 模拟
+    │   └── simulate_npc_ticks — 内部 per-tick 推进时间、衰减、NPC 决策、事件
+    │
+    ├── 5. 结果选择
     │   └── 加权随机选择 outcome（含 weightModifiers）
     │
-    ├── 4. 效果应用
+    ├── 6. 效果应用
     │   └── _apply_effects — 逐一应用 outcome.effects
     │
-    ├── 5. 输出生成
-    │   ├── _select_output_template — 条件筛选 + 加权随机
-    │   └── _resolve_template — 变量替换
-    │
-    ├── 6. 时间推进
-    │   └── game_state.time.advance(timeCost)
-    │
-    ├── 7. NPC 模拟
-    │   └── simulate_npc_ticks(elapsed_minutes, exclude_id=actor)
+    ├── 7. 输出生成
+    │   ├── _select_output_template — action 级别 + outcome 级别模板
+    │   ├── _resolve_template — 变量替换
+    │   └── 自动附加 [outcome_label] + 效果摘要
     │
     └── 8. 日志过滤
         └── filter_visible_npc_log — 只返回玩家感知范围内的 NPC 日志

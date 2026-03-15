@@ -153,3 +153,23 @@ class TestMultiplyMode:
         add, mul = _calc_modifier_bonus([], char, game_state, "player", None)
         assert add == 0
         assert mul == 1.0
+
+
+class TestVariableModifier:
+    def test_variable_modifier(self, game_state):
+        game_state.variable_defs["power"] = {
+            "id": "power", "steps": [{"type": "constant", "value": 60}],
+        }
+        char = game_state.characters["player"]
+        mods = [{"type": "variable", "varId": "power", "per": 10, "bonus": 2}]
+        add, _ = _calc_modifier_bonus(mods, char, game_state, "player", None)
+        assert add == 12  # 60//10 * 2
+
+
+class TestWorldVarModifier:
+    def test_world_var_modifier(self, game_state):
+        game_state.world_variables["danger"] = 30
+        char = game_state.characters["player"]
+        mods = [{"type": "worldVar", "key": "danger", "per": 10, "bonus": 5}]
+        add, _ = _calc_modifier_bonus(mods, char, game_state, "player", None)
+        assert add == 15  # 30//10 * 5

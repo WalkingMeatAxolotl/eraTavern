@@ -962,7 +962,12 @@ class GameState:
         }
 
     def snapshot_save_data(self) -> dict[str, Any]:
-        """Snapshot all mutable runtime state for saving to a slot."""
+        """Snapshot all mutable runtime state for saving to a slot.
+
+        Returns a deep copy — safe to hold across subsequent state mutations.
+        """
+        import copy
+
         # Sync display state back to character_data first
         for char_id, char_state in self.characters.items():
             if char_id not in self.character_data:
@@ -992,15 +997,15 @@ class GameState:
         characters: dict[str, Any] = {}
         for char_id, cd in self.character_data.items():
             characters[char_id] = {
-                "position": cd.get("position", {}),
-                "resources": cd.get("resources", {}),
-                "inventory": cd.get("inventory", []),
-                "abilities": cd.get("abilities", {}),
-                "experiences": cd.get("experiences", {}),
-                "clothing": cd.get("clothing", {}),
-                "traits": cd.get("traits", {}),
-                "favorability": cd.get("favorability", {}),
-                "basicInfo": cd.get("basicInfo", {}),
+                "position": copy.deepcopy(cd.get("position", {})),
+                "resources": copy.deepcopy(cd.get("resources", {})),
+                "inventory": copy.deepcopy(cd.get("inventory", [])),
+                "abilities": copy.deepcopy(cd.get("abilities", {})),
+                "experiences": copy.deepcopy(cd.get("experiences", {})),
+                "clothing": copy.deepcopy(cd.get("clothing", {})),
+                "traits": copy.deepcopy(cd.get("traits", {})),
+                "favorability": copy.deepcopy(cd.get("favorability", {})),
+                "basicInfo": copy.deepcopy(cd.get("basicInfo", {})),
             }
 
         # Trim logs for save (30 game days)
@@ -1019,9 +1024,9 @@ class GameState:
         return {
             "time": self.time.to_dict(),
             "characters": characters,
-            "npcActivities": self.npc_activities,
-            "npcActionHistory": self.npc_action_history,
-            "decayAccumulators": self.decay_accumulators,
+            "npcActivities": copy.deepcopy(self.npc_activities),
+            "npcActionHistory": copy.deepcopy(self.npc_action_history),
+            "decayAccumulators": copy.deepcopy(self.decay_accumulators),
             "npcFullLog": trimmed_npc_log,
             "actionLog": trimmed_action_log,
             "worldVariables": dict(self.world_variables),

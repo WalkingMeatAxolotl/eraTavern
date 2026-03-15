@@ -786,13 +786,13 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       {/* Time */}
       {condition.type === "time" && (
         <>
-          <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number"
+          <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number" min={0} max={23}
             value={condition.hourMin ?? ""} placeholder="起"
-            onChange={e => update({ hourMin: e.target.value ? Number(e.target.value) : undefined })} />
+            onChange={e => update({ hourMin: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })} />
           <span style={{ color: T.textDim, fontSize: "11px" }}>~</span>
-          <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number"
+          <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number" min={0} max={23}
             value={condition.hourMax ?? ""} placeholder="止"
-            onChange={e => update({ hourMax: e.target.value ? Number(e.target.value) : undefined })} />
+            onChange={e => update({ hourMax: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })} />
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.season ?? ""}
             onChange={e => update({ season: e.target.value || undefined })}>
             <option value="">任意季节</option>

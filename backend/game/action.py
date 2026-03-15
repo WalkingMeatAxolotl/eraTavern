@@ -693,6 +693,8 @@ def simulate_npc_ticks(
     log: list[dict] = []
     has_events = bool(getattr(game_state, "event_defs", {}))
     for _ in range(ticks):
+        # Advance time by one tick
+        game_state.time.advance(TICK_MINUTES)
         # Apply ability decay for all characters each tick
         apply_ability_decay(
             game_state.characters, game_state.trait_defs,
@@ -1127,11 +1129,10 @@ def _execute_configured(
     if target_id and target_id in game_state.npc_goals:
         game_state.npc_goals.pop(target_id, None)
 
-    # Advance time — exclude target NPC from tick simulation
+    # Simulate NPC ticks (time advances per-tick inside simulate_npc_ticks)
     time_cost = _snap_to_tick(action_def.get("timeCost", 0))
     npc_log_raw: list[dict] = []
     if time_cost > 0:
-        game_state.time.advance(time_cost)
         exclude = [target_id] if target_id else None
         npc_log_raw = simulate_npc_ticks(game_state, time_cost, character_id, exclude_ids=exclude)
 
@@ -1690,8 +1691,7 @@ def _execute_move(
         if cell_info:
             cell_name = cell_info.get("name", f"{target_cell}号")
 
-    # Advance time by travel time
-    game_state.time.advance(travel_time)
+    # Simulate NPC ticks (time advances per-tick inside simulate_npc_ticks)
     npc_log_raw = simulate_npc_ticks(game_state, travel_time, character_id)
 
     result: dict[str, Any] = {

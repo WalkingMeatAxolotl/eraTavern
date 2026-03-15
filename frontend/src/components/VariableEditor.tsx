@@ -212,7 +212,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         setMessage(result.message);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e}`);
+      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
     } finally {
       setSaving(false);
     }
@@ -245,7 +245,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         setTestError(res.message ?? "求值失败");
       }
     } catch (e) {
-      setTestError(`请求失败: ${e}`);
+      setTestError(`请求失败: ${e instanceof Error ? e.message : e}`);
     }
   };
 

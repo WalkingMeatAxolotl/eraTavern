@@ -130,7 +130,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         setTimeout(onBack, 500);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e}`);
+      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
     } finally {
       setSaving(false);
     }
@@ -148,7 +148,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         setMessage(result.message);
       }
     } catch (e) {
-      setMessage(`删除失败: ${e}`);
+      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
     } finally {
       setSaving(false);
     }
