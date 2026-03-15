@@ -25,8 +25,8 @@ const OP_OPTIONS: { value: string; label: string }[] = [
   { value: "divide", label: "/" },
   { value: "min", label: "min" },
   { value: "max", label: "max" },
-  { value: "clamp_min", label: ">=下限" },
-  { value: "clamp_max", label: "<=上限" },
+  { value: "floor", label: "下限(不低于)" },
+  { value: "cap", label: "上限(不超过)" },
 ];
 
 const TYPE_OPTIONS: { value: string; label: string }[] = [
@@ -35,6 +35,8 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "basicInfo", label: "基础信息" },
   { value: "traitCount", label: "特质计数" },
   { value: "hasTrait", label: "拥有特质" },
+  { value: "experience", label: "经历次数" },
+  { value: "itemCount", label: "物品数量" },
   { value: "constant", label: "常量" },
   { value: "variable", label: "其他变量" },
 ];
@@ -113,7 +115,7 @@ function formulaPreview(steps: VariableStep[]): string {
       parts.push(val);
     } else {
       const sym = opSymbol(op);
-      if (["min", "max", "clamp_min", "clamp_max"].includes(op)) {
+      if (["min", "max", "floor", "cap"].includes(op)) {
         parts.push(`${sym}(${val})`);
       } else {
         parts.push(`${sym} ${val}`);
@@ -132,8 +134,8 @@ function opSymbol(op: string): string {
     case "divide": return "\u00F7";
     case "min": return "min";
     case "max": return "max";
-    case "clamp_min": return "\u2265";
-    case "clamp_max": return "\u2264";
+    case "floor": return "\u2265";
+    case "cap": return "\u2264";
     default: return "?";
   }
 }
@@ -795,6 +797,34 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
             </>
           );
         })()}
+
+        {step.type === "experience" && (
+          <select
+            style={{ ...selectStyle, flex: 1 }}
+            value={step.key ?? ""}
+            onChange={(e) => onChange({ key: e.target.value })}
+            disabled={readOnly}
+          >
+            <option value="">选择经历</option>
+            {(definitions?.template.experiences ?? []).map((ex) => (
+              <option key={ex.key} value={ex.key}>{ex.label} ({ex.key})</option>
+            ))}
+          </select>
+        )}
+
+        {step.type === "itemCount" && (
+          <select
+            style={{ ...selectStyle, flex: 1 }}
+            value={step.key ?? ""}
+            onChange={(e) => onChange({ key: e.target.value })}
+            disabled={readOnly}
+          >
+            <option value="">选择物品</option>
+            {Object.entries(definitions?.itemDefs ?? {}).map(([id, def]) => (
+              <option key={id} value={id}>{(def as any).name} ({id})</option>
+            ))}
+          </select>
+        )}
 
         {step.type === "variable" && (
           <select

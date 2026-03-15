@@ -157,11 +157,11 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     }
   };
 
-  /** Format multiplier hint: value=90 → "×0.90", value=120 → "×1.20" */
+  /** Format percentage hint: value=120 increase → "+20%", value=80 decrease → "-20%"
+   *  Multiple percentage effects on same target stack additively: two +20% = +40% total. */
   const pctHint = (value: number, direction: string) => {
-    let m = value / 100;
-    if (direction === "decrease") m = 2.0 - m;
-    return `\u00D7${m.toFixed(2)}`;
+    const delta = direction === "increase" ? value - 100 : 100 - value;
+    return `${delta >= 0 ? "+" : ""}${delta}%`;
   };
 
   return (

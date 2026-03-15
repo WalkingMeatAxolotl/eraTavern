@@ -118,6 +118,7 @@ class GameState:
         self.npc_activities: dict[str, str] = {}
         self.npc_full_log: list[dict] = []
         self.npc_action_history: dict[str, list[dict]] = {}
+        self.decay_accumulators: dict[str, dict[str, int]] = {}
         self.action_log: list[dict] = []
         self.cell_action_index: dict[tuple, list[dict]] = {}
         self.no_location_actions: list[dict] = []
@@ -159,6 +160,7 @@ class GameState:
         self.npc_activities = {}
         self.npc_full_log = []
         self.npc_action_history = {}
+        self.decay_accumulators = {}
         self.action_log = []
         self.cell_action_index = {}
         self.no_location_actions = []
@@ -235,6 +237,7 @@ class GameState:
         self.npc_activities = {}
         self.npc_full_log = []
         self.npc_action_history = {}
+        self.decay_accumulators = {}
         self.action_log = []
         self._init_world_variables()
         self.event_state = {}
@@ -1010,6 +1013,7 @@ class GameState:
             "characters": characters,
             "npcActivities": self.npc_activities,
             "npcActionHistory": self.npc_action_history,
+            "decayAccumulators": self.decay_accumulators,
             "npcFullLog": trimmed_npc_log,
             "actionLog": trimmed_action_log,
             "worldVariables": dict(self.world_variables),
@@ -1067,6 +1071,7 @@ class GameState:
         self.npc_goals = {}
         self.npc_activities = runtime.get("npcActivities", {})
         self.npc_action_history = runtime.get("npcActionHistory", {})
+        self.decay_accumulators = runtime.get("decayAccumulators", {})
         self.npc_full_log = runtime.get("npcFullLog", [])
         self.action_log = runtime.get("actionLog", [])
 

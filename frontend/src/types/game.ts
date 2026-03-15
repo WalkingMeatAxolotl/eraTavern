@@ -227,8 +227,8 @@ export interface ItemDefinition {
 // --- Derived variable types ---
 
 export interface VariableStep {
-  type: "ability" | "resource" | "basicInfo" | "traitCount" | "hasTrait" | "constant" | "variable";
-  op?: "add" | "subtract" | "multiply" | "divide" | "min" | "max" | "clamp_min" | "clamp_max";
+  type: "ability" | "resource" | "basicInfo" | "traitCount" | "hasTrait" | "experience" | "itemCount" | "constant" | "variable";
+  op?: "add" | "subtract" | "multiply" | "divide" | "min" | "max" | "floor" | "cap";
   key?: string;
   field?: "value" | "max";
   traitGroup?: string;

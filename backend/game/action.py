@@ -693,6 +693,11 @@ def simulate_npc_ticks(
     log: list[dict] = []
     has_events = bool(getattr(game_state, "event_defs", {}))
     for _ in range(ticks):
+        # Apply ability decay for all characters each tick
+        apply_ability_decay(
+            game_state.characters, game_state.trait_defs,
+            TICK_MINUTES, game_state.decay_accumulators,
+        )
         for npc_id, npc in list(game_state.characters.items()):
             if npc.get("isPlayer") or npc_id in skip:
                 continue
@@ -1127,7 +1132,6 @@ def _execute_configured(
     npc_log_raw: list[dict] = []
     if time_cost > 0:
         game_state.time.advance(time_cost)
-        apply_ability_decay(game_state.characters, game_state.trait_defs, time_cost)
         exclude = [target_id] if target_id else None
         npc_log_raw = simulate_npc_ticks(game_state, time_cost, character_id, exclude_ids=exclude)
 
@@ -1688,7 +1692,6 @@ def _execute_move(
 
     # Advance time by travel time
     game_state.time.advance(travel_time)
-    apply_ability_decay(game_state.characters, game_state.trait_defs, travel_time)
     npc_log_raw = simulate_npc_ticks(game_state, travel_time, character_id)
 
     result: dict[str, Any] = {

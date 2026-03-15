@@ -136,6 +136,20 @@ def _resolve_step_value(
                 return 1.0 if trait_id in t.get("values", []) else 0.0
         return 0.0
 
+    if step_type == "experience":
+        key = step.get("key", "")
+        for exp in character_state.get("experiences", []):
+            if exp["key"] == key:
+                return float(exp.get("count", 0))
+        return 0.0
+
+    if step_type == "itemCount":
+        key = step.get("key", "")
+        for inv in character_state.get("inventory", []):
+            if inv["itemId"] == key:
+                return float(inv.get("amount", 0))
+        return 0.0
+
     if step_type == "variable":
         var_id = step.get("varId", "")
         ref_def = all_var_defs.get(var_id)
@@ -160,8 +174,8 @@ def _apply_op(op: str, result: float, value: float) -> float:
         return min(result, value)
     if op == "max":
         return max(result, value)
-    if op == "clamp_min":
+    if op in ("floor", "clamp_min"):
         return max(result, value)
-    if op == "clamp_max":
+    if op in ("cap", "clamp_max"):
         return min(result, value)
     return result  # unknown op — no-op

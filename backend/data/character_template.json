@@ -4,8 +4,7 @@
 
   "basicInfo": [
     { "key": "name", "label": "名称", "type": "string", "defaultValue": "" },
-    { "key": "money", "label": "金钱", "type": "number", "defaultValue": 0 },
-    { "key": "libido", "label": "性欲", "type": "number", "defaultValue": 0 }
+    { "key": "money", "label": "金钱", "type": "number", "defaultValue": 0 }
   ],
 
   "resources": [

@@ -414,15 +414,20 @@ def _apply_all_effects(
     fixed_deltas: dict[str, float],
     pct_multipliers: dict[str, list[float]],
 ) -> None:
-    """Apply collected effects to character state."""
+    """Apply collected effects to character state.
+
+    Percentage model: additive stacking.
+    Each multiplier is already a ratio (e.g. 1.2 for +20%, 0.8 for -20%).
+    Sum all (m - 1.0) deltas, then final_multiplier = 1.0 + sum_of_deltas.
+    Example: two +20% effects → 1.0 + 0.2 + 0.2 = 1.4 (not 1.2 * 1.2 = 1.44).
+    """
     all_targets = set(fixed_deltas.keys()) | set(pct_multipliers.keys())
     for target in all_targets:
         fd = fixed_deltas.get(target, 0)
         mults = pct_multipliers.get(target, [])
-        product = 1.0
-        for m in mults:
-            product *= m
-        _apply_computed_effect(state, target, fd, product)
+        pct_sum = sum(m - 1.0 for m in mults)
+        final_multiplier = 1.0 + pct_sum
+        _apply_computed_effect(state, target, fd, final_multiplier)
 
 
 def apply_trait_effects(
@@ -572,8 +577,16 @@ def apply_ability_decay(
     characters: dict[str, dict[str, Any]],
     trait_defs: dict[str, dict],
     minutes_elapsed: int,
+    decay_accumulators: dict[str, dict[str, int]],
 ) -> None:
-    """Apply ability decay to all characters based on elapsed game-time minutes."""
+    """Apply ability decay using accumulation. Called per-tick.
+
+    decay_accumulators: {char_id: {ability_key: accumulated_minutes}}
+    Each tick adds minutes_elapsed to the accumulator. When it reaches
+    intervalMinutes, decay triggers and the accumulator resets.
+    """
+    # Collect decay rules from ability-category traits
+    decay_rules: list[tuple[str, dict]] = []
     for td in trait_defs.values():
         if td.get("category") != "ability":
             continue
@@ -583,14 +596,26 @@ def apply_ability_decay(
         interval = decay.get("intervalMinutes", 0)
         if interval <= 0:
             continue
-        intervals = minutes_elapsed // interval
-        if intervals <= 0:
-            continue
-        amount = decay.get("amount", 0)
-        decay_type = decay.get("type", "fixed")
-        ability_key = td["id"]
+        decay_rules.append((td["id"], decay))
 
-        for char_state in characters.values():
+    if not decay_rules:
+        return
+
+    for char_id, char_state in characters.items():
+        acc = decay_accumulators.setdefault(char_id, {})
+        for ability_key, decay in decay_rules:
+            interval = decay["intervalMinutes"]
+            acc[ability_key] = acc.get(ability_key, 0) + minutes_elapsed
+
+            if acc[ability_key] < interval:
+                continue
+
+            # Trigger: how many intervals accumulated
+            intervals = acc[ability_key] // interval
+            acc[ability_key] = acc[ability_key] % interval
+
+            amount = decay.get("amount", 0)
+            decay_type = decay.get("type", "fixed")
             for ab in char_state.get("abilities", []):
                 if ab["key"] != ability_key:
                     continue
