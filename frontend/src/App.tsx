@@ -210,6 +210,17 @@ export default function App() {
     }
   }, [player, loading, addMessage]);
 
+  const handleChangeOutfit = useCallback(async (outfitId: string, selections: Record<string, string>) => {
+    if (!player || loading) return;
+    setLoading(true);
+    try {
+      const result = await performAction(player.id, "changeOutfit", undefined, undefined, undefined, undefined, outfitId, selections);
+      addResultMessages(result);
+    } finally {
+      setLoading(false);
+    }
+  }, [player, loading, addMessage]);
+
   const handleCellClick = useCallback(
     (cellId: number) => {
       if (!player) return;
@@ -414,6 +425,7 @@ export default function App() {
               onMove={handleMove}
               onLook={handleLook}
               onAction={handleAction}
+              onChangeOutfit={handleChangeOutfit}
               disabled={loading}
               selectedNpcId={
                 selectedCharacterId && selectedCharacterId !== player.id

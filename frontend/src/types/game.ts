@@ -204,7 +204,8 @@ export interface OutfitType {
 export interface ClothingDefinition {
   id: string;
   name: string;
-  slot: string;
+  slot?: string;       // legacy single slot
+  slots: string[];     // multi-slot
   occlusion: string[];
   effects?: TraitEffect[];
   source: string;
@@ -455,15 +456,23 @@ export interface MoveTarget {
   travelTime?: number;
 }
 
+export interface OutfitTarget {
+  outfitId: string;
+  outfitName: string;
+  current: boolean;
+  slots: Record<string, { id: string; name: string }[]>;
+}
+
 export interface GameAction {
   id: string;
   name: string;
-  type: "move" | "look" | "configured";
+  type: "move" | "look" | "configured" | "changeOutfit";
   category?: string;
   targetType?: "none" | "npc" | "self";
   enabled?: boolean;
   disabledReason?: string;
   targets?: MoveTarget[];
+  outfitTargets?: OutfitTarget[];
 }
 
 // --- Time types ---

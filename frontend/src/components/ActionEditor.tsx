@@ -798,7 +798,7 @@ function ConditionLeafEditor({
 
       {condition.type === "clothing" && (() => {
         const slotClothing = condition.slot
-          ? Object.values(ctx.definitions.clothingDefs).filter((c) => c.slot === condition.slot)
+          ? Object.values(ctx.definitions.clothingDefs).filter((c) => (c.slots ?? [c.slot]).includes(condition.slot))
           : [];
         return (
           <>
@@ -1742,7 +1742,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
               <select style={inputStyle} value={effect.itemId ?? ""}
                 onChange={(e) => update({ itemId: e.target.value })} disabled={disabled}>
                 <option value="">选择服装</option>
-                {clothingList.filter((c) => !effect.slot || c.slot === effect.slot).map((c) => (
+                {clothingList.filter((c) => !effect.slot || (c.slots ?? [c.slot]).includes(effect.slot)).map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>

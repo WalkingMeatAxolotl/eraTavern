@@ -35,6 +35,53 @@ def get_available_actions(
             "targets": connections,
         })
 
+    # Built-in: changeOutfit (only if outfit types exist)
+    if game_state.outfit_types:
+        char_data = game_state.character_data.get(character_id, {})
+        current_outfit = char_data.get("currentOutfit", "default")
+        outfits_data = char_data.get("outfits", {})
+        outfit_targets = []
+        def _resolve_slot_names(slots_data: dict) -> dict:
+            """Convert {slot: [id, ...]} to {slot: [{id, name}, ...]}."""
+            result = {}
+            for slot, ids in slots_data.items():
+                result[slot] = []
+                for cid in ids:
+                    cdef = game_state.clothing_defs.get(cid, {})
+                    result[slot].append({"id": cid, "name": cdef.get("name", cid)})
+            return result
+
+        # Always include default
+        default_items = outfits_data.get("default", {})
+        outfit_targets.append({
+            "outfitId": "default",
+            "outfitName": "默认服装",
+            "current": current_outfit == "default",
+            "slots": _resolve_slot_names(default_items),
+        })
+        # Add all global outfit types
+        for ot in game_state.outfit_types:
+            oid = ot.get("id", "")
+            custom = outfits_data.get(oid)
+            if custom:
+                resolved = custom
+            elif ot.get("copyDefault"):
+                resolved = default_items
+            else:
+                resolved = ot.get("slots", {})
+            outfit_targets.append({
+                "outfitId": oid,
+                "outfitName": ot.get("name", oid),
+                "current": current_outfit == oid,
+                "slots": _resolve_slot_names(resolved),
+            })
+        actions.append({
+            "id": "changeOutfit",
+            "name": "换装",
+            "type": "changeOutfit",
+            "outfitTargets": outfit_targets,
+        })
+
     # Configured actions from actions.json
     for action_def in game_state.action_defs.values():
         # If target provided, evaluate all conditions; otherwise skip target-dependent ones
@@ -76,6 +123,9 @@ def execute_action(
 
     if action_type == "look":
         return _execute_look(game_state, character_id, action)
+
+    if action_type == "changeOutfit":
+        return _execute_change_outfit(game_state, character_id, action)
 
     # Configured action
     action_id = action.get("actionId") or action.get("type")
@@ -1585,12 +1635,21 @@ def _apply_effects(
                 if not outfit:
                     continue
                 cl = tgt_cd.setdefault("clothing", {})
+                occupied: set[str] = set()  # Slots occupied by multi-slot items
                 for slot, candidates in outfit.items():
+                    if slot in occupied:
+                        continue
                     if not candidates:
                         cl[slot] = {"itemId": None, "state": "off"}
                     else:
                         chosen = random.choice(candidates)
                         cl[slot] = {"itemId": chosen, "state": "worn"}
+                        # Multi-slot: occupy all slots this clothing uses
+                        cdef = game_state.clothing_defs.get(chosen, {})
+                        for extra_slot in cdef.get("slots", []):
+                            if extra_slot != slot:
+                                cl[extra_slot] = {"itemId": chosen, "state": "worn"}
+                                occupied.add(extra_slot)
                 tgt_cd["currentOutfit"] = outfit_key
                 summaries.append(f"{target_prefix}换装 → {outfit_key}")
 
@@ -1826,6 +1885,62 @@ def _execute_look(
         "success": True,
         "message": "\n".join(lines),
     }
+
+
+def _execute_change_outfit(
+    game_state: Any, character_id: str, action: dict
+) -> dict:
+    """Execute a player outfit change. Fixed 5-minute time cost."""
+    char = game_state.characters.get(character_id)
+    if not char:
+        return {"success": False, "message": "角色不存在"}
+
+    outfit_id = action.get("outfitId", "")
+    selections = action.get("selections", {})  # {slot: clothingId}
+
+    if not outfit_id:
+        return {"success": False, "message": "未指定预设"}
+
+    char_data = game_state.character_data.get(character_id, {})
+    cl = char_data.setdefault("clothing", {})
+
+    # Apply selections: each slot gets the player-chosen clothing item
+    occupied: set[str] = set()
+    for slot, item_id in selections.items():
+        if slot in occupied:
+            continue
+        if item_id:
+            cl[slot] = {"itemId": item_id, "state": "worn"}
+            # Multi-slot: occupy all slots this clothing uses
+            cdef = game_state.clothing_defs.get(item_id, {})
+            for extra_slot in cdef.get("slots", []):
+                if extra_slot != slot:
+                    cl[extra_slot] = {"itemId": item_id, "state": "worn"}
+                    occupied.add(extra_slot)
+        else:
+            cl[slot] = {"itemId": None, "state": "off"}
+
+    char_data["currentOutfit"] = outfit_id
+
+    # Find outfit name for message
+    outfit_name = "默认服装" if outfit_id == "default" else outfit_id
+    for ot in game_state.outfit_types:
+        if ot.get("id") == outfit_id:
+            outfit_name = ot.get("name", outfit_id)
+            break
+
+    # Simulate NPC ticks (5 minutes)
+    time_cost = _snap_to_tick(5)
+    npc_log_raw = simulate_npc_ticks(game_state, time_cost, character_id)
+
+    result: dict[str, Any] = {
+        "success": True,
+        "message": f"换装 → {outfit_name}",
+    }
+    npc_log = filter_visible_npc_log(npc_log_raw, char["position"], game_state, character_id)
+    if npc_log:
+        result["npcLog"] = npc_log
+    return result
 
 
 # ========================

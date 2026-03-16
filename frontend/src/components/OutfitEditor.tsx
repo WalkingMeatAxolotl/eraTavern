@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { GameDefinitions, OutfitType } from "../types/game";
 import { saveOutfitTypes } from "../api/client";
 import T from "../theme";
+import { HelpButton, HelpPanel, helpSub, helpP } from "./HelpToggle";
 
 interface Props {
   outfit: OutfitType;
@@ -20,6 +21,9 @@ const SLOT_LABELS: Record<string, string> = {
   hands: "手",
   feet: "脚",
   shoes: "鞋子",
+  mainHand: "主手",
+  offHand: "副手",
+  back: "背部",
   accessory1: "装饰品1",
   accessory2: "装饰品2",
   accessory3: "装饰品3",
@@ -52,11 +56,14 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
 
   const clothingSlots = definitions.template.clothingSlots;
 
-  // Group clothing by slot (share accessory items across accessory1/2/3)
+  // Group clothing by slot (multi-slot items appear in all their slots)
   const clothingBySlot: Record<string, { id: string; name: string }[]> = {};
   for (const c of Object.values(definitions.clothingDefs)) {
-    if (!clothingBySlot[c.slot]) clothingBySlot[c.slot] = [];
-    clothingBySlot[c.slot].push({ id: c.id, name: c.name });
+    const cslots = c.slots ?? (c.slot ? [c.slot] : []);
+    for (const s of cslots) {
+      if (!clothingBySlot[s]) clothingBySlot[s] = [];
+      clothingBySlot[s].push({ id: c.id, name: c.name });
+    }
   }
   const accessoryItems = clothingBySlot["accessory"] ?? [];
   for (const s of ["accessory1", "accessory2", "accessory3"]) {
@@ -159,15 +166,15 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
             <input type="checkbox" checked={copyDefault} onChange={() => setCopyDefault(!copyDefault)} />
             初始继承默认服装
           </label>
-          <button onClick={() => setShowHelp((v) => !v)}
-            style={{ padding: "2px 6px", backgroundColor: T.bg2, border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "11px", color: showHelp ? T.danger : T.textSub }}
-          >[?]</button>
+          <HelpButton show={showHelp} onToggle={() => setShowHelp((v) => !v)} />
         </div>
         {showHelp && (
-          <div style={{ fontSize: "11px", color: T.textDim, padding: "4px 8px", backgroundColor: T.bg2, borderRadius: "3px", lineHeight: "1.6" }}>
-            <b>开启</b>：角色未自定义此预设时，使用角色自己的默认服装内容。<br />
-            <b>关闭</b>：使用下方定义的默认槽位内容，所有角色共享。
-          </div>
+          <HelpPanel>
+            <div style={helpSub}>开启</div>
+            <div style={helpP}>角色未自定义此预设时，使用角色自己的默认服装内容。</div>
+            <div style={helpSub}>关闭</div>
+            <div style={helpP}>使用下方定义的默认槽位内容，所有角色共享。</div>
+          </HelpPanel>
         )}
       </div>
 

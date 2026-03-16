@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../theme";
+import { HelpButton, HelpPanel, helpSub, helpP, helpEm, helpDim } from "./HelpToggle";
 import type {
   EventDefinition, WorldVariableDefinition, GameDefinitions,
   ActionCondition, ConditionItem, ActionEffect,
@@ -354,9 +355,9 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
   const [effects, setEffects] = useState<ActionEffect[]>(event.effects ?? []);
   const [outputTemplate, setOutputTemplate] = useState(event.outputTemplate ?? "");
   const [saving, setSaving] = useState(false);
+  const [showVarHelp, setShowVarHelp] = useState(false);
   const [showTriggerHelp, setShowTriggerHelp] = useState(false);
   const [showScopeHelp, setShowScopeHelp] = useState(false);
-  const [showVarHelp, setShowVarHelp] = useState(false);
 
   // Derived lists from definitions
   const resourceKeys = definitions?.template.resources.map(r => ({ key: r.key, label: r.label })) ?? [];
@@ -468,10 +469,24 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
                 onChange={e => setCooldown(Math.max(5, Math.ceil(Number(e.target.value) / 5) * 5))} />
             </>
           )}
-          <button onClick={() => setShowTriggerHelp(v => !v)}
-            style={{ ...btnBase, color: showTriggerHelp ? T.danger : T.textSub, fontSize: "11px" }}>[?]</button>
+          <HelpButton show={showTriggerHelp} onToggle={() => setShowTriggerHelp((v) => !v)} />
         </div>
-        {showTriggerHelp && <TriggerModeHelp />}
+        {showTriggerHelp && (
+          <HelpPanel>
+            <div style={{ ...helpP, marginBottom: "2px" }}>控制事件在条件满足时何时触发。</div>
+            <div style={helpSub}>on_change — 变化触发</div>
+            <div style={helpP}>条件从 <span style={helpEm}>不满足 → 满足</span> 的瞬间触发一次。条件持续满足期间不会重复触发，必须先变回不满足、再次满足时才会再次触发。</div>
+            <div style={helpDim}>适合"进入某状态时"的事件。例：好感度首次达到 50 时触发特殊对话。</div>
+            <div style={helpSub}>while — 持续触发</div>
+            <div style={helpP}>每次检查时只要条件满足就触发，受冷却时间（分钟）限制避免过于频繁。</div>
+            <div style={helpDim}>适合持续性效果。例：天气为雨天时，每 10 分钟所有人心情 -1。</div>
+            <div style={helpSub}>once — 一次性</div>
+            <div style={helpP}>条件满足时触发 <span style={helpEm}>一次</span> 后永久标记为已完成，之后不会再触发。</div>
+            <div style={helpDim}>适合一次性剧情事件。例：第一次击败 Boss 后解锁新区域。</div>
+            <div style={helpSub}>on_change vs once 的区别</div>
+            <div style={helpP}><span style={helpEm}>on_change</span> 在条件恢复不满足后可以再次触发（多次），<span style={helpEm}>once</span> 触发后永远不再触发（仅一次）。</div>
+          </HelpPanel>
+        )}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>目标范围</label>
           <select style={inputStyle} value={targetScope}
@@ -479,10 +494,19 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
             <option value="each_character">each_character (每个角色)</option>
             <option value="none">none (无目标)</option>
           </select>
-          <button onClick={() => setShowScopeHelp(v => !v)}
-            style={{ ...btnBase, color: showScopeHelp ? T.danger : T.textSub, fontSize: "11px" }}>[?]</button>
+          <HelpButton show={showScopeHelp} onToggle={() => setShowScopeHelp((v) => !v)} />
         </div>
-        {showScopeHelp && <TargetScopeHelp />}
+        {showScopeHelp && (
+          <HelpPanel>
+            <div style={{ ...helpP, marginBottom: "2px" }}>控制事件对谁评估和执行效果。</div>
+            <div style={helpSub}>each_character — 每个角色</div>
+            <div style={helpP}>对每个角色 <span style={helpEm}>分别</span> 评估条件、分别执行效果。效果中的 <span style={helpEm}>self</span> 指当前被评估的角色。</div>
+            <div style={helpDim}>例：任何角色 HP 低于 10 时自动获得特质"濒死"——每个角色独立判断。</div>
+            <div style={helpSub}>none — 无目标</div>
+            <div style={helpP}>无角色上下文，仅在玩家行动后评估一次。条件只能使用 <span style={helpEm}>世界变量</span>、<span style={helpEm}>时间</span> 等全局条件，效果只能修改 <span style={helpEm}>世界变量</span>。</div>
+            <div style={helpDim}>例：当世界变量 tavern_open = 1 时，设置 customers_arriving = 1。</div>
+          </HelpPanel>
+        )}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>启用</label>
           <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
@@ -764,7 +788,7 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       {/* Clothing */}
       {condition.type === "clothing" && (() => {
         const slotClothing = condition.slot && ctx.definitions
-          ? Object.values(ctx.definitions.clothingDefs).filter(c => c.slot === condition.slot)
+          ? Object.values(ctx.definitions.clothingDefs).filter(c => (c.slots ?? [c.slot]).includes(condition.slot))
           : [];
         return (
           <>
@@ -1021,70 +1045,7 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
   );
 }
 
-// ─── Event help panel ───
-
-const helpBox: React.CSSProperties = { margin: "4px 0 4px 68px", padding: "8px 12px", backgroundColor: T.bg3, border: `1px solid ${T.border}`, borderRadius: "3px" };
-const helpSub: React.CSSProperties = { color: "#e9a045", fontSize: "11px", fontWeight: "bold", marginTop: "6px", marginBottom: "2px" };
-const helpP: React.CSSProperties = { color: T.textSub, fontSize: "11px", lineHeight: "1.6", margin: "2px 0" };
-const helpEm: React.CSSProperties = { color: "#0ff", fontSize: "11px" };
-const helpDim: React.CSSProperties = { color: T.textDim, fontSize: "11px", fontStyle: "italic" };
-
-function TriggerModeHelp() {
-  return (
-    <div style={helpBox}>
-      <div style={{ ...helpP, marginBottom: "2px" }}>控制事件在条件满足时何时触发。</div>
-
-      <div style={helpSub}>on_change — 变化触发</div>
-      <div style={helpP}>
-        条件从 <span style={helpEm}>不满足 → 满足</span> 的瞬间触发一次。
-        条件持续满足期间不会重复触发，必须先变回不满足、再次满足时才会再次触发。
-      </div>
-      <div style={helpDim}>适合"进入某状态时"的事件。例：好感度首次达到 50 时触发特殊对话。金币从 99→100 触发，100→120 不触发，降回 80 后再回到 100 会再次触发。</div>
-
-      <div style={helpSub}>while — 持续触发</div>
-      <div style={helpP}>
-        每次检查时只要条件满足就触发，受冷却时间（分钟）限制避免过于频繁。
-      </div>
-      <div style={helpDim}>适合持续性效果。例：天气为雨天时，每 10 分钟所有人心情 -1。</div>
-
-      <div style={helpSub}>once — 一次性</div>
-      <div style={helpP}>
-        条件满足时触发 <span style={helpEm}>一次</span> 后永久标记为已完成，之后即使条件反复变化也不会再触发。
-      </div>
-      <div style={helpDim}>适合一次性剧情事件。例：第一次击败 Boss 后解锁新区域——无论之后状态如何变化，都不会重复触发。</div>
-
-      <div style={helpSub}>on_change vs once 的区别</div>
-      <div style={helpP}>
-        两者都是"变化时触发一次"，区别在于：<span style={helpEm}>on_change</span> 在条件恢复不满足后可以再次触发（多次），
-        而 <span style={helpEm}>once</span> 触发后永远不再触发（仅一次）。
-      </div>
-    </div>
-  );
-}
-
-function TargetScopeHelp() {
-  return (
-    <div style={helpBox}>
-      <div style={{ ...helpP, marginBottom: "2px" }}>控制事件对谁评估和执行效果。</div>
-
-      <div style={helpSub}>each_character — 每个角色</div>
-      <div style={helpP}>
-        对每个角色 <span style={helpEm}>分别</span> 评估条件、分别执行效果。
-        玩家行动后对玩家评估，每个 NPC 的行动回合对该 NPC 评估。
-        效果中的 <span style={helpEm}>self</span> 指当前被评估的角色。
-      </div>
-      <div style={helpDim}>例：任何角色 HP 低于 10 时自动获得特质"濒死"——每个角色独立判断。若配合 once 模式，则每个角色各触发一次。</div>
-
-      <div style={helpSub}>none — 无目标</div>
-      <div style={helpP}>
-        无角色上下文，仅在玩家行动后评估一次。
-        条件只能使用 <span style={helpEm}>世界变量</span>、<span style={helpEm}>时间</span> 等全局条件，
-        效果只能修改 <span style={helpEm}>世界变量</span>。
-      </div>
-      <div style={helpDim}>例：当世界变量 tavern_open = 1 时，设置 customers_arriving = 1。</div>
-    </div>
-  );
-}
+// (Help panels moved to HelpToggle component)
 
 // ─── Event template variable help panel ───
 

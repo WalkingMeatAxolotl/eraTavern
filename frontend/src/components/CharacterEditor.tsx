@@ -20,6 +20,9 @@ const SLOT_LABELS: Record<string, string> = {
   hands: "手",
   feet: "脚",
   shoes: "鞋子",
+  mainHand: "主手",
+  offHand: "副手",
+  back: "背部",
   accessory1: "装饰品1",
   accessory2: "装饰品2",
   accessory3: "装饰品3",
@@ -63,12 +66,15 @@ export default function CharacterEditor({ character, definitions, allCharacters,
     return { groupsByCategory: byCategory, traitToGroup: t2g };
   }, [traitGroups]);
 
-  // Group clothing by slot — accessory1/2/3 share items from "accessory" slot
+  // Group clothing by slot — multi-slot items appear in all their slots
   const clothingBySlot = useMemo(() => {
     const grouped: Record<string, { id: string; name: string }[]> = {};
     for (const c of Object.values(clothingDefs)) {
-      if (!grouped[c.slot]) grouped[c.slot] = [];
-      grouped[c.slot].push({ id: c.id, name: c.name });
+      const cslots = c.slots ?? (c.slot ? [c.slot] : []);
+      for (const s of cslots) {
+        if (!grouped[s]) grouped[s] = [];
+        grouped[s].push({ id: c.id, name: c.name });
+      }
     }
     // Share "accessory" items across accessory1/2/3
     const accessoryItems = grouped["accessory"] ?? [];

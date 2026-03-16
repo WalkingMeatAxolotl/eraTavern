@@ -14,6 +14,9 @@ const SLOT_LABELS: Record<string, string> = {
   hands: "手",
   feet: "脚",
   shoes: "鞋子",
+  mainHand: "主手",
+  offHand: "副手",
+  back: "背部",
   accessory: "装饰品",
   accessory1: "装饰品1",
   accessory2: "装饰品2",
@@ -129,7 +132,9 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
     grouped[s] = [];
   }
   for (const c of filteredClothing) {
-    const key = c.slot.startsWith("accessory") ? "accessory" : c.slot;
+    const cslots = c.slots ?? (c.slot ? [c.slot] : []);
+    const primarySlot = cslots[0] ?? "";
+    const key = primarySlot.startsWith("accessory") ? "accessory" : primarySlot;
     if (grouped[key]) {
       grouped[key].push(c);
     } else {

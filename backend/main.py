@@ -674,6 +674,8 @@ class ActionRequest(BaseModel):
     targetCell: Optional[int] = None
     targetMap: Optional[str] = None
     targetId: Optional[str] = None
+    outfitId: Optional[str] = None
+    selections: Optional[dict] = None
 
 
 @app.get("/api/game/available-actions/{character_id:path}")
@@ -695,6 +697,8 @@ async def perform_action(req: ActionRequest):
         "targetCell": req.targetCell,
         "targetMap": _ensure_ns(req.targetMap) if req.targetMap else req.targetMap,
         "targetId": _ensure_ns(req.targetId) if req.targetId else req.targetId,
+        "outfitId": req.outfitId,
+        "selections": req.selections,
     }
     result = execute_action(game_state, _ensure_ns(req.characterId), action_data)
 

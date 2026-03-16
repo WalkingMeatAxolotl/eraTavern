@@ -193,11 +193,13 @@ export async function performAction(
   targetMap?: string,
   actionId?: string,
   targetId?: string,
+  outfitId?: string,
+  selections?: Record<string, string>,
 ): Promise<ActionResult> {
   const res = await fetch(`${API_BASE}/action`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ characterId, type, actionId, targetCell, targetMap, targetId }),
+    body: JSON.stringify({ characterId, type, actionId, targetCell, targetMap, targetId, outfitId, selections }),
   });
   return handleResponse(res);
 }

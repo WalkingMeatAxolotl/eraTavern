@@ -13,9 +13,11 @@
   ],
 
   "clothingSlots": [
+    "mainHand", "offHand",
     "hat", "upperBody", "upperUnderwear",
     "lowerBody", "lowerUnderwear",
     "hands", "feet", "shoes",
+    "back",
     "accessory1", "accessory2", "accessory3"
   ],
 

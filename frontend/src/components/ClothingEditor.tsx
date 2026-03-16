@@ -3,6 +3,7 @@ import type { GameDefinitions, ClothingDefinition, TraitEffect } from "../types/
 import { createClothingDef, saveClothingDef, deleteClothingDef } from "../api/client";
 import T from "../theme";
 import PrefixedIdInput from "./PrefixedIdInput";
+import { HelpButton, HelpPanel, helpSub, helpP, helpEm } from "./HelpToggle";
 
 function buildTargetOptions(defs: GameDefinitions) {
   const groups: { label: string; options: { value: string; label: string }[] }[] = [];
@@ -51,6 +52,9 @@ const SLOT_LABELS: Record<string, string> = {
   hands: "手",
   feet: "脚",
   shoes: "鞋子",
+  mainHand: "主手",
+  offHand: "副手",
+  back: "背部",
   accessory: "装饰品",
   accessory1: "装饰品1",
   accessory2: "装饰品2",
@@ -81,11 +85,13 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
   const addonPrefix = clothing.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(clothing.id));
   const [name, setName] = useState(clothing.name);
-  const [slot, setSlot] = useState(clothing.slot);
+  const [selectedSlots, setSelectedSlots] = useState<string[]>(clothing.slots ?? (clothing.slot ? [clothing.slot] : []));
   const [occlusion, setOcclusion] = useState<string[]>([...clothing.occlusion]);
   const [effects, setEffects] = useState<TraitEffect[]>([...(clothing.effects ?? [])]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [showSlotHelp, setShowSlotHelp] = useState(false);
+  const [showOcclusionHelp, setShowOcclusionHelp] = useState(false);
 
   const isReadOnly = false;  // all addon entities are editable
   const slots = [...new Set(definitions.template.clothingSlots.map((s) =>
@@ -124,7 +130,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
     setSaving(true);
     setMessage("");
     try {
-      const data = { id, name, slot, occlusion, effects, source: clothing.source };
+      const data = { id, name, slots: selectedSlots, occlusion, effects, source: clothing.source };
       if (addonCrud) {
         if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(clothing.id, data); }
         return;
@@ -161,8 +167,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
     }
   };
 
-  // Available slots for occlusion (exclude the item's own slot)
-  const occlusionOptions = slots.filter((s) => s !== slot && !occlusion.includes(s));
+  // Available slots for occlusion (exclude the item's own slots)
+  const occlusionOptions = slots.filter((s) => !selectedSlots.includes(s) && !occlusion.includes(s));
 
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
@@ -201,27 +207,61 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           </div>
         </div>
         <div>
-          <div style={labelStyle}>装备槽位</div>
-          <select
-            style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-            value={slot}
-            onChange={(e) => {
-              setSlot(e.target.value);
-              // Remove self-slot from occlusion if it was there
-              setOcclusion((prev) => prev.filter((s) => s !== e.target.value));
-            }}
-            disabled={isReadOnly}
-          >
-            {slots.map((s) => (
-              <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>
+          <div style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "6px" }}>
+            装备槽位 {selectedSlots.length > 1 && <span style={{ color: T.accent }}>(多槽位)</span>}
+            <HelpButton show={showSlotHelp} onToggle={() => setShowSlotHelp((v) => !v)} />
+          </div>
+          {showSlotHelp && (
+            <HelpPanel>
+              <div style={helpP}>服装占据的角色槽位。大多数服装只有一个槽位。</div>
+              <div style={helpSub}>多槽位</div>
+              <div style={helpP}>如连体衣同时占据上半身+下半身，穿上后这些槽位都被占据。</div>
+            </HelpPanel>
+          )}
+          <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
+            {selectedSlots.map((s, i) => (
+              <span key={s} style={{ display: "inline-flex", alignItems: "center", gap: "2px", padding: "2px 8px", backgroundColor: T.bg2, border: `1px solid ${T.borderLight}`, borderRadius: "3px", fontSize: "12px" }}>
+                {SLOT_LABELS[s] ?? s}
+                {!isReadOnly && i > 0 && (
+                  <button onClick={() => {
+                    const next = selectedSlots.filter((x) => x !== s);
+                    setSelectedSlots(next);
+                    setOcclusion((prev) => prev.filter((o) => !next.includes(o)));
+                  }}
+                    style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", padding: "0 2px", fontSize: "12px", lineHeight: 1 }}>x</button>
+                )}
+              </span>
             ))}
-          </select>
+            {!isReadOnly && (() => {
+              const available = slots.filter((s) => !selectedSlots.includes(s));
+              return available.length > 0 ? (
+                <select value="" onChange={(e) => {
+                  if (!e.target.value) return;
+                  const next = [...selectedSlots, e.target.value];
+                  setSelectedSlots(next);
+                  setOcclusion((prev) => prev.filter((o) => !next.includes(o)));
+                }} style={inputStyle}>
+                  <option value="">+</option>
+                  {available.map((s) => <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>)}
+                </select>
+              ) : null;
+            })()}
+          </div>
         </div>
       </div>
 
       {/* Occlusion */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>遮挡槽位</div>
+        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub, display: "flex", alignItems: "center", gap: "6px" }}>
+          遮挡槽位
+          <HelpButton show={showOcclusionHelp} onToggle={() => setShowOcclusionHelp((v) => !v)} />
+        </div>
+        {showOcclusionHelp && (
+          <HelpPanel>
+            <div style={helpP}>穿着此服装时，遮挡的其他槽位将被隐藏（显示为 <span style={helpEm}>???</span>）。</div>
+            <div style={helpP}>仅 <span style={helpEm}>worn</span> 状态生效，halfWorn 不遮挡。不影响效果计算。</div>
+          </HelpPanel>
+        )}
         <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
           {occlusion.map((s) => (
             <span

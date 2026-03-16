@@ -101,6 +101,9 @@ SLOT_LABELS = {
     "hands": "手",
     "feet": "脚",
     "shoes": "鞋子",
+    "mainHand": "主手",
+    "offHand": "副手",
+    "back": "背部",
     "accessory1": "装饰品1",
     "accessory2": "装饰品2",
     "accessory3": "装饰品3",
@@ -341,7 +344,13 @@ def load_clothing_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
         data = _load_json_safe(addon_path / "clothing.json")
         for c in data.get("clothing", []):
             ns_id = namespace_id(addon_id, c["id"])
-            result[ns_id] = {**c, "id": ns_id, "_local_id": c["id"], "source": addon_id}
+            entry = {**c, "id": ns_id, "_local_id": c["id"], "source": addon_id}
+            # Compat: "slot" (string) → "slots" (list)
+            if "slots" not in entry:
+                entry["slots"] = [entry.pop("slot")] if "slot" in entry else []
+            elif "slot" in entry:
+                del entry["slot"]
+            result[ns_id] = entry
     return result
 
 
@@ -503,11 +512,13 @@ def apply_clothing_effects(
     """Apply clothing effects to character state in-place."""
     fixed_deltas: dict[str, float] = {}
     pct_multipliers: dict[str, list[float]] = {}
+    seen_items: set[str] = set()  # Avoid double-counting multi-slot clothing
 
     for slot_data in char_data.get("clothing", {}).values():
         item_id = slot_data.get("itemId") if isinstance(slot_data, dict) else None
-        if not item_id:
+        if not item_id or item_id in seen_items:
             continue
+        seen_items.add(item_id)
         wear_state = slot_data.get("state") if isinstance(slot_data, dict) else None
         if wear_state not in ("worn", "halfWorn"):
             continue  # "off" or missing state = no effect
