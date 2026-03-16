@@ -6,6 +6,12 @@ import type {
 } from "../types/game";
 import { createActionDef, saveActionDef, deleteActionDef } from "../api/client";
 import T from "../theme";
+import PrefixedIdInput from "./PrefixedIdInput";
+
+function toLocalId(nsId: string): string {
+  const dot = nsId.indexOf(".");
+  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
+}
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -179,7 +185,8 @@ if (typeof document !== "undefined" && !document.getElementById(AE_STYLE_ID)) {
 }
 
 export default function ActionEditor({ action, isNew, definitions, onBack, addonCrud }: Props) {
-  const [id, setId] = useState(action.id);
+  const addonPrefix = action.source || "";
+  const [id, setId] = useState(isNew ? "" : toLocalId(action.id));
   const [name, setName] = useState(action.name);
   const [category, setCategory] = useState(action.category);
   const [targetType, setTargetType] = useState(action.targetType);
@@ -261,14 +268,15 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
         npcWeight, npcWeightModifiers,
         conditions, costs: [], outcomes,
         outputTemplates: outputTemplates.length > 0 ? outputTemplates : undefined,
+        source: action.source,
       };
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(id, data); }
+        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(action.id, data); }
         return;
       }
       const result = isNew
         ? await createActionDef(data)
-        : await saveActionDef(id, data);
+        : await saveActionDef(action.id, data);
       setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
@@ -314,8 +322,12 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           <div style={{ display: "flex", gap: "12px" }}>
             <div style={{ flex: 1 }}>
               <div style={labelStyle}>ID</div>
-              <input className="ae-input" style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-                value={id} onChange={(e) => setId(e.target.value)} disabled={!isNew || isReadOnly} />
+              <PrefixedIdInput
+                prefix={addonPrefix}
+                value={id}
+                onChange={setId}
+                disabled={!isNew || isReadOnly}
+              />
             </div>
             <div style={{ flex: 1 }}>
               <div style={labelStyle}>名称</div>
@@ -802,7 +814,7 @@ function ConditionLeafEditor({
               <option value="">任意状态</option>
               <option value="worn">穿着</option>
               <option value="halfWorn">半穿</option>
-              <option value="none">脱下</option>
+              <option value="off">脱下</option>
               <option value="empty">无衣物</option>
             </select>
           </>
@@ -1688,7 +1700,7 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
             onChange={(e) => update({ state: e.target.value })} disabled={disabled}>
             <option value="worn">穿着</option>
             <option value="halfWorn">半穿</option>
-            <option value="none">脱下</option>
+            <option value="off">脱下</option>
             <option value="empty">无衣物</option>
           </select>
         </>

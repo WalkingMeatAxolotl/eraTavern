@@ -485,9 +485,9 @@ def apply_clothing_effects(
         item_id = slot_data.get("itemId") if isinstance(slot_data, dict) else None
         if not item_id:
             continue
-        state = slot_data.get("state") if isinstance(slot_data, dict) else None
-        if state not in ("worn", "halfWorn"):
-            continue  # "none" or missing state = no effect
+        wear_state = slot_data.get("state") if isinstance(slot_data, dict) else None
+        if wear_state not in ("worn", "halfWorn"):
+            continue  # "off" or missing state = no effect
         clothing_def = clothing_defs.get(item_id)
         if not clothing_def:
             continue

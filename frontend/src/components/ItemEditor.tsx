@@ -2,6 +2,12 @@ import { useState } from "react";
 import type { ItemDefinition } from "../types/game";
 import { createItemDef, saveItemDef, deleteItemDef } from "../api/client";
 import T from "../theme";
+import PrefixedIdInput from "./PrefixedIdInput";
+
+function toLocalId(nsId: string): string {
+  const dot = nsId.indexOf(".");
+  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
+}
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -33,7 +39,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: Props) {
-  const [id, setId] = useState(item.id);
+  const addonPrefix = item.source || "";
+  const [id, setId] = useState(isNew ? "" : toLocalId(item.id));
   const [name, setName] = useState(item.name);
   const [tags, setTags] = useState<string[]>([...(item.tags ?? [])]);
   const [tagInput, setTagInput] = useState("");
@@ -65,14 +72,14 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
     setSaving(true);
     setMessage("");
     try {
-      const data = { id, name, tags, description, maxStack, sellable, price };
+      const data = { id, name, tags, description, maxStack, sellable, price, source: item.source };
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(id, data); }
+        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(item.id, data); }
         return;
       }
       const result = isNew
         ? await createItemDef(data)
-        : await saveItemDef(id, data);
+        : await saveItemDef(item.id, data);
       setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
@@ -121,10 +128,10 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
         <div style={{ display: "flex", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>ID</div>
-            <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+            <PrefixedIdInput
+              prefix={addonPrefix}
               value={id}
-              onChange={(e) => setId(e.target.value)}
+              onChange={setId}
               disabled={!isNew || isReadOnly}
             />
           </div>

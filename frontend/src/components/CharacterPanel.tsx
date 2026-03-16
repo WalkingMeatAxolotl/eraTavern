@@ -113,7 +113,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                     {slot.state === "halfWorn" && (
                       <span style={{ color: T.danger }}> (半穿)</span>
                     )}
-                    {slot.state === "none" && (
+                    {slot.state === "off" && (
                       <span style={{ color: T.danger }}> (脱下)</span>
                     )}
                   </>

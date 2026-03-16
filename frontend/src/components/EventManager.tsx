@@ -9,6 +9,12 @@ import {
   fetchWorldVariableDefs, createWorldVariableDef, saveWorldVariableDef, deleteWorldVariableDef,
   fetchDefinitions,
 } from "../api/client";
+import PrefixedIdInput from "./PrefixedIdInput";
+
+function toLocalId(nsId: string): string {
+  const dot = nsId.indexOf(".");
+  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
+}
 
 // ── Styles ──────────────────────────────────────────────
 
@@ -242,7 +248,8 @@ function WorldVarEditor({ variable, isNew, onBack }: {
   isNew: boolean;
   onBack: () => void;
 }) {
-  const [id, setId] = useState(variable.id);
+  const addonPrefix = variable.source || "";
+  const [id, setId] = useState(isNew ? "" : toLocalId(variable.id));
   const [name, setName] = useState(variable.name);
   const [description, setDescription] = useState(variable.description ?? "");
   const [type, setType] = useState<"number" | "boolean">(variable.type);
@@ -293,8 +300,7 @@ function WorldVarEditor({ variable, isNew, onBack }: {
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>ID</label>
-          <input style={{ ...inputStyle, flex: 1 }} value={id}
-            onChange={e => setId(e.target.value)} disabled={!isNew} />
+          <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>名称</label>
@@ -336,7 +342,8 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
   worldVars: WorldVariableDefinition[];
   onBack: () => void;
 }) {
-  const [id, setId] = useState(event.id);
+  const addonPrefix = event.source || "";
+  const [id, setId] = useState(isNew ? "" : toLocalId(event.id));
   const [name, setName] = useState(event.name);
   const [description, setDescription] = useState(event.description ?? "");
   const [triggerMode, setTriggerMode] = useState(event.triggerMode);
@@ -434,8 +441,7 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
       <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>ID</label>
-          <input style={{ ...inputStyle, flex: 1 }} value={id}
-            onChange={e => setId(e.target.value)} disabled={!isNew} />
+          <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>名称</label>
@@ -955,7 +961,7 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
             onChange={e => update({ state: e.target.value })}>
             <option value="worn">穿着</option>
             <option value="halfWorn">半穿</option>
-            <option value="none">脱下</option>
+            <option value="off">脱下</option>
             <option value="empty">无衣物</option>
           </select>
         </>

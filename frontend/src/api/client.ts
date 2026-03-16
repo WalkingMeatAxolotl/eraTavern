@@ -1,22 +1,33 @@
 import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo } from "../types/game";
+import { translateError } from "../i18n/messages";
 
 const API_BASE = "/api/game";
 
 /**
  * Unified response handler.
- * - On HTTP error: reads body for {message} and throws with it.
- * - On success: returns parsed JSON.
+ * - Translates backend error codes to localized messages via i18n.
+ * - On HTTP error: throws with translated message.
+ * - On success: returns parsed JSON with translated `message` field.
  */
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
     try {
       const body = await res.json();
-      if (body.message) msg = body.message;
+      if (body.error) {
+        msg = translateError(body.error, body.params) ?? body.error;
+      } else if (body.message) {
+        msg = body.message;
+      }
     } catch { /* body not JSON, use status */ }
     throw new Error(msg);
   }
-  return handleResponse(res);
+  const data = await res.json();
+  // Translate error code to localized message for success responses too
+  if (data.error) {
+    data.message = translateError(data.error, data.params) ?? data.error;
+  }
+  return data;
 }
 
 export interface AppConfig {

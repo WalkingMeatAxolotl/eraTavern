@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { GameDefinitions, ClothingDefinition, TraitEffect } from "../types/game";
 import { createClothingDef, saveClothingDef, deleteClothingDef } from "../api/client";
 import T from "../theme";
+import PrefixedIdInput from "./PrefixedIdInput";
 
 function buildTargetOptions(defs: GameDefinitions) {
   const groups: { label: string; options: { value: string; label: string }[] }[] = [];
@@ -71,8 +72,14 @@ const labelStyle: React.CSSProperties = {
   marginBottom: "2px",
 };
 
+function toLocalId(nsId: string): string {
+  const dot = nsId.indexOf(".");
+  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
+}
+
 export default function ClothingEditor({ clothing, definitions, isNew, onBack, addonCrud }: Props) {
-  const [id, setId] = useState(clothing.id);
+  const addonPrefix = clothing.source || "";
+  const [id, setId] = useState(isNew ? "" : toLocalId(clothing.id));
   const [name, setName] = useState(clothing.name);
   const [slot, setSlot] = useState(clothing.slot);
   const [occlusion, setOcclusion] = useState<string[]>([...clothing.occlusion]);
@@ -117,14 +124,14 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
     setSaving(true);
     setMessage("");
     try {
-      const data = { id, name, slot, occlusion, effects };
+      const data = { id, name, slot, occlusion, effects, source: clothing.source };
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(id, data); }
+        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(clothing.id, data); }
         return;
       }
       const result = isNew
         ? await createClothingDef(data)
-        : await saveClothingDef(id, data);
+        : await saveClothingDef(clothing.id, data);
       setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
@@ -176,10 +183,10 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         <div style={{ display: "flex", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>ID</div>
-            <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+            <PrefixedIdInput
+              prefix={addonPrefix}
               value={id}
-              onChange={(e) => setId(e.target.value)}
+              onChange={setId}
               disabled={!isNew || isReadOnly}
             />
           </div>

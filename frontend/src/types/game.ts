@@ -110,7 +110,7 @@ export interface ClothingSlot {
   occluded: boolean;
   itemId: string | null;
   itemName: string | null;
-  state: "worn" | "halfWorn" | "none" | null;
+  state: "worn" | "halfWorn" | "off" | null;
 }
 
 export interface Trait {
@@ -393,7 +393,7 @@ export interface RawCharacterData {
   portrait?: string | null;
   basicInfo: Record<string, string | number>;
   resources?: Record<string, { value: number; max: number }>;
-  clothing: Record<string, { itemId: string; state: "worn" | "halfWorn" | "none" }>;
+  clothing: Record<string, { itemId: string; state: "worn" | "halfWorn" | "off" }>;
   traits: Record<string, string[]>;
   abilities: Record<string, number>;
   experiences?: Record<string, { count: number; first?: { event: string; location: string; target: string } }>;

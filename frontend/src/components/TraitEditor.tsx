@@ -2,6 +2,12 @@ import { useState } from "react";
 import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from "../types/game";
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../api/client";
 import T from "../theme";
+import PrefixedIdInput from "./PrefixedIdInput";
+
+function toLocalId(nsId: string): string {
+  const dot = nsId.indexOf(".");
+  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
+}
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -74,7 +80,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function TraitEditor({ trait, definitions, isNew, onBack, addonCrud }: TraitEditorProps) {
-  const [id, setId] = useState(trait.id);
+  const addonPrefix = trait.source || "";
+  const [id, setId] = useState(isNew ? "" : toLocalId(trait.id));
   const [name, setName] = useState(trait.name);
   const [category, setCategory] = useState(trait.category);
   const [description, setDescription] = useState(trait.description ?? "");
@@ -115,18 +122,18 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     setSaving(true);
     setMessage("");
     try {
-      const data: Record<string, unknown> = { id, name, category, description, effects };
+      const data: Record<string, unknown> = { id, name, category, description, effects, source: trait.source };
       if (category === "ability") {
         data.defaultValue = defaultValue;
         data.decay = decayEnabled ? decay : null;
       }
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(id, data); }
+        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(trait.id, data); }
         return;
       }
       const result = isNew
         ? await createTraitDef(data)
-        : await saveTraitDef(id, data);
+        : await saveTraitDef(trait.id, data);
       setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         // Return to list after creating
@@ -183,10 +190,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         <div style={{ display: "flex", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>ID</div>
-            <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+            <PrefixedIdInput
+              prefix={addonPrefix}
               value={id}
-              onChange={(e) => setId(e.target.value)}
+              onChange={setId}
               disabled={!isNew || isReadOnly}
             />
           </div>

@@ -2,6 +2,12 @@ import { useState, useMemo } from "react";
 import type { GameDefinitions, TraitGroup } from "../types/game";
 import { createTraitGroup, saveTraitGroup, deleteTraitGroup } from "../api/client";
 import T from "../theme";
+import PrefixedIdInput from "./PrefixedIdInput";
+
+function toLocalId(nsId: string): string {
+  const dot = nsId.indexOf(".");
+  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
+}
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -18,6 +24,7 @@ interface Props {
 }
 
 export default function TraitGroupEditor({ group, definitions, isNew, onBack, addonCrud }: Props) {
+  const addonPrefix = group.source || "";
   const [data, setData] = useState<TraitGroup>(() => structuredClone(group));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -40,14 +47,14 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
     setSaving(true);
     setMessage(null);
     try {
-      const payload = { id: data.id, name: data.name, category: data.category, traits: data.traits, exclusive: data.exclusive !== false };
+      const payload = { id: data.id, name: data.name, category: data.category, traits: data.traits, exclusive: data.exclusive !== false, source: group.source };
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(payload); } else { await addonCrud.save(data.id, payload); }
+        if (isNew) { await addonCrud.create(payload); } else { await addonCrud.save(group.id, payload); }
         return;
       }
       const result = isNew
         ? await createTraitGroup(payload)
-        : await saveTraitGroup(data.id, payload);
+        : await saveTraitGroup(group.id, payload);
       setMessage(result.message);
       if (result.success && isNew) {
         onBack();
@@ -94,11 +101,11 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
 
       {/* ID */}
       <Row label="ID">
-        <input
-          value={data.id}
-          onChange={(e) => setData((prev) => ({ ...prev, id: e.target.value }))}
-          readOnly={!isNew || isReadOnly}
-          style={inputStyle(!isNew || isReadOnly ? T.textDim : undefined)}
+        <PrefixedIdInput
+          prefix={addonPrefix}
+          value={isNew ? data.id : toLocalId(data.id)}
+          onChange={(v) => setData((prev) => ({ ...prev, id: v }))}
+          disabled={!isNew || isReadOnly}
         />
       </Row>
 

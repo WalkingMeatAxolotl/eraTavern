@@ -498,6 +498,8 @@ def _resolve_template(
                         name = cl.get("itemName", cl["itemId"])
                         if cl.get("state") == "halfWorn":
                             return f"{name}(半穿)"
+                        if cl.get("state") == "off":
+                            return f"{name}(脱下)"
                         return name
                     return "无"
             return ""
@@ -1548,7 +1550,7 @@ def _apply_effects(
             if slot in cl:
                 if op == "remove" or new_state == "empty":
                     item_name = cl[slot].get("itemId", slot)
-                    cl[slot] = {"itemId": None, "state": "none"}
+                    cl[slot] = {"itemId": None, "state": "off"}
                     summaries.append(f"{target_prefix}移除 [{item_name}]")
                 else:
                     cl[slot]["state"] = new_state

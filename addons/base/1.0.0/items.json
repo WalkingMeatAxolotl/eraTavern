@@ -213,6 +213,15 @@
       "maxStack": 99,
       "sellable": true,
       "price": 60
+    },
+    {
+      "id": "test",
+      "name": "test",
+      "tags": [],
+      "description": "",
+      "maxStack": 1,
+      "sellable": true,
+      "price": 0
     }
   ]
 }
