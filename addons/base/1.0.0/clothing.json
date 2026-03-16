@@ -1,4 +1,23 @@
 {
+  "outfitTypes": [
+    {
+      "id": "test",
+      "name": "test",
+      "description": "",
+      "copyDefault": false,
+      "slots": {
+        "hat": [
+          "base.iron-helm"
+        ],
+        "upperBody": [
+          "base.leather-armor"
+        ],
+        "upperUnderwear": [
+          "base.undershirt"
+        ]
+      }
+    }
+  ],
   "clothing": [
     {
       "id": "straw-hat",

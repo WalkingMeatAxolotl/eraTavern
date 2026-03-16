@@ -1,0 +1,79 @@
+{
+  "id": "xia",
+  "template": "era-touhou",
+  "isPlayer": false,
+  "active": true,
+  "portrait": "base.xia.png",
+  "basicInfo": {
+    "name": "夏",
+    "money": 500
+  },
+  "resources": {
+    "stamina": {
+      "value": 2000,
+      "max": 2000
+    },
+    "energy": {
+      "value": 2000,
+      "max": 2000
+    }
+  },
+  "clothing": {
+    "hat": {
+      "itemId": "straw-hat",
+      "state": "worn"
+    },
+    "upperBody": {
+      "itemId": "cloth-shirt",
+      "state": "worn"
+    },
+    "lowerBody": {
+      "itemId": "cloth-pants",
+      "state": "worn"
+    },
+    "shoes": {
+      "itemId": "leather-boots",
+      "state": "worn"
+    }
+  },
+  "outfits": {
+    "default": {
+      "hat": [
+        "straw-hat",
+        "wizard-hat"
+      ],
+      "upperBody": [
+        "cloth-shirt"
+      ],
+      "lowerBody": [
+        "cloth-pants"
+      ],
+      "shoes": [
+        "leather-boots"
+      ]
+    },
+    "combat": {
+      "hat": [
+        "iron-helm"
+      ],
+      "upperBody": [
+        "leather-armor",
+        "robe"
+      ],
+      "lowerBody": [
+        "leather-pants"
+      ],
+      "shoes": [
+        "leather-boots"
+      ]
+    }
+  },
+  "currentOutfit": "default",
+  "traits": {},
+  "abilities": {},
+  "position": {
+    "mapId": "t1",
+    "cellId": 1
+  },
+  "inventory": []
+}

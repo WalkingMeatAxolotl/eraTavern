@@ -345,16 +345,39 @@ def load_clothing_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     return result
 
 
-def save_clothing_defs_file(data_dir: Path, clothing_list: list[dict]) -> None:
+def load_outfit_types(data_dir_or_addons: Path | AddonDirs) -> list[dict]:
+    """Load outfit types from all addon clothing.json files, merged by id."""
+    by_id: dict[str, dict] = {}
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for _addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "clothing.json")
+        for t in data.get("outfitTypes", []):
+            if isinstance(t, str):
+                # Legacy: plain string → convert to object
+                if t != "default" and t != "默认服装" and t not in by_id:
+                    by_id[t] = {"id": t, "name": t, "copyDefault": True, "slots": {}}
+            elif isinstance(t, dict) and t.get("id"):
+                oid = t["id"]
+                if oid != "default":
+                    by_id[oid] = t
+    return list(by_id.values())
+
+
+def save_clothing_defs_file(data_dir: Path, clothing_list: list[dict],
+                            outfit_types: Optional[list[dict]] = None) -> None:
     """Write game-specific clothing.json (strips internal fields)."""
     clean = []
     for c in clothing_list:
         entry = _strip_internal_fields(c)
         entry["id"] = to_local_id(entry["id"])
         clean.append(entry)
+    out: dict[str, Any] = {}
+    if outfit_types:
+        out["outfitTypes"] = outfit_types
+    out["clothing"] = clean
     path = data_dir / "clothing.json"
     with open(path, "w", encoding="utf-8") as f:
-        json.dump({"clothing": clean}, f, ensure_ascii=False, indent=2)
+        json.dump(out, f, ensure_ascii=False, indent=2)
 
 
 def load_characters(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
@@ -860,6 +883,14 @@ def namespace_character_data(
         if isinstance(data, dict) and data.get("itemId"):
             data["itemId"] = resolve_ref(data["itemId"], clothing_defs, default_addon)
 
+    # Outfits: itemId lists per slot per outfit
+    for outfit_key, outfit in char_data.get("outfits", {}).items():
+        for slot, items in outfit.items():
+            outfit[slot] = [
+                resolve_ref(item_id, clothing_defs, default_addon)
+                for item_id in items if item_id
+            ]
+
     # Inventory: itemId per entry
     for inv in char_data.get("inventory", []):
         if inv.get("itemId"):
@@ -925,6 +956,16 @@ def strip_character_namespaces(char_data: dict, addon_id: str = "") -> dict:
                 new_cl[slot] = data
         result["clothing"] = new_cl
 
+    # Outfits
+    if "outfits" in result:
+        new_outfits: dict[str, Any] = {}
+        for outfit_key, outfit in result["outfits"].items():
+            new_outfits[outfit_key] = {
+                slot: [s(item_id) for item_id in items if item_id]
+                for slot, items in outfit.items()
+            }
+        result["outfits"] = new_outfits
+
     # Inventory
     if "inventory" in result:
         result["inventory"] = [
@@ -981,7 +1022,7 @@ def namespace_action_refs(
                 cost["itemId"] = resolve_ref(cost["itemId"], item_defs, addon_id)
         for outcome in action.get("outcomes", []):
             for eff in outcome.get("effects", []):
-                _ns_eff(eff, trait_defs, item_defs, character_defs, map_defs, addon_id)
+                _ns_eff(eff, trait_defs, item_defs, clothing_defs, character_defs, map_defs, addon_id)
 
 
 def _ns_cond(cond: dict, trait_defs: dict, item_defs: dict,
@@ -1001,12 +1042,15 @@ def _ns_cond(cond: dict, trait_defs: dict, item_defs: dict,
 
 
 def _ns_eff(eff: dict, trait_defs: dict, item_defs: dict,
-            character_defs: dict, map_defs: dict, default_addon: str) -> None:
+            clothing_defs: dict, character_defs: dict, map_defs: dict,
+            default_addon: str) -> None:
     """Namespace references in a single action effect."""
     if eff.get("traitId") and eff["traitId"] not in SYMBOLIC_REFS:
         eff["traitId"] = resolve_ref(eff["traitId"], trait_defs, default_addon)
     if eff.get("itemId") and eff["itemId"] not in SYMBOLIC_REFS:
-        eff["itemId"] = resolve_ref(eff["itemId"], item_defs, default_addon)
+        # outfit effects reference clothing defs, not item defs
+        defs = clothing_defs if eff.get("type") == "outfit" else item_defs
+        eff["itemId"] = resolve_ref(eff["itemId"], defs, default_addon)
     target = eff.get("target", "")
     if target and target not in SYMBOLIC_REFS:
         eff["target"] = resolve_ref(target, character_defs, default_addon)

@@ -1,4 +1,4 @@
-import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo } from "../types/game";
+import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo, OutfitType } from "../types/game";
 import { translateError } from "../i18n/messages";
 
 const API_BASE = "/api/game";
@@ -316,6 +316,23 @@ export async function saveClothingDef(id: string, data: Omit<ClothingDefinition,
 export async function deleteClothingDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/clothing/${id}`, {
     method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+// --- Outfit Types ---
+
+export async function fetchOutfitTypes(): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/outfit-types`);
+  const data = await handleResponse<Record<string, any>>(res);
+  return data.outfitTypes;
+}
+
+export async function saveOutfitTypes(outfitTypes: OutfitType[]): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/outfit-types`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ outfitTypes }),
   });
   return handleResponse(res);
 }

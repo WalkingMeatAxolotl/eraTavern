@@ -10,6 +10,7 @@ from .map_engine import load_map_collection, load_decor_presets
 from .character import (
     load_template,
     load_clothing_defs,
+    load_outfit_types,
     load_item_defs,
     load_item_tags,
     load_action_defs,
@@ -98,6 +99,7 @@ class GameState:
         self.maps: dict[str, dict] = {}
         self.template: dict = {}
         self.clothing_defs: dict[str, dict] = {}
+        self.outfit_types: list[dict] = []
         self.item_defs: dict[str, dict] = {}
         self.item_tags: list[str] = []
         self.trait_defs: dict[str, dict] = {}
@@ -140,6 +142,7 @@ class GameState:
         self.maps = {}
         self.template = _load_global_template()
         self.clothing_defs = {}
+        self.outfit_types = ["default"]
         self.item_defs = {}
         self.item_tags = []
         self.trait_defs = {}
@@ -205,6 +208,7 @@ class GameState:
         self.decor_presets = load_decor_presets(self.addon_dirs)
         self.template = _load_global_template()
         self.clothing_defs = load_clothing_defs(self.addon_dirs)
+        self.outfit_types = load_outfit_types(self.addon_dirs)
         self.item_defs = load_item_defs(self.addon_dirs)
         self.item_tags = load_item_tags(self.addon_dirs)
         self.trait_defs = load_trait_defs(self.addon_dirs)
@@ -276,6 +280,7 @@ class GameState:
         # Load character system
         self.template = _load_global_template()
         self.clothing_defs = load_clothing_defs(self.addon_dirs)
+        self.outfit_types = load_outfit_types(self.addon_dirs)
         self.item_defs = load_item_defs(self.addon_dirs)
         self.item_tags = load_item_tags(self.addon_dirs)
         self.trait_defs = load_trait_defs(self.addon_dirs)
@@ -383,7 +388,7 @@ class GameState:
                 if d.get("source") == source
             ]
             if src_clothing:
-                save_clothing_defs_file(target_dir, src_clothing)
+                save_clothing_defs_file(target_dir, src_clothing, self.outfit_types)
 
             # Items
             src_items = [
@@ -731,6 +736,7 @@ class GameState:
             self.decor_presets = load_decor_presets(self.addon_dirs)
             self.template = _load_global_template()
             self.clothing_defs = load_clothing_defs(self.addon_dirs)
+            self.outfit_types = load_outfit_types(self.addon_dirs)
             self.item_defs = load_item_defs(self.addon_dirs)
             self.item_tags = load_item_tags(self.addon_dirs)
             self.trait_defs = load_trait_defs(self.addon_dirs)
@@ -950,6 +956,7 @@ class GameState:
         return {
             "template": template_ext,
             "clothingDefs": self.clothing_defs,
+            "outfitTypes": self.outfit_types,
             "itemDefs": self.item_defs,
             "traitDefs": self.trait_defs,
             "traitGroups": self.trait_groups,
@@ -1003,6 +1010,8 @@ class GameState:
                 "abilities": copy.deepcopy(cd.get("abilities", {})),
                 "experiences": copy.deepcopy(cd.get("experiences", {})),
                 "clothing": copy.deepcopy(cd.get("clothing", {})),
+                "outfits": copy.deepcopy(cd.get("outfits", {})),
+                "currentOutfit": cd.get("currentOutfit", "default"),
                 "traits": copy.deepcopy(cd.get("traits", {})),
                 "favorability": copy.deepcopy(cd.get("favorability", {})),
                 "basicInfo": copy.deepcopy(cd.get("basicInfo", {})),
@@ -1065,6 +1074,10 @@ class GameState:
                 cd["experiences"] = saved["experiences"]
             if "clothing" in saved:
                 cd["clothing"] = saved["clothing"]
+            if "outfits" in saved:
+                cd["outfits"] = saved["outfits"]
+            if "currentOutfit" in saved:
+                cd["currentOutfit"] = saved["currentOutfit"]
             if "traits" in saved:
                 cd["traits"] = saved["traits"]
             if "favorability" in saved:

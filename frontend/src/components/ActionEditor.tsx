@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type {
   ActionDefinition, ActionCondition, ConditionItem,
-  ActionCost, ActionOutcome, ActionEffect,
+  ActionCost, ActionOutcome, ActionEffect, ClothingDefinition,
   ValueModifier, GameDefinitions, OutputTemplateEntry, SuggestNext,
 } from "../types/game";
 import { createActionDef, saveActionDef, deleteActionDef } from "../api/client";
@@ -152,6 +152,7 @@ const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: "clothing", label: "服装" },
   { value: "position", label: "位置" },
   { value: "worldVar", label: "世界变量" },
+  { value: "outfit", label: "服装预设" },
 ];
 
 const OPS = [">=", "<=", ">", "<", "==", "!="];
@@ -217,6 +218,8 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   const mapList = Object.values(maps);
   const traitList = Object.values(traitDefs);
   const itemList = Object.values(itemDefs);
+  const clothingList = Object.values(clothingDefs);
+  const outfitTypes = [{id: "default", name: "默认服装"}, ...(definitions.outfitTypes ?? []).map((t) => ({id: t.id, name: t.name}))];
   const npcList = Object.values(characters ?? {}).filter((c) => !c.isPlayer);
   const variableList = Object.values(definitions.variableDefs ?? {}).map((v) => ({ id: v.id, name: v.name || v.id }));
   const worldVarList = Object.values(definitions.worldVariableDefs ?? {}).map((v) => ({ id: v.id, name: v.name || v.id }));
@@ -454,7 +457,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             <OutcomeEditor key={idx} outcome={outcome} onChange={(o) => updateOutcome(idx, o)}
               onRemove={() => removeOutcome(idx)} disabled={isReadOnly} definitions={definitions}
               resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
-              traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} variableList={variableList} worldVarList={worldVarList} actionList={actionList} categoryList={categoryList} />
+              traitCategories={traitCategories} clothingSlots={clothingSlots} clothingList={clothingList} outfitTypes={outfitTypes} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} variableList={variableList} worldVarList={worldVarList} actionList={actionList} categoryList={categoryList} />
           ))}
         </div>
       </div>
@@ -1160,6 +1163,8 @@ interface OutcomeEditorProps {
   mapList: MapInfo[];
   traitList: TraitInfo[];
   itemList: ItemInfo[];
+  clothingList: ClothingDefinition[];
+  outfitTypes: { id: string; name: string }[];
   npcList: { id: string; name: string }[];
   variableList: { id: string; name: string }[];
   worldVarList: { id: string; name: string }[];
@@ -1167,7 +1172,7 @@ interface OutcomeEditorProps {
   categoryList: string[];
 }
 
-function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, worldVarList, actionList, categoryList }: OutcomeEditorProps) {
+function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, clothingList, outfitTypes, npcList, variableList, worldVarList, actionList, categoryList }: OutcomeEditorProps) {
   const [showChain, setShowChain] = useState((outcome.suggestNext ?? []).length > 0);
   const [showOutTpl, setShowOutTpl] = useState(
     (outcome.outputTemplates ?? []).length > 0 || !!outcome.outputTemplate
@@ -1334,7 +1339,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, definitions, res
                   <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
                     <EffectEditor effect={eff} onChange={(e) => updateEffect(effIdx, { ...e, target: group.target })} disabled={disabled}
                       resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
-                      traitCategories={traitCategories} clothingSlots={clothingSlots} mapList={mapList} traitList={traitList} itemList={itemList} variableList={variableList} worldVarList={worldVarList} />
+                      traitCategories={traitCategories} clothingSlots={clothingSlots} clothingList={clothingList} outfitTypes={outfitTypes} mapList={mapList} traitList={traitList} itemList={itemList} variableList={variableList} worldVarList={worldVarList} />
                     {!disabled && <button className="ae-del-btn" onClick={() => removeEffect(effIdx)} style={delBtnStyle}>x</button>}
                   </div>
                   {hasModifiers && (
@@ -1509,6 +1514,8 @@ interface EffectEditorProps {
   basicInfoNumKeys: KeyLabel[];
   traitCategories: KeyLabel[];
   clothingSlots: string[];
+  clothingList: ClothingDefinition[];
+  outfitTypes: { id: string; name: string }[];
   mapList: MapInfo[];
   traitList: TraitInfo[];
   itemList: ItemInfo[];
@@ -1516,7 +1523,7 @@ interface EffectEditorProps {
   worldVarList: { id: string; name: string }[];
 }
 
-function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, variableList, worldVarList }: EffectEditorProps) {
+function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, clothingList, outfitTypes, mapList, traitList, itemList, variableList, worldVarList }: EffectEditorProps) {
   const update = (patch: Partial<ActionEffect>) => onChange({ ...effect, ...patch });
 
   return (
@@ -1703,6 +1710,58 @@ function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, e
             <option value="off">脱下</option>
             <option value="empty">无衣物</option>
           </select>
+        </>
+      )}
+
+      {effect.type === "outfit" && (
+        <>
+          <select style={inputStyle} value={effect.op} onChange={(e) => update({ op: e.target.value })} disabled={disabled}>
+            <option value="switch">切换预设</option>
+            <option value="add">添加衣物</option>
+            <option value="remove">移除衣物</option>
+          </select>
+          {effect.op === "switch" && (
+            <select style={inputStyle} value={effect.outfitKey ?? ""}
+              onChange={(e) => update({ outfitKey: e.target.value })} disabled={disabled}>
+              <option value="">选择预设</option>
+              {outfitTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          )}
+          {effect.op === "add" && (
+            <>
+              <select style={inputStyle} value={effect.outfitKey ?? ""}
+                onChange={(e) => update({ outfitKey: e.target.value })} disabled={disabled}>
+                <option value="">选择预设</option>
+                {outfitTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <select style={inputStyle} value={effect.slot ?? ""}
+                onChange={(e) => update({ slot: e.target.value, itemId: undefined })} disabled={disabled}>
+                <option value="">槽位</option>
+                {clothingSlots.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select style={inputStyle} value={effect.itemId ?? ""}
+                onChange={(e) => update({ itemId: e.target.value })} disabled={disabled}>
+                <option value="">选择服装</option>
+                {clothingList.filter((c) => !effect.slot || c.slot === effect.slot).map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </>
+          )}
+          {effect.op === "remove" && (
+            <>
+              <select style={inputStyle} value={effect.outfitKey ?? ""}
+                onChange={(e) => update({ outfitKey: e.target.value || undefined })} disabled={disabled}>
+                <option value="">任意预设</option>
+                {outfitTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <select style={inputStyle} value={effect.slot ?? ""}
+                onChange={(e) => update({ slot: e.target.value || undefined })} disabled={disabled}>
+                <option value="">任意槽位</option>
+                {clothingSlots.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </>
+          )}
         </>
       )}
 

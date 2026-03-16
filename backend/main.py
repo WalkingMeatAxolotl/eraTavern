@@ -970,6 +970,41 @@ async def delete_clothing(item_id: str):
     return _resp(True, "ENTITY_DELETED", {"entity": "clothing"})
 
 
+# --- Outfit Types ---
+
+
+@app.get("/api/game/outfit-types")
+async def get_outfit_types():
+    """Get all outfit type names."""
+    return {"outfitTypes": game_state.outfit_types}
+
+
+@app.put("/api/game/outfit-types")
+async def update_outfit_types(body: dict = Body(...)):
+    """Replace the full outfit types list."""
+    types = body.get("outfitTypes", [])
+    if not isinstance(types, list):
+        return _resp(False, "VALIDATION_INVALID_TYPE")
+    # Filter out 默认服装 (always implicit), ensure valid objects
+    cleaned = []
+    seen = set()
+    for t in types:
+        if isinstance(t, dict) and t.get("id") and t["id"] != "default":
+            oid = t["id"]
+            if oid not in seen:
+                seen.add(oid)
+                cleaned.append({
+                    "id": oid,
+                    "name": t.get("name", oid),
+                    "description": t.get("description", ""),
+                    "copyDefault": bool(t.get("copyDefault", True)),
+                    "slots": t.get("slots", {}),
+                })
+    game_state.outfit_types = cleaned
+    await _mark_dirty()
+    return _resp(True, "ENTITY_UPDATED", {"entity": "outfitTypes"})
+
+
 # --- Item CRUD ---
 
 

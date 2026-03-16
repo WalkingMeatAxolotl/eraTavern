@@ -1557,6 +1557,82 @@ def _apply_effects(
                     item_name = cl[slot].get("itemId", slot)
                     summaries.append(f"{target_prefix}[{item_name}] → {new_state}")
 
+        elif etype == "outfit":
+            import random
+            # Resolve target (same pattern as clothing)
+            out_target = eff.get("target", "self")
+            if out_target == "{{targetId}}" and target_id:
+                tgt_cd = game_state.character_data.get(target_id, {})
+            elif out_target == "self" or not out_target:
+                tgt_cd = game_state.character_data.get(char_id, {})
+            else:
+                tgt_cd = game_state.character_data.get(out_target, {})
+            if not tgt_cd:
+                continue
+
+            if op == "switch":
+                outfit_key = eff.get("outfitKey", "")
+                outfit = tgt_cd.get("outfits", {}).get(outfit_key)
+                # Fallback: resolve from outfit type definition
+                if not outfit and outfit_key != "default":
+                    for ot in game_state.outfit_types:
+                        if ot.get("id") == outfit_key:
+                            if ot.get("copyDefault"):
+                                outfit = tgt_cd.get("outfits", {}).get("default")
+                            else:
+                                outfit = ot.get("slots", {})
+                            break
+                if not outfit:
+                    continue
+                cl = tgt_cd.setdefault("clothing", {})
+                for slot, candidates in outfit.items():
+                    if not candidates:
+                        cl[slot] = {"itemId": None, "state": "off"}
+                    else:
+                        chosen = random.choice(candidates)
+                        cl[slot] = {"itemId": chosen, "state": "worn"}
+                tgt_cd["currentOutfit"] = outfit_key
+                summaries.append(f"{target_prefix}换装 → {outfit_key}")
+
+            elif op == "add":
+                outfit_key = eff.get("outfitKey", "")
+                slot = eff.get("slot", "")
+                item_id = eff.get("itemId", "")
+                if not outfit_key or not slot or not item_id:
+                    continue
+                outfits = tgt_cd.setdefault("outfits", {})
+                outfit = outfits.setdefault(outfit_key, {})
+                slot_list = outfit.setdefault(slot, [])
+                if item_id not in slot_list:
+                    slot_list.append(item_id)
+                summaries.append(f"{target_prefix}预设[{outfit_key}] +{item_id}")
+
+            elif op == "remove":
+                outfit_key = eff.get("outfitKey")
+                slot_filter = eff.get("slot")
+                outfits = tgt_cd.get("outfits", {})
+                current_outfit = tgt_cd.get("currentOutfit", "default")
+                cl = tgt_cd.get("clothing", {})
+                removed = []
+                for ok, outfit in outfits.items():
+                    if outfit_key and ok != outfit_key:
+                        continue
+                    for sl, candidates in list(outfit.items()):
+                        if slot_filter and sl != slot_filter:
+                            continue
+                        if not candidates:
+                            continue
+                        worn_id = None
+                        if ok == current_outfit:
+                            worn_id = cl.get(sl, {}).get("itemId")
+                        removable = [c for c in candidates if c != worn_id]
+                        if removable:
+                            victim = random.choice(removable)
+                            candidates.remove(victim)
+                            removed.append(victim)
+                if removed:
+                    summaries.append(f"{target_prefix}移除{len(removed)}件预设服装")
+
         elif etype == "position":
             map_id = eff.get("mapId", "")
             cell_id = eff.get("cellId")

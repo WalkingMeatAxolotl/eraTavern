@@ -193,6 +193,14 @@ export interface TraitDefinition {
   source: string;
 }
 
+export interface OutfitType {
+  id: string;
+  name: string;
+  description?: string;
+  copyDefault: boolean;
+  slots: Record<string, string[]>;
+}
+
 export interface ClothingDefinition {
   id: string;
   name: string;
@@ -282,7 +290,7 @@ export interface ActionCost {
 }
 
 export interface ActionEffect {
-  type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position" | "experience" | "worldVar";
+  type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position" | "experience" | "worldVar" | "outfit";
   key?: string;
   op: string;
   value?: number | { varId: string; multiply?: number };
@@ -299,6 +307,7 @@ export interface ActionEffect {
   state?: string;
   mapId?: string;
   cellId?: number;
+  outfitKey?: string;
 }
 
 export interface ValueModifier {
@@ -394,6 +403,8 @@ export interface RawCharacterData {
   basicInfo: Record<string, string | number>;
   resources?: Record<string, { value: number; max: number }>;
   clothing: Record<string, { itemId: string; state: "worn" | "halfWorn" | "off" }>;
+  outfits?: Record<string, Record<string, string[]>>;
+  currentOutfit?: string;
   traits: Record<string, string[]>;
   abilities: Record<string, number>;
   experiences?: Record<string, { count: number; first?: { event: string; location: string; target: string } }>;
@@ -422,6 +433,7 @@ export interface GameDefinitions {
     inventory: { key: string; label: string; maxSlots?: number }[];
   };
   clothingDefs: Record<string, ClothingDefinition>;
+  outfitTypes: OutfitType[];
   itemDefs: Record<string, ItemDefinition>;
   traitDefs: Record<string, TraitDefinition>;
   traitGroups: Record<string, TraitGroup>;

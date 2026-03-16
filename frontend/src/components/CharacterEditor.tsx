@@ -37,6 +37,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
   const [message, setMessage] = useState<string | null>(null);
   // Tracks which trait group is pending selection per category (first dropdown picked a group)
   const [pendingGroup, setPendingGroup] = useState<Record<string, string>>({});
+  const [selectedOutfit, setSelectedOutfit] = useState<string>("default");
 
   const { template, clothingDefs, itemDefs, traitDefs, traitGroups, maps } = definitions;
 
@@ -236,34 +237,143 @@ export default function CharacterEditor({ character, definitions, allCharacters,
         })}
       </Section>
 
-      {/* Clothing */}
-      <Section title="初始服装">
-        {template.clothingSlots.map((slot) => {
-          const equipped = data.clothing[slot];
-          const options = clothingBySlot[slot] ?? [];
+      {/* Outfits */}
+      <Section title="服装预设">
+        {(() => {
+          // Auto-initialize outfits from clothing if missing
+          const outfits: Record<string, Record<string, string[]>> = data.outfits && Object.keys(data.outfits).length > 0
+            ? data.outfits
+            : (() => {
+              const def: Record<string, string[]> = {};
+              for (const [slot, info] of Object.entries(data.clothing)) {
+                if (info?.itemId) def[slot] = [info.itemId];
+              }
+              return { "default": def };
+            })();
+          // Use global outfit types from definitions (default is always implicit)
+          const outfitTypeDefs = definitions.outfitTypes ?? [];
+          const outfitTypeIds = ["default", ...outfitTypeDefs.map((t) => t.id)];
+          const outfitNameMap: Record<string, string> = { "default": "默认服装" };
+          for (const t of outfitTypeDefs) outfitNameMap[t.id] = t.name;
+          const activeKey = outfitTypeIds.includes(selectedOutfit) ? selectedOutfit : "default";
+          const hasCustom = !!outfits[activeKey];
+          // Resolve outfit: custom → inherited (from default or type def)
+          const resolvedOutfit = (() => {
+            if (outfits[activeKey]) return outfits[activeKey];
+            if (activeKey === "default") return {};
+            const typeDef = outfitTypeDefs.find((t) => t.id === activeKey);
+            if (typeDef?.copyDefault) return outfits["default"] ?? {};
+            return typeDef?.slots ?? {};
+          })();
+          const outfit = resolvedOutfit;
+
+          const updateOutfits = (newOutfits: Record<string, Record<string, string[]>>) => {
+            updateField("outfits", newOutfits);
+            // Sync default outfit → initial clothing (first item per slot)
+            const def = newOutfits["default"];
+            if (def) {
+              const newClothing: Record<string, { itemId: string; state: "worn" | "halfWorn" | "off" }> = {};
+              for (const [slot, items] of Object.entries(def)) {
+                if (items.length > 0) {
+                  newClothing[slot] = { itemId: items[0], state: "worn" };
+                }
+              }
+              updateField("clothing", newClothing);
+            }
+          };
+
           return (
-            <Row key={slot} label={SLOT_LABELS[slot] ?? slot}>
-              <select
-                value={equipped?.itemId ?? ""}
-                onChange={(e) => {
-                  const newClothing = { ...data.clothing };
-                  if (e.target.value) {
-                    newClothing[slot] = { itemId: e.target.value, state: "worn" };
-                  } else {
-                    delete newClothing[slot];
-                  }
-                  updateField("clothing", newClothing);
-                }}
-                style={selectStyle()}
-              >
-                <option value="">无</option>
-                {options.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+            <>
+              {/* Outfit type tabs + status */}
+              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "6px", alignItems: "center" }}>
+                {outfitTypeIds.map((id) => (
+                  <button key={id} onClick={() => setSelectedOutfit(id)}
+                    style={{
+                      ...btnStyle(activeKey === id ? T.accent : T.textSub),
+                      fontWeight: activeKey === id ? "bold" : "normal",
+                      borderColor: activeKey === id ? T.accent : T.border,
+                      minWidth: "60px",
+                      textAlign: "center",
+                    }}>
+                    {outfitNameMap[id] ?? id}
+                  </button>
                 ))}
-              </select>
-            </Row>
+              </div>
+
+              {/* Status + action for non-default outfits */}
+              {activeKey !== "default" && (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                  {hasCustom
+                    ? <>
+                        <span style={{ color: T.textDim, fontSize: "12px" }}>已自定义</span>
+                        <button style={{ ...btnStyle(T.danger), fontSize: "12px", padding: "2px 8px" }} onClick={() => {
+                          const next = { ...outfits };
+                          delete next[activeKey];
+                          updateOutfits(next);
+                        }}>[恢复继承]</button>
+                      </>
+                    : <>
+                        <span style={{ color: T.textDim, fontSize: "12px" }}>继承中</span>
+                        <button style={{ ...btnStyle(T.accent), fontSize: "12px", padding: "2px 8px" }} onClick={() => {
+                          const typeDef = outfitTypeDefs.find((t) => t.id === activeKey);
+                          const source = typeDef?.copyDefault
+                            ? structuredClone(outfits["default"] ?? {})
+                            : structuredClone(typeDef?.slots ?? {});
+                          updateOutfits({ ...outfits, [activeKey]: source });
+                        }}>[自定义]</button>
+                      </>
+                  }
+                </div>
+              )}
+
+              {/* Slot display for selected outfit */}
+              {template.clothingSlots.map((slot) => {
+                const items = outfit[slot] ?? [];
+                const options = clothingBySlot[slot] ?? [];
+                const editable = hasCustom || activeKey === "default";
+                return (
+                  <div key={slot}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", minHeight: "26px" }}>
+                      <span style={{ minWidth: "100px", color: T.textSub }}>{SLOT_LABELS[slot] ?? slot}:</span>
+                      {items.length === 0 && <span style={{ color: T.textDim }}>(空)</span>}
+                      {items.map((itemId, i) => {
+                        const def = clothingDefs[itemId];
+                        const name = def?.name ?? itemId;
+                        return (
+                          <span key={i} style={{ color: T.text, display: "inline-flex", alignItems: "center", gap: "2px" }}>
+                            [{name}]
+                            {editable && (
+                              <button style={{ ...btnStyle(T.danger), padding: "0 4px", fontSize: "11px", lineHeight: "1" }}
+                                onClick={() => {
+                                  const newItems = items.filter((_, j) => j !== i);
+                                  const newOutfit = { ...outfit, [slot]: newItems };
+                                  updateOutfits({ ...outfits, [activeKey]: newOutfit });
+                                }}>x</button>
+                            )}
+                          </span>
+                        );
+                      })}
+                      {editable && (
+                        <select style={selectStyle()} value=""
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const newItems = [...items, e.target.value];
+                            const newOutfit = { ...outfit, [slot]: newItems };
+                            updateOutfits({ ...outfits, [activeKey]: newOutfit });
+                          }}>
+                          <option value="">+添加</option>
+                          {options.filter((c) => !items.includes(c.id)).map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
           );
-        })}
+        })()}
       </Section>
 
       {/* Traits */}
