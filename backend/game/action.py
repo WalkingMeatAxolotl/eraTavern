@@ -790,14 +790,14 @@ def filter_visible_npc_log(
 ) -> list[str]:
     """Filter NPC log entries to only those visible to the player.
 
-    Visible if NPC is at the same cell, or player has a perception trait/ability
-    that grants extended visibility.
+    Visible if NPC is within the player's sense range (sense_matrix).
     """
     visible: list[str] = []
-    p_map = player_pos.get("mapId", "")
-    p_cell = player_pos.get("cellId", -1)
+    p_key = (player_pos.get("mapId", ""), player_pos.get("cellId", -1))
+    sense_row = getattr(game_state, "sense_matrix", {}).get(p_key, {})
     for entry in log:
-        if entry["mapId"] == p_map and entry["cellId"] == p_cell:
+        e_key = (entry["mapId"], entry["cellId"])
+        if e_key == p_key or e_key in sense_row:
             visible.append(entry["text"])
     return visible
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-"""FastAPI entry point with REST API and WebSocket."""
+"""FastAPI entry point with REST API and SSE."""
 
+import asyncio
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -9,9 +10,9 @@ from typing import Optional
 
 import shutil
 
-from fastapi import Body, FastAPI, File, Query, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, File, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 from game.state import GameState, list_available_worlds, list_available_addons, list_available_games
@@ -40,27 +41,34 @@ def _save_last_world(world_id: str) -> None:
         json.dump(config, f, ensure_ascii=False, indent=2)
 
 
-# WebSocket connection manager
-class ConnectionManager:
+# SSE connection manager
+class SSEManager:
     def __init__(self) -> None:
-        self.connections: list[WebSocket] = []
+        self.queues: list[asyncio.Queue] = []
 
-    async def connect(self, ws: WebSocket) -> None:
-        await ws.accept()
-        self.connections.append(ws)
+    def add(self, queue: asyncio.Queue) -> None:
+        self.queues.append(queue)
 
-    def disconnect(self, ws: WebSocket) -> None:
-        self.connections.remove(ws)
+    def remove(self, queue: asyncio.Queue) -> None:
+        if queue in self.queues:
+            self.queues.remove(queue)
 
-    async def broadcast(self, data: dict) -> None:
-        for ws in self.connections:
+    async def broadcast(self, event_type: str, data: dict) -> None:
+        msg = {"type": event_type, "data": data}
+        for q in self.queues:
             try:
-                await ws.send_json(data)
+                await q.put(msg)
             except Exception:
                 pass
 
 
-manager = ConnectionManager()
+def _format_sse(event_type: str, data: dict) -> str:
+    """Format a server-sent event string."""
+    payload = json.dumps(data, ensure_ascii=False)
+    return f"event: {event_type}\ndata: {payload}\n\n"
+
+
+manager = SSEManager()
 game_state: Optional[GameState] = None
 
 
@@ -93,7 +101,7 @@ def _ensure_ns(entity_id: str, source: str = "") -> str:
 async def _mark_dirty() -> None:
     """Mark session as having unsaved changes and notify clients."""
     game_state.dirty = True
-    await manager.broadcast({"type": "dirty_update", "dirty": True})
+    await manager.broadcast("dirty_update", {"dirty": True})
 
 
 def _resp(success: bool, error: str, params: Optional[dict] = None, **extra) -> dict:
@@ -188,9 +196,9 @@ async def select_world(req: SelectWorldRequest):
     game_state.load_world(req.worldId)
     _save_last_world(req.worldId)
 
-    # Broadcast game change to all WebSocket clients
+    # Broadcast game change to all SSE clients
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
+    await manager.broadcast("game_changed", state)
 
     return _resp(True, "WORLD_SWITCHED", {"name": game_state.world_name})
 
@@ -202,7 +210,7 @@ async def unload_world():
     _save_last_world("")
 
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
+    await manager.broadcast("game_changed", state)
     return {"success": True}
 
 
@@ -225,7 +233,7 @@ async def update_session_addons(req: UpdateSessionAddonsRequest):
         # Empty world - immediate reload
         game_state.load_session_addons(req.addons)
         state = game_state.get_full_state()
-        await manager.broadcast({"type": "game_changed", "data": state})
+        await manager.broadcast("game_changed", state)
         return {"success": True, "staged": False}
 
 
@@ -467,7 +475,7 @@ async def restart_game():
     """Restart current game (reload all data from disk, reset time)."""
     game_state.load_world(game_state.world_id)
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
+    await manager.broadcast("game_changed", state)
     return _resp(True, "WORLD_RESTARTED", {"name": game_state.world_name})
 
 
@@ -530,7 +538,7 @@ async def load_save_endpoint(slot_id: str):
     # Restore runtime from save
     game_state.restore_save_data(save_data["runtime"])
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
+    await manager.broadcast("game_changed", state)
     return _resp(True, "SAVE_LOADED", {"id": slot_id})
 
 
@@ -732,9 +740,9 @@ async def perform_action(req: ActionRequest):
                 e for e in game_state.action_log
                 if e.get("totalDays", 0) >= cutoff
             ]
-        # Broadcast updated state to all WebSocket clients
+        # Broadcast updated state to all SSE clients
         state = game_state.get_full_state()
-        await manager.broadcast({"type": "state_update", "data": state})
+        await manager.broadcast("state_update", state)
 
     return result
 
@@ -1537,7 +1545,7 @@ async def update_map_raw(map_id: str, body: dict = Body(...)):
     game_state.distance_matrix = build_distance_matrix(game_state.maps)
     await _mark_dirty()
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "state_update", "data": state})
+    await manager.broadcast("state_update", state)
     return _resp(True, "ENTITY_UPDATED", {"entity": "map"})
 
 
@@ -1552,7 +1560,7 @@ async def delete_map_endpoint(map_id: str):
     game_state.distance_matrix = build_distance_matrix(game_state.maps)
     await _mark_dirty()
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "state_update", "data": state})
+    await manager.broadcast("state_update", state)
     return _resp(True, "ENTITY_DELETED", {"entity": "map"})
 
 
@@ -1582,7 +1590,7 @@ async def save_session(body: dict = Body({})):
     new_addons = body.get("addons")
     game_state.save_all(new_addon_refs=new_addons)
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
+    await manager.broadcast("game_changed", state)
     return _resp(True, "SESSION_SAVED")
 
 
@@ -1623,39 +1631,55 @@ async def save_session_as(body: dict = Body(...)):
     _save_last_world(world_id)
 
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "game_changed", "data": state})
+    await manager.broadcast("game_changed", state)
 
     return _resp(True, "WORLD_SAVE_AS_SUCCESS", {"name": world_name})
 
 
 async def _broadcast_state():
-    """Broadcast updated game state to all WebSocket clients."""
+    """Broadcast updated game state to all SSE clients."""
     state = game_state.get_full_state()
-    await manager.broadcast({"type": "state_update", "data": state})
+    await manager.broadcast("state_update", state)
 
 
 # --- Apply Changes & Backup ---
 
 
-# --- WebSocket ---
+# --- SSE ---
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket):
-    await manager.connect(ws)
-    try:
-        # Send initial state
-        state = game_state.get_full_state()
-        await ws.send_json({"type": "state_update", "data": state})
+@app.get("/api/events")
+async def sse_events(request: Request):
+    """SSE endpoint for real-time server→client push."""
+    async def event_stream():
+        queue: asyncio.Queue = asyncio.Queue()
+        manager.add(queue)
+        try:
+            # Send initial state
+            state = game_state.get_full_state()
+            yield _format_sse("state_update", state)
+            # Keep streaming events
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    msg = await asyncio.wait_for(queue.get(), timeout=30)
+                    yield _format_sse(msg["type"], msg["data"])
+                except asyncio.TimeoutError:
+                    # Send keepalive comment to prevent connection timeout
+                    yield ": keepalive\n\n"
+        finally:
+            manager.remove(queue)
 
-        # Keep connection alive, listen for pings
-        while True:
-            data = await ws.receive_text()
-            # Simple ping/pong
-            if data == "ping":
-                await ws.send_text("pong")
-    except WebSocketDisconnect:
-        manager.disconnect(ws)
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 def _get_addon_dir_or_404(addon_id: str, version: str):

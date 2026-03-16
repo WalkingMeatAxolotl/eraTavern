@@ -22,189 +22,237 @@
     {
       "id": "straw-hat",
       "name": "草帽",
-      "slot": "hat",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "hat"
+      ]
     },
     {
       "id": "iron-helm",
       "name": "铁盔",
-      "slot": "hat",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "hat"
+      ]
     },
     {
       "id": "wizard-hat",
       "name": "法师帽",
-      "slot": "hat",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "hat"
+      ]
     },
     {
       "id": "hood",
       "name": "兜帽",
-      "slot": "hat",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "hat"
+      ]
     },
     {
       "id": "cloth-shirt",
       "name": "布衫",
-      "slot": "upperBody",
       "occlusion": [
         "upperUnderwear"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "upperBody"
+      ]
     },
     {
       "id": "leather-armor",
       "name": "皮甲",
-      "slot": "upperBody",
       "occlusion": [
         "upperUnderwear"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "upperBody"
+      ]
     },
     {
       "id": "chain-mail",
       "name": "锁子甲",
-      "slot": "upperBody",
       "occlusion": [
         "upperUnderwear"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "upperBody"
+      ]
     },
     {
       "id": "robe",
       "name": "长袍",
-      "slot": "upperBody",
       "occlusion": [
         "upperUnderwear",
         "lowerUnderwear"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "upperBody"
+      ]
     },
     {
       "id": "cloak",
       "name": "斗篷",
-      "slot": "upperBody",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "upperBody"
+      ]
     },
     {
       "id": "undershirt",
       "name": "内衣",
-      "slot": "upperUnderwear",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "upperUnderwear"
+      ]
     },
     {
       "id": "cloth-pants",
       "name": "布裤",
-      "slot": "lowerBody",
       "occlusion": [
         "lowerUnderwear"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "lowerBody"
+      ]
     },
     {
       "id": "leather-pants",
       "name": "皮裤",
-      "slot": "lowerBody",
       "occlusion": [
         "lowerUnderwear"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "lowerBody"
+      ]
     },
     {
       "id": "skirt",
       "name": "裙子",
-      "slot": "lowerBody",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "lowerBody"
+      ]
     },
     {
       "id": "armored-greaves",
       "name": "胫甲裙",
-      "slot": "lowerBody",
       "occlusion": [
         "lowerUnderwear"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "lowerBody"
+      ]
     },
     {
       "id": "shorts",
       "name": "短裤",
-      "slot": "lowerUnderwear",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "lowerUnderwear"
+      ]
     },
     {
       "id": "leather-gloves",
       "name": "皮手套",
-      "slot": "hands",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "hands"
+      ]
     },
     {
       "id": "gauntlets",
       "name": "铁手甲",
-      "slot": "hands",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "hands"
+      ]
     },
     {
       "id": "socks",
       "name": "袜子",
-      "slot": "feet",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "feet"
+      ]
     },
     {
       "id": "leather-boots",
       "name": "皮靴",
-      "slot": "shoes",
       "occlusion": [
         "feet"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "shoes"
+      ]
     },
     {
       "id": "sandals",
       "name": "草鞋",
-      "slot": "shoes",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "shoes"
+      ]
     },
     {
       "id": "iron-boots",
       "name": "铁靴",
-      "slot": "shoes",
       "occlusion": [
         "feet"
       ],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "shoes"
+      ]
     },
     {
       "id": "necklace",
       "name": "项链",
-      "slot": "accessory1",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "accessory1"
+      ]
     },
     {
       "id": "ring",
       "name": "戒指",
-      "slot": "accessory2",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "accessory2"
+      ]
     },
     {
       "id": "bracelet",
       "name": "手镯",
-      "slot": "accessory3",
       "occlusion": [],
-      "effects": []
+      "effects": [],
+      "slots": [
+        "accessory3"
+      ]
     }
   ]
 }

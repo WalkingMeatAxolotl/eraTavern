@@ -6,7 +6,7 @@
 |-------|-----------|-------------|
 | Backend | Python 3.x / FastAPI / uvicorn | `backend/main.py` |
 | Frontend | React 18 + TypeScript / Vite | `frontend/src/App.tsx` |
-| Communication | REST API + WebSocket | Port defined in `config.json` |
+| Communication | REST API + SSE | Port defined in `config.json` |
 | Data | JSON files (no database) | `addons/`, `worlds/` |
 
 ## 目录结构
@@ -42,7 +42,7 @@ tavernGame/
 │   └── saves/{slotId}.json          存档文件
 │
 ├── backend/
-│   ├── main.py                      FastAPI app, all REST/WS endpoints
+│   ├── main.py                      FastAPI app, all REST/SSE endpoints
 │   ├── game/
 │   │   ├── state.py                   GameState singleton, load/rebuild/save/persist
 │   │   ├── addon_loader.py            目录常量, addon/world CRUD, fork/copy
@@ -95,7 +95,7 @@ tavernGame/
                     │  trait_defs, action_defs, ...             │
                     │  dirty flag                               │
                     └──────────┬───────────────────▲───────────┘
-                               │ API/WS            │ API
+                               │ API/SSE           │ API
                     ┌──────────▼───────────────────┤───────────┐
                     │       Frontend (React)                   │
                     │  gameState, editors, sidebars            │
@@ -187,9 +187,9 @@ tavernGame/
 | 存档 | `/api/saves` | 存档 CRUD + 加载 | — |
 | 资产 | `/api/assets`, `/assets` | 上传 + 静态 serve | — |
 
-### WebSocket (`main.py: /ws`)
+### SSE (`main.py: GET /api/events`)
 
-服务器主动推送，前端通过 `client.ts` 连接接收：
+服务器主动推送，前端通过 `client.ts` 的 `connectSSE()` 使用 `EventSource` 连接接收：
 
 | 事件类型 | 触发场景 | 携带数据 |
 |---------|---------|---------|
@@ -199,8 +199,9 @@ tavernGame/
 
 - 连接建立时立即发送一次 `state_update` 作为初始状态
 - `state_update` 与 `game_changed` 携带相同数据（全量状态），区别在语义——前端据此决定是否重置 UI 状态
-- 行动结果（output 文本、NPC 日志）通过 REST API `POST /api/game/action` 的响应返回，不走 WebSocket
-- 支持 ping/pong 保活
+- 行动结果（output 文本、NPC 日志）通过 REST API `POST /api/game/action` 的响应返回，不走 SSE
+- 30 秒无事件时发送 keepalive 注释防止连接超时
+- `EventSource` 自动重连，无需手动处理
 
 ### 前后端职责分工
 
@@ -311,4 +312,4 @@ tavernGame/
 1. `main.py` 读取 `config.json` 获取端口和 `lastWorldId`
 2. `lifespan` 上下文管理器触发 `game_state.load_world(lastWorldId)`
 3. 如果世界不存在，自动创建 `default` 世界
-4. 加载完成后前端连接 WebSocket，获取初始状态
+4. 加载完成后前端连接 SSE (`/api/events`)，获取初始状态

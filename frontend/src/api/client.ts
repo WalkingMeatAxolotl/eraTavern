@@ -765,34 +765,33 @@ export async function fetchAddonVersionsDetail(addonId: string): Promise<AddonVe
   return data.versions ?? [];
 }
 
-// WebSocket connection
-export function connectWebSocket(
+// SSE connection
+export function connectSSE(
   onStateUpdate: (state: GameState) => void,
   onGameChanged?: (state: GameState) => void,
   onDirtyUpdate?: (dirty: boolean) => void
-): WebSocket {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+): EventSource {
+  const es = new EventSource("/api/events");
 
-  ws.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
-    if (msg.type === "state_update") {
-      onStateUpdate(msg.data);
-    } else if (msg.type === "game_changed") {
-      if (onGameChanged) {
-        onGameChanged(msg.data);
-      } else {
-        onStateUpdate(msg.data);
-      }
-    } else if (msg.type === "dirty_update") {
-      onDirtyUpdate?.(msg.dirty);
+  es.addEventListener("state_update", (e) => {
+    onStateUpdate(JSON.parse(e.data));
+  });
+
+  es.addEventListener("game_changed", (e) => {
+    const state = JSON.parse(e.data);
+    if (onGameChanged) {
+      onGameChanged(state);
+    } else {
+      onStateUpdate(state);
     }
-  };
+  });
 
-  ws.onclose = () => {
-    // Reconnect after 2 seconds
-    setTimeout(() => connectWebSocket(onStateUpdate, onGameChanged, onDirtyUpdate), 2000);
-  };
+  es.addEventListener("dirty_update", (e) => {
+    const msg = JSON.parse(e.data);
+    onDirtyUpdate?.(msg.dirty);
+  });
 
-  return ws;
+  // EventSource auto-reconnects on connection loss
+
+  return es;
 }

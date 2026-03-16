@@ -9,7 +9,7 @@ import {
   fetchSession,
   performAction,
   restartGame,
-  connectWebSocket,
+  connectSSE,
 } from "./api/client";
 import type { AppConfig } from "./api/client";
 import LocationHeader from "./components/LocationHeader";
@@ -65,7 +65,7 @@ export default function App() {
   const [selectedAddonTab, setSelectedAddonTab] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
 
-  const wsRef = useRef<WebSocket | null>(null);
+  const esRef = useRef<EventSource | null>(null);
 
   const player = gameState
     ? Object.values(gameState.characters).find((c) => c.isPlayer) ?? null
@@ -123,10 +123,10 @@ export default function App() {
     setSessionDirty(dirty);
   }, []);
 
-  // WebSocket — always connected
+  // SSE — always connected
   useEffect(() => {
-    wsRef.current = connectWebSocket(handleStateUpdate, handleGameChanged, handleDirtyUpdate);
-    return () => { wsRef.current?.close(); };
+    esRef.current = connectSSE(handleStateUpdate, handleGameChanged, handleDirtyUpdate);
+    return () => { esRef.current?.close(); };
   }, [handleStateUpdate, handleGameChanged, handleDirtyUpdate]);
 
   // Initial load
@@ -235,7 +235,7 @@ export default function App() {
   const handleWorldChanged = useCallback(async () => {
     setMessages([]);
     setSessionKey((k) => k + 1); // Force remount editor components
-    // Directly fetch new state (don't rely solely on WebSocket)
+    // Directly fetch new state (don't rely solely on SSE)
     const [state, session] = await Promise.all([fetchGameState(), fetchSession()]);
     setGameState(state);
     setCurrentWorldId(session.worldId);

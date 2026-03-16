@@ -443,7 +443,7 @@ no_location_actions: [action_def, ...]
 |------|------|
 | `_split_conditions(conditions)` | 将条件列表拆分为 `(location_cond, npc_present_cond, hard_conds)` 三部分，供 NPC 决策和索引构建使用 |
 | `_expand_location_cells(location_cond, maps)` | 展开 location 条件为 `[(mapId, cellId), ...]` 列表，支持 cellTags → cellId 展开 |
-| `filter_visible_npc_log(log, game_state, player_id)` | 过滤 NPC 日志，只返回玩家当前位置可见的条目 |
+| `filter_visible_npc_log(log, player_pos, game_state, player_id)` | 过滤 NPC 日志，只返回玩家感知范围内（`sense_matrix`）可见的条目 |
 | `evaluate_events(game_state, scope?, char_id?)` | 全局事件系统：检查事件条件并触发效果，支持 `each_character` / `none` 作用域 |
 | `_resolve_effect_value(eff, char, game_state)` | 解析效果值：数字直接返回；`{varId, multiply}` 对象则计算变量值 × multiply |
 | `_snap_to_tick(minutes)` | 将分钟值向上取整到 `TICK_MINUTES`（5）的倍数，最小 5 |

@@ -16,10 +16,6 @@ export default defineConfig({
     proxy: {
       '/api': `http://localhost:${backendPort}`,
       '/assets': `http://localhost:${backendPort}`,
-      '/ws': {
-        target: `ws://localhost:${backendPort}`,
-        ws: true,
-      },
     },
   },
 })
