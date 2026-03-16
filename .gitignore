@@ -32,6 +32,9 @@ Thumbs.db
 worlds/*
 !worlds/put_worlds_here
 
+# Game data - saves (per-world, private)
+saves/
+
 # Game data - legacy location
 backend/data/worlds/
 backend/data/saves/

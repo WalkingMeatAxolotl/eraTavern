@@ -30,9 +30,5 @@
     { "key": "mentalTrait", "label": "精神的特征", "multiple": true },
     { "key": "techTrait", "label": "技术的特征", "multiple": true },
     { "key": "other", "label": "其他", "multiple": true }
-  ],
-
-  "inventory": [
-    { "key": "cooking", "label": "当前持有料理", "maxSlots": 1 }
   ]
 }

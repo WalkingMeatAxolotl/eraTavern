@@ -431,7 +431,6 @@ export interface GameDefinitions {
     traits: { key: string; label: string; multiple: boolean }[];
     abilities: { key: string; label: string; defaultValue: number }[];
     experiences: { key: string; label: string }[];
-    inventory: { key: string; label: string; maxSlots?: number }[];
   };
   clothingDefs: Record<string, ClothingDefinition>;
   outfitTypes: OutfitType[];

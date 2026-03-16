@@ -25,9 +25,6 @@
     { "key": "ability", "label": "能力", "multiple": true },
     { "key": "experience", "label": "经验", "multiple": true }
   ],
-  "inventory": [
-    { "key": "cooking", "label": "当前持有料理", "maxSlots": 1 }
-  ]
 }
 ```
 
