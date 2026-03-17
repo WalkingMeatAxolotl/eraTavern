@@ -21,7 +21,8 @@
 | **category** | 分类标签，如 `social`、`combat`、`gather`，用于分组和行动链引用 |
 | **targetType** | 行动的目标类型（见下表） |
 | **timeCost** | 执行该行动消耗的游戏时间（单位：分钟，须为 5 的倍数） |
-| **triggerLLM** | 是否在执行时触发 LLM 生成文本描述 |
+| **triggerLLM** | 是否在玩家执行后自动触发 LLM 生成叙事文本 |
+| **LLM 预设** | 指定使用哪个 LLM 预设（仅在触发 LLM 时显示，留空则跟随默认设置） |
 
 ### 目标类型（targetType）
 
