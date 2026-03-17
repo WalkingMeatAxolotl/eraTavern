@@ -885,13 +885,23 @@ class GameState:
                 if source:
                     bg_image = f"{source}/backgrounds/{bg_image}"
 
+            # Qualify cell-level background images with addon source
+            source = map_data.get("_source", "")
+            cells = map_data["cells"]
+            if source:
+                cells = []
+                for c in map_data["cells"]:
+                    if c.get("backgroundImage"):
+                        c = {**c, "backgroundImage": f"{source}/backgrounds/{c['backgroundImage']}"}
+                    cells.append(c)
+
             maps_data[map_id] = {
                 "id": map_data["id"],
                 "name": map_data["name"],
                 "defaultColor": map_data.get("defaultColor", "#FFFFFF"),
                 "defaultBackgroundImage": bg_image,
                 "grid": map_data["compiled_grid"],
-                "cells": map_data["cells"],
+                "cells": cells,
             }
 
         # Update cached characters so condition checks use fresh data

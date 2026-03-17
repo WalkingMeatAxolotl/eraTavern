@@ -41,7 +41,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
       {/* Background image or gradient fallback */}
       {bgImage ? (
         <img
-          src={`/assets/backgrounds/${bgImage}`}
+          src={`/assets/${bgImage}`}
           alt=""
           style={{
             position: "absolute",
@@ -132,7 +132,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
             return (
               <img
                 key={char.id}
-                src={`/assets/characters/${char.portrait}`}
+                src={`/assets/${char.portrait}`}
                 alt={char.basicInfo.name?.value as string ?? char.id}
                 onClick={() => onSelectCharacter(isSelected ? null : char.id)}
                 style={{
