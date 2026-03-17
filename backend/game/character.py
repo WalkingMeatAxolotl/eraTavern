@@ -309,6 +309,30 @@ def save_event_defs_file(data_dir: Path, events_list: list[dict]) -> None:
         json.dump(existing, f, ensure_ascii=False, indent=2)
 
 
+def load_lorebook_entries(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load lorebook entries from addon directories, merged by id."""
+    result: dict[str, dict] = {}
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for addon_id, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / "lorebook.json")
+        for entry in data if isinstance(data, list) else data.get("entries", []):
+            ns_id = namespace_id(addon_id, entry["id"])
+            result[ns_id] = {**entry, "id": ns_id, "_local_id": entry["id"], "source": addon_id}
+    return result
+
+
+def save_lorebook_file(data_dir: Path, entries_list: list[dict]) -> None:
+    """Write lorebook entries to lorebook.json (strips internal fields)."""
+    clean = []
+    for e in entries_list:
+        entry = _strip_internal_fields(e)
+        entry["id"] = to_local_id(entry["id"])
+        clean.append(entry)
+    path = data_dir / "lorebook.json"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(clean, f, ensure_ascii=False, indent=2)
+
+
 def save_world_variable_defs_file(data_dir: Path, variables_list: list[dict]) -> None:
     """Write world variables to events.json (strips internal fields), preserving events."""
     clean = []

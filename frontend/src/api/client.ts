@@ -1,4 +1,4 @@
-import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo, OutfitType, LLMPreset, LLMProvider } from "../types/game";
+import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, LorebookEntry, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo, OutfitType, LLMPreset, LLMProvider } from "../types/game";
 import { translateError } from "../i18n/messages";
 
 const API_BASE = "/api/game";
@@ -533,6 +533,39 @@ export async function saveEventDef(id: string, data: Omit<EventDefinition, "sour
 
 export async function deleteEventDef(id: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/events/${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+// --- Lorebook CRUD ---
+
+export async function fetchLorebookEntries(): Promise<LorebookEntry[]> {
+  const res = await fetch(`${API_BASE}/lorebook`);
+  const data = await handleResponse<Record<string, any>>(res);
+  return data.entries;
+}
+
+export async function createLorebookEntry(data: Omit<LorebookEntry, "source">): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/lorebook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+}
+
+export async function saveLorebookEntry(id: string, data: Omit<LorebookEntry, "source">): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/lorebook/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteLorebookEntry(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/lorebook/${id}`, {
     method: "DELETE",
   });
   return handleResponse(res);

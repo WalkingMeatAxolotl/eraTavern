@@ -389,6 +389,19 @@ export interface EventDefinition {
   source: string;
 }
 
+// --- Lorebook types ---
+
+export interface LorebookEntry {
+  id: string;
+  name: string;
+  keywords: string[];
+  content: string;
+  enabled: boolean;
+  priority: number;
+  insertMode: "keyword" | "always";
+  source: string;
+}
+
 export interface ActionDefinition {
   id: string;
   name: string;
@@ -427,6 +440,7 @@ export interface RawCharacterData {
   position: { mapId: string; cellId: number };
   restPosition?: { mapId: string; cellId: number };
   favorability?: Record<string, number>;
+  llm?: Record<string, string>;
 }
 
 export interface MapSummary {
@@ -454,6 +468,7 @@ export interface GameDefinitions {
   actionDefs: Record<string, ActionDefinition>;
   variableDefs: Record<string, VariableDefinition>;
   eventDefs: Record<string, EventDefinition>;
+  lorebookDefs: Record<string, LorebookEntry>;
   worldVariableDefs: Record<string, WorldVariableDefinition>;
   maps: Record<string, MapSummary>;
   characters: Record<string, { id: string; name: string; isPlayer: boolean }>;

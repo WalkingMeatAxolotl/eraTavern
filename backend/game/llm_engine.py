@@ -291,6 +291,18 @@ def _format_char_full(char: dict, game_state: Any) -> str:
     return "\n".join(sections)
 
 
+def _format_char_llm(char: dict) -> str:
+    """All LLM description fields combined."""
+    llm = char.get("llm", {})
+    if not llm:
+        return ""
+    lines = []
+    for key, val in llm.items():
+        if val:
+            lines.append(f"{key}: {val}")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Format functions — scene & environment
 # ---------------------------------------------------------------------------
@@ -445,6 +457,45 @@ def _format_previous_narrative(previous_narratives: list, count: int = 1) -> str
 
 
 # ---------------------------------------------------------------------------
+# Lorebook
+# ---------------------------------------------------------------------------
+
+def _format_lorebook(game_state: Any, variables: dict[str, str]) -> str:
+    """Match lorebook entries by keyword against current context, return combined content."""
+    lorebook_defs = getattr(game_state, "lorebook_defs", {})
+    if not lorebook_defs:
+        return ""
+
+    # Build scan text from already-collected variables
+    scan_parts = [
+        variables.get("rawOutput", ""),
+        variables.get("player.name", ""),
+        variables.get("target.name", ""),
+        variables.get("location", ""),
+        variables.get("mapName", ""),
+    ]
+    scan_text = "\n".join(scan_parts).lower()
+
+    matched = []
+    for entry in lorebook_defs.values():
+        if not entry.get("enabled", True):
+            continue
+        mode = entry.get("insertMode", "keyword")
+        if mode == "always":
+            matched.append(entry)
+        elif mode == "keyword":
+            keywords = entry.get("keywords", [])
+            if any(kw.lower() in scan_text for kw in keywords if kw):
+                matched.append(entry)
+
+    if not matched:
+        return ""
+
+    matched.sort(key=lambda e: e.get("priority", 0), reverse=True)
+    return "\n---\n".join(e.get("content", "") for e in matched if e.get("content"))
+
+
+# ---------------------------------------------------------------------------
 # Variable collection — main entry point
 # ---------------------------------------------------------------------------
 
@@ -460,7 +511,7 @@ def _collect_char_variables(
             ".traits", ".traits.names", ".abilities", ".experiences",
             ".clothing", ".clothing.detail", ".outfit",
             ".inventory", ".inventory.detail",
-            ".favorability", ".variables",
+            ".favorability", ".variables", ".llm",
         ]
         return {f"{prefix}{k}": "" for k in keys}
 
@@ -468,7 +519,7 @@ def _collect_char_variables(
     item_defs = getattr(game_state, "item_defs", {})
     clothing_defs = getattr(game_state, "clothing_defs", {})
 
-    return {
+    result = {
         f"{prefix}": _format_char_full(char, game_state),
         f"{prefix}.name": _format_name(char),
         f"{prefix}.money": _format_money(char),
@@ -484,7 +535,15 @@ def _collect_char_variables(
         f"{prefix}.inventory.detail": _format_inventory_detail(char, item_defs),
         f"{prefix}.favorability": _format_favorability(char),
         f"{prefix}.variables": _format_char_variables(char, game_state),
+        f"{prefix}.llm": _format_char_llm(char),
     }
+
+    # Individual llm fields: player.llm.personality, target.llm.appearance, etc.
+    llm = char.get("llm", {})
+    for key, val in llm.items():
+        result[f"{prefix}.llm.{key}"] = str(val) if val else ""
+
+    return result
 
 
 def collect_variables(
@@ -545,6 +604,9 @@ def collect_variables(
     wv_defs = getattr(game_state, "world_variable_defs", {})
     for var_id, value in wv.items():
         variables[f"worldVar.{var_id}"] = str(value)
+
+    # Lorebook — keyword-triggered entries
+    variables["lorebook"] = _format_lorebook(game_state, variables)
 
     # Backward-compatible aliases
     variables["playerName"] = variables["player.name"]

@@ -1434,6 +1434,64 @@ async def delete_event(event_id: str):
     return _resp(True, "ENTITY_DELETED", {"entity": "event"})
 
 
+# --- Lorebook CRUD ---
+
+
+@app.get("/api/game/lorebook")
+async def get_lorebook():
+    """Get all lorebook entries."""
+    return {"entries": list(game_state.lorebook_defs.values())}
+
+
+@app.post("/api/game/lorebook")
+async def create_lorebook_entry(body: dict = Body(...)):
+    """Create a new lorebook entry (in memory)."""
+    raw_id = body.get("id", "")
+    if err := _validate_id(raw_id):
+        return err
+    source = body.get("source") or get_addon_from_id(raw_id) or ""
+    entry_id = _ensure_ns(raw_id, source)
+    if not entry_id:
+        return _resp(False, "ENTITY_MISSING_ID", {"entity": "lorebook"})
+    if entry_id in game_state.lorebook_defs:
+        return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": "lorebook", "id": entry_id})
+    entry = {k: v for k, v in body.items() if k != "source"}
+    entry["id"] = entry_id
+    entry["_local_id"] = to_local_id(entry_id)
+    entry["source"] = source
+    game_state.lorebook_defs[entry_id] = entry
+    await _mark_dirty()
+    return _resp(True, "ENTITY_CREATED", {"entity": "lorebook"})
+
+
+@app.put("/api/game/lorebook/{entry_id:path}")
+async def update_lorebook_entry(entry_id: str, body: dict = Body(...)):
+    """Update a lorebook entry (in memory)."""
+    entry_id = _ensure_ns(entry_id)
+    ed = game_state.lorebook_defs.get(entry_id)
+    if not ed:
+        return _resp(False, "ENTITY_NOT_FOUND", {"entity": "lorebook", "id": entry_id})
+    source = ed.get("source", "")
+    entry = {k: v for k, v in body.items() if k != "source"}
+    entry["id"] = entry_id
+    entry["_local_id"] = to_local_id(entry_id)
+    entry["source"] = source
+    game_state.lorebook_defs[entry_id] = entry
+    await _mark_dirty()
+    return _resp(True, "ENTITY_UPDATED", {"entity": "lorebook"})
+
+
+@app.delete("/api/game/lorebook/{entry_id:path}")
+async def delete_lorebook_entry(entry_id: str):
+    """Delete a lorebook entry (in memory)."""
+    entry_id = _ensure_ns(entry_id)
+    if entry_id not in game_state.lorebook_defs:
+        return _resp(False, "ENTITY_NOT_FOUND", {"entity": "lorebook", "id": entry_id})
+    del game_state.lorebook_defs[entry_id]
+    await _mark_dirty()
+    return _resp(True, "ENTITY_DELETED", {"entity": "lorebook"})
+
+
 # --- World Variable Definition CRUD ---
 
 

@@ -19,6 +19,7 @@ from .character import (
     load_variable_defs,
     load_variable_tags,
     load_event_defs,
+    load_lorebook_entries,
     load_world_variable_defs,
     load_characters,
     build_character_state,
@@ -108,6 +109,7 @@ class GameState:
         self.variable_defs: dict[str, dict] = {}
         self.variable_tags: list[str] = []
         self.event_defs: dict[str, dict] = {}
+        self.lorebook_defs: dict[str, dict] = {}
         self.world_variable_defs: dict[str, dict] = {}
         self.world_variables: dict[str, float] = {}
         self.event_state: dict[str, dict] = {}
@@ -219,6 +221,7 @@ class GameState:
         self.variable_defs = load_variable_defs(self.addon_dirs)
         self.variable_tags = load_variable_tags(self.addon_dirs)
         self.event_defs = load_event_defs(self.addon_dirs)
+        self.lorebook_defs = load_lorebook_entries(self.addon_dirs)
         self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
         self.character_data = load_characters(self.addon_dirs)
 
@@ -292,6 +295,7 @@ class GameState:
         self.variable_defs = load_variable_defs(self.addon_dirs)
         self.variable_tags = load_variable_tags(self.addon_dirs)
         self.event_defs = load_event_defs(self.addon_dirs)
+        self.lorebook_defs = load_lorebook_entries(self.addon_dirs)
         self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
         self.character_data = load_characters(self.addon_dirs)
 
@@ -338,7 +342,7 @@ class GameState:
             save_clothing_defs_file, save_item_defs_file, save_item_tags_file,
             save_trait_defs_file, save_action_defs_file, save_trait_groups_file,
             save_variable_defs_file, save_variable_tags_file,
-            save_event_defs_file, save_world_variable_defs_file,
+            save_event_defs_file, save_lorebook_file, save_world_variable_defs_file,
             save_character,
         )
         from .map_engine import save_map_file, save_decor_presets as _save_decor_presets
@@ -361,6 +365,8 @@ class GameState:
         for d in self.variable_defs.values():
             sources.add(d.get("source", ""))
         for d in self.event_defs.values():
+            sources.add(d.get("source", ""))
+        for d in self.lorebook_defs.values():
             sources.add(d.get("source", ""))
         for d in self.world_variable_defs.values():
             sources.add(d.get("source", ""))
@@ -437,6 +443,15 @@ class GameState:
             ]
             if src_events:
                 save_event_defs_file(target_dir, src_events)
+
+            # Lorebook
+            src_lorebook = [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in self.lorebook_defs.values()
+                if d.get("source") == source
+            ]
+            if src_lorebook:
+                save_lorebook_file(target_dir, src_lorebook)
 
             # World variables
             src_world_vars = [
@@ -975,6 +990,7 @@ class GameState:
             "actionDefs": self.action_defs,
             "variableDefs": self.variable_defs,
             "eventDefs": self.event_defs,
+            "lorebookDefs": self.lorebook_defs,
             "worldVariableDefs": self.world_variable_defs,
             "maps": maps_summary,
             "characters": characters_summary,

@@ -30,6 +30,7 @@ import ItemManager from "./components/ItemManager";
 import ActionManager from "./components/ActionManager";
 import VariableManager from "./components/VariableManager";
 import EventManager from "./components/EventManager";
+import LorebookManager from "./components/LorebookManager";
 import MapManager from "./components/MapManager";
 import SettingsPage from "./components/SettingsPage";
 import FloatingActions from "./components/FloatingActions";
@@ -308,6 +309,7 @@ export default function App() {
     if (navPage === "actions") return <>{addonTab}<ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "variables") return <>{addonTab}<VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "events") return <>{addonTab}<EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "lorebook") return <>{addonTab}<LorebookManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "llm") return <LLMPresetManager key={sessionKey} debugEntries={debugEntries} />;
     if (navPage === "settings") {

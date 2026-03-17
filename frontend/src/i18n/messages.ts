@@ -16,6 +16,7 @@ const ENTITY_NAMES: Record<string, string> = {
   traitGroup: "特质组",
   variable: "变量",
   event: "事件",
+  lorebook: "世界书条目",
   worldVariable: "世界变量",
   map: "地图",
 };

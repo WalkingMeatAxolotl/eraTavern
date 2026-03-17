@@ -30,6 +30,7 @@ tavernGame/
 │   │   ├── items.json                 物品定义
 │   │   ├── actions.json               行动定义
 │   │   ├── variables.json             衍生变量定义
+│   │   ├── lorebook.json              世界书条目
 │   │   ├── decor_presets.json         装饰预设
 │   │   ├── map_collection.json        地图合集索引
 │   │   ├── maps/{mapId}.json          地图数据
@@ -73,7 +74,7 @@ tavernGame/
 │       ├── 编辑器: CharacterEditor, MapEditor, ActionEditor, TraitEditor,
 │       │          TraitGroupEditor, ItemEditor, ClothingEditor, VariableEditor
 │       ├── 管理器: ActionManager, CharacterManager, ClothingManager, EventManager,
-│       │          ItemManager, MapManager, TraitManager, VariableManager
+│       │          ItemManager, LorebookManager, MapManager, TraitManager, VariableManager
 │       ├── 游戏UI: CharacterPanel, CompactCharacterInfo, ActionMenu,
 │       │          MapView, LocationHeader, NarrativePanel
 │       ├── LLM: LLMPresetManager, LLMDebugPanel
@@ -192,6 +193,7 @@ tavernGame/
 | 特质/变量 | `/api/game/traits`, `/api/game/variables` | 特质/组/变量 CRUD + 求值 | trait.md |
 | 物品/服装 | `/api/game/items`, `/api/game/clothing` | 物品/服装 CRUD + 标签 | item.md |
 | 行动/事件 | `/api/game/actions`, `/api/game/events` | 行动/事件 CRUD | action.md |
+| 世界书 | `/api/game/lorebook` | 世界书条目 CRUD | llm.md |
 | 地图 | `/api/game/maps` | 地图 CRUD + 装饰预设 | map.md |
 | 世界变量 | `/api/game/world-variables` | 世界变量 CRUD | — |
 | 存档 | `/api/saves` | 存档 CRUD + 加载 | — |

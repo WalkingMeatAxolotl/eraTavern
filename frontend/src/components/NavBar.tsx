@@ -1,6 +1,6 @@
 import T from "../theme";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "settings" | "llm" | "system";
+type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "lorebook" | "maps" | "settings" | "llm" | "system";
 
 interface NavBarProps {
   navPage: NavPage | null;
@@ -23,6 +23,7 @@ const worldTabs: NavItem[] = [
   { key: "actions", label: "行动" },
   { key: "variables", label: "变量" },
   { key: "events", label: "事件" },
+  { key: "lorebook", label: "世界书" },
   { key: "maps", label: "地图" },
   { key: "settings", label: "世界设置" },
 ];

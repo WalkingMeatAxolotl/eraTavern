@@ -111,6 +111,8 @@ const VARIABLE_GROUPS = [
     { name: "player.inventory.detail", desc: "物品详细（含描述）" },
     { name: "player.favorability", desc: "好感度列表" },
     { name: "player.variables", desc: "角色自定义变量" },
+    { name: "player.llm", desc: "LLM 描述（全部字段）" },
+    { name: "player.llm.xxx", desc: "LLM 单个字段（如 player.llm.personality）" },
   ]},
   { label: "目标", vars: [
     { name: "target", desc: "目标完整摘要（无目标时为空）" },
@@ -118,6 +120,8 @@ const VARIABLE_GROUPS = [
     { name: "target.traits", desc: "目标特质（含描述）" },
     { name: "target.clothing", desc: "目标穿着" },
     { name: "target.favorability", desc: "目标好感度" },
+    { name: "target.llm", desc: "目标 LLM 描述（全部字段）" },
+    { name: "target.llm.xxx", desc: "目标 LLM 单个字段" },
   ]},
   { label: "场景", vars: [
     { name: "location", desc: "当前区格名称" },
@@ -130,6 +134,9 @@ const VARIABLE_GROUPS = [
     { name: "npcsHere", desc: "同区格NPC+活动" },
     { name: "npcsNearby", desc: "感知范围内NPC+位置+活动" },
     { name: "worldVars", desc: "全部世界变量" },
+  ]},
+  { label: "世界书", vars: [
+    { name: "lorebook", desc: "关键词命中的世界书条目（自动匹配）" },
   ]},
   { label: "历史（支持参数 :count=N）", vars: [
     { name: "recentActions", desc: "近期行动摘要（默认5条）" },
