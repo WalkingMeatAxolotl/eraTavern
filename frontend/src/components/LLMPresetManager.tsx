@@ -8,6 +8,8 @@ import {
   deleteLLMPreset,
   fetchLLMModels,
   testLLMConnection,
+  fetchConfig,
+  updateConfig,
 } from "../api/client";
 
 // --- Styles ---
@@ -75,9 +77,22 @@ function makeBlankPreset(): LLMPreset {
 // --- Available variables ---
 
 const VARIABLE_GROUPS = [
-  { label: "核心", vars: ["rawOutput"] },
-  { label: "角色", vars: ["playerName", "playerInfo", "targetName", "targetInfo", "clothingState"] },
-  { label: "场景", vars: ["location", "mapName", "time", "weather"] },
+  { label: "核心", vars: [
+    { name: "rawOutput", desc: "行动执行结果的原始输出，包含：行动描述 + 效果摘要 + 可见NPC行为日志" },
+  ]},
+  { label: "角色", vars: [
+    { name: "playerName", desc: "玩家角色名称" },
+    { name: "playerInfo", desc: "玩家角色详细信息（属性、状态等）" },
+    { name: "targetName", desc: "行动目标角色名称（无目标时为空）" },
+    { name: "targetInfo", desc: "行动目标角色详细信息（无目标时为空）" },
+    { name: "clothingState", desc: "玩家当前穿着的服装描述" },
+  ]},
+  { label: "场景", vars: [
+    { name: "location", desc: "玩家所在区格名称" },
+    { name: "mapName", desc: "玩家所在地图名称" },
+    { name: "time", desc: "当前游戏时间（如 第1天 08:00）" },
+    { name: "weather", desc: "当前天气（含图标）" },
+  ]},
 ];
 
 // --- Prompt entry editor ---
@@ -193,7 +208,8 @@ function PromptEntryRow({
                 <span style={{ color: T.textDim, fontSize: "10px", marginRight: "6px" }}>{g.label}:</span>
                 {g.vars.map((v) => (
                   <button
-                    key={v}
+                    key={v.name}
+                    title={v.desc}
                     style={{
                       padding: "1px 6px",
                       margin: "1px 2px",
@@ -208,7 +224,7 @@ function PromptEntryRow({
                     onClick={() => {
                       const ta = contentRef.current;
                       if (!ta) return;
-                      const tag = `{{${v}}}`;
+                      const tag = `{{${v.name}}}`;
                       const start = ta.selectionStart;
                       const end = ta.selectionEnd;
                       const val = ta.value;
@@ -221,7 +237,7 @@ function PromptEntryRow({
                       }, 0);
                     }}
                   >
-                    {`{{${v}}}`}
+                    {`{{${v.name}}}`}
                   </button>
                 ))}
               </div>
@@ -251,11 +267,14 @@ export default function LLMPresetManager() {
   const [modelLoading, setModelLoading] = useState(false);
   const [testResult, setTestResult] = useState("");
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
+  const [globalPreset, setGlobalPreset] = useState("");
+  const [subTab, setSubTab] = useState<"presets" | "global">("presets");
 
   const loadPresets = useCallback(async () => {
     try {
-      const list = await fetchLLMPresets();
+      const [list, cfg] = await Promise.all([fetchLLMPresets(), fetchConfig()]);
       setPresets(list);
+      setGlobalPreset(cfg.defaultLlmPreset || "");
     } catch (e) {
       console.error("Failed to load presets:", e);
     }
@@ -427,58 +446,114 @@ export default function LLMPresetManager() {
     setExpandedEntry(preset.promptEntries.length);
   };
 
-  // --- List view ---
+  // --- Sub-tab bar ---
+  const subTabBtn = (key: "presets" | "global", label: string) => (
+    <button
+      key={key}
+      onClick={() => setSubTab(key)}
+      style={{
+        padding: "4px 14px",
+        backgroundColor: subTab === key ? T.bg2 : "transparent",
+        color: subTab === key ? T.accent : T.textSub,
+        border: subTab === key ? `1px solid ${T.border}` : "1px solid transparent",
+        borderRadius: "3px",
+        cursor: "pointer",
+        fontSize: "12px",
+        fontWeight: subTab === key ? "bold" : "normal",
+      }}
+    >
+      [{label}]
+    </button>
+  );
+
+  // --- List / global settings view ---
   if (editingId === null) {
     return (
       <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-            == LLM 预设 ==
-          </span>
-          <button onClick={handleNew} style={btnStyle(T.successDim)}>[+ 新建预设]</button>
+        {/* Sub-tabs */}
+        <div style={{ display: "flex", gap: "4px", marginBottom: "12px" }}>
+          {subTabBtn("presets", "预设管理")}
+          {subTabBtn("global", "全局设置")}
         </div>
 
-        {presets.length === 0 && (
-          <div style={{ color: T.textDim, fontSize: "12px", padding: "8px 0" }}>
-            暂无预设。点击 [+ 新建预设] 创建。
-          </div>
+        {subTab === "presets" && (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+                == LLM 预设 ==
+              </span>
+              <button onClick={handleNew} style={btnStyle(T.successDim)}>[+ 新建预设]</button>
+            </div>
+
+            {presets.length === 0 && (
+              <div style={{ color: T.textDim, fontSize: "12px", padding: "8px 0" }}>
+                暂无预设。点击 [+ 新建预设] 创建。
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {presets.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handleSelectPreset(p.id)}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 12px",
+                    backgroundColor: T.bg1,
+                    color: T.text,
+                    border: `1px solid ${T.border}`,
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    textAlign: "left",
+                    transition: "border-color 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = T.borderLight)}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.border)}
+                >
+                  <span>
+                    <span style={{ fontWeight: "bold" }}>{p.name || p.id}</span>
+                    {p.name && <span style={{ color: T.textDim, marginLeft: "8px", fontSize: "11px" }}>{p.id}</span>}
+                  </span>
+                  <span style={{ color: T.textDim, fontSize: "11px", maxWidth: "40%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {p.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {message && (
+              <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>
+            )}
+          </>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          {presets.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => handleSelectPreset(p.id)}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "8px 12px",
-                backgroundColor: T.bg1,
-                color: T.text,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-                textAlign: "left",
-                transition: "border-color 0.15s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = T.borderLight)}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.border)}
-            >
-              <span>
-                <span style={{ fontWeight: "bold" }}>{p.name || p.id}</span>
-                {p.name && <span style={{ color: T.textDim, marginLeft: "8px", fontSize: "11px" }}>{p.id}</span>}
-              </span>
-              <span style={{ color: T.textDim, fontSize: "11px", maxWidth: "40%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {p.description}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {message && (
-          <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>
+        {subTab === "global" && (
+          <>
+            <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+              == 全局设置 ==
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+              <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>默认预设</span>
+              <select
+                style={{ ...inputStyle, width: "200px" }}
+                value={globalPreset}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setGlobalPreset(val);
+                  await updateConfig({ defaultLlmPreset: val });
+                }}
+              >
+                <option value="">（无）</option>
+                {presets.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name || p.id}</option>
+                ))}
+              </select>
+              <span style={{ fontSize: "11px", color: T.textDim }}>所有世界通用的默认 LLM 预设</span>
+            </div>
+          </>
         )}
       </div>
     );

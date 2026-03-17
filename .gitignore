@@ -32,21 +32,19 @@ Thumbs.db
 worlds/*
 !worlds/put_worlds_here
 
-# Game data - saves (per-world, private)
-saves/
+# User data (saves, LLM presets with API keys, etc.)
+user/
 
 # Game data - legacy location
 backend/data/worlds/
 backend/data/saves/
+saves/
+llm-presets/
 
 # Game data - addons (keep only base)
 addons/*
 !addons/base/
 !addons/put_addons_here
-
-# LLM presets (may contain API keys)
-llm-presets/*
-!llm-presets/put_presets_here
 
 # Development plans (local only)
 plan/

@@ -1,6 +1,6 @@
 import T from "../theme";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "llm" | "settings";
+type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "settings" | "llm" | "system";
 
 interface NavBarProps {
   navPage: NavPage | null;
@@ -15,7 +15,7 @@ interface NavBarProps {
 
 type NavItem = { key: NavPage; label: string };
 
-const navItems: NavItem[] = [
+const worldTabs: NavItem[] = [
   { key: "characters", label: "人物" },
   { key: "traits", label: "属性" },
   { key: "clothing", label: "服装" },
@@ -24,8 +24,12 @@ const navItems: NavItem[] = [
   { key: "variables", label: "变量" },
   { key: "events", label: "事件" },
   { key: "maps", label: "地图" },
-  { key: "llm", label: "LLM" },
-  { key: "settings", label: "设置" },
+  { key: "settings", label: "世界设置" },
+];
+
+const globalTabs: NavItem[] = [
+  { key: "llm", label: "LLM设置" },
+  { key: "system", label: "系统设置" },
 ];
 
 export default function NavBar({
@@ -106,7 +110,7 @@ export default function NavBar({
             </span>
           )}
           <span style={{ color: T.borderDim, margin: "0 4px" }}>|</span>
-          {navItems.map((item) => (
+          {worldTabs.map((item) => (
             <button
               key={item.key}
               style={btnStyle(navPage === item.key)}
@@ -119,8 +123,20 @@ export default function NavBar({
           ))}
         </div>
 
-        {/* Right: addon toggle */}
-        <div style={{ display: "flex", alignItems: "center" }}>
+        {/* Right: global tabs + addon toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+          {globalTabs.map((item) => (
+            <button
+              key={item.key}
+              style={btnStyle(navPage === item.key)}
+              onClick={() =>
+                onNavChange(navPage === item.key ? null : item.key)
+              }
+            >
+              [{item.label}]
+            </button>
+          ))}
+          <span style={{ color: T.borderDim, margin: "0 4px" }}>|</span>
           <button style={sideToggleStyle(rightOpen)} onClick={onToggleRight}>
             [扩展]
           </button>

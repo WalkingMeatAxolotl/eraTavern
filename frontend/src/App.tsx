@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import T from "./theme";
-import type { GameState, GameAction, ActionResult } from "./types/game";
+import type { GameState, GameAction, ActionResult, NarrativeEntry } from "./types/game";
 import type { DetailTab } from "./components/CharacterPanel";
 import {
   fetchConfig,
@@ -34,18 +34,14 @@ import SettingsPage from "./components/SettingsPage";
 import FloatingActions from "./components/FloatingActions";
 import LLMPresetManager from "./components/LLMPresetManager";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "llm" | "settings";
+type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "settings" | "llm" | "system";
 
 export default function App() {
   const [config, setConfig] = useState<AppConfig>({ maxWidth: 1200 });
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [actions, setActions] = useState<GameAction[]>([]);
   const [activeMapId, setActiveMapId] = useState<string>("");
-  const [messages, setMessages] = useState<string[]>([]);
-  const [llmRawOutput, setLlmRawOutput] = useState("");
-  const [llmAutoTrigger, setLlmAutoTrigger] = useState(false);
-  const [llmTargetId, setLlmTargetId] = useState<string | undefined>();
-  const [llmPresetId, setLlmPresetId] = useState<string | undefined>();
+  const [narrativeEntries, setNarrativeEntries] = useState<NarrativeEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [topView, setTopView] = useState<"location" | string>("location");
   const [compactTab, setCompactTab] = useState<"basic" | "clothing">("basic");
@@ -111,7 +107,7 @@ export default function App() {
 
   const handleGameChanged = useCallback((state: GameState) => {
     setGameState(state);
-    setMessages([]);
+    setNarrativeEntries([]);
     setSessionKey((k) => k + 1);
     const p = Object.values(state.characters).find((c) => c.isPlayer);
     if (p) setActiveMapId(p.position.mapId);
@@ -159,34 +155,27 @@ export default function App() {
     }
   }, [gameState?.worldId]);
 
-  const addMessage = useCallback((msg: string) => {
-    setMessages((prev) => [...prev, msg]);
-  }, []);
-
   const addResultMessages = useCallback((result: ActionResult, targetId?: string) => {
-    addMessage(result.success ? result.message : `[失败] ${result.message}`);
+    const raw: string[] = [];
+    raw.push(result.success ? result.message : `[失败] ${result.message}`);
     if (result.npcLog) {
       for (const line of result.npcLog) {
-        addMessage(line);
+        raw.push(line);
       }
     }
-    // Build rawOutput for LLM
+    const entry: NarrativeEntry = { raw };
     if (result.success) {
       const parts: string[] = [];
       if (result.message) parts.push(result.message);
       if (result.effectsSummary?.length) parts.push(result.effectsSummary.join("\n"));
       if (result.npcLog?.length) parts.push(result.npcLog.join("\n"));
-      setLlmRawOutput(parts.join("\n\n"));
-      setLlmAutoTrigger(!!result.triggerLLM);
-      setLlmTargetId(targetId);
-      setLlmPresetId(result.llmPreset || undefined);
-    } else {
-      setLlmRawOutput("");
-      setLlmAutoTrigger(false);
-      setLlmTargetId(undefined);
-      setLlmPresetId(undefined);
+      entry.llmRawOutput = parts.join("\n\n");
+      entry.autoTriggerLLM = !!result.triggerLLM;
+      entry.targetId = targetId;
+      entry.presetId = result.llmPreset || undefined;
     }
-  }, [addMessage]);
+    setNarrativeEntries((prev) => [...prev, entry]);
+  }, []);
 
   const handleMove = useCallback(
     async (targetCell: number, targetMap?: string) => {
@@ -254,7 +243,7 @@ export default function App() {
 
   // Called when world/addons change from sidebars
   const handleWorldChanged = useCallback(async () => {
-    setMessages([]);
+    setNarrativeEntries([]);
     setSessionKey((k) => k + 1); // Force remount editor components
     // Directly fetch new state (don't rely solely on SSE)
     const [state, session] = await Promise.all([fetchGameState(), fetchSession()]);
@@ -325,13 +314,25 @@ export default function App() {
           if (!confirm("确认重新开始游戏？所有运行时状态将重置。")) return;
           const result = await restartGame();
           if (result.success) {
-            setMessages([]);
+            setNarrativeEntries([]);
             setNavPage(null);
           }
         }}
         onWorldChanged={handleWorldChanged}
         settingsBtnStyle={settingsBtnStyle}
       />;
+    }
+    if (navPage === "system") {
+      return (
+        <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+            == 系统设置 ==
+          </span>
+          <div style={{ color: T.textDim, fontSize: "12px", marginTop: "8px" }}>
+            暂无系统设置项。
+          </div>
+        </div>
+      );
     }
     return null;
   };
@@ -353,42 +354,6 @@ export default function App() {
     return (
       <>
         <div>
-          <div style={{ display: "flex", gap: "2px", marginBottom: "4px" }}>
-            <button
-              onClick={() => setTopView("location")}
-              style={{
-                padding: "6px 16px",
-                backgroundColor: topView === "location" ? T.bg2 : T.bg1,
-                color: topView === "location" ? T.accent : T.text,
-                border: `1px solid ${T.border}`,
-                borderBottom: topView === "location" ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
-                cursor: "pointer",
-
-                fontSize: "13px",
-              }}
-            >
-              [{playerMap?.name ?? ""} - {playerCellName}]
-            </button>
-            {Object.values(gameState.maps).map((m) => (
-              <button
-                key={m.id}
-                onClick={() => { setTopView(m.id); setActiveMapId(m.id); }}
-                style={{
-                  padding: "6px 16px",
-                  backgroundColor: topView === m.id ? T.bg2 : T.bg1,
-                  color: topView === m.id ? T.accent : T.text,
-                  border: `1px solid ${T.border}`,
-                  borderBottom: topView === m.id ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
-                  cursor: "pointer",
-  
-                  fontSize: "13px",
-                }}
-              >
-                [{m.name}]
-              </button>
-            ))}
-          </div>
-
           {topView === "location" ? (
             playerMap && (
               <LocationHeader
@@ -413,6 +378,40 @@ export default function App() {
 
         <div style={{ display: "flex", gap: "8px", minHeight: "50vh" }}>
           <div style={{ flex: "1 1 60%", display: "flex", flexDirection: "column", minWidth: 0 }}>
+            {/* Map/location tabs */}
+            <div style={{ display: "flex", gap: "2px", marginBottom: "4px" }}>
+              <button
+                onClick={() => setTopView("location")}
+                style={{
+                  padding: "4px 12px",
+                  backgroundColor: topView === "location" ? T.bg2 : T.bg1,
+                  color: topView === "location" ? T.accent : T.textSub,
+                  border: `1px solid ${T.border}`,
+                  borderBottom: topView === "location" ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
+                  cursor: "pointer",
+                  fontSize: "12px",
+                }}
+              >
+                [{playerMap?.name ?? ""} - {playerCellName}]
+              </button>
+              {Object.values(gameState.maps).map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { setTopView(m.id); setActiveMapId(m.id); }}
+                  style={{
+                    padding: "4px 12px",
+                    backgroundColor: topView === m.id ? T.bg2 : T.bg1,
+                    color: topView === m.id ? T.accent : T.textSub,
+                    border: `1px solid ${T.border}`,
+                    borderBottom: topView === m.id ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
+                    cursor: "pointer",
+                    fontSize: "12px",
+                  }}
+                >
+                  [{m.name}]
+                </button>
+              ))}
+            </div>
             {detailOpen ? (
               <CharacterPanel
                 character={
@@ -426,11 +425,7 @@ export default function App() {
               />
             ) : (
               <NarrativePanel
-                messages={messages}
-                llmRawOutput={llmRawOutput}
-                autoTriggerLLM={llmAutoTrigger}
-                targetId={llmTargetId}
-                presetId={llmPresetId}
+                entries={narrativeEntries}
               />
             )}
           </div>

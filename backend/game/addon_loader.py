@@ -14,7 +14,8 @@ from typing import Any
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
 ADDONS_DIR = _BACKEND_DIR.parent / "addons"
 WORLDS_DIR = _BACKEND_DIR.parent / "worlds"
-SAVES_DIR = _BACKEND_DIR.parent / "saves"
+USER_DIR = _BACKEND_DIR.parent / "user"
+SAVES_DIR = USER_DIR / "saves"
 DATA_DIR = _BACKEND_DIR / "data"
 TEMPLATE_PATH = DATA_DIR / "character_template.json"
 

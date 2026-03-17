@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Optional
 
-PRESETS_DIR = Path(__file__).resolve().parent.parent.parent / "llm-presets"
+PRESETS_DIR = Path(__file__).resolve().parent.parent.parent / "user" / "llm-presets"
 
 
 def _preset_path(preset_id: str) -> Path:

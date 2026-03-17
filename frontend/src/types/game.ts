@@ -1,3 +1,13 @@
+// --- Narrative types ---
+
+export interface NarrativeEntry {
+  raw: string[];
+  llmRawOutput?: string;
+  autoTriggerLLM?: boolean;
+  targetId?: string;
+  presetId?: string;
+}
+
 // --- Map types ---
 
 export interface MapGrid {

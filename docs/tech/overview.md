@@ -38,11 +38,12 @@ tavernGame/
 │
 ├── worlds/{worldId}/              世界（配置 + 存档）
 │   ├── world.json                   id, name, description, cover, addons, playerCharacter, llmPreset
-│   ├── about/covers/                封面图片
-│   └── saves/{slotId}.json          存档文件
+│   └── about/covers/                封面图片
 │
-├── llm-presets/{presetId}/       LLM 预设（独立于 addon/world）
-│   └── preset.json                 完整预设（元信息 + API 配置 + 提示词条目）
+├── user/                          用户私有数据（.gitignore）
+│   ├── saves/{worldId}/{slot}.json  存档文件
+│   └── llm-presets/{presetId}/      LLM 预设（含 API key）
+│       └── preset.json                完整预设（元信息 + API 配置 + 提示词条目）
 │
 ├── backend/
 │   ├── main.py                      FastAPI app, all REST/SSE endpoints
