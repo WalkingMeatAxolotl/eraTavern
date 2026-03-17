@@ -95,7 +95,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
     if (!confirm(`确定要删除物品「${name || id}」吗？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(id); return; }
+      if (addonCrud) { await addonCrud.delete(id); onBack(); return; }
       const result = await deleteItemDef(id);
       if (result.success) {
         onBack();

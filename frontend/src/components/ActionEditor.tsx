@@ -301,7 +301,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
     if (!confirm(`确定要删除行动「${name || id}」吗？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(id); return; }
+      if (addonCrud) { await addonCrud.delete(id); onBack(); return; }
       const result = await deleteActionDef(id);
       if (result.success) onBack();
       else setMessage(result.message);

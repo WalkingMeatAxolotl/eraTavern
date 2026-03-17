@@ -153,7 +153,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
     if (!confirm(`确定要删除服装「${name || id}」吗？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(id); return; }
+      if (addonCrud) { await addonCrud.delete(id); onBack(); return; }
       const result = await deleteClothingDef(id);
       if (result.success) {
         onBack();

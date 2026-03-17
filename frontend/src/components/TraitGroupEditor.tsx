@@ -70,7 +70,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
     if (!confirm(`确定删除特质组 "${data.name}" ？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(data.id); return; }
+      if (addonCrud) { await addonCrud.delete(data.id); onBack(); return; }
       await deleteTraitGroup(data.id);
       onBack();
     } catch (e: unknown) {

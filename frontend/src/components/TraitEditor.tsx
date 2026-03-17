@@ -150,7 +150,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     if (!confirm(`确定要删除特质「${name || id}」吗？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(id); return; }
+      if (addonCrud) { await addonCrud.delete(id); onBack(); return; }
       const result = await deleteTraitDef(id);
       if (result.success) {
         onBack();
