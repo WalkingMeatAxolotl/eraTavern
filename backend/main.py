@@ -24,6 +24,9 @@ from game.addon_loader import (
     list_addon_versions_detail, copy_addon_version, overwrite_addon_version,
     build_addon_dirs,
 )
+from game.llm_preset import (
+    list_presets, load_preset, save_preset, delete_preset,
+)
 
 CONFIG_PATH = Path(__file__).parent.parent / "config.json"
 
@@ -166,7 +169,22 @@ app.add_middleware(
 async def get_config():
     """Get frontend-relevant config."""
     config = load_config()
-    return {"maxWidth": config.get("maxWidth", 1200)}
+    return {
+        "maxWidth": config.get("maxWidth", 1200),
+        "defaultLlmPreset": config.get("defaultLlmPreset", ""),
+    }
+
+
+@app.put("/api/config")
+async def update_config(body: dict = Body(...)):
+    """Update frontend-relevant config fields."""
+    config = load_config()
+    for key in ("defaultLlmPreset",):
+        if key in body:
+            config[key] = body[key]
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+    return _resp(True, "")
 
 
 @app.get("/api/worlds")
@@ -246,6 +264,7 @@ async def get_session():
         "addons": game_state.addon_refs,
         "playerCharacter": game_state.player_character,
         "dirty": game_state.dirty,
+        "llmPreset": game_state.llm_preset,
     }
 
 
@@ -308,13 +327,14 @@ async def update_world_meta(world_id: str, body: dict = Body(...)):
     if not world_dir.exists():
         return _resp(False, "WORLD_NOT_FOUND", {"id": world_id})
     config = load_world_config(world_id)
-    for key in ("name", "description", "cover"):
+    for key in ("name", "description", "cover", "llmPreset"):
         if key in body:
             config[key] = body[key]
     save_world_config(world_id, config)
     # Update in-memory state if this is the current world
     if game_state.world_id == world_id:
         game_state.world_name = config.get("name", game_state.world_name)
+        game_state.llm_preset = config.get("llmPreset", "")
     return _resp(True, "WORLD_META_UPDATED")
 
 
@@ -1670,6 +1690,157 @@ async def sse_events(request: Request):
                     yield ": keepalive\n\n"
         finally:
             manager.remove(queue)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+# --- LLM Preset API ---
+
+
+@app.get("/api/llm/presets")
+async def get_llm_presets():
+    """List all LLM presets."""
+    return {"presets": list_presets()}
+
+
+@app.get("/api/llm/presets/{preset_id:path}")
+async def get_llm_preset(preset_id: str):
+    """Get full preset data."""
+    data = load_preset(preset_id)
+    if data is None:
+        return _resp(False, "LLM_PRESET_NOT_FOUND")
+    return _resp(True, "", preset=data)
+
+
+@app.put("/api/llm/presets/{preset_id:path}")
+async def put_llm_preset(preset_id: str, request: Request):
+    """Create or update a preset."""
+    data = await request.json()
+    save_preset(preset_id, data)
+    return _resp(True, "")
+
+
+@app.delete("/api/llm/presets/{preset_id:path}")
+async def delete_llm_preset(preset_id: str):
+    """Delete a preset."""
+    if not delete_preset(preset_id):
+        return _resp(False, "LLM_PRESET_NOT_FOUND")
+    return _resp(True, "")
+
+
+@app.get("/api/llm/models")
+async def get_llm_models(base_url: str = Query(...), api_key: str = Query("")):
+    """Proxy request to get available models from an OpenAI-compatible API."""
+    import httpx
+    url = base_url.rstrip("/") + "/models"
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(url, headers=headers)
+        if resp.status_code != 200:
+            return _resp(False, "LLM_MODELS_FETCH_FAILED", {
+                "status": resp.status_code,
+                "detail": resp.text[:500],
+            })
+        body = resp.json()
+        models = [m.get("id", "") for m in body.get("data", [])]
+        return _resp(True, "", models=models)
+    except httpx.ConnectError:
+        return _resp(False, "LLM_CONNECTION_FAILED")
+    except httpx.TimeoutException:
+        return _resp(False, "LLM_CONNECTION_TIMEOUT")
+    except Exception as e:
+        return _resp(False, "LLM_CONNECTION_FAILED", {"detail": str(e)})
+
+
+@app.post("/api/llm/test")
+async def test_llm_connection(request: Request):
+    """Test LLM API connection by sending a minimal chat completion request."""
+    import httpx
+    data = await request.json()
+    api = data.get("api", {})
+    base_url = api.get("baseUrl", "").rstrip("/")
+    api_key = api.get("apiKey", "")
+    model = api.get("model", "")
+
+    if not base_url:
+        return _resp(False, "LLM_BASE_URL_EMPTY")
+    if not model:
+        return _resp(False, "LLM_MODEL_EMPTY")
+
+    url = base_url + "/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": "Hi"}],
+        "max_tokens": 1,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+        if resp.status_code == 200:
+            return _resp(True, "")
+        return _resp(False, "LLM_TEST_FAILED", {
+            "status": resp.status_code,
+            "detail": resp.text[:500],
+        })
+    except httpx.ConnectError:
+        return _resp(False, "LLM_CONNECTION_FAILED")
+    except httpx.TimeoutException:
+        return _resp(False, "LLM_CONNECTION_TIMEOUT")
+    except Exception as e:
+        return _resp(False, "LLM_CONNECTION_FAILED", {"detail": str(e)})
+
+
+@app.post("/api/llm/generate")
+async def llm_generate(request: Request):
+    """Trigger LLM generation. Returns SSE stream with llm_chunk/llm_done/llm_error events."""
+    from game.llm_engine import (
+        build_raw_output, collect_variables, assemble_messages,
+        resolve_preset_id, call_llm_streaming,
+    )
+    data = await request.json()
+
+    # Accept either a preset id to load, or explicit raw_output + preset_id
+    raw_output = data.get("rawOutput", "")
+    target_id = data.get("targetId")
+    preset_id = data.get("presetId") or resolve_preset_id(game_state)
+
+    if not preset_id:
+        return _resp(False, "LLM_NO_PRESET")
+    preset = load_preset(preset_id)
+    if preset is None:
+        return _resp(False, "LLM_PRESET_NOT_FOUND")
+
+    api_config = preset.get("api", {})
+    if not api_config.get("baseUrl"):
+        return _resp(False, "LLM_BASE_URL_EMPTY")
+    if not api_config.get("model"):
+        return _resp(False, "LLM_MODEL_EMPTY")
+
+    # Collect variables and assemble messages
+    if target_id:
+        target_id = _ensure_ns(target_id)
+    variables = collect_variables(game_state, raw_output, target_id=target_id)
+    messages = assemble_messages(preset, variables)
+
+    async def event_stream():
+        async for event_type, event_data in call_llm_streaming(api_config, messages):
+            yield _format_sse(event_type, event_data)
 
     return StreamingResponse(
         event_stream(),

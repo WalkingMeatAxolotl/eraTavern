@@ -19,7 +19,8 @@ interface ActionDefinition {
   name: string;                        // 显示名称
   category: string;                    // 分类（如 social、combat），用于分组和行动链的 category 引用
   targetType: "none" | "npc" | "self"; // 目标类型
-  triggerLLM: boolean;                 // 是否触发 LLM 生成文本
+  triggerLLM: boolean;                 // 是否在玩家执行后自动触发 LLM 生成
+  llmPreset?: string;                  // 指定 LLM 预设 ID（空 = 跟随默认：world → global）
   timeCost: number;                    // 消耗游戏时间（分钟，须为 5 的倍数）
   npcWeight: number;                   // NPC 基础权重（0 = NPC 不会选择此行动）
   npcWeightModifiers?: WeightModifier[]; // NPC 权重动态修正

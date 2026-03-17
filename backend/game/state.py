@@ -122,6 +122,7 @@ class GameState:
         self.npc_action_history: dict[str, list[dict]] = {}
         self.decay_accumulators: dict[str, dict[str, int]] = {}
         self.action_log: list[dict] = []
+        self.llm_preset: str = ""
         self.cell_action_index: dict[tuple, list[dict]] = {}
         self.no_location_actions: list[dict] = []
         self.time = GameTime()
@@ -165,6 +166,7 @@ class GameState:
         self.npc_action_history = {}
         self.decay_accumulators = {}
         self.action_log = []
+        self.llm_preset = ""
         self.cell_action_index = {}
         self.no_location_actions = []
         self.time = GameTime()
@@ -259,6 +261,7 @@ class GameState:
         self.world_name = world_config["name"]
         self.addon_refs = world_config.get("addons", [])
         self.player_character = world_config.get("playerCharacter", "")
+        self.llm_preset: str = world_config.get("llmPreset", "")
 
         # No auto-fork: addons stay at whichever version world.json specifies.
         # Forking is triggered explicitly by the user via POST /api/addon/{id}/fork.

@@ -1224,6 +1224,8 @@ def _execute_configured(
         "message": text or f"执行了 {action_def['name']}",
         "actionId": action_def["id"],
         "actionName": action_def["name"],
+        "triggerLLM": bool(action_def.get("triggerLLM")),
+        "llmPreset": action_def.get("llmPreset", ""),
     }
     if outcome:
         result["outcomeGrade"] = outcome.get("grade")

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import T from "./theme";
-import type { GameState, GameAction } from "./types/game";
+import type { GameState, GameAction, ActionResult } from "./types/game";
 import type { DetailTab } from "./components/CharacterPanel";
 import {
   fetchConfig,
@@ -32,8 +32,9 @@ import EventManager from "./components/EventManager";
 import MapManager from "./components/MapManager";
 import SettingsPage from "./components/SettingsPage";
 import FloatingActions from "./components/FloatingActions";
+import LLMPresetManager from "./components/LLMPresetManager";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "settings";
+type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "llm" | "settings";
 
 export default function App() {
   const [config, setConfig] = useState<AppConfig>({ maxWidth: 1200 });
@@ -41,6 +42,10 @@ export default function App() {
   const [actions, setActions] = useState<GameAction[]>([]);
   const [activeMapId, setActiveMapId] = useState<string>("");
   const [messages, setMessages] = useState<string[]>([]);
+  const [llmRawOutput, setLlmRawOutput] = useState("");
+  const [llmAutoTrigger, setLlmAutoTrigger] = useState(false);
+  const [llmTargetId, setLlmTargetId] = useState<string | undefined>();
+  const [llmPresetId, setLlmPresetId] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [topView, setTopView] = useState<"location" | string>("location");
   const [compactTab, setCompactTab] = useState<"basic" | "clothing">("basic");
@@ -158,12 +163,28 @@ export default function App() {
     setMessages((prev) => [...prev, msg]);
   }, []);
 
-  const addResultMessages = useCallback((result: { success: boolean; message: string; npcLog?: string[] }) => {
+  const addResultMessages = useCallback((result: ActionResult, targetId?: string) => {
     addMessage(result.success ? result.message : `[失败] ${result.message}`);
     if (result.npcLog) {
       for (const line of result.npcLog) {
         addMessage(line);
       }
+    }
+    // Build rawOutput for LLM
+    if (result.success) {
+      const parts: string[] = [];
+      if (result.message) parts.push(result.message);
+      if (result.effectsSummary?.length) parts.push(result.effectsSummary.join("\n"));
+      if (result.npcLog?.length) parts.push(result.npcLog.join("\n"));
+      setLlmRawOutput(parts.join("\n\n"));
+      setLlmAutoTrigger(!!result.triggerLLM);
+      setLlmTargetId(targetId);
+      setLlmPresetId(result.llmPreset || undefined);
+    } else {
+      setLlmRawOutput("");
+      setLlmAutoTrigger(false);
+      setLlmTargetId(undefined);
+      setLlmPresetId(undefined);
     }
   }, [addMessage]);
 
@@ -182,7 +203,7 @@ export default function App() {
         setLoading(false);
       }
     },
-    [player, loading, addMessage]
+    [player, loading, addResultMessages]
   );
 
   const handleLook = useCallback(
@@ -196,7 +217,7 @@ export default function App() {
         setLoading(false);
       }
     },
-    [player, loading, addMessage]
+    [player, loading, addResultMessages]
   );
 
   const handleAction = useCallback(async (actionId: string, targetId?: string) => {
@@ -204,11 +225,11 @@ export default function App() {
     setLoading(true);
     try {
       const result = await performAction(player.id, "configured", undefined, undefined, actionId, targetId);
-      addResultMessages(result);
+      addResultMessages(result, targetId);
     } finally {
       setLoading(false);
     }
-  }, [player, loading, addMessage]);
+  }, [player, loading, addResultMessages]);
 
   const handleChangeOutfit = useCallback(async (outfitId: string, selections: Record<string, string>) => {
     if (!player || loading) return;
@@ -219,7 +240,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [player, loading, addMessage]);
+  }, [player, loading, addResultMessages]);
 
   const handleCellClick = useCallback(
     (cellId: number) => {
@@ -295,6 +316,7 @@ export default function App() {
     if (navPage === "variables") return <>{addonTab}<VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "events") return <>{addonTab}<EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "llm") return <LLMPresetManager key={sessionKey} />;
     if (navPage === "settings") {
       return <SettingsPage
         worldId={currentWorldId}
@@ -403,7 +425,13 @@ export default function App() {
                 onClose={() => setDetailOpen(false)}
               />
             ) : (
-              <NarrativePanel messages={messages} />
+              <NarrativePanel
+                messages={messages}
+                llmRawOutput={llmRawOutput}
+                autoTriggerLLM={llmAutoTrigger}
+                targetId={llmTargetId}
+                presetId={llmPresetId}
+              />
             )}
           </div>
 

@@ -13,7 +13,7 @@
 
 ```
 tavernGame/
-├── config.json                    启动配置 (ports, maxWidth, lastWorldId)
+├── config.json                    启动配置 (ports, maxWidth, lastWorldId, defaultLlmPreset)
 ├── CLAUDE.md                      AI 协作指令
 │
 ├── addons/{addonId}/              扩展包（所有游戏实体的来源）
@@ -37,9 +37,12 @@ tavernGame/
 │   └── {version}-{worldId}/         世界专属分支（fork）
 │
 ├── worlds/{worldId}/              世界（配置 + 存档）
-│   ├── world.json                   id, name, description, cover, addons, playerCharacter
+│   ├── world.json                   id, name, description, cover, addons, playerCharacter, llmPreset
 │   ├── about/covers/                封面图片
 │   └── saves/{slotId}.json          存档文件
+│
+├── llm-presets/{presetId}/       LLM 预设（独立于 addon/world）
+│   └── preset.json                 完整预设（元信息 + API 配置 + 提示词条目）
 │
 ├── backend/
 │   ├── main.py                      FastAPI app, all REST/SSE endpoints
@@ -48,6 +51,8 @@ tavernGame/
 │   │   ├── addon_loader.py            目录常量, addon/world CRUD, fork/copy
 │   │   ├── character.py               角色加载, namespace, trait/ability/clothing logic
 │   │   ├── action.py                  行动执行, 条件求值, NPC 决策
+│   │   ├── llm_preset.py              LLM 预设文件 CRUD
+│   │   ├── llm_engine.py              LLM 变量收集, 提示词组装, API 调用
 │   │   ├── map_engine.py              地图加载, grid 编译, distance/sense matrix
 │   │   ├── time_system.py             游戏时间 (GameTime), 天气, 季节
 │   │   ├── variable_engine.py         衍生变量求值, 循环检测, 调试追踪
@@ -65,7 +70,7 @@ tavernGame/
 │       ├── 编辑器: CharacterEditor, MapEditor, ActionEditor, TraitEditor,
 │       │          TraitGroupEditor, ItemEditor, ClothingEditor, VariableEditor
 │       ├── 管理器: ActionManager, CharacterManager, ClothingManager, EventManager,
-│       │          ItemManager, MapManager, TraitManager, VariableManager
+│       │          ItemManager, MapManager, TraitManager, VariableManager, LLMPresetManager
 │       ├── 游戏UI: CharacterPanel, CompactCharacterInfo, ActionMenu,
 │       │          MapView, MapTabs, LocationHeader, NarrativePanel
 │       ├── 通用: ColorPicker
@@ -185,6 +190,7 @@ tavernGame/
 | 地图 | `/api/game/maps` | 地图 CRUD + 装饰预设 | map.md |
 | 世界变量 | `/api/game/world-variables` | 世界变量 CRUD | — |
 | 存档 | `/api/saves` | 存档 CRUD + 加载 | — |
+| LLM | `/api/llm` | 预设 CRUD、模型获取、连接测试、生成 | llm.md |
 | 资产 | `/api/assets`, `/assets` | 上传 + 静态 serve | — |
 
 ### SSE (`main.py: GET /api/events`)
@@ -200,6 +206,7 @@ tavernGame/
 - 连接建立时立即发送一次 `state_update` 作为初始状态
 - `state_update` 与 `game_changed` 携带相同数据（全量状态），区别在语义——前端据此决定是否重置 UI 状态
 - 行动结果（output 文本、NPC 日志）通过 REST API `POST /api/game/action` 的响应返回，不走 SSE
+- LLM 生成通过独立 SSE 流 `POST /api/llm/generate` 返回（`llm_chunk` / `llm_done` / `llm_error`）
 - 30 秒无事件时发送 keepalive 注释防止连接超时
 - `EventSource` 自动重连，无需手动处理
 

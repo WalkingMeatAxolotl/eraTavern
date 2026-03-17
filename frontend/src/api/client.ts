@@ -1,4 +1,4 @@
-import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo, OutfitType } from "../types/game";
+import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo, OutfitType, LLMPreset } from "../types/game";
 import { translateError } from "../i18n/messages";
 
 const API_BASE = "/api/game";
@@ -32,10 +32,20 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export interface AppConfig {
   maxWidth: number;
+  defaultLlmPreset: string;
 }
 
 export async function fetchConfig(): Promise<AppConfig> {
   const res = await fetch("/api/config");
+  return handleResponse(res);
+}
+
+export async function updateConfig(data: Partial<AppConfig>): Promise<{ success: boolean; message: string }> {
+  const res = await fetch("/api/config", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
   return handleResponse(res);
 }
 
@@ -122,7 +132,7 @@ export async function deleteWorld(worldId: string): Promise<{ success: boolean; 
   return handleResponse(res);
 }
 
-export async function updateWorldMeta(worldId: string, data: { name?: string; description?: string; cover?: string }): Promise<{ success: boolean; message: string }> {
+export async function updateWorldMeta(worldId: string, data: { name?: string; description?: string; cover?: string; llmPreset?: string }): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/worlds/${encodeURIComponent(worldId)}/meta`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -794,4 +804,53 @@ export function connectSSE(
   // EventSource auto-reconnects on connection loss
 
   return es;
+}
+
+// --- LLM Preset API ---
+
+const LLM_BASE = "/api/llm";
+
+export async function fetchLLMPresets(): Promise<{ id: string; name: string; description: string }[]> {
+  const res = await fetch(`${LLM_BASE}/presets`);
+  const data = await handleResponse<{ presets: { id: string; name: string; description: string }[] }>(res);
+  return data.presets;
+}
+
+export async function fetchLLMPreset(id: string): Promise<LLMPreset> {
+  const res = await fetch(`${LLM_BASE}/presets/${encodeURIComponent(id)}`);
+  const data = await handleResponse<{ preset: LLMPreset }>(res);
+  return data.preset;
+}
+
+export async function saveLLMPreset(id: string, preset: LLMPreset): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${LLM_BASE}/presets/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(preset),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteLLMPreset(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${LLM_BASE}/presets/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+export async function fetchLLMModels(baseUrl: string, apiKey: string): Promise<string[]> {
+  const params = new URLSearchParams({ base_url: baseUrl });
+  if (apiKey) params.set("api_key", apiKey);
+  const res = await fetch(`${LLM_BASE}/models?${params}`);
+  const data = await handleResponse<{ models: string[] }>(res);
+  return data.models;
+}
+
+export async function testLLMConnection(api: { baseUrl: string; apiKey: string; model: string }): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${LLM_BASE}/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ api }),
+  });
+  return handleResponse(res);
 }

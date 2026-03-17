@@ -44,6 +44,10 @@ addons/*
 !addons/base/
 !addons/put_addons_here
 
+# LLM presets (may contain API keys)
+llm-presets/*
+!llm-presets/put_presets_here
+
 # Development plans (local only)
 plan/
 

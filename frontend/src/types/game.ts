@@ -87,6 +87,7 @@ export interface SessionInfo {
   addons: { id: string; version: string }[];
   playerCharacter: string;
   dirty: boolean;
+  llmPreset: string;
 }
 
 // --- Character types ---
@@ -382,6 +383,7 @@ export interface ActionDefinition {
   category: string;
   targetType: "none" | "npc" | "self";
   triggerLLM: boolean;
+  llmPreset?: string;
   timeCost: number;
   npcWeight: number;
   npcWeightModifiers?: WeightModifier[];
@@ -492,6 +494,44 @@ export interface GameTime {
   displayText: string;
 }
 
+// --- LLM Preset types ---
+
+export interface LLMParameters {
+  temperature: number;
+  maxTokens: number;
+  topP: number;
+  frequencyPenalty: number;
+  presencePenalty: number;
+}
+
+export interface LLMApiConfig {
+  apiType: string;
+  apiSource: string;
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  streaming: boolean;
+  postProcessing: string;
+  parameters: LLMParameters;
+}
+
+export interface LLMPromptEntry {
+  id: string;
+  name: string;
+  enabled: boolean;
+  role: "system" | "user" | "assistant";
+  content: string;
+  position: number;
+}
+
+export interface LLMPreset {
+  id: string;
+  name: string;
+  description: string;
+  api: LLMApiConfig;
+  promptEntries: LLMPromptEntry[];
+}
+
 // --- Game state ---
 
 export interface GameState {
@@ -510,4 +550,9 @@ export interface ActionResult {
   newPosition?: { mapId: string; cellId: number };
   restored?: Record<string, { label: string; old: number; new: number; max: number }>;
   npcLog?: string[];
+  effectsSummary?: string[];
+  triggerLLM?: boolean;
+  llmPreset?: string;
+  actionId?: string;
+  targetId?: string;
 }

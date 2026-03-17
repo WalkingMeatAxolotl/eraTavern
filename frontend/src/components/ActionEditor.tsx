@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type {
   ActionDefinition, ActionCondition, ConditionItem,
   ActionCost, ActionOutcome, ActionEffect, ClothingDefinition,
   ValueModifier, GameDefinitions, OutputTemplateEntry, SuggestNext,
 } from "../types/game";
-import { createActionDef, saveActionDef, deleteActionDef } from "../api/client";
+import { createActionDef, saveActionDef, deleteActionDef, fetchLLMPresets } from "../api/client";
 import T from "../theme";
 import PrefixedIdInput from "./PrefixedIdInput";
 
@@ -192,6 +192,8 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   const [category, setCategory] = useState(action.category);
   const [targetType, setTargetType] = useState(action.targetType);
   const [triggerLLM, setTriggerLLM] = useState(action.triggerLLM);
+  const [llmPreset, setLlmPreset] = useState(action.llmPreset || "");
+  const [llmPresetList, setLlmPresetList] = useState<{ id: string; name: string }[]>([]);
   const [timeCost, setTimeCost] = useState(action.timeCost);
   const [npcWeight, setNpcWeight] = useState(action.npcWeight ?? 0);
   const [npcWeightModifiers, setNpcWeightModifiers] = useState<ValueModifier[]>(
@@ -205,6 +207,10 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [showVarHelp, setShowVarHelp] = useState(false);
+
+  useEffect(() => {
+    fetchLLMPresets().then(setLlmPresetList).catch(() => {});
+  }, []);
 
   const isReadOnly = false;  // all addon entities are editable
 
@@ -267,7 +273,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
     setMessage("");
     try {
       const data = {
-        id, name, category, targetType, triggerLLM, timeCost,
+        id, name, category, targetType, triggerLLM, llmPreset: llmPreset || undefined, timeCost,
         npcWeight, npcWeightModifiers,
         conditions, costs: [], outcomes,
         outputTemplates: outputTemplates.length > 0 ? outputTemplates : undefined,
@@ -372,6 +378,18 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
               <input type="checkbox" checked={triggerLLM} onChange={(e) => setTriggerLLM(e.target.checked)} disabled={isReadOnly} />
               <span style={{ fontSize: "12px" }}>触发LLM</span>
             </label>
+            {triggerLLM && (
+              <div>
+                <div style={labelStyle}>LLM 预设</div>
+                <select className="ae-input" style={{ ...inputStyle, width: "160px" }}
+                  value={llmPreset} onChange={(e) => setLlmPreset(e.target.value)} disabled={isReadOnly}>
+                  <option value="">（跟随默认）</option>
+                  {llmPresetList.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name || p.id}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </div>

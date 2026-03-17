@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../theme";
-import { fetchSaves, createSave, loadSave, deleteSave, renameSave, type SaveSlotMeta } from "../api/client";
+import { fetchSaves, createSave, loadSave, deleteSave, renameSave, type SaveSlotMeta, fetchLLMPresets, updateConfig, updateWorldMeta, fetchConfig, fetchSession } from "../api/client";
 
 const MAX_SLOTS = 10;
 
@@ -41,6 +41,11 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
   const [renameValue, setRenameValue] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // LLM preset settings
+  const [presetList, setPresetList] = useState<{ id: string; name: string }[]>([]);
+  const [globalPreset, setGlobalPreset] = useState("");
+  const [worldPreset, setWorldPreset] = useState("");
+
   const refresh = useCallback(async () => {
     if (!worldId) return;
     try {
@@ -50,6 +55,20 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
   }, [worldId]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  // Load LLM presets + current settings
+  useEffect(() => {
+    (async () => {
+      try {
+        const [presets, cfg, session] = await Promise.all([
+          fetchLLMPresets(), fetchConfig(), fetchSession(),
+        ]);
+        setPresetList(presets);
+        setGlobalPreset(cfg.defaultLlmPreset || "");
+        setWorldPreset(session.llmPreset || "");
+      } catch { /* ignore */ }
+    })();
+  }, [worldId]);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -231,6 +250,53 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
           </div>
         </>
       )}
+
+      {/* LLM Settings */}
+      <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+        == LLM 设置 ==
+      </span>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>全局默认预设</span>
+          <select
+            style={{ ...inputStyle, width: "200px" }}
+            value={globalPreset}
+            onChange={async (e) => {
+              const val = e.target.value;
+              setGlobalPreset(val);
+              await updateConfig({ defaultLlmPreset: val });
+            }}
+          >
+            <option value="">（无）</option>
+            {presetList.map((p) => (
+              <option key={p.id} value={p.id}>{p.name || p.id}</option>
+            ))}
+          </select>
+          <span style={{ fontSize: "11px", color: T.textDim }}>所有世界通用的默认</span>
+        </div>
+
+        {worldId && (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>世界级预设</span>
+            <select
+              style={{ ...inputStyle, width: "200px" }}
+              value={worldPreset}
+              onChange={async (e) => {
+                const val = e.target.value;
+                setWorldPreset(val);
+                await updateWorldMeta(worldId, { llmPreset: val });
+              }}
+            >
+              <option value="">（跟随全局）</option>
+              {presetList.map((p) => (
+                <option key={p.id} value={p.id}>{p.name || p.id}</option>
+              ))}
+            </select>
+            <span style={{ fontSize: "11px", color: T.textDim }}>覆盖全局默认</span>
+          </div>
+        )}
+      </div>
 
       {/* Restart — destructive, placed last */}
       {worldId && (
