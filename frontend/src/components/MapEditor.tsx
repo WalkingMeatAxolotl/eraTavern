@@ -11,6 +11,7 @@ import {
 } from "../api/client";
 import T from "../theme";
 import ColorPicker from "./ColorPicker";
+import { HelpButton, HelpPanel, helpP } from "./HelpToggle";
 
 type Tool = "none" | "blank" | "cell" | { preset: DecorPreset };
 
@@ -72,6 +73,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
   const [mouseDown, setMouseDown] = useState(false);
   const [showPresetEditor, setShowPresetEditor] = useState(false);
   const [showConnections, setShowConnections] = useState(true);
+  const [showBgHelp, setShowBgHelp] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const reloadPresets = () => fetchDecorPresets().then(setPresets);
@@ -356,18 +358,13 @@ export default function MapEditor({ mapId, onBack }: Props) {
             btnStyle={btnStyle}
             onChange={(filename) => setMapData({ ...mapData, backgroundImage: filename })}
           />
-          <HelpTip text="地图编辑网格的底层背景图片，叠加在背景色之上" />
+          <HelpButton show={showBgHelp} onToggle={() => setShowBgHelp((v) => !v)} />
         </Row>
-        <Row label="默认场景背景">
-          <BgImagePicker
-            image={mapData.defaultBackgroundImage ?? undefined}
-            cellId={-1}
-            mapId={mapId}
-            btnStyle={btnStyle}
-            onChange={(filename) => setMapData({ ...mapData, defaultBackgroundImage: filename ?? null })}
-          />
-          <HelpTip text="当区格未设置自己的场景背景时，使用此默认背景" />
-        </Row>
+        {showBgHelp && (
+          <HelpPanel>
+            <div style={helpP}>地图背景图片，同时作为游戏页面中区格未设置自己背景时的默认场景背景</div>
+          </HelpPanel>
+        )}
       </Section>
 
       {/* ── Section: 网格编辑 ── */}

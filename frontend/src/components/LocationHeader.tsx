@@ -17,7 +17,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
   const [page, setPage] = useState(0);
 
   const cell = map.cells.find((c) => c.id === cellId);
-  const bgImage = cell?.backgroundImage ?? map.defaultBackgroundImage;
+  const bgImage = cell?.backgroundImage ?? map.backgroundImage;
 
   // Characters with portraits at this location
   const portraitChars = charactersAtLocation.filter((c) => c.portrait);

@@ -30,7 +30,7 @@ export interface GameMap {
   name: string;
   description?: string;
   defaultColor: string;
-  defaultBackgroundImage: string | null;
+  backgroundImage?: string;
   grid: MapGrid[][];
   cells: MapCell[];
 }
@@ -50,7 +50,6 @@ export interface RawMapData {
   name: string;
   description?: string;
   defaultColor: string;
-  defaultBackgroundImage?: string;
   backgroundImage?: string;
   grid: RawMapGrid[][];
   cells: MapCell[];

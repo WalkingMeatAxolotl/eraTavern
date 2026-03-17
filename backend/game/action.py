@@ -1835,7 +1835,7 @@ def _execute_move(
 
     result: dict[str, Any] = {
         "success": True,
-        "message": f"移动到了 {cell_name}",
+        "message": f"{char.get('basicInfo', {}).get('name', {}).get('value', character_id)} 移动到了 {cell_name}",
         "newPosition": char["position"],
     }
     # Filter NPC logs: show only NPCs at player's new position
@@ -1867,8 +1867,10 @@ def _execute_look(
     cell_info = map_data.get("cell_index", {}).get(target_cell, {})
     cell_name = cell_info.get("name", f"#{target_cell}")
 
-    # Build message: location header + each NPC's activity
-    lines = [f"在{cell_name}。"]
+    # Build message: action description + location header + each NPC's activity
+    char = game_state.characters.get(character_id, {})
+    char_name = char.get("basicInfo", {}).get("name", {}).get("value", character_id)
+    lines = [f"{char_name} 查看了 {cell_name}。"]
     found_npc = False
     for cid, c in game_state.characters.items():
         if cid == character_id:

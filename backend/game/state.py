@@ -879,14 +879,12 @@ class GameState:
         maps_data = {}
         for map_id, map_data in self.maps.items():
             # Qualify background image paths with addon source
-            bg_image = map_data.get("defaultBackgroundImage")
-            if bg_image:
-                source = map_data.get("_source", "")
-                if source:
-                    bg_image = f"{source}/backgrounds/{bg_image}"
+            source = map_data.get("_source", "")
+            bg_image = map_data.get("backgroundImage")
+            if bg_image and source:
+                bg_image = f"{source}/backgrounds/{bg_image}"
 
             # Qualify cell-level background images with addon source
-            source = map_data.get("_source", "")
             cells = map_data["cells"]
             if source:
                 cells = []
@@ -899,7 +897,7 @@ class GameState:
                 "id": map_data["id"],
                 "name": map_data["name"],
                 "defaultColor": map_data.get("defaultColor", "#FFFFFF"),
-                "defaultBackgroundImage": bg_image,
+                "backgroundImage": bg_image,
                 "grid": map_data["compiled_grid"],
                 "cells": cells,
             }
