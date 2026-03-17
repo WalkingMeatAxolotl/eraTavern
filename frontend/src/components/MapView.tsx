@@ -57,7 +57,7 @@ export default function MapView({ map, playerCellId, onCellClick }: MapViewProps
     <div
       style={{
         fontSize: "14px",
-        backgroundColor: map.defaultColor,
+        backgroundColor: map.defaultColor + Math.round((map.mapOverlayOpacity ?? 0.7) * 255).toString(16).padStart(2, "0"),
         padding: "12px",
         borderRadius: "4px",
         overflowX: "auto",

@@ -32,7 +32,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
         position: "relative",
         width: "100%",
         aspectRatio: "16 / 9",
-        maxHeight: "50vh",
+        maxHeight: "100%",
         borderRadius: "4px",
         overflow: "hidden",
         backgroundColor: T.bg0,

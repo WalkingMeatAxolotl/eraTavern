@@ -357,7 +357,7 @@ export default function App() {
     // Game view
     return (
       <>
-        <div>
+        <div style={{ position: "relative", height: "50vh", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px" }}>
           {topView === "location" ? (
             playerMap && (
               <LocationHeader
@@ -370,13 +370,33 @@ export default function App() {
               />
             )
           ) : (
-            activeMap && (
-              <MapView
-                map={activeMap}
-                playerCellId={player.position.mapId === activeMapId ? player.position.cellId : null}
-                onCellClick={handleCellClick}
-              />
-            )
+            activeMap && (() => {
+              const mapViewCell = player.position.mapId === activeMapId
+                ? activeMap.cells.find((c) => c.id === player.position.cellId)
+                : undefined;
+              const mapViewBg = mapViewCell?.backgroundImage ?? activeMap.backgroundImage;
+              return (
+              <>
+                {mapViewBg && (
+                  <>
+                    <img
+                      src={`/assets/${mapViewBg}`}
+                      alt=""
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" }} />
+                  </>
+                )}
+                <div style={{ position: "relative" }}>
+                  <MapView
+                    map={activeMap}
+                    playerCellId={player.position.mapId === activeMapId ? player.position.cellId : null}
+                    onCellClick={handleCellClick}
+                  />
+                </div>
+              </>
+              );
+            })()
           )}
         </div>
 

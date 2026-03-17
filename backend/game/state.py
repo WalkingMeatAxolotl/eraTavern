@@ -898,6 +898,7 @@ class GameState:
                 "name": map_data["name"],
                 "defaultColor": map_data.get("defaultColor", "#FFFFFF"),
                 "backgroundImage": bg_image,
+                "mapOverlayOpacity": map_data.get("mapOverlayOpacity", 0.7),
                 "grid": map_data["compiled_grid"],
                 "cells": cells,
             }

@@ -365,6 +365,20 @@ export default function MapEditor({ mapId, onBack }: Props) {
             <div style={helpP}>地图背景图片，同时作为游戏页面中区格未设置自己背景时的默认场景背景</div>
           </HelpPanel>
         )}
+        {mapData.backgroundImage && (
+          <Row label="总览底色不透明度">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round((mapData.mapOverlayOpacity ?? 0.7) * 100)}
+              onChange={(e) => setMapData({ ...mapData, mapOverlayOpacity: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) / 100 })}
+              style={{ ...inputStyle, width: "60px" }}
+            />
+            <span style={{ color: T.textDim, fontSize: "11px" }}>%</span>
+          </Row>
+        )}
       </Section>
 
       {/* ── Section: 网格编辑 ── */}
