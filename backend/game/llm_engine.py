@@ -12,7 +12,7 @@ from game.llm_preset import load_preset
 
 
 # ---------------------------------------------------------------------------
-# Variable collection
+# Variable helpers
 # ---------------------------------------------------------------------------
 
 def _get_player_char(game_state: Any) -> Optional[dict]:
@@ -20,11 +20,33 @@ def _get_player_char(game_state: Any) -> Optional[dict]:
     pid = game_state.player_character
     if pid:
         return game_state.characters.get(pid)
-    # Fallback: find by isPlayer flag
     for char in game_state.characters.values():
         if char.get("isPlayer"):
             return char
     return None
+
+
+def _get_player_id(game_state: Any) -> str:
+    """Get the player character ID."""
+    if game_state.player_character:
+        return game_state.player_character
+    for cid, char in game_state.characters.items():
+        if char.get("isPlayer"):
+            return cid
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Format functions — character data
+# ---------------------------------------------------------------------------
+
+def _format_name(char: dict) -> str:
+    return char.get("basicInfo", {}).get("name", {}).get("value", "")
+
+
+def _format_money(char: dict) -> str:
+    money = char.get("basicInfo", {}).get("money", {}).get("value", 0)
+    return str(money)
 
 
 def _format_resources(char: dict) -> str:
@@ -34,7 +56,8 @@ def _format_resources(char: dict) -> str:
     return ", ".join(parts) if parts else ""
 
 
-def _format_traits(char: dict) -> str:
+def _format_traits_names(char: dict) -> str:
+    """Trait names only (compact, saves tokens)."""
     parts = []
     for t in char.get("traits", []):
         if t.get("values"):
@@ -42,11 +65,123 @@ def _format_traits(char: dict) -> str:
     return "; ".join(parts) if parts else ""
 
 
+def _format_traits_detail(char: dict, trait_defs: dict) -> str:
+    """Traits with descriptions from trait_defs."""
+    sections = []
+    for t in char.get("traits", []):
+        values = t.get("values", [])
+        if not values:
+            continue
+        label = t["label"]
+        if len(values) == 1:
+            # Single value: inline
+            desc = _trait_desc(values[0], trait_defs)
+            line = f"{label}: {values[0]}"
+            if desc:
+                line += f" — {desc}"
+            sections.append(line)
+        else:
+            # Multiple: list
+            lines = [f"{label}:"]
+            for v in values:
+                desc = _trait_desc(v, trait_defs)
+                entry = f"  {v}"
+                if desc:
+                    entry += f" — {desc}"
+                lines.append(entry)
+            sections.append("\n".join(lines))
+    return "\n".join(sections) if sections else ""
+
+
+def _trait_desc(trait_name: str, trait_defs: dict) -> str:
+    """Find trait description by display name."""
+    for td in trait_defs.values():
+        if td.get("name") == trait_name:
+            return td.get("description", "")
+    return ""
+
+
 def _format_abilities(char: dict) -> str:
     parts = []
     for a in char.get("abilities", []):
-        parts.append(f"{a['label']}:{a['grade']}({a['exp']})")
+        parts.append(f"{a['label']}: {a['grade']}({a['exp']})")
     return ", ".join(parts) if parts else ""
+
+
+def _format_experiences(char: dict) -> str:
+    exps = char.get("experiences", [])
+    if not exps:
+        return ""
+    parts = []
+    for e in exps:
+        count = e.get("count", 0)
+        if count > 0:
+            parts.append(f"{e['label']}: {count}次")
+    return ", ".join(parts) if parts else ""
+
+
+def _format_clothing(char: dict) -> str:
+    """Simple clothing list."""
+    slots = char.get("clothing", [])
+    worn = [s for s in slots if s.get("itemName") and s.get("state") in ("worn", "halfWorn")]
+    if not worn:
+        return "无"
+    parts = []
+    for s in worn:
+        parts.append(f"{s['slotLabel']}: {s['itemName']}")
+    return ", ".join(parts)
+
+
+def _format_clothing_detail(char: dict, clothing_defs: dict) -> str:
+    """Clothing with state, description, effects, occlusion."""
+    slots = char.get("clothing", [])
+    worn = [s for s in slots if s.get("itemName") and s.get("state") in ("worn", "halfWorn")]
+    if not worn:
+        return "无"
+    lines = []
+    for s in worn:
+        state_str = "(穿着)" if s["state"] == "worn" else "(半脱)"
+        occ_str = "(遮挡)" if s.get("occluded") else ""
+        line = f"{s['slotLabel']}: {s['itemName']}{state_str}{occ_str}"
+        # Add description and effects from clothing_defs
+        item_id = s.get("itemId", "")
+        cdef = clothing_defs.get(item_id, {})
+        desc = cdef.get("description", "")
+        if desc:
+            line += f" — {desc}"
+        effects = _format_effects(cdef.get("effects", []))
+        if effects:
+            line += f" [{effects}]"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _format_effects(effects: list) -> str:
+    """Format trait/clothing effects as compact string."""
+    parts = []
+    for e in effects:
+        target = e.get("target", "")
+        effect = e.get("effect", "increase")
+        mag_type = e.get("magnitudeType", "fixed")
+        value = e.get("value", 0)
+        sign = "+" if effect == "increase" else "-"
+        suffix = "%" if mag_type == "percentage" else ""
+        parts.append(f"{target}{sign}{value}{suffix}")
+    return ", ".join(parts) if parts else ""
+
+
+def _format_outfit(char: dict, game_state: Any) -> str:
+    """Current outfit preset name."""
+    char_data = _get_char_data_for(char, game_state)
+    if not char_data:
+        return ""
+    current = char_data.get("currentOutfit", "default")
+    if current == "default":
+        return "默认服装"
+    for ot in getattr(game_state, "outfit_types", []):
+        if ot.get("id") == current:
+            return ot.get("name", current)
+    return current
 
 
 def _format_inventory(char: dict) -> str:
@@ -62,6 +197,24 @@ def _format_inventory(char: dict) -> str:
     return ", ".join(parts)
 
 
+def _format_inventory_detail(char: dict, item_defs: dict) -> str:
+    """Inventory with item descriptions."""
+    items = char.get("inventory", [])
+    if not items:
+        return ""
+    lines = []
+    for it in items:
+        s = it["name"]
+        if it.get("amount", 1) > 1:
+            s += f" x{it['amount']}"
+        idef = item_defs.get(it.get("itemId", ""), {})
+        desc = idef.get("description", "")
+        if desc:
+            s += f" — {desc}"
+        lines.append(s)
+    return "\n".join(lines)
+
+
 def _format_favorability(char: dict) -> str:
     favs = char.get("favorability", [])
     if not favs:
@@ -69,78 +222,305 @@ def _format_favorability(char: dict) -> str:
     return ", ".join(f"{f['name']}: {f['value']}" for f in favs)
 
 
-def _format_char_info(char: dict) -> str:
-    """Build a human-readable summary of a character."""
+def _format_char_variables(char: dict, game_state: Any) -> str:
+    """Character-level custom variables."""
+    char_data = _get_char_data_for(char, game_state)
+    if not char_data:
+        return ""
+    char_vars = char_data.get("variables", {})
+    if not char_vars:
+        return ""
+    var_defs = getattr(game_state, "variable_defs", {})
+    parts = []
+    for var_id, value in char_vars.items():
+        vdef = var_defs.get(var_id, {})
+        name = vdef.get("name", var_id)
+        parts.append(f"{name}: {value}")
+    return ", ".join(parts) if parts else ""
+
+
+def _get_char_data_for(char: dict, game_state: Any) -> Optional[dict]:
+    """Get raw character_data for a display character."""
+    char_id = char.get("id", "")
+    return game_state.character_data.get(char_id)
+
+
+def _format_char_full(char: dict, game_state: Any) -> str:
+    """Complete character summary."""
     sections = []
+    name = _format_name(char)
+    if name:
+        sections.append(f"【{name}】")
+
+    money = _format_money(char)
+    if money and money != "0":
+        sections.append(f"金钱: {money}")
+
     res = _format_resources(char)
     if res:
-        sections.append(f"资源: {res}")
-    traits = _format_traits(char)
+        sections.append(res)
+
+    traits = _format_traits_names(char)
     if traits:
-        sections.append(f"特征: {traits}")
+        sections.append(f"特质: {traits}")
+
     abilities = _format_abilities(char)
     if abilities:
         sections.append(f"能力: {abilities}")
+
+    experiences = _format_experiences(char)
+    if experiences:
+        sections.append(f"经验: {experiences}")
+
+    clothing = _format_clothing(char)
+    if clothing and clothing != "无":
+        sections.append(f"穿着: {clothing}")
+
     inv = _format_inventory(char)
     if inv:
         sections.append(f"物品: {inv}")
+
     fav = _format_favorability(char)
     if fav:
         sections.append(f"好感度: {fav}")
+
+    char_vars = _format_char_variables(char, game_state)
+    if char_vars:
+        sections.append(f"变量: {char_vars}")
+
     return "\n".join(sections)
 
 
-def _format_clothing(char: dict) -> str:
-    """Build a summary of worn clothing."""
-    slots = char.get("clothing", [])
-    worn = [s for s in slots if s.get("itemName") and s.get("state") in ("worn", "halfWorn")]
-    if not worn:
-        return "无"
-    parts = []
-    for s in worn:
-        state_str = ""
-        if s["state"] == "halfWorn":
-            state_str = "(半脱)"
-        occ = "(遮挡)" if s.get("occluded") else ""
-        parts.append(f"{s['slotLabel']}: {s['itemName']}{state_str}{occ}")
-    return "\n".join(parts)
+# ---------------------------------------------------------------------------
+# Format functions — scene & environment
+# ---------------------------------------------------------------------------
+
+def _get_cell_info(game_state: Any, map_id: str, cell_id: int) -> dict:
+    """Get cell dict from map data."""
+    m = game_state.maps.get(map_id, {})
+    return m.get("cell_index", {}).get(cell_id, {})
 
 
 def _get_cell_name(game_state: Any, map_id: str, cell_id: int) -> str:
-    """Get the display name of a map cell."""
-    m = game_state.maps.get(map_id, {})
-    for cell in m.get("cells", []):
-        if cell.get("id") == cell_id:
-            return cell.get("name", str(cell_id))
-    return str(cell_id)
+    cell = _get_cell_info(game_state, map_id, cell_id)
+    return cell.get("name", str(cell_id))
+
+
+def _get_cell_description(game_state: Any, map_id: str, cell_id: int) -> str:
+    cell = _get_cell_info(game_state, map_id, cell_id)
+    return cell.get("description", "")
 
 
 def _get_map_name(game_state: Any, map_id: str) -> str:
     return game_state.maps.get(map_id, {}).get("name", map_id)
 
 
+def _get_map_description(game_state: Any, map_id: str) -> str:
+    return game_state.maps.get(map_id, {}).get("description", "")
+
+
+def _format_location_neighbors(game_state: Any, map_id: str, cell_id: int) -> str:
+    """Names of adjacent cells."""
+    cell = _get_cell_info(game_state, map_id, cell_id)
+    connections = cell.get("connections", [])
+    names = []
+    for conn in connections:
+        target_map = conn.get("targetMap", map_id)
+        target_cell = conn.get("targetCell")
+        if target_cell is not None:
+            names.append(_get_cell_name(game_state, target_map, target_cell))
+    return ", ".join(names) if names else ""
+
+
+def _format_npcs_here(game_state: Any, map_id: str, cell_id: int, player_id: str) -> str:
+    """NPCs at the same cell with their current activity."""
+    parts = []
+    for cid, c in game_state.characters.items():
+        if cid == player_id or c.get("isPlayer"):
+            continue
+        pos = c.get("position", {})
+        if pos.get("mapId") == map_id and pos.get("cellId") == cell_id:
+            name = _format_name(c)
+            activity = game_state.npc_activities.get(cid, "待机中")
+            parts.append(f"{name}: {activity}")
+    return "\n".join(parts) if parts else ""
+
+
+def _format_npcs_nearby(game_state: Any, player_id: str) -> str:
+    """NPCs within sense range with location and activity."""
+    sense = getattr(game_state, "sense_matrix", {})
+    player = game_state.characters.get(player_id, {})
+    player_pos = player.get("position", {})
+    player_key = (player_pos.get("mapId", ""), player_pos.get("cellId", 0))
+    parts = []
+    for cid, c in game_state.characters.items():
+        if cid == player_id or c.get("isPlayer"):
+            continue
+        pos = c.get("position", {})
+        npc_key = (pos.get("mapId", ""), pos.get("cellId", 0))
+        # Check sense_matrix
+        dist = sense.get(player_key, {}).get(npc_key)
+        if dist is None:
+            continue
+        name = _format_name(c)
+        cell_name = _get_cell_name(game_state, pos.get("mapId", ""), pos.get("cellId", 0))
+        activity = game_state.npc_activities.get(cid, "待机中")
+        parts.append(f"[{cell_name}] {name}: {activity}")
+    return "\n".join(parts) if parts else ""
+
+
+def _format_world_vars(game_state: Any) -> str:
+    """All world variables with names and values."""
+    wv = getattr(game_state, "world_variables", {})
+    if not wv:
+        return ""
+    wv_defs = getattr(game_state, "world_variable_defs", {})
+    parts = []
+    for var_id, value in wv.items():
+        vdef = wv_defs.get(var_id, {})
+        name = vdef.get("name", var_id)
+        parts.append(f"{name}: {value}")
+    return ", ".join(parts) if parts else ""
+
+
+# ---------------------------------------------------------------------------
+# Format functions — history (dynamic / parameterized)
+# ---------------------------------------------------------------------------
+
+def _format_recent_actions(game_state: Any, count: int = 5) -> str:
+    """Recent player actions from action_log."""
+    log = getattr(game_state, "action_log", [])
+    recent = log[-count:] if count < len(log) else log
+    if not recent:
+        return ""
+    lines = []
+    for entry in recent:
+        action_name = entry.get("actionName", entry.get("actionId", ""))
+        msg = entry.get("message", "")
+        # Compact: first line of message only
+        first_line = msg.split("\n")[0] if msg else ""
+        if action_name and first_line:
+            lines.append(f"{action_name} — {first_line}")
+        elif first_line:
+            lines.append(first_line)
+    return "\n".join(lines) if lines else ""
+
+
+def _format_recent_npc_activity(game_state: Any, player_id: str, count: int = 10) -> str:
+    """Recent NPC activity within sense range from npc_full_log."""
+    log = getattr(game_state, "npc_full_log", [])
+    sense = getattr(game_state, "sense_matrix", {})
+    player = game_state.characters.get(player_id, {})
+    player_pos = player.get("position", {})
+    player_key = (player_pos.get("mapId", ""), player_pos.get("cellId", 0))
+
+    # Filter by sense range
+    visible = []
+    for entry in reversed(log):
+        npc_key = (entry.get("mapId", ""), entry.get("cellId", 0))
+        if sense.get(player_key, {}).get(npc_key) is not None:
+            visible.append(entry)
+            if len(visible) >= count:
+                break
+
+    visible.reverse()
+    if not visible:
+        return ""
+    lines = []
+    for entry in visible:
+        npc_id = entry.get("npcId", "")
+        npc = game_state.characters.get(npc_id, {})
+        name = _format_name(npc) or npc_id
+        text = entry.get("text", "")
+        lines.append(f"{name}: {text}")
+    return "\n".join(lines) if lines else ""
+
+
+def _format_previous_narrative(previous_narratives: list, count: int = 1) -> str:
+    """Previous LLM narrative outputs (passed from frontend)."""
+    if not previous_narratives:
+        return ""
+    recent = previous_narratives[-count:] if count < len(previous_narratives) else previous_narratives
+    return "\n---\n".join(recent)
+
+
+# ---------------------------------------------------------------------------
+# Variable collection — main entry point
+# ---------------------------------------------------------------------------
+
+def _collect_char_variables(
+    prefix: str,
+    char: Optional[dict],
+    game_state: Any,
+) -> dict[str, str]:
+    """Collect all variables for a character (player or target)."""
+    if not char:
+        keys = [
+            "", ".name", ".money", ".resources",
+            ".traits", ".traits.names", ".abilities", ".experiences",
+            ".clothing", ".clothing.detail", ".outfit",
+            ".inventory", ".inventory.detail",
+            ".favorability", ".variables",
+        ]
+        return {f"{prefix}{k}": "" for k in keys}
+
+    trait_defs = getattr(game_state, "trait_defs", {})
+    item_defs = getattr(game_state, "item_defs", {})
+    clothing_defs = getattr(game_state, "clothing_defs", {})
+
+    return {
+        f"{prefix}": _format_char_full(char, game_state),
+        f"{prefix}.name": _format_name(char),
+        f"{prefix}.money": _format_money(char),
+        f"{prefix}.resources": _format_resources(char),
+        f"{prefix}.traits": _format_traits_detail(char, trait_defs),
+        f"{prefix}.traits.names": _format_traits_names(char),
+        f"{prefix}.abilities": _format_abilities(char),
+        f"{prefix}.experiences": _format_experiences(char),
+        f"{prefix}.clothing": _format_clothing(char),
+        f"{prefix}.clothing.detail": _format_clothing_detail(char, clothing_defs),
+        f"{prefix}.outfit": _format_outfit(char, game_state),
+        f"{prefix}.inventory": _format_inventory(char),
+        f"{prefix}.inventory.detail": _format_inventory_detail(char, item_defs),
+        f"{prefix}.favorability": _format_favorability(char),
+        f"{prefix}.variables": _format_char_variables(char, game_state),
+    }
+
+
 def collect_variables(
     game_state: Any,
     raw_output: str,
     target_id: Optional[str] = None,
+    action_def: Optional[dict] = None,
 ) -> dict[str, str]:
-    """Collect all template variables for prompt interpolation."""
+    """Collect all static template variables for prompt interpolation."""
     variables: dict[str, str] = {"rawOutput": raw_output}
 
+    # Player
     player = _get_player_char(game_state)
+    player_id = _get_player_id(game_state)
+    variables.update(_collect_char_variables("player", player, game_state))
+
+    # Target
+    target = game_state.characters.get(target_id) if target_id else None
+    variables.update(_collect_char_variables("target", target, game_state))
+
+    # Location & map
     if player:
         pos = player.get("position", {})
-        variables["playerName"] = player.get("basicInfo", {}).get("name", {}).get("value", "")
-        variables["playerInfo"] = _format_char_info(player)
-        variables["clothingState"] = _format_clothing(player)
-        variables["location"] = _get_cell_name(game_state, pos.get("mapId", ""), pos.get("cellId", -1))
-        variables["mapName"] = _get_map_name(game_state, pos.get("mapId", ""))
+        mid = pos.get("mapId", "")
+        cid = pos.get("cellId", -1)
+        variables["location"] = _get_cell_name(game_state, mid, cid)
+        variables["location.description"] = _get_cell_description(game_state, mid, cid)
+        variables["location.neighbors"] = _format_location_neighbors(game_state, mid, cid)
+        variables["mapName"] = _get_map_name(game_state, mid)
+        variables["mapName.description"] = _get_map_description(game_state, mid)
+        variables["npcsHere"] = _format_npcs_here(game_state, mid, cid, player_id)
+        variables["npcsNearby"] = _format_npcs_nearby(game_state, player_id)
     else:
-        variables["playerName"] = ""
-        variables["playerInfo"] = ""
-        variables["clothingState"] = ""
-        variables["location"] = ""
-        variables["mapName"] = ""
+        for k in ["location", "location.description", "location.neighbors",
+                   "mapName", "mapName.description", "npcsHere", "npcsNearby"]:
+            variables[k] = ""
 
     # Time & weather
     td = game_state.time.to_dict()
@@ -149,50 +529,121 @@ def collect_variables(
     icon = td.get("weatherIcon", "")
     variables["weather"] = f"{icon} {weather}" if icon else weather
 
-    # Target character (if any)
-    if target_id and target_id in game_state.characters:
-        target = game_state.characters[target_id]
-        variables["targetName"] = target.get("basicInfo", {}).get("name", {}).get("value", "")
-        variables["targetInfo"] = _format_char_info(target)
+    # Action context
+    if action_def:
+        variables["action.name"] = action_def.get("name", "")
+        variables["action.description"] = action_def.get("description", "")
+        variables["action.category"] = action_def.get("category", "")
     else:
-        variables["targetName"] = ""
-        variables["targetInfo"] = ""
+        variables["action.name"] = ""
+        variables["action.description"] = ""
+        variables["action.category"] = ""
+
+    # World variables
+    variables["worldVars"] = _format_world_vars(game_state)
+    wv = getattr(game_state, "world_variables", {})
+    wv_defs = getattr(game_state, "world_variable_defs", {})
+    for var_id, value in wv.items():
+        variables[f"worldVar.{var_id}"] = str(value)
+
+    # Backward-compatible aliases
+    variables["playerName"] = variables["player.name"]
+    variables["playerInfo"] = variables["player"]
+    variables["clothingState"] = variables["player.clothing"]
+    variables["targetName"] = variables["target.name"]
+    variables["targetInfo"] = variables["target"]
 
     return variables
+
+
+# ---------------------------------------------------------------------------
+# Parameterized variable parsing & dynamic resolution
+# ---------------------------------------------------------------------------
+
+def _parse_var(raw: str) -> tuple[str, dict[str, str]]:
+    """Parse 'recentActions:count=10:format=brief' → ('recentActions', {'count':'10','format':'brief'})."""
+    parts = raw.split(":")
+    name = parts[0]
+    params: dict[str, str] = {}
+    for p in parts[1:]:
+        if "=" in p:
+            k, v = p.split("=", 1)
+            params[k] = v
+    return name, params
+
+
+def _resolve_dynamic(
+    name: str,
+    params: dict[str, str],
+    game_state: Any,
+    context: dict,
+) -> Optional[str]:
+    """Resolve parameterized/dynamic variables. Returns None if not recognized."""
+    player_id = _get_player_id(game_state)
+
+    if name == "recentActions":
+        count = int(params.get("count", "5"))
+        return _format_recent_actions(game_state, count)
+    if name == "recentNpcActivity":
+        count = int(params.get("count", "10"))
+        return _format_recent_npc_activity(game_state, player_id, count)
+    if name == "previousNarrative":
+        count = int(params.get("count", "1"))
+        narratives = context.get("previousNarratives", [])
+        return _format_previous_narrative(narratives, count)
+
+    return None
 
 
 # ---------------------------------------------------------------------------
 # Prompt assembly
 # ---------------------------------------------------------------------------
 
-def _interpolate(content: str, variables: dict[str, str]) -> str:
-    """Replace {{varName}} placeholders with actual values."""
+_VAR_REGEX = re.compile(r"\{\{([\w.]+(?::[\w.=]+)*)\}\}")
+
+
+def _interpolate(
+    content: str,
+    variables: dict[str, str],
+    game_state: Any,
+    context: dict,
+) -> str:
+    """Replace {{varName}} and {{varName:key=val}} placeholders with values."""
     def replacer(m: re.Match) -> str:
-        key = m.group(1)
-        return variables.get(key, m.group(0))  # keep original if unknown
-    return re.sub(r"\{\{(\w+)\}\}", replacer, content)
+        raw = m.group(1)
+        name, params = _parse_var(raw)
+        # Static variables (pre-collected)
+        if name in variables and not params:
+            return variables[name]
+        # Dynamic / parameterized variables
+        result = _resolve_dynamic(name, params, game_state, context)
+        if result is not None:
+            return result
+        # Unknown — keep original
+        return m.group(0)
+    return _VAR_REGEX.sub(replacer, content)
 
 
 def assemble_messages(
     preset: dict,
     variables: dict[str, str],
+    game_state: Any,
+    context: Optional[dict] = None,
 ) -> list[dict[str, str]]:
     """Build the chat messages list from preset prompt entries + variables."""
+    ctx = context or {}
     entries = preset.get("promptEntries", [])
-    # Filter enabled, sort by position
     enabled = [e for e in entries if e.get("enabled", True)]
     enabled.sort(key=lambda e: e.get("position", 0))
 
     messages: list[dict[str, str]] = []
     for entry in enabled:
         role = entry.get("role", "user")
-        content = _interpolate(entry.get("content", ""), variables)
+        content = _interpolate(entry.get("content", ""), variables, game_state, ctx)
         if not content and role == "assistant":
-            # Skip empty assistant prefill
             continue
         messages.append({"role": role, "content": content})
 
-    # Post-processing
     post = preset.get("api", {}).get("postProcessing", "mergeConsecutiveSameRole")
     if post == "mergeConsecutiveSameRole":
         messages = _merge_consecutive(messages)
@@ -222,14 +673,11 @@ def resolve_preset_id(
     action_def: Optional[dict] = None,
 ) -> Optional[str]:
     """Resolve which preset to use: action → world → global. Returns None if none set."""
-    # 1. Action-level
     if action_def and action_def.get("llmPreset"):
         return action_def["llmPreset"]
-    # 2. World-level (stored in world.json, loaded into game_state)
     world_preset = getattr(game_state, "llm_preset", None)
     if world_preset:
         return world_preset
-    # 3. Global (from config.json)
     try:
         from pathlib import Path
         cfg_path = Path(__file__).resolve().parent.parent.parent / "config.json"
@@ -250,22 +698,15 @@ def resolve_preset_id(
 def build_raw_output(action_result: dict) -> str:
     """Build the {{rawOutput}} string from an action execution result."""
     parts: list[str] = []
-
-    # Main action message
     msg = action_result.get("message", "")
     if msg:
         parts.append(msg)
-
-    # Effects summary
     effects = action_result.get("effectsSummary", [])
     if effects:
         parts.append("\n".join(effects))
-
-    # Visible NPC log
     npc_log = action_result.get("npcLog", [])
     if npc_log:
         parts.append("\n".join(npc_log))
-
     return "\n\n".join(parts)
 
 
@@ -277,13 +718,7 @@ async def call_llm_streaming(
     api_config: dict,
     messages: list[dict[str, str]],
 ):
-    """Call LLM API with streaming. Yields (event_type, data_dict) tuples.
-
-    Events:
-      ("llm_chunk", {"text": "..."})
-      ("llm_done",  {"fullText": "..."})
-      ("llm_error", {"error": "...", "detail": "..."})
-    """
+    """Call LLM API with streaming. Yields (event_type, data_dict) tuples."""
     base_url = api_config.get("baseUrl", "").rstrip("/")
     api_key = api_config.get("apiKey", "")
     model = api_config.get("model", "")
@@ -300,7 +735,6 @@ async def call_llm_streaming(
         "messages": messages,
         "stream": streaming,
     }
-    # Add generation parameters
     if params.get("temperature") is not None:
         payload["temperature"] = params["temperature"]
     if params.get("maxTokens"):
@@ -335,7 +769,6 @@ async def call_llm_streaming(
                             chunk = json.loads(data_str)
                         except json.JSONDecodeError:
                             continue
-                        # Capture usage from final chunk (some APIs send it)
                         if chunk.get("usage"):
                             usage = chunk["usage"]
                         delta = (
@@ -351,7 +784,6 @@ async def call_llm_streaming(
                     done_data["usage"] = usage
                 yield ("llm_done", done_data)
             else:
-                # Non-streaming
                 resp = await client.post(url, json=payload, headers=headers)
                 if resp.status_code != 200:
                     yield ("llm_error", {

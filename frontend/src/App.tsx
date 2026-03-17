@@ -43,6 +43,7 @@ export default function App() {
   const [actions, setActions] = useState<GameAction[]>([]);
   const [activeMapId, setActiveMapId] = useState<string>("");
   const [narrativeEntries, setNarrativeEntries] = useState<NarrativeEntry[]>([]);
+  const [llmStates, setLlmStates] = useState<Record<number, { text: string; status: string; error: string }>>({});
   const [debugEntries, setDebugEntries] = useState<LLMDebugEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [topView, setTopView] = useState<"location" | string>("location");
@@ -175,6 +176,7 @@ export default function App() {
       entry.autoTriggerLLM = !!result.triggerLLM;
       entry.targetId = targetId;
       entry.presetId = result.llmPreset || undefined;
+      entry.actionId = result.actionId || undefined;
     }
     setNarrativeEntries((prev) => [...prev, entry]);
   }, []);
@@ -428,6 +430,8 @@ export default function App() {
             ) : (
               <NarrativePanel
                 entries={narrativeEntries}
+                llmStates={llmStates}
+                onLlmStatesChange={setLlmStates}
                 onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e])}
               />
             )}

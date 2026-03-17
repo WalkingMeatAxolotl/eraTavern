@@ -1835,8 +1835,23 @@ async def llm_generate(request: Request):
     # Collect variables and assemble messages
     if target_id:
         target_id = _ensure_ns(target_id)
-    variables = collect_variables(game_state, raw_output, target_id=target_id)
-    messages = assemble_messages(preset, variables)
+    action_id = data.get("actionId")
+    action_def = game_state.action_defs.get(action_id) if action_id else None
+    variables = collect_variables(game_state, raw_output, target_id=target_id, action_def=action_def)
+    context = {"previousNarratives": data.get("previousNarratives", [])}
+    messages = assemble_messages(preset, variables, game_state, context)
+
+    # Scan preset entries for referenced variable names
+    import re as _re
+    _var_pattern = _re.compile(r"\{\{([\w.]+(?::[\w.=]+)*)\}\}")
+    referenced_vars: set[str] = set()
+    for entry in preset.get("promptEntries", []):
+        if entry.get("enabled", True):
+            for m in _var_pattern.finditer(entry.get("content", "")):
+                raw = m.group(1)
+                name = raw.split(":")[0]  # strip params
+                referenced_vars.add(name)
+    used_variables = {k: variables.get(k, "") for k in referenced_vars}
 
     async def event_stream():
         # Send debug info before generation starts
@@ -1847,7 +1862,7 @@ async def llm_generate(request: Request):
             "baseUrl": api_config.get("baseUrl", ""),
             "parameters": api_config.get("parameters", {}),
             "messages": messages,
-            "variables": variables,
+            "variables": used_variables,
         }
         yield _format_sse("llm_debug", debug_info)
 

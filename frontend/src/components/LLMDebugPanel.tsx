@@ -53,7 +53,7 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
       </div>
 
       {!collapsed && (
-        <div style={{ maxHeight: "400px", overflowY: "auto", padding: "4px 0" }}>
+        <div style={{ padding: "4px 0" }}>
           {entries.length === 0 && (
             <div style={{ color: T.textDim, padding: "8px 10px" }}>暂无调用记录。执行 LLM 生成后会显示在这里。</div>
           )}
@@ -87,7 +87,7 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                   )}
                   {entry.usage && (
                     <span style={{ color: T.accent, marginLeft: "auto", flexShrink: 0 }}>
-                      {entry.usage.total_tokens ?? "?"} tokens
+                      {entry.usage.prompt_tokens ?? "?"}↑ {entry.usage.completion_tokens ?? "?"}↓
                     </span>
                   )}
                   <span style={{ color: T.accent, fontSize: "10px", flexShrink: 0 }}>{isExpanded ? "▾" : "▸"}</span>
@@ -112,10 +112,10 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                       </div>
                     )}
 
-                    {/* Variables */}
+                    {/* Variables — only those referenced in prompt entries */}
                     {entry.variables && Object.keys(entry.variables).length > 0 && (
                       <div style={{ marginBottom: "6px" }}>
-                        <div style={{ color: T.accent, marginBottom: "2px" }}>Variables</div>
+                        <div style={{ color: T.accent, marginBottom: "2px" }}>Variables ({Object.keys(entry.variables).length})</div>
                         <div style={{ padding: "4px 8px", backgroundColor: T.bg2, borderRadius: "2px" }}>
                           {Object.entries(entry.variables).map(([k, v]) => (
                             <div key={k} style={{ marginBottom: "2px" }}>
@@ -146,7 +146,7 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                             wordBreak: "break-word",
                             color: T.text,
                             fontSize: "11px",
-                            maxHeight: "150px",
+                            maxHeight: "300px",
                             overflowY: "auto",
                           }}>
                             {m.content}
@@ -187,7 +187,7 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                     {/* Usage */}
                     {entry.usage && (
                       <div style={{ color: T.textDim }}>
-                        Usage: prompt={entry.usage.prompt_tokens ?? "?"}, completion={entry.usage.completion_tokens ?? "?"}, total={entry.usage.total_tokens ?? "?"}
+                        Tokens: 输入 {entry.usage.prompt_tokens ?? "?"} | 输出 {entry.usage.completion_tokens ?? "?"} | 合计 {entry.usage.total_tokens ?? "?"}
                       </div>
                     )}
                   </div>

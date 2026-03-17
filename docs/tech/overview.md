@@ -71,11 +71,13 @@ tavernGame/
 │       ├── 编辑器: CharacterEditor, MapEditor, ActionEditor, TraitEditor,
 │       │          TraitGroupEditor, ItemEditor, ClothingEditor, VariableEditor
 │       ├── 管理器: ActionManager, CharacterManager, ClothingManager, EventManager,
-│       │          ItemManager, MapManager, TraitManager, VariableManager, LLMPresetManager
+│       │          ItemManager, MapManager, TraitManager, VariableManager
 │       ├── 游戏UI: CharacterPanel, CompactCharacterInfo, ActionMenu,
-│       │          MapView, MapTabs, LocationHeader, NarrativePanel
-│       ├── 通用: ColorPicker
-│       └── 设置: SettingsPage
+│       │          MapView, LocationHeader, NarrativePanel
+│       ├── LLM: LLMPresetManager, LLMDebugPanel
+│       ├── 通用: ColorPicker, HelpToggle
+│       ├── 世界设置: SettingsPage
+│       └── 导航: 左侧世界级tabs ‖ 右侧全局级tabs（LLM设置, 系统设置）
 │
 ├── docs/                           文档
 │   ├── user/                         用户文档

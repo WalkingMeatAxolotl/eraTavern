@@ -79,21 +79,52 @@ function makeBlankPreset(): LLMPreset {
 // --- Available variables ---
 
 const VARIABLE_GROUPS = [
-  { label: "核心", vars: [
-    { name: "rawOutput", desc: "行动执行结果的原始输出，包含：行动描述 + 效果摘要 + 可见NPC行为日志" },
+  { label: "行动", vars: [
+    { name: "rawOutput", desc: "行动原始输出 = 描述 + 效果摘要 + NPC日志" },
+    { name: "action.name", desc: "行动名称" },
+    { name: "action.description", desc: "行动描述" },
+    { name: "action.category", desc: "行动分类" },
   ]},
-  { label: "角色", vars: [
-    { name: "playerName", desc: "玩家角色名称" },
-    { name: "playerInfo", desc: "玩家角色详细信息（属性、状态等）" },
-    { name: "targetName", desc: "行动目标角色名称（无目标时为空）" },
-    { name: "targetInfo", desc: "行动目标角色详细信息（无目标时为空）" },
-    { name: "clothingState", desc: "玩家当前穿着的服装描述" },
+  { label: "玩家", vars: [
+    { name: "player", desc: "完整角色摘要（所有信息组合）" },
+    { name: "player.name", desc: "名称" },
+    { name: "player.money", desc: "金钱" },
+    { name: "player.resources", desc: "资源状态（体力/气力等）" },
+    { name: "player.traits", desc: "全部特质（含描述）" },
+    { name: "player.traits.names", desc: "特质名称列表（省token）" },
+    { name: "player.abilities", desc: "能力等级" },
+    { name: "player.experiences", desc: "经验记录" },
+    { name: "player.clothing", desc: "穿着简洁列表" },
+    { name: "player.clothing.detail", desc: "穿着详细（含描述/效果/遮挡）" },
+    { name: "player.outfit", desc: "当前预设名称" },
+    { name: "player.inventory", desc: "物品列表" },
+    { name: "player.inventory.detail", desc: "物品详细（含描述）" },
+    { name: "player.favorability", desc: "好感度列表" },
+    { name: "player.variables", desc: "角色自定义变量" },
+  ]},
+  { label: "目标", vars: [
+    { name: "target", desc: "目标完整摘要（无目标时为空）" },
+    { name: "target.name", desc: "目标名称" },
+    { name: "target.traits", desc: "目标特质（含描述）" },
+    { name: "target.clothing", desc: "目标穿着" },
+    { name: "target.favorability", desc: "目标好感度" },
   ]},
   { label: "场景", vars: [
-    { name: "location", desc: "玩家所在区格名称" },
-    { name: "mapName", desc: "玩家所在地图名称" },
-    { name: "time", desc: "当前游戏时间（如 第1天 08:00）" },
-    { name: "weather", desc: "当前天气（含图标）" },
+    { name: "location", desc: "当前区格名称" },
+    { name: "location.description", desc: "区格描述" },
+    { name: "location.neighbors", desc: "相邻区格名称" },
+    { name: "mapName", desc: "地图名称" },
+    { name: "mapName.description", desc: "地图描述" },
+    { name: "time", desc: "游戏时间" },
+    { name: "weather", desc: "天气" },
+    { name: "npcsHere", desc: "同区格NPC+活动" },
+    { name: "npcsNearby", desc: "感知范围内NPC+位置+活动" },
+    { name: "worldVars", desc: "全部世界变量" },
+  ]},
+  { label: "历史（支持参数 :count=N）", vars: [
+    { name: "recentActions", desc: "近期行动摘要（默认5条）" },
+    { name: "recentNpcActivity", desc: "近期NPC行为（默认10条）" },
+    { name: "previousNarrative", desc: "之前的LLM叙事输出（默认1条）" },
   ]},
 ];
 

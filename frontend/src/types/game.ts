@@ -6,6 +6,7 @@ export interface NarrativeEntry {
   autoTriggerLLM?: boolean;
   targetId?: string;
   presetId?: string;
+  actionId?: string;
 }
 
 // --- Map types ---

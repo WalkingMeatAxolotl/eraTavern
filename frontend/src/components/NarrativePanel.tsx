@@ -5,24 +5,25 @@ import type { LLMDebugEntry } from "./LLMDebugPanel";
 
 type LLMStatus = "idle" | "generating" | "done" | "error";
 
+/** Per-entry LLM state, keyed by entry index */
+export interface LLMState {
+  text: string;
+  status: string;
+  error: string;
+}
+
 interface NarrativePanelProps {
   entries: NarrativeEntry[];
+  llmStates: Record<number, LLMState>;
+  onLlmStatesChange: React.Dispatch<React.SetStateAction<Record<number, LLMState>>>;
   onDebugEntry?: (entry: LLMDebugEntry) => void;
 }
 
 const LLM_BASE = "/api/llm";
 
-/** Per-entry LLM state, keyed by entry index */
-interface LLMState {
-  text: string;
-  status: LLMStatus;
-  error: string;
-}
-
-export default function NarrativePanel({ entries, onDebugEntry }: NarrativePanelProps) {
+export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, onDebugEntry }: NarrativePanelProps) {
+  const setLlmStates = onLlmStatesChange;
   const bottomRef = useRef<HTMLDivElement>(null);
-  // LLM state per entry index
-  const [llmStates, setLlmStates] = useState<Record<number, LLMState>>({});
   const abortRef = useRef<AbortController | null>(null);
   const autoTriggeredRef = useRef<Set<number>>(new Set());
 
@@ -67,6 +68,16 @@ export default function NarrativePanel({ entries, onDebugEntry }: NarrativePanel
       const body: Record<string, unknown> = { rawOutput: entry.llmRawOutput };
       if (entry.targetId) body.targetId = entry.targetId;
       if (entry.presetId) body.presetId = entry.presetId;
+      if (entry.actionId) body.actionId = entry.actionId;
+      // Collect previous narrative texts for {{previousNarrative}} variable
+      const previousNarratives: string[] = [];
+      for (let i = 0; i < idx; i++) {
+        const s = llmStates[i];
+        if (s && s.status === "done" && s.text) {
+          previousNarratives.push(s.text);
+        }
+      }
+      if (previousNarratives.length > 0) body.previousNarratives = previousNarratives;
 
       const resp = await fetch(`${LLM_BASE}/generate`, {
         method: "POST",
