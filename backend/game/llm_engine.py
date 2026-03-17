@@ -18,7 +18,13 @@ from game.llm_preset import load_preset
 def _get_player_char(game_state: Any) -> Optional[dict]:
     """Get the player's runtime character dict."""
     pid = game_state.player_character
-    return game_state.characters.get(pid) if pid else None
+    if pid:
+        return game_state.characters.get(pid)
+    # Fallback: find by isPlayer flag
+    for char in game_state.characters.values():
+        if char.get("isPlayer"):
+            return char
+    return None
 
 
 def _format_resources(char: dict) -> str:
@@ -310,6 +316,7 @@ async def call_llm_streaming(
         async with httpx.AsyncClient(timeout=120) as client:
             if streaming:
                 full_text = ""
+                usage = None
                 async with client.stream("POST", url, json=payload, headers=headers) as resp:
                     if resp.status_code != 200:
                         body = await resp.aread()
@@ -328,6 +335,9 @@ async def call_llm_streaming(
                             chunk = json.loads(data_str)
                         except json.JSONDecodeError:
                             continue
+                        # Capture usage from final chunk (some APIs send it)
+                        if chunk.get("usage"):
+                            usage = chunk["usage"]
                         delta = (
                             chunk.get("choices", [{}])[0]
                             .get("delta", {})
@@ -336,7 +346,10 @@ async def call_llm_streaming(
                         if delta:
                             full_text += delta
                             yield ("llm_chunk", {"text": delta})
-                yield ("llm_done", {"fullText": full_text})
+                done_data: dict[str, Any] = {"fullText": full_text}
+                if usage:
+                    done_data["usage"] = usage
+                yield ("llm_done", done_data)
             else:
                 # Non-streaming
                 resp = await client.post(url, json=payload, headers=headers)
@@ -352,7 +365,10 @@ async def call_llm_streaming(
                     .get("message", {})
                     .get("content", "")
                 )
-                yield ("llm_done", {"fullText": text})
+                done_data = {"fullText": text}
+                if body.get("usage"):
+                    done_data["usage"] = body["usage"]
+                yield ("llm_done", done_data)
     except httpx.ConnectError:
         yield ("llm_error", {"error": "LLM_CONNECTION_FAILED", "detail": ""})
     except httpx.TimeoutException:

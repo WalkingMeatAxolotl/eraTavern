@@ -1,11 +1,13 @@
 import T from "../theme";
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { NarrativeEntry } from "../types/game";
+import type { LLMDebugEntry } from "./LLMDebugPanel";
 
 type LLMStatus = "idle" | "generating" | "done" | "error";
 
 interface NarrativePanelProps {
   entries: NarrativeEntry[];
+  onDebugEntry?: (entry: LLMDebugEntry) => void;
 }
 
 const LLM_BASE = "/api/llm";
@@ -17,7 +19,7 @@ interface LLMState {
   error: string;
 }
 
-export default function NarrativePanel({ entries }: NarrativePanelProps) {
+export default function NarrativePanel({ entries, onDebugEntry }: NarrativePanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   // LLM state per entry index
   const [llmStates, setLlmStates] = useState<Record<number, LLMState>>({});
@@ -36,11 +38,26 @@ export default function NarrativePanel({ entries }: NarrativePanelProps) {
     }));
   }, []);
 
+  const generatingIdxRef = useRef<number | null>(null);
+
   const startGeneration = useCallback(async (idx: number) => {
     const entry = entries[idx];
     if (!entry?.llmRawOutput) return;
 
+    // Abort previous generation and finalize its state
     abortRef.current?.abort();
+    if (generatingIdxRef.current !== null && generatingIdxRef.current !== idx) {
+      const oldIdx = generatingIdxRef.current;
+      setLlmStates((prev) => {
+        const old = prev[oldIdx];
+        if (old && old.status === "generating") {
+          return { ...prev, [oldIdx]: { ...old, status: old.text ? "done" : "idle" } };
+        }
+        return prev;
+      });
+    }
+    generatingIdxRef.current = idx;
+
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -74,6 +91,8 @@ export default function NarrativePanel({ entries }: NarrativePanelProps) {
       const decoder = new TextDecoder();
       let buffer = "";
       let accumulated = "";
+      let debugEntry: Partial<LLMDebugEntry> = {};
+      let eventType = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -83,7 +102,6 @@ export default function NarrativePanel({ entries }: NarrativePanelProps) {
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
 
-        let eventType = "";
         for (const line of lines) {
           if (line.startsWith("event: ")) {
             eventType = line.slice(7).trim();
@@ -91,15 +109,32 @@ export default function NarrativePanel({ entries }: NarrativePanelProps) {
             const dataStr = line.slice(6);
             try {
               const data = JSON.parse(dataStr);
-              if (eventType === "llm_chunk") {
+              if (eventType === "llm_debug") {
+                debugEntry = {
+                  timestamp: new Date().toLocaleTimeString(),
+                  presetId: data.presetId || "",
+                  presetName: data.presetName || "",
+                  model: data.model || "",
+                  baseUrl: data.baseUrl || "",
+                  parameters: data.parameters || {},
+                  messages: data.messages || [],
+                  variables: data.variables || {},
+                };
+              } else if (eventType === "llm_chunk") {
                 accumulated += data.text || "";
                 updateLLM(idx, { text: accumulated });
               } else if (eventType === "llm_done") {
                 accumulated = data.fullText || accumulated;
                 updateLLM(idx, { text: accumulated, status: "done" });
+                if (onDebugEntry) {
+                  onDebugEntry({ ...debugEntry, responseText: accumulated, usage: data.usage } as LLMDebugEntry);
+                }
                 return;
               } else if (eventType === "llm_error") {
                 updateLLM(idx, { error: data.detail || data.error || "生成失败", status: "error" });
+                if (onDebugEntry) {
+                  onDebugEntry({ ...debugEntry, error: data.detail || data.error || "生成失败" } as LLMDebugEntry);
+                }
                 return;
               }
             } catch {
@@ -111,6 +146,9 @@ export default function NarrativePanel({ entries }: NarrativePanelProps) {
 
       if (accumulated) {
         updateLLM(idx, { status: "done" });
+        if (onDebugEntry) {
+          onDebugEntry({ ...debugEntry, responseText: accumulated } as LLMDebugEntry);
+        }
       } else {
         updateLLM(idx, { status: "idle" });
       }
@@ -142,6 +180,8 @@ export default function NarrativePanel({ entries }: NarrativePanelProps) {
   const lastIdx = entries.length - 1;
 
   return (
+    <>
+    <style>{`@keyframes llm-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
     <div
       style={{
         fontSize: "13px",
@@ -193,11 +233,12 @@ export default function NarrativePanel({ entries }: NarrativePanelProps) {
 
               {llm.status === "generating" && (
                 <div style={{ marginTop: "8px", borderTop: `1px solid ${T.border}`, paddingTop: "8px" }}>
-                  <div style={{ color: T.accent, fontSize: "11px", marginBottom: "4px" }}>
-                    [LLM 叙事]{!llm.text && " 生成中..."}
+                  <div style={{ color: T.accent, fontSize: "11px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", backgroundColor: T.accent, animation: "llm-pulse 1s ease-in-out infinite" }} />
+                    [LLM 生成中]
                   </div>
                   {llm.text && (
-                    <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>{llm.text}</div>
+                    <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>{llm.text}<span style={{ animation: "llm-pulse 1s ease-in-out infinite", color: T.accent }}>▌</span></div>
                   )}
                 </div>
               )}
@@ -257,5 +298,6 @@ export default function NarrativePanel({ entries }: NarrativePanelProps) {
 
       <div ref={bottomRef} />
     </div>
+    </>
   );
 }

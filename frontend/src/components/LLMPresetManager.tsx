@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import T from "../theme";
 import type { LLMPreset, LLMPromptEntry, LLMApiConfig, LLMParameters } from "../types/game";
+import LLMDebugPanel from "./LLMDebugPanel";
+import type { LLMDebugEntry } from "./LLMDebugPanel";
 import {
   fetchLLMPresets,
   fetchLLMPreset,
@@ -255,7 +257,7 @@ function PromptEntryRow({
 
 // --- Main component ---
 
-export default function LLMPresetManager() {
+export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?: LLMDebugEntry[] }) {
   const [presets, setPresets] = useState<{ id: string; name: string; description: string }[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [preset, setPreset] = useState<LLMPreset>(makeBlankPreset());
@@ -268,7 +270,7 @@ export default function LLMPresetManager() {
   const [testResult, setTestResult] = useState("");
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
   const [globalPreset, setGlobalPreset] = useState("");
-  const [subTab, setSubTab] = useState<"presets" | "global">("presets");
+  const [subTab, setSubTab] = useState<"presets" | "global" | "debug">("presets");
 
   const loadPresets = useCallback(async () => {
     try {
@@ -447,7 +449,7 @@ export default function LLMPresetManager() {
   };
 
   // --- Sub-tab bar ---
-  const subTabBtn = (key: "presets" | "global", label: string) => (
+  const subTabBtn = (key: "presets" | "global" | "debug", label: string) => (
     <button
       key={key}
       onClick={() => setSubTab(key)}
@@ -474,6 +476,7 @@ export default function LLMPresetManager() {
         <div style={{ display: "flex", gap: "4px", marginBottom: "12px" }}>
           {subTabBtn("presets", "预设管理")}
           {subTabBtn("global", "全局设置")}
+          {subTabBtn("debug", `调试日志(${debugEntries.length})`)}
         </div>
 
         {subTab === "presets" && (
@@ -554,6 +557,10 @@ export default function LLMPresetManager() {
               <span style={{ fontSize: "11px", color: T.textDim }}>所有世界通用的默认 LLM 预设</span>
             </div>
           </>
+        )}
+
+        {subTab === "debug" && (
+          <LLMDebugPanel entries={debugEntries} defaultExpanded />
         )}
       </div>
     );

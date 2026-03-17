@@ -1839,6 +1839,18 @@ async def llm_generate(request: Request):
     messages = assemble_messages(preset, variables)
 
     async def event_stream():
+        # Send debug info before generation starts
+        debug_info = {
+            "presetId": preset_id,
+            "presetName": preset.get("name", preset_id),
+            "model": api_config.get("model", ""),
+            "baseUrl": api_config.get("baseUrl", ""),
+            "parameters": api_config.get("parameters", {}),
+            "messages": messages,
+            "variables": variables,
+        }
+        yield _format_sse("llm_debug", debug_info)
+
         async for event_type, event_data in call_llm_streaming(api_config, messages):
             yield _format_sse(event_type, event_data)
 

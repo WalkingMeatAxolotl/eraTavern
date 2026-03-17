@@ -18,6 +18,7 @@ import CompactCharacterInfo from "./components/CompactCharacterInfo";
 import CharacterPanel from "./components/CharacterPanel";
 import ActionMenu from "./components/ActionMenu";
 import NarrativePanel from "./components/NarrativePanel";
+import type { LLMDebugEntry } from "./components/LLMDebugPanel";
 import NavBar from "./components/NavBar";
 import WorldSidebar from "./components/WorldSidebar";
 import AddonSidebar from "./components/AddonSidebar";
@@ -42,6 +43,7 @@ export default function App() {
   const [actions, setActions] = useState<GameAction[]>([]);
   const [activeMapId, setActiveMapId] = useState<string>("");
   const [narrativeEntries, setNarrativeEntries] = useState<NarrativeEntry[]>([]);
+  const [debugEntries, setDebugEntries] = useState<LLMDebugEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [topView, setTopView] = useState<"location" | string>("location");
   const [compactTab, setCompactTab] = useState<"basic" | "clothing">("basic");
@@ -305,7 +307,7 @@ export default function App() {
     if (navPage === "variables") return <>{addonTab}<VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "events") return <>{addonTab}<EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
     if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "llm") return <LLMPresetManager key={sessionKey} />;
+    if (navPage === "llm") return <LLMPresetManager key={sessionKey} debugEntries={debugEntries} />;
     if (navPage === "settings") {
       return <SettingsPage
         worldId={currentWorldId}
@@ -426,6 +428,7 @@ export default function App() {
             ) : (
               <NarrativePanel
                 entries={narrativeEntries}
+                onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e])}
               />
             )}
           </div>
