@@ -42,8 +42,9 @@ tavernGame/
 │
 ├── user/                          用户私有数据（.gitignore）
 │   ├── saves/{worldId}/{slot}.json  存档文件
-│   └── llm-presets/{presetId}/      LLM 预设（含 API key）
-│       └── preset.json                完整预设（元信息 + API 配置 + 提示词条目）
+│   ├── llm-providers/{id}.json      API 服务配置（URL、Key、模型）
+│   └── llm-presets/{presetId}/      LLM 预设（引用 provider + 提示词条目）
+│       └── preset.json
 │
 ├── backend/
 │   ├── main.py                      FastAPI app, all REST/SSE endpoints
@@ -53,6 +54,7 @@ tavernGame/
 │   │   ├── character.py               角色加载, namespace, trait/ability/clothing logic
 │   │   ├── action.py                  行动执行, 条件求值, NPC 决策
 │   │   ├── llm_preset.py              LLM 预设文件 CRUD
+│   │   ├── llm_provider.py            LLM API 服务文件 CRUD
 │   │   ├── llm_engine.py              LLM 变量收集, 提示词组装, API 调用
 │   │   ├── map_engine.py              地图加载, grid 编译, distance/sense matrix
 │   │   ├── time_system.py             游戏时间 (GameTime), 天气, 季节
@@ -193,7 +195,7 @@ tavernGame/
 | 地图 | `/api/game/maps` | 地图 CRUD + 装饰预设 | map.md |
 | 世界变量 | `/api/game/world-variables` | 世界变量 CRUD | — |
 | 存档 | `/api/saves` | 存档 CRUD + 加载 | — |
-| LLM | `/api/llm` | 预设 CRUD、模型获取、连接测试、生成 | llm.md |
+| LLM | `/api/llm` | API 服务 CRUD、预设 CRUD、模型获取、连接测试、生成 | llm.md |
 | 资产 | `/api/assets`, `/assets` | 上传 + 静态 serve | — |
 
 ### SSE (`main.py: GET /api/events`)

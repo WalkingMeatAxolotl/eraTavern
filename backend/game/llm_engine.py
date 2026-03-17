@@ -644,7 +644,7 @@ def assemble_messages(
             continue
         messages.append({"role": role, "content": content})
 
-    post = preset.get("api", {}).get("postProcessing", "mergeConsecutiveSameRole")
+    post = preset.get("postProcessing") or preset.get("api", {}).get("postProcessing", "mergeConsecutiveSameRole")
     if post == "mergeConsecutiveSameRole":
         messages = _merge_consecutive(messages)
 

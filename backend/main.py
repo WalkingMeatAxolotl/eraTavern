@@ -27,6 +27,9 @@ from game.addon_loader import (
 from game.llm_preset import (
     list_presets, load_preset, save_preset, delete_preset,
 )
+from game.llm_provider import (
+    list_providers, load_provider, save_provider, delete_provider,
+)
 
 CONFIG_PATH = Path(__file__).parent.parent / "config.json"
 
@@ -1736,6 +1739,40 @@ async def delete_llm_preset(preset_id: str):
     return _resp(True, "")
 
 
+# --- LLM Provider API ---
+
+
+@app.get("/api/llm/providers")
+async def get_llm_providers():
+    """List all LLM providers."""
+    return {"providers": list_providers()}
+
+
+@app.get("/api/llm/providers/{provider_id:path}")
+async def get_llm_provider(provider_id: str):
+    """Get full provider data."""
+    data = load_provider(provider_id)
+    if data is None:
+        return _resp(False, "LLM_PROVIDER_NOT_FOUND")
+    return _resp(True, "", provider=data)
+
+
+@app.put("/api/llm/providers/{provider_id:path}")
+async def put_llm_provider(provider_id: str, request: Request):
+    """Create or update a provider."""
+    data = await request.json()
+    save_provider(provider_id, data)
+    return _resp(True, "")
+
+
+@app.delete("/api/llm/providers/{provider_id:path}")
+async def delete_llm_provider(provider_id: str):
+    """Delete a provider."""
+    if not delete_provider(provider_id):
+        return _resp(False, "LLM_PROVIDER_NOT_FOUND")
+    return _resp(True, "")
+
+
 @app.get("/api/llm/models")
 async def get_llm_models(base_url: str = Query(...), api_key: str = Query("")):
     """Proxy request to get available models from an OpenAI-compatible API."""
@@ -1826,11 +1863,26 @@ async def llm_generate(request: Request):
     if preset is None:
         return _resp(False, "LLM_PRESET_NOT_FOUND")
 
-    api_config = preset.get("api", {})
+    # Load provider (API config)
+    provider_id = preset.get("providerId", "")
+    if not provider_id:
+        # Migration: old preset with embedded api block
+        api_config = preset.get("api", {})
+    else:
+        provider = load_provider(provider_id)
+        if provider is None:
+            return _resp(False, "LLM_PROVIDER_NOT_FOUND")
+        api_config = provider
+
     if not api_config.get("baseUrl"):
         return _resp(False, "LLM_BASE_URL_EMPTY")
     if not api_config.get("model"):
         return _resp(False, "LLM_MODEL_EMPTY")
+
+    # Merge preset-level parameters into api_config for the call
+    preset_params = preset.get("parameters")
+    if preset_params:
+        api_config = {**api_config, "parameters": preset_params}
 
     # Collect variables and assemble messages
     if target_id:

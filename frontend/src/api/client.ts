@@ -1,4 +1,4 @@
-import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo, OutfitType, LLMPreset } from "../types/game";
+import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo, OutfitType, LLMPreset, LLMProvider } from "../types/game";
 import { translateError } from "../i18n/messages";
 
 const API_BASE = "/api/game";
@@ -851,6 +851,36 @@ export async function testLLMConnection(api: { baseUrl: string; apiKey: string; 
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ api }),
+  });
+  return handleResponse(res);
+}
+
+// --- LLM Provider API ---
+
+export async function fetchLLMProviders(): Promise<{ id: string; name: string }[]> {
+  const res = await fetch(`${LLM_BASE}/providers`);
+  const data = await handleResponse<{ providers: { id: string; name: string }[] }>(res);
+  return data.providers;
+}
+
+export async function fetchLLMProvider(id: string): Promise<LLMProvider> {
+  const res = await fetch(`${LLM_BASE}/providers/${encodeURIComponent(id)}`);
+  const data = await handleResponse<{ provider: LLMProvider }>(res);
+  return data.provider;
+}
+
+export async function saveLLMProvider(id: string, provider: LLMProvider): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${LLM_BASE}/providers/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(provider),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteLLMProvider(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${LLM_BASE}/providers/${encodeURIComponent(id)}`, {
+    method: "DELETE",
   });
   return handleResponse(res);
 }

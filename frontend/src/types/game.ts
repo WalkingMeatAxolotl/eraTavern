@@ -42,6 +42,7 @@ export interface GameMap {
   description?: string;
   defaultColor: string;
   backgroundImage?: string;
+  mapOverlayOpacity?: number;
   grid: MapGrid[][];
   cells: MapCell[];
 }
@@ -62,6 +63,7 @@ export interface RawMapData {
   description?: string;
   defaultColor: string;
   backgroundImage?: string;
+  mapOverlayOpacity?: number;
   grid: RawMapGrid[][];
   cells: MapCell[];
 }
@@ -504,7 +506,7 @@ export interface GameTime {
   displayText: string;
 }
 
-// --- LLM Preset types ---
+// --- LLM types ---
 
 export interface LLMParameters {
   temperature: number;
@@ -514,15 +516,15 @@ export interface LLMParameters {
   presencePenalty: number;
 }
 
-export interface LLMApiConfig {
+export interface LLMProvider {
+  id: string;
+  name: string;
   apiType: string;
   apiSource: string;
   baseUrl: string;
   apiKey: string;
   model: string;
   streaming: boolean;
-  postProcessing: string;
-  parameters: LLMParameters;
 }
 
 export interface LLMPromptEntry {
@@ -538,7 +540,9 @@ export interface LLMPreset {
   id: string;
   name: string;
   description: string;
-  api: LLMApiConfig;
+  providerId: string;
+  postProcessing: string;
+  parameters: LLMParameters;
   promptEntries: LLMPromptEntry[];
 }
 

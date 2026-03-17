@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import T from "../theme";
-import type { LLMPreset, LLMPromptEntry, LLMApiConfig, LLMParameters } from "../types/game";
+import type { LLMPreset, LLMPromptEntry, LLMParameters, LLMProvider } from "../types/game";
 import LLMDebugPanel from "./LLMDebugPanel";
 import type { LLMDebugEntry } from "./LLMDebugPanel";
 import {
@@ -8,6 +8,10 @@ import {
   fetchLLMPreset,
   saveLLMPreset,
   deleteLLMPreset,
+  fetchLLMProviders,
+  fetchLLMProvider,
+  saveLLMProvider,
+  deleteLLMProvider,
   fetchLLMModels,
   testLLMConnection,
   fetchConfig,
@@ -49,30 +53,36 @@ const btnStyle = (color: string): React.CSSProperties => ({
   fontSize: "13px",
 });
 
-// --- Default preset ---
+// --- Default objects ---
 
 function makeBlankPreset(): LLMPreset {
   return {
     id: "",
     name: "",
     description: "",
-    api: {
-      apiType: "chatCompletion",
-      apiSource: "openaiCompatible",
-      baseUrl: "",
-      apiKey: "",
-      model: "",
-      streaming: true,
-      postProcessing: "mergeConsecutiveSameRole",
-      parameters: {
-        temperature: 0.8,
-        maxTokens: 4096,
-        topP: 1.0,
-        frequencyPenalty: 0,
-        presencePenalty: 0,
-      },
+    providerId: "",
+    postProcessing: "mergeConsecutiveSameRole",
+    parameters: {
+      temperature: 0.8,
+      maxTokens: 4096,
+      topP: 1.0,
+      frequencyPenalty: 0,
+      presencePenalty: 0,
     },
     promptEntries: [],
+  };
+}
+
+function makeBlankProvider(): LLMProvider {
+  return {
+    id: "",
+    name: "",
+    apiType: "chatCompletion",
+    apiSource: "openaiCompatible",
+    baseUrl: "",
+    apiKey: "",
+    model: "",
+    streaming: true,
   };
 }
 
@@ -286,45 +296,229 @@ function PromptEntryRow({
   );
 }
 
+// --- Provider editor (inline in global settings) ---
+
+function ProviderEditor({
+  provider,
+  isNew,
+  onSave,
+  onDelete,
+  onBack,
+}: {
+  provider: LLMProvider;
+  isNew: boolean;
+  onSave: (p: LLMProvider) => void;
+  onDelete: () => void;
+  onBack: () => void;
+}) {
+  const [prov, setProv] = useState<LLMProvider>(provider);
+  const [modelList, setModelList] = useState<string[]>([]);
+  const [modelLoading, setModelLoading] = useState(false);
+  const [testResult, setTestResult] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleFetchModels = async () => {
+    const url = prov.baseUrl.trim();
+    if (!url) { setTestResult("请先填写 API URL"); return; }
+    setModelLoading(true);
+    setTestResult("");
+    try {
+      const models = await fetchLLMModels(url, prov.apiKey);
+      setModelList(models);
+      if (models.length === 0) setTestResult("未获取到模型");
+    } catch (e) {
+      setTestResult(`获取模型失败: ${e instanceof Error ? e.message : e}`);
+    } finally {
+      setModelLoading(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    const url = prov.baseUrl.trim();
+    if (!url) { setTestResult("请先填写 API URL"); return; }
+    if (!prov.model) { setTestResult("请先选择模型"); return; }
+    setTestResult("测试中...");
+    try {
+      const result = await testLLMConnection({ baseUrl: url, apiKey: prov.apiKey, model: prov.model });
+      setTestResult(result.success ? "连接成功 ✓" : (result.message || "连接失败"));
+    } catch (e) {
+      setTestResult(`连接失败: ${e instanceof Error ? e.message : e}`);
+    }
+  };
+
+  const handleSave = () => {
+    if (!prov.id.trim()) { setMessage("ID 不能为空"); return; }
+    if (!prov.name.trim()) { setMessage("名称不能为空"); return; }
+    onSave(prov);
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+          == {isNew ? "新建 API 服务" : "编辑 API 服务"} ==
+        </span>
+        <button onClick={onBack} style={btnStyle(T.textSub)}>[返回]</button>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
+          <div style={{ flex: 1 }}>
+            <div style={labelStyle}>ID</div>
+            <input
+              style={{ ...inputStyle, ...(isNew ? {} : { color: T.textDim }) }}
+              value={prov.id}
+              onChange={(e) => setProv((p) => ({ ...p, id: e.target.value }))}
+              disabled={!isNew}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={labelStyle}>名称</div>
+            <input
+              style={inputStyle}
+              value={prov.name}
+              onChange={(e) => setProv((p) => ({ ...p, name: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
+          <div style={{ flex: 2 }}>
+            <div style={labelStyle}>API URL</div>
+            <input
+              style={inputStyle}
+              value={prov.baseUrl}
+              onChange={(e) => setProv((p) => ({ ...p, baseUrl: e.target.value }))}
+              placeholder="http://127.0.0.1:8317/v1"
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={labelStyle}>API Key</div>
+            <input
+              style={inputStyle}
+              type="password"
+              value={prov.apiKey}
+              onChange={(e) => setProv((p) => ({ ...p, apiKey: e.target.value }))}
+              placeholder="（可选）"
+            />
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "12px", alignItems: "flex-end", marginBottom: "6px" }}>
+          <div style={{ flex: 2 }}>
+            <div style={labelStyle}>模型</div>
+            {modelList.length > 0 ? (
+              <select
+                style={inputStyle}
+                value={prov.model}
+                onChange={(e) => setProv((p) => ({ ...p, model: e.target.value }))}
+              >
+                <option value="">-- 选择模型 --</option>
+                {modelList.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            ) : (
+              <input
+                style={inputStyle}
+                value={prov.model}
+                onChange={(e) => setProv((p) => ({ ...p, model: e.target.value }))}
+                placeholder="模型名称"
+              />
+            )}
+          </div>
+          <button onClick={handleFetchModels} disabled={modelLoading} style={btnStyle(T.textSub)}>
+            {modelLoading ? "[获取中...]" : "[获取模型]"}
+          </button>
+          <button onClick={handleTestConnection} style={btnStyle(T.textSub)}>
+            [测试连接]
+          </button>
+        </div>
+        {testResult && (
+          <div style={{ color: testResult.includes("✓") ? T.success : T.danger, fontSize: "12px", marginBottom: "6px" }}>
+            {testResult}
+          </div>
+        )}
+
+        <div>
+          <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "4px" }}>
+            <input
+              type="checkbox"
+              checked={prov.streaming}
+              onChange={(e) => setProv((p) => ({ ...p, streaming: e.target.checked }))}
+              style={{ accentColor: T.accent }}
+            />
+            流式输出
+          </label>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <button onClick={handleSave} style={btnStyle(T.successDim)}>[保存]</button>
+        {!isNew && (
+          <button onClick={onDelete} style={btnStyle(T.danger)}>[删除]</button>
+        )}
+        <button onClick={onBack} style={btnStyle(T.textSub)}>[返回]</button>
+        {message && (
+          <span style={{ color: T.danger, fontSize: "12px" }}>{message}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- Main component ---
 
 export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?: LLMDebugEntry[] }) {
   const [presets, setPresets] = useState<{ id: string; name: string; description: string }[]>([]);
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [preset, setPreset] = useState<LLMPreset>(makeBlankPreset());
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
-  const [modelList, setModelList] = useState<string[]>([]);
-  const [modelLoading, setModelLoading] = useState(false);
-  const [testResult, setTestResult] = useState("");
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
   const [globalPreset, setGlobalPreset] = useState("");
-  const [subTab, setSubTab] = useState<"presets" | "global" | "debug">("presets");
+  const [subTab, setSubTab] = useState<"presets" | "providers" | "global" | "debug">("presets");
 
-  const loadPresets = useCallback(async () => {
+  // Provider editor state (within global tab)
+  const [editingProvider, setEditingProvider] = useState<LLMProvider | null>(null);
+  const [isNewProvider, setIsNewProvider] = useState(false);
+  const [providerMessage, setProviderMessage] = useState("");
+
+  const loadAll = useCallback(async () => {
     try {
-      const [list, cfg] = await Promise.all([fetchLLMPresets(), fetchConfig()]);
-      setPresets(list);
+      const [presetList, providerList, cfg] = await Promise.all([
+        fetchLLMPresets(), fetchLLMProviders(), fetchConfig(),
+      ]);
+      setPresets(presetList);
+      setProviders(providerList);
       setGlobalPreset(cfg.defaultLlmPreset || "");
     } catch (e) {
-      console.error("Failed to load presets:", e);
+      console.error("Failed to load LLM data:", e);
     }
   }, []);
 
-  useEffect(() => { loadPresets(); }, [loadPresets]);
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  // --- Preset handlers ---
 
   const handleSelectPreset = async (id: string) => {
     try {
       const data = await fetchLLMPreset(id);
+      // Migrate old preset format: extract api block into top-level fields
+      const raw = data as any;
+      if (raw.api && !raw.parameters) {
+        data.parameters = raw.api.parameters || makeBlankPreset().parameters;
+        data.postProcessing = raw.api.postProcessing || "mergeConsecutiveSameRole";
+        if (!data.providerId) data.providerId = "";
+      }
+      if (!data.parameters) data.parameters = makeBlankPreset().parameters;
+      if (!data.postProcessing) data.postProcessing = "mergeConsecutiveSameRole";
       setPreset(data);
       setEditingId(id);
       setIsNew(false);
       setMessage("");
       setExpandedEntry(null);
-      setModelList([]);
-      setTestResult("");
     } catch (e) {
       setMessage(`加载失败: ${e instanceof Error ? e.message : e}`);
     }
@@ -336,15 +530,13 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
     setIsNew(true);
     setMessage("");
     setExpandedEntry(null);
-    setModelList([]);
-    setTestResult("");
   };
 
   const handleBack = () => {
     setEditingId(null);
     setIsNew(false);
     setMessage("");
-    loadPresets();
+    loadAll();
   };
 
   const handleSave = async () => {
@@ -361,7 +553,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
           setIsNew(false);
           setEditingId(id);
         }
-        loadPresets();
+        loadAll();
       } else {
         setMessage(result.message || "保存失败");
       }
@@ -389,47 +581,62 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
     }
   };
 
-  const handleFetchModels = async () => {
-    const url = preset.api.baseUrl.trim();
-    if (!url) { setTestResult("请先填写 API URL"); return; }
-    setModelLoading(true);
-    setTestResult("");
+  // --- Provider handlers ---
+
+  const handleNewProvider = () => {
+    setEditingProvider(makeBlankProvider());
+    setIsNewProvider(true);
+    setProviderMessage("");
+  };
+
+  const handleEditProvider = async (id: string) => {
     try {
-      const models = await fetchLLMModels(url, preset.api.apiKey);
-      setModelList(models);
-      if (models.length === 0) setTestResult("未获取到模型");
+      const data = await fetchLLMProvider(id);
+      setEditingProvider(data);
+      setIsNewProvider(false);
+      setProviderMessage("");
     } catch (e) {
-      setTestResult(`获取模型失败: ${e instanceof Error ? e.message : e}`);
-    } finally {
-      setModelLoading(false);
+      setProviderMessage(`加载失败: ${e instanceof Error ? e.message : e}`);
     }
   };
 
-  const handleTestConnection = async () => {
-    const url = preset.api.baseUrl.trim();
-    if (!url) { setTestResult("请先填写 API URL"); return; }
-    if (!preset.api.model) { setTestResult("请先选择模型"); return; }
-    setTestResult("测试中...");
+  const handleSaveProvider = async (prov: LLMProvider) => {
     try {
-      const result = await testLLMConnection({
-        baseUrl: url,
-        apiKey: preset.api.apiKey,
-        model: preset.api.model,
-      });
-      setTestResult(result.success ? "连接成功 ✓" : (result.message || "连接失败"));
+      const result = await saveLLMProvider(prov.id, prov);
+      if (result.success) {
+        setEditingProvider(null);
+        setProviderMessage("已保存");
+        loadAll();
+      } else {
+        setProviderMessage(result.message || "保存失败");
+      }
     } catch (e) {
-      setTestResult(`连接失败: ${e instanceof Error ? e.message : e}`);
+      setProviderMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
     }
   };
 
-  const updateApi = (patch: Partial<LLMApiConfig>) => {
-    setPreset((p) => ({ ...p, api: { ...p.api, ...patch } }));
+  const handleDeleteProvider = async () => {
+    if (!editingProvider) return;
+    if (!confirm(`确定要删除 API 服务「${editingProvider.name || editingProvider.id}」吗？`)) return;
+    try {
+      const result = await deleteLLMProvider(editingProvider.id);
+      if (result.success) {
+        setEditingProvider(null);
+        loadAll();
+      } else {
+        setProviderMessage(result.message || "删除失败");
+      }
+    } catch (e) {
+      setProviderMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
+    }
   };
+
+  // --- Preset entry handlers ---
 
   const updateParams = (patch: Partial<LLMParameters>) => {
     setPreset((p) => ({
       ...p,
-      api: { ...p.api, parameters: { ...p.api.parameters, ...patch } },
+      parameters: { ...p.parameters, ...patch },
     }));
   };
 
@@ -439,22 +646,6 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       entries[idx] = entry;
       return { ...p, promptEntries: entries };
     });
-  };
-
-  const moveEntry = (idx: number, dir: -1 | 1) => {
-    const target = idx + dir;
-    setPreset((p) => {
-      const entries = [...p.promptEntries];
-      if (target < 0 || target >= entries.length) return p;
-      // Swap positions
-      const tmpPos = entries[idx].position;
-      entries[idx] = { ...entries[idx], position: entries[target].position };
-      entries[target] = { ...entries[target], position: tmpPos };
-      // Swap array positions
-      [entries[idx], entries[target]] = [entries[target], entries[idx]];
-      return { ...p, promptEntries: entries };
-    });
-    setExpandedEntry((cur) => (cur === idx ? target : cur === target ? idx : cur));
   };
 
   const deleteEntry = (idx: number) => {
@@ -480,7 +671,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
   };
 
   // --- Sub-tab bar ---
-  const subTabBtn = (key: "presets" | "global" | "debug", label: string) => (
+  const subTabBtn = (key: "presets" | "providers" | "global" | "debug", label: string) => (
     <button
       key={key}
       onClick={() => setSubTab(key)}
@@ -506,6 +697,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
         {/* Sub-tabs */}
         <div style={{ display: "flex", gap: "4px", marginBottom: "12px" }}>
           {subTabBtn("presets", "预设管理")}
+          {subTabBtn("providers", "接口管理")}
           {subTabBtn("global", "全局设置")}
           {subTabBtn("debug", `调试日志(${debugEntries.length})`)}
         </div>
@@ -560,6 +752,69 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
             {message && (
               <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>
+            )}
+          </>
+        )}
+
+        {subTab === "providers" && (
+          <>
+            {editingProvider ? (
+              <ProviderEditor
+                provider={editingProvider}
+                isNew={isNewProvider}
+                onSave={handleSaveProvider}
+                onDelete={handleDeleteProvider}
+                onBack={() => { setEditingProvider(null); loadAll(); }}
+              />
+            ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+                    == API 服务 ==
+                  </span>
+                  <button onClick={handleNewProvider} style={btnStyle(T.successDim)}>[+ 新建]</button>
+                </div>
+
+                {providers.length === 0 && (
+                  <div style={{ color: T.textDim, fontSize: "12px", padding: "8px 0" }}>
+                    暂无 API 服务。点击 [+ 新建] 添加 LLM 接口配置。
+                  </div>
+                )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {providers.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleEditProvider(p.id)}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "8px 12px",
+                        backgroundColor: T.bg1,
+                        color: T.text,
+                        border: `1px solid ${T.border}`,
+                        borderRadius: "3px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        textAlign: "left",
+                        transition: "border-color 0.15s",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = T.borderLight)}
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.border)}
+                    >
+                      <span style={{ fontWeight: "bold" }}>{p.name || p.id}</span>
+                      <span style={{ color: T.textDim, fontSize: "11px" }}>{p.id}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {providerMessage && (
+                  <div style={{ color: providerMessage === "已保存" ? T.success : T.danger, fontSize: "12px", marginTop: "8px" }}>
+                    {providerMessage}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -642,97 +897,50 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
         </div>
       </div>
 
-      {/* API config */}
+      {/* API service + parameters */}
       <div style={sectionStyle}>
-        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>API 配置</div>
+        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>API 服务 & 参数</div>
         <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
           <div style={{ flex: 2 }}>
-            <div style={labelStyle}>API URL</div>
-            <input
+            <div style={labelStyle}>API 服务</div>
+            <select
               style={inputStyle}
-              value={preset.api.baseUrl}
-              onChange={(e) => updateApi({ baseUrl: e.target.value })}
-              placeholder="http://127.0.0.1:8317/v1"
-            />
+              value={preset.providerId}
+              onChange={(e) => setPreset((p) => ({ ...p, providerId: e.target.value }))}
+            >
+              <option value="">-- 选择 API 服务 --</option>
+              {providers.map((p) => (
+                <option key={p.id} value={p.id}>{p.name || p.id}</option>
+              ))}
+            </select>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>API Key</div>
-            <input
-              style={inputStyle}
-              type="password"
-              value={preset.api.apiKey}
-              onChange={(e) => updateApi({ apiKey: e.target.value })}
-              placeholder="（可选）"
-            />
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "flex-end", marginBottom: "6px" }}>
-          <div style={{ flex: 2 }}>
-            <div style={labelStyle}>模型</div>
-            {modelList.length > 0 ? (
-              <select
-                style={inputStyle}
-                value={preset.api.model}
-                onChange={(e) => updateApi({ model: e.target.value })}
-              >
-                <option value="">-- 选择模型 --</option>
-                {modelList.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            ) : (
-              <input
-                style={inputStyle}
-                value={preset.api.model}
-                onChange={(e) => updateApi({ model: e.target.value })}
-                placeholder="模型名称"
-              />
-            )}
-          </div>
-          <button onClick={handleFetchModels} disabled={modelLoading} style={btnStyle(T.textSub)}>
-            {modelLoading ? "[获取中...]" : "[获取模型]"}
-          </button>
-          <button onClick={handleTestConnection} style={btnStyle(T.textSub)}>
-            [测试连接]
-          </button>
-        </div>
-        {testResult && (
-          <div style={{ color: testResult.includes("✓") ? T.success : T.danger, fontSize: "12px", marginBottom: "6px" }}>
-            {testResult}
-          </div>
-        )}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div>
-            <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "4px" }}>
-              <input
-                type="checkbox"
-                checked={preset.api.streaming}
-                onChange={(e) => updateApi({ streaming: e.target.checked })}
-                style={{ accentColor: T.accent }}
-              />
-              流式输出
-            </label>
-          </div>
-          <div>
             <div style={labelStyle}>后处理</div>
             <select
-              style={{ ...inputStyle, width: "auto" }}
-              value={preset.api.postProcessing}
-              onChange={(e) => updateApi({ postProcessing: e.target.value })}
+              style={inputStyle}
+              value={preset.postProcessing}
+              onChange={(e) => setPreset((p) => ({ ...p, postProcessing: e.target.value }))}
             >
               <option value="mergeConsecutiveSameRole">合并相邻同角色</option>
               <option value="none">不处理</option>
             </select>
           </div>
         </div>
+        {!preset.providerId && (
+          <div style={{ color: T.danger, fontSize: "11px", marginBottom: "6px" }}>
+            请选择 API 服务，或在 [全局设置] 中新建
+          </div>
+        )}
 
         {/* Generation parameters */}
         <div style={{ color: T.textSub, fontSize: "11px", fontWeight: "bold", marginBottom: "4px", marginTop: "8px" }}>生成参数</div>
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
           {([
-            ["temperature", "Temperature", preset.api.parameters.temperature],
-            ["maxTokens", "Max Tokens", preset.api.parameters.maxTokens],
-            ["topP", "Top P", preset.api.parameters.topP],
-            ["frequencyPenalty", "Freq Penalty", preset.api.parameters.frequencyPenalty],
-            ["presencePenalty", "Pres Penalty", preset.api.parameters.presencePenalty],
+            ["temperature", "Temperature", preset.parameters.temperature],
+            ["maxTokens", "Max Tokens", preset.parameters.maxTokens],
+            ["topP", "Top P", preset.parameters.topP],
+            ["frequencyPenalty", "Freq Penalty", preset.parameters.frequencyPenalty],
+            ["presencePenalty", "Pres Penalty", preset.parameters.presencePenalty],
           ] as [keyof LLMParameters, string, number][]).map(([key, label, val]) => (
             <div key={key} style={{ width: "120px" }}>
               <div style={labelStyle}>{label}</div>
