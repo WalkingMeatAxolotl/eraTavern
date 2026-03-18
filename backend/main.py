@@ -4,32 +4,41 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
-
-import shutil
 
 from fastapi import Body, FastAPI, File, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
-from game.state import GameState, list_available_worlds, list_available_addons, list_available_games
-from game.action import get_available_actions, execute_action, evaluate_events
-from game.map_engine import compile_grid
-from game.character import namespace_id, to_local_id, get_addon_from_id
+from game.action import evaluate_events, execute_action, get_available_actions
 from game.addon_loader import (
-    ADDONS_DIR, get_addon_dir, fork_addon_version, list_addon_versions,
-    list_addon_versions_detail, copy_addon_version, overwrite_addon_version,
-    build_addon_dirs,
+    ADDONS_DIR,
+    copy_addon_version,
+    fork_addon_version,
+    get_addon_dir,
+    list_addon_versions,
+    list_addon_versions_detail,
+    overwrite_addon_version,
 )
+from game.character import get_addon_from_id, namespace_id, to_local_id
 from game.llm_preset import (
-    list_presets, load_preset, save_preset, delete_preset,
+    delete_preset,
+    list_presets,
+    load_preset,
+    save_preset,
 )
 from game.llm_provider import (
-    list_providers, load_provider, save_provider, delete_provider,
+    delete_provider,
+    list_providers,
+    load_provider,
+    save_provider,
 )
+from game.map_engine import compile_grid
+from game.state import GameState, list_available_addons, list_available_worlds
 
 CONFIG_PATH = Path(__file__).parent.parent / "config.json"
 
@@ -122,7 +131,7 @@ def _resp(success: bool, error: str, params: Optional[dict] = None, **extra) -> 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global game_state
-    from game.addon_loader import save_world_config, WORLDS_DIR
+    from game.addon_loader import save_world_config
     game_state = GameState()
 
     config = load_config()
@@ -280,7 +289,7 @@ class CreateWorldRequest(BaseModel):
 @app.post("/api/worlds")
 async def create_world(req: CreateWorldRequest):
     """Create a new world. Addon versions will be forked on first load."""
-    from game.addon_loader import save_world_config, WORLDS_DIR
+    from game.addon_loader import WORLDS_DIR, save_world_config
     if err := _validate_id(req.id):
         return err
     world_dir = WORLDS_DIR / req.id
@@ -300,8 +309,9 @@ async def create_world(req: CreateWorldRequest):
 @app.delete("/api/worlds/{world_id}")
 async def delete_world(world_id: str):
     """Delete a world."""
-    from game.addon_loader import WORLDS_DIR
     import shutil as _shutil
+
+    from game.addon_loader import WORLDS_DIR
     world_dir = WORLDS_DIR / world_id
     if not world_dir.exists():
         return _resp(False, "WORLD_NOT_FOUND", {"id": world_id})
@@ -312,7 +322,7 @@ async def delete_world(world_id: str):
 @app.put("/api/worlds/{world_id}")
 async def update_world(world_id: str):
     """Update existing world config with current session state."""
-    from game.addon_loader import load_world_config, save_world_config, WORLDS_DIR
+    from game.addon_loader import WORLDS_DIR, load_world_config, save_world_config
     world_dir = WORLDS_DIR / world_id
     if not world_dir.exists():
         return _resp(False, "WORLD_NOT_FOUND", {"id": world_id})
@@ -325,7 +335,7 @@ async def update_world(world_id: str):
 @app.put("/api/worlds/{world_id}/meta")
 async def update_world_meta(world_id: str, body: dict = Body(...)):
     """Update world metadata (name, description, cover)."""
-    from game.addon_loader import load_world_config, save_world_config, WORLDS_DIR
+    from game.addon_loader import WORLDS_DIR, load_world_config, save_world_config
     world_dir = WORLDS_DIR / world_id
     if not world_dir.exists():
         return _resp(False, "WORLD_NOT_FOUND", {"id": world_id})
@@ -347,7 +357,7 @@ async def update_addon_meta(addon_id: str, version: str, body: dict = Body(...))
 
     Writes to addons/{addonId}/meta.json (shared across all versions).
     """
-    from game.addon_loader import save_addon_shared_meta, load_addon_shared_meta, ADDONS_DIR
+    from game.addon_loader import ADDONS_DIR, load_addon_shared_meta, save_addon_shared_meta
     addon_base = ADDONS_DIR / addon_id
     if not addon_base.exists():
         return _resp(False, "ADDON_NOT_FOUND", {"id": addon_id})
@@ -517,8 +527,9 @@ async def list_saves_endpoint():
 @app.post("/api/saves")
 async def create_save_endpoint(body: dict = Body(...)):
     """Create or overwrite a save slot."""
-    from game.save_manager import create_save, list_saves, MAX_SLOTS
     from datetime import datetime
+
+    from game.save_manager import MAX_SLOTS, create_save, list_saves
     if not game_state.world_id:
         return _resp(False, "NO_WORLD_LOADED")
     slot_id = body.get("slotId", "")
@@ -601,7 +612,7 @@ async def serve_asset(path: str):
       - {addonId}/{subfolder}/{filename} — addon assets
     Searches both about/ and assets/ subdirectories.
     """
-    from game.addon_loader import WORLDS_DIR, ADDONS_DIR
+    from game.addon_loader import ADDONS_DIR, WORLDS_DIR
 
     parts = path.split("/", 1)
     if len(parts) == 2:
@@ -1686,7 +1697,7 @@ async def save_session(body: dict = Body({})):
 @app.post("/api/session/save-as")
 async def save_session_as(body: dict = Body(...)):
     """Create a new world from current in-memory state, fork addons, and save."""
-    from game.addon_loader import save_world_config, WORLDS_DIR
+    from game.addon_loader import WORLDS_DIR, save_world_config
     world_id = body.get("id", "").strip()
     world_name = body.get("name", "").strip()
     if not world_id or not world_name:
@@ -1913,8 +1924,10 @@ async def test_llm_connection(request: Request):
 async def llm_generate(request: Request):
     """Trigger LLM generation. Returns SSE stream with llm_chunk/llm_done/llm_error events."""
     from game.llm_engine import (
-        build_raw_output, collect_variables, assemble_messages,
-        resolve_preset_id, call_llm_streaming,
+        assemble_messages,
+        call_llm_streaming,
+        collect_variables,
+        resolve_preset_id,
     )
     data = await request.json()
 

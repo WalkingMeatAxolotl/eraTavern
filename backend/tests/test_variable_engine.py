@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-from game.variable_engine import evaluate_variable, evaluate_variable_debug, _apply_op
-
+from game.variable_engine import _apply_op, evaluate_variable, evaluate_variable_debug
 
 # --- _apply_op tests ---
 

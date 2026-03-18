@@ -6,46 +6,43 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-from .map_engine import load_map_collection, load_decor_presets
+from .addon_loader import (
+    build_addon_dirs,
+    load_world_config,
+    save_world_config,
+)
+from .addon_loader import (
+    list_addons as _list_addons,
+)
+from .addon_loader import (
+    list_worlds as _list_worlds,
+)
+from .addon_loader import (
+    load_template as _load_global_template,
+)
 from .character import (
-    load_template,
+    build_character_state,
+    get_ability_defs,
+    get_experience_defs,
+    load_action_defs,
+    load_characters,
     load_clothing_defs,
-    load_outfit_types,
+    load_event_defs,
     load_item_defs,
     load_item_tags,
-    load_action_defs,
+    load_lorebook_entries,
+    load_outfit_types,
     load_trait_defs,
     load_trait_groups,
     load_variable_defs,
     load_variable_tags,
-    load_event_defs,
-    load_lorebook_entries,
     load_world_variable_defs,
-    load_characters,
-    build_character_state,
-    get_ability_defs,
-    get_experience_defs,
-    apply_ability_decay,
-    namespace_character_data,
     namespace_action_refs,
-    namespace_id,
-    to_local_id,
+    namespace_character_data,
     resolve_ref,
-    get_addon_from_id,
+    to_local_id,
 )
-from .addon_loader import (
-    ADDONS_DIR,
-    list_addons as _list_addons,
-    list_worlds as _list_worlds,
-    load_world_config,
-    save_world_config,
-    build_addon_dirs,
-    load_template as _load_global_template,
-    get_addon_dir,
-    get_world_dir,
-    fork_addon_version,
-    is_world_fork,
-)
+from .map_engine import load_decor_presets, load_map_collection
 from .time_system import GameTime
 
 
@@ -339,13 +336,21 @@ class GameState:
     def _persist_entity_files(self) -> None:
         """Write all entities to their respective addon directories (by source)."""
         from .character import (
-            save_clothing_defs_file, save_item_defs_file, save_item_tags_file,
-            save_trait_defs_file, save_action_defs_file, save_trait_groups_file,
-            save_variable_defs_file, save_variable_tags_file,
-            save_event_defs_file, save_lorebook_file, save_world_variable_defs_file,
+            save_action_defs_file,
             save_character,
+            save_clothing_defs_file,
+            save_event_defs_file,
+            save_item_defs_file,
+            save_item_tags_file,
+            save_lorebook_file,
+            save_trait_defs_file,
+            save_trait_groups_file,
+            save_variable_defs_file,
+            save_variable_tags_file,
+            save_world_variable_defs_file,
         )
-        from .map_engine import save_map_file, save_decor_presets as _save_decor_presets
+        from .map_engine import save_decor_presets as _save_decor_presets
+        from .map_engine import save_map_file
 
         # Build addon_id → path lookup
         addon_dir_map: dict[str, Path] = {aid: apath for aid, apath in self.addon_dirs}

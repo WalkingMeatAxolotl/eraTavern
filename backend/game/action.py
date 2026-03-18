@@ -476,7 +476,7 @@ def _check_costs(costs: list[dict], char: dict) -> tuple[bool, str]:
                     found = inv["amount"]
                     break
             if found < amount:
-                return False, f"物品不足"
+                return False, "物品不足"
 
     return True, ""
 
@@ -844,7 +844,6 @@ def filter_visible_npc_log(
 
 def _npc_tick(game_state: Any, npc_id: str) -> str | None:
     """Process one tick for a single NPC. Returns activity text or None."""
-    import random
 
     npc = game_state.characters.get(npc_id)
     if not npc:
@@ -1194,7 +1193,6 @@ def _execute_configured(
     game_state: Any, character_id: str, action_def: dict, action: dict
 ) -> dict:
     """Execute a configured action from actions.json."""
-    import random
 
     char = game_state.characters.get(character_id)
     if not char:

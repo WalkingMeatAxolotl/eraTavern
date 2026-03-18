@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from game.action import _check_costs, _apply_costs
+from game.action import _apply_costs, _check_costs
 from tests.conftest import make_character
 
 

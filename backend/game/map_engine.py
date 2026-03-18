@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
+
 def load_map_collection(data_dir_or_addons: "Path | AddonDirs") -> dict:
     """Load maps from addon directories (or legacy single data_dir).
 

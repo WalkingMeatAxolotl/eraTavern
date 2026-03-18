@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import pytest
 from game.character import (
-    namespace_id,
-    to_local_id,
-    resolve_ref,
-    validate_local_id,
-    _strip_ref,
-    _strip_internal_fields,
-    exp_to_grade,
-    strip_character_namespaces,
-    NS_SEP,
     SYMBOLIC_REFS,
+    _strip_internal_fields,
+    _strip_ref,
+    exp_to_grade,
+    namespace_id,
+    resolve_ref,
+    strip_character_namespaces,
+    to_local_id,
+    validate_local_id,
 )
 
 

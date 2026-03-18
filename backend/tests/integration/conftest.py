@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-import sys
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -234,6 +234,7 @@ def api_client(tmp_path, monkeypatch):
     Returns (client, game_state).
     """
     import json as _json
+
     import game.addon_loader as loader
     from game.state import GameState
 

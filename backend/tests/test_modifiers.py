@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from game.action import _calc_modifier_bonus
-from tests.conftest import MockGameState, make_character, make_char_data
 
 
 class TestAbilityModifier:

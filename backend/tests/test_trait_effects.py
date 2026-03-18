@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-from game.character import _collect_effects, _apply_all_effects
+from game.character import _apply_all_effects, _collect_effects
 
 
 class TestCollectEffects:

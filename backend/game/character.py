@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 GRADES = ["G", "F", "E", "D", "C", "B", "A", "S"]
 

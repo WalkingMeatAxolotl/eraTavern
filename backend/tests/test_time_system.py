@@ -5,12 +5,11 @@ from __future__ import annotations
 import random
 
 import pytest
+
 from game.time_system import (
-    GameTime,
-    SEASONS,
-    SEASON_WEATHER_WEIGHTS,
     WEATHER_IDS,
     WEATHER_TABLE,
+    GameTime,
 )
 
 

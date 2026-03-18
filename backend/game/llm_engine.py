@@ -8,9 +8,6 @@ from typing import Any, Optional
 
 import httpx
 
-from game.llm_preset import load_preset
-
-
 # ---------------------------------------------------------------------------
 # Variable helpers
 # ---------------------------------------------------------------------------

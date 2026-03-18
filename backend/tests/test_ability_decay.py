@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from game.character import apply_ability_decay, exp_to_grade
 
 

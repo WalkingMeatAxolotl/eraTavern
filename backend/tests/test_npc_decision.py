@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from game.action import (
+    TICK_MINUTES,
     _build_suggest_map,
     _npc_choose_action,
     _npc_tick,
     simulate_npc_ticks,
-    TICK_MINUTES,
 )
-from tests.conftest import MockGameState, make_character, make_char_data
-
+from tests.conftest import make_char_data, make_character
 
 # ========================
 # _build_suggest_map

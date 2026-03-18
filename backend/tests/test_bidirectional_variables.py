@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from game.variable_engine import evaluate_variable, evaluate_variable_debug
-from tests.conftest import MockGameState, make_character, make_char_data
+from tests.conftest import MockGameState, make_char_data
 
 
 def _make_char(abilities=None, resources=None, traits=None, experiences=None, inventory=None):

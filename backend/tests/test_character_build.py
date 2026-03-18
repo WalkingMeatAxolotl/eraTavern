@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
 from game.character import build_character_state, build_clothing_state, exp_to_grade
-
 
 # ---------------------------------------------------------------------------
 # Helper factories

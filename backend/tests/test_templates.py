@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from game.action import _select_output_template, _resolve_template
-from tests.conftest import MockGameState, make_character, make_char_data
-
+from game.action import _resolve_template, _select_output_template
 
 # ========================
 # _select_output_template

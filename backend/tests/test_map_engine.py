@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-from game.map_engine import compile_grid, validate_move, build_distance_matrix, build_sense_matrix
+from game.map_engine import build_distance_matrix, build_sense_matrix, compile_grid, validate_move
 
 
 def _make_map(cells, grid=None, connections_map=None, default_color="#FFF"):

@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-from tests.conftest import MockGameState, make_character
 from game.action import _should_fire_event, _update_event_state, evaluate_events
-
+from tests.conftest import MockGameState
 
 # ---------------------------------------------------------------------------
 # Helpers

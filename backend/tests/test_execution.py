@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from game.action import execute_action, _roll_outcome, _snap_to_tick
-from tests.conftest import MockGameState, make_character, make_char_data
+from game.action import _roll_outcome, _snap_to_tick, execute_action
 
 
 def _add_connection(game_state, from_map, from_cell, to_map, to_cell, travel_time=5, sense_only=False):
