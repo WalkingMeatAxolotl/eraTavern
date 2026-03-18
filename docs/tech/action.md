@@ -35,14 +35,19 @@ interface ActionDefinition {
 
 ### ConditionItem
 
-条件系统支持叶节点和逻辑组合，形成递归树结构：
+条件系统支持叶节点和逻辑组合，形成递归树结构。
+
+**术语说明：**
+- **执行者**（self）：执行行动的角色
+- **目标角色**（target）：行动目标角色
 
 ```typescript
 // 叶节点
 interface ActionCondition {
-  type: "location" | "npcPresent" | "npcAbsent" | "resource" | "ability"
-      | "trait" | "noTrait" | "favorability" | "hasItem" | "clothing"
-      | "time" | "basicInfo" | "variable" | "worldVar";
+  type: "location" | "npcPresent" | "resource" | "ability"
+      | "trait" | "favorability" | "hasItem" | "clothing"
+      | "time" | "basicInfo" | "variable" | "worldVar"
+      | "experience" | "outfit";
   condTarget?: "self" | "target";  // 检查谁的属性（默认 self）
 
   // location
@@ -50,7 +55,7 @@ interface ActionCondition {
   cellIds?: number[];
   cellTags?: string[];      // 展开为匹配 tag 的 cellId 列表
 
-  // npcPresent / npcAbsent
+  // npcPresent
   npcId?: string;           // 为空时检查"任意 NPC"
 
   // resource / ability / basicInfo / variable / favorability
@@ -58,23 +63,32 @@ interface ActionCondition {
   op?: string;              // 比较运算符: >=, <=, >, <, ==, !=
   value?: number;           // 比较值
 
-  // trait / noTrait
+  // trait
   traitId?: string;
 
-  // hasItem
+  // hasItem — 支持数量比较
   itemId?: string;
   tag?: string;             // 按标签匹配物品
+  // op + value: 可选，指定时按匹配物品总数量比较（如 op=">=" value=3）
+  //             不指定时只检查是否存在
 
   // clothing
   slot?: string;            // 槽位名
   itemId?: string;          // 可选：指定衣物 ID（不指定则匹配任意衣物）
   state?: string;           // 可选：穿着状态（worn / halfWorn / none / empty）
 
-  // time
+  // time — 含天气
   hourMin?: number;
   hourMax?: number;
   dayOfWeek?: string;       // 星期几（"星期一"～"星期日"）
   season?: string;          // 季节（"春"/"夏"/"秋"/"冬"）
+  weather?: string;         // 天气名称
+
+  // experience — 经验记录次数比较
+  // 使用 key + op + value
+
+  // outfit — 服装预设检查
+  outfitId?: string;        // 预设 ID（如 "default"）
 
   // favorability
   targetId?: string;        // 好感度对象
@@ -85,6 +99,9 @@ interface ActionCondition {
   // worldVar（使用 key 字段，不是 varId）
   // key?: string;          // 世界变量名（复用上方 key 字段）
 }
+
+// 注意：旧版 npcAbsent / noTrait 仍兼容但不推荐，
+// 应使用 { not: { type: "npcPresent" } } 和 { not: { type: "trait" } } 替代
 
 // 逻辑组合 — 用键名区分，非 type 字段
 type ConditionItem =
@@ -169,24 +186,78 @@ interface ActionEffect {
 type WeightModifier = ValueModifier;
 
 interface ValueModifier {
-  type: "ability" | "trait" | "favorability" | "experience" | "variable" | "worldVar";
-  key?: string;         // ability key / trait category key / experience key / worldVar key
+  type: "ability" | "trait" | "favorability" | "experience" | "variable" | "worldVar"
+      | "resource" | "basicInfo" | "hasItem" | "outfit" | "clothing";
+  modTarget?: "self" | "target";  // 检查谁的属性（默认 "self"，即执行者）
+  key?: string;         // ability / trait category / experience / worldVar / resource / basicInfo key
   value?: string;       // trait: 匹配的特质值
   source?: string;      // favorability: "target"（默认）或 "self"
   per?: number;         // 每 per 单位属性值提供一次 bonus
   bonus: number;        // 加成值
   bonusMode?: "add" | "multiply";  // "add"（默认）: 累加 / "multiply": 乘数百分比
   varId?: string;       // variable 类型的变量 ID
+  itemId?: string;      // hasItem / clothing 的物品 ID
+  outfitId?: string;    // outfit 的预设 ID
+  slot?: string;        // clothing 的槽位名
 }
 ```
 
-**计算规则：**
+**各 type 计算方式：**
+
+| type | 计算 |
+|------|------|
+| `ability` | `floor(能力经验 / per) × bonus` |
+| `resource` | `floor(资源值 / per) × bonus` |
+| `basicInfo` | `floor(基础信息数值 / per) × bonus`（仅 number 类型） |
+| `experience` | `floor(经验次数 / per) × bonus` |
+| `trait` | 拥有指定特质 → `bonus`，否则 0 |
+| `hasItem` | 持有指定物品 → `bonus`，否则 0 |
+| `outfit` | 当前预设匹配 → `bonus`，否则 0 |
+| `clothing` | 指定槽位穿着匹配 → `bonus`，否则 0 |
+| `favorability` | `floor(好感度 / per) × bonus` |
+| `variable` | `floor(变量值 / per) × bonus`（支持双向变量） |
+| `worldVar` | `floor(世界变量 / per) × bonus` |
+
+**`modTarget` 选项**：当 `modTarget: "target"` 时，从目标角色读取属性；默认 `"self"` 从执行者读取。
+
+**汇总规则：**
 
 ```
 additive_total = Σ (floor(属性值 / per) × bonus)   // bonusMode = "add"
 multiplicative_total = Π (bonus%)                   // bonusMode = "multiply"
 final = (base + additive_total) × multiplicative_total
 ```
+
+### 双向变量 (Bidirectional Variables)
+
+衍生变量（`VariableDefinition`）可标记 `isBidirectional: true`，表示该变量描述两个角色之间的关系（如"亲密度"）。
+
+**数据结构扩展：**
+
+```typescript
+interface VariableDefinition {
+  // ... 基本字段
+  isBidirectional?: boolean;  // 双向变量标记
+  steps: VariableStep[];
+}
+
+interface VariableStep {
+  type: "constant" | "ability" | "resource" | "basicInfo" | "traitCount"
+      | "hasTrait" | "experience" | "itemCount" | "favorability" | "variable";
+  source?: "self" | "target";  // 读取谁的数据（默认 "self"）
+  // ... 其他字段
+}
+```
+
+**求值规则：**
+- 每个 step 的 `source` 决定从哪个角色读取数据
+- `source: "self"` → 读执行者状态
+- `source: "target"` → 读目标角色状态
+- `favorability` step type 特殊处理：`source: "self"` = 执行者对目标的好感度，`source: "target"` = 目标对执行者的好感度
+
+**在条件/修正器中的使用：**
+- 条件 `type: "variable"` 检查双向变量时，self/target 方向由 `condTarget` 决定
+- 修正器 `type: "variable"` 中 `modTarget` 决定求值方向
 
 ### SuggestNext
 
@@ -262,10 +333,12 @@ interface OutputTemplateEntry {
 
 | condTarget 值 | 实际检查目标 |
 |----------------|------------|
-| `"self"`（默认） | 执行者 character |
-| `"target"` | target_id 对应的角色 |
+| `"self"`（默认） | 执行者（执行行动的角色） |
+| `"target"` | 目标角色（行动目标） |
 
-注意：`location` 和 `npcPresent`/`npcAbsent` 始终使用执行者的位置，不受 condTarget 影响。
+**condTarget 动态限制**：condTarget 选项根据行动的 `targetType` 动态控制——当 `targetType="none"` 或 `"self"` 时，前端不显示 target 选项（无目标角色可检查）。
+
+注意：`location` 和 `npcPresent` 始终使用执行者的位置，不受 condTarget 影响。
 
 **skip_target_conds 参数：**
 
@@ -294,13 +367,29 @@ interface OutputTemplateEntry {
 
 逐一应用效果，返回人类可读的摘要列表（用于 UI 展示）。
 
-**target 解析规则：**
+**target 解析规则 (`_resolve_effect_targets`)：**
 
 | effect.target 值 | 实际目标 |
 |-------------------|----------|
 | `"self"`（默认） | 行动执行者 |
 | `"{{targetId}}"` | 行动目标（target_id 参数） |
 | 具体角色 ID | 从 `game_state.characters` 查找 |
+| `{ filter: FilterDef }` | 多目标筛选（见下方） |
+
+**FilterDef（多目标筛选）：**
+
+效果 target 可以是 `{ filter: FilterDef }` 对象，`_resolve_effect_targets` 从所有角色中筛选出匹配的目标列表，对每个目标独立应用效果。
+
+```typescript
+interface FilterDef {
+  cell?: "current" | { mapId: string; cellId: number };  // 位置筛选
+  trait?: { key: string; traitId: string };               // 特质筛选
+  variable?: { varId: string; op: string; value: number }; // 衍生变量筛选（双向求值）
+  excludeSelf?: boolean;                                   // 排除执行者自身
+}
+```
+
+筛选流程：从全部角色出发 → cell 筛选 → trait 筛选 → variable 筛选 → excludeSelf → 返回匹配 ID 列表。
 
 **各 type 对应的 op 值：**
 

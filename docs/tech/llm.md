@@ -265,6 +265,70 @@ Action 定义中 `triggerLLM: true` → 玩家执行后自动调用 LLM。
 - 感知范围内（≤60 分钟距离，respects senseBlocked 连接）的 NPC 行为均可见
 - 不区分距离远近，统一完整显示
 
+## 世界书系统 (Lorebook)
+
+### 存储
+
+世界书条目存储在 addon 版本目录中：`addons/{addonId}/{version}/lorebook.json`
+
+加载时按 addon 加载顺序合并（后加载的覆盖先加载的），与其他实体一致。
+
+### 数据结构
+
+```typescript
+interface LorebookEntry {
+  id: string;                           // 命名空间 ID (addonId.localId)
+  name: string;                         // 条目名称
+  keywords: string[];                   // 关键词列表（用于匹配）
+  content: string;                      // 条目内容（插入 prompt）
+  enabled: boolean;                     // 是否启用
+  priority: number;                     // 优先级（高优先级排前面）
+  insertMode: "keyword" | "always";     // 触发模式
+  source: string;                       // 来源 addon (addonId.version)
+}
+```
+
+### 关键词匹配 (`llm_engine.py: _format_lorebook`)
+
+1. 构建扫描文本：`rawOutput` + `player.name` + `target.name` + `location` + `mapName`
+2. 对每个启用的条目：
+   - `insertMode: "always"` → 始终命中
+   - `insertMode: "keyword"` → 任一关键词（不区分大小写）出现在扫描文本中则命中
+3. 命中条目按 `priority` 降序排列
+4. 用 `\n---\n` 连接所有命中条目的 content
+5. 结果存入 `{{lorebook}}` 变量
+
+### API 端点
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/game/lorebook` | 获取所有世界书条目 |
+| POST | `/api/game/lorebook` | 创建条目 |
+| PUT | `/api/game/lorebook/{entry_id:path}` | 更新条目 |
+| DELETE | `/api/game/lorebook/{entry_id:path}` | 删除条目 |
+
+## 角色 LLM 描述
+
+角色数据中可包含 `llm` 字段，存储专供 LLM 使用的描述文本（如 personality、appearance 等）。
+
+```typescript
+interface CharacterData {
+  // ... 其他字段
+  llm?: Record<string, string>;  // 自定义键值对（如 { personality: "...", appearance: "..." }）
+}
+```
+
+### 变量映射
+
+| 变量 | 内容 |
+|------|------|
+| `{{player.llm}}` | 所有 LLM 描述字段组合（`字段名: 内容` 格式，换行分隔） |
+| `{{player.llm.xxx}}` | 单个字段值（如 `{{player.llm.personality}}`） |
+| `{{target.llm}}` / `{{target.llm.xxx}}` | 目标角色的对应字段 |
+
+`_format_char_llm(char)` 将 `llm` dict 格式化为 `key: value` 的多行文本。
+`_collect_char_variables()` 同时注册每个独立字段为 `{prefix}.llm.{key}` 变量。
+
 ## 前端架构
 
 ### LLM 设置页 (`LLMPresetManager.tsx`)
@@ -295,3 +359,10 @@ Action 定义中 `triggerLLM: true` → 玩家执行后自动调用 LLM。
 - 流式显示：`fetch` + `ReadableStream` 解析 SSE
 - 自动触发：`triggerLLM: true` 时自动开始
 - 错误处理：显示详情 + [重试] 按钮
+
+### 世界书管理 (`LorebookManager.tsx`)
+
+从 AddonTabBar 世界级 tab 进入。列表 + 编辑两栏布局：
+
+- 条目列表：显示名称、启用状态、关键词数量
+- 编辑视图：ID、名称、关键词（标签输入）、内容（多行文本）、触发模式（keyword/always）、优先级、启用开关

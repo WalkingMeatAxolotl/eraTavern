@@ -74,7 +74,7 @@ tavernGame/
 │       ├── 编辑器: CharacterEditor, MapEditor, ActionEditor, TraitEditor,
 │       │          TraitGroupEditor, ItemEditor, ClothingEditor, VariableEditor
 │       ├── 管理器: ActionManager, CharacterManager, ClothingManager, EventManager,
-│       │          ItemManager, LorebookManager, MapManager, TraitManager, VariableManager
+│       │          ItemManager, LorebookManager (世界书), MapManager, TraitManager, VariableManager
 │       ├── 游戏UI: CharacterPanel, CompactCharacterInfo, ActionMenu,
 │       │          MapView, LocationHeader, NarrativePanel
 │       ├── LLM: LLMPresetManager, LLMDebugPanel
