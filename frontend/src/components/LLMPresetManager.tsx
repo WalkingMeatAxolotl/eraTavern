@@ -89,60 +89,73 @@ function makeBlankProvider(): LLMProvider {
 // --- Available variables ---
 
 const VARIABLE_GROUPS = [
-  { label: "行动", vars: [
-    { name: "rawOutput", desc: "行动原始输出 = 描述 + 效果摘要 + NPC日志" },
-    { name: "action.name", desc: "行动名称" },
-    { name: "action.description", desc: "行动描述" },
-    { name: "action.category", desc: "行动分类" },
-  ]},
-  { label: "玩家", vars: [
-    { name: "player", desc: "完整角色摘要（所有信息组合）" },
-    { name: "player.name", desc: "名称" },
-    { name: "player.money", desc: "金钱" },
-    { name: "player.resources", desc: "资源状态（体力/气力等）" },
-    { name: "player.traits", desc: "全部特质（含描述）" },
-    { name: "player.traits.names", desc: "特质名称列表（省token）" },
-    { name: "player.abilities", desc: "能力等级" },
-    { name: "player.experiences", desc: "经验记录" },
-    { name: "player.clothing", desc: "穿着简洁列表" },
-    { name: "player.clothing.detail", desc: "穿着详细（含描述/效果/遮挡）" },
-    { name: "player.outfit", desc: "当前预设名称" },
-    { name: "player.inventory", desc: "物品列表" },
-    { name: "player.inventory.detail", desc: "物品详细（含描述）" },
-    { name: "player.favorability", desc: "好感度列表" },
-    { name: "player.variables", desc: "角色自定义变量" },
-    { name: "player.llm", desc: "LLM 描述（全部字段）" },
-    { name: "player.llm.xxx", desc: "LLM 单个字段（如 player.llm.personality）" },
-  ]},
-  { label: "目标", vars: [
-    { name: "target", desc: "目标完整摘要（无目标时为空）" },
-    { name: "target.name", desc: "目标名称" },
-    { name: "target.traits", desc: "目标特质（含描述）" },
-    { name: "target.clothing", desc: "目标穿着" },
-    { name: "target.favorability", desc: "目标好感度" },
-    { name: "target.llm", desc: "目标 LLM 描述（全部字段）" },
-    { name: "target.llm.xxx", desc: "目标 LLM 单个字段" },
-  ]},
-  { label: "场景", vars: [
-    { name: "location", desc: "当前区格名称" },
-    { name: "location.description", desc: "区格描述" },
-    { name: "location.neighbors", desc: "相邻区格名称" },
-    { name: "mapName", desc: "地图名称" },
-    { name: "mapName.description", desc: "地图描述" },
-    { name: "time", desc: "游戏时间" },
-    { name: "weather", desc: "天气" },
-    { name: "npcsHere", desc: "同区格NPC+活动" },
-    { name: "npcsNearby", desc: "感知范围内NPC+位置+活动" },
-    { name: "worldVars", desc: "全部世界变量" },
-  ]},
-  { label: "世界书", vars: [
-    { name: "lorebook", desc: "关键词命中的世界书条目（自动匹配）" },
-  ]},
-  { label: "历史（支持参数 :count=N）", vars: [
-    { name: "recentActions", desc: "近期行动摘要（默认5条）" },
-    { name: "recentNpcActivity", desc: "近期NPC行为（默认10条）" },
-    { name: "previousNarrative", desc: "之前的LLM叙事输出（默认1条）" },
-  ]},
+  {
+    label: "行动",
+    vars: [
+      { name: "rawOutput", desc: "行动原始输出 = 描述 + 效果摘要 + NPC日志" },
+      { name: "action.name", desc: "行动名称" },
+      { name: "action.description", desc: "行动描述" },
+      { name: "action.category", desc: "行动分类" },
+    ],
+  },
+  {
+    label: "玩家",
+    vars: [
+      { name: "player", desc: "完整角色摘要（所有信息组合）" },
+      { name: "player.name", desc: "名称" },
+      { name: "player.money", desc: "金钱" },
+      { name: "player.resources", desc: "资源状态（体力/气力等）" },
+      { name: "player.traits", desc: "全部特质（含描述）" },
+      { name: "player.traits.names", desc: "特质名称列表（省token）" },
+      { name: "player.abilities", desc: "能力等级" },
+      { name: "player.experiences", desc: "经验记录" },
+      { name: "player.clothing", desc: "穿着简洁列表" },
+      { name: "player.clothing.detail", desc: "穿着详细（含描述/效果/遮挡）" },
+      { name: "player.outfit", desc: "当前预设名称" },
+      { name: "player.inventory", desc: "物品列表" },
+      { name: "player.inventory.detail", desc: "物品详细（含描述）" },
+      { name: "player.favorability", desc: "好感度列表" },
+      { name: "player.variables", desc: "角色自定义变量" },
+      { name: "player.llm", desc: "LLM 描述（全部字段）" },
+      { name: "player.llm.xxx", desc: "LLM 单个字段（如 player.llm.personality）" },
+    ],
+  },
+  {
+    label: "目标",
+    vars: [
+      { name: "target", desc: "目标完整摘要（无目标时为空）" },
+      { name: "target.name", desc: "目标名称" },
+      { name: "target.traits", desc: "目标特质（含描述）" },
+      { name: "target.clothing", desc: "目标穿着" },
+      { name: "target.favorability", desc: "目标好感度" },
+      { name: "target.llm", desc: "目标 LLM 描述（全部字段）" },
+      { name: "target.llm.xxx", desc: "目标 LLM 单个字段" },
+    ],
+  },
+  {
+    label: "场景",
+    vars: [
+      { name: "location", desc: "当前区格名称" },
+      { name: "location.description", desc: "区格描述" },
+      { name: "location.neighbors", desc: "相邻区格名称" },
+      { name: "mapName", desc: "地图名称" },
+      { name: "mapName.description", desc: "地图描述" },
+      { name: "time", desc: "游戏时间" },
+      { name: "weather", desc: "天气" },
+      { name: "npcsHere", desc: "同区格NPC+活动" },
+      { name: "npcsNearby", desc: "感知范围内NPC+位置+活动" },
+      { name: "worldVars", desc: "全部世界变量" },
+    ],
+  },
+  { label: "世界书", vars: [{ name: "lorebook", desc: "关键词命中的世界书条目（自动匹配）" }] },
+  {
+    label: "历史（支持参数 :count=N）",
+    vars: [
+      { name: "recentActions", desc: "近期行动摘要（默认5条）" },
+      { name: "recentNpcActivity", desc: "近期NPC行为（默认10条）" },
+      { name: "previousNarrative", desc: "之前的LLM叙事输出（默认1条）" },
+    ],
+  },
 ];
 
 // --- Prompt entry editor ---
@@ -191,26 +204,64 @@ function PromptEntryRow({
         onClick={onToggle}
       >
         <button
-          style={{ background: "none", border: "none", color: T.textDim, cursor: "pointer", fontSize: "11px", padding: "0 2px" }}
-          onClick={(e) => { e.stopPropagation(); onMove(-1); }}
+          style={{
+            background: "none",
+            border: "none",
+            color: T.textDim,
+            cursor: "pointer",
+            fontSize: "11px",
+            padding: "0 2px",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMove(-1);
+          }}
           disabled={index === 0}
-        >▲</button>
+        >
+          ▲
+        </button>
         <button
-          style={{ background: "none", border: "none", color: T.textDim, cursor: "pointer", fontSize: "11px", padding: "0 2px" }}
-          onClick={(e) => { e.stopPropagation(); onMove(1); }}
+          style={{
+            background: "none",
+            border: "none",
+            color: T.textDim,
+            cursor: "pointer",
+            fontSize: "11px",
+            padding: "0 2px",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMove(1);
+          }}
           disabled={index === total - 1}
-        >▼</button>
+        >
+          ▼
+        </button>
         <input
           type="checkbox"
           checked={entry.enabled}
-          onChange={(e) => { e.stopPropagation(); onChange({ ...entry, enabled: e.target.checked }); }}
+          onChange={(e) => {
+            e.stopPropagation();
+            onChange({ ...entry, enabled: e.target.checked });
+          }}
           onClick={(e) => e.stopPropagation()}
           style={{ accentColor: T.accent }}
         />
-        <span style={{ color: roleColors[entry.role] || T.textSub, fontSize: "11px", fontWeight: "bold", minWidth: "50px" }}>
+        <span
+          style={{ color: roleColors[entry.role] || T.textSub, fontSize: "11px", fontWeight: "bold", minWidth: "50px" }}
+        >
           {entry.role}
         </span>
-        <span style={{ color: T.text, fontSize: "12px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span
+          style={{
+            color: T.text,
+            fontSize: "12px",
+            flex: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {entry.name || entry.id}
         </span>
         <span style={{ color: T.textDim, fontSize: "10px" }}>{expanded ? "▼" : "▶"}</span>
@@ -295,7 +346,9 @@ function PromptEntryRow({
           </div>
 
           <div style={{ marginTop: "6px" }}>
-            <button style={btnStyle(T.danger)} onClick={onDelete}>[删除条目]</button>
+            <button style={btnStyle(T.danger)} onClick={onDelete}>
+              [删除条目]
+            </button>
           </div>
         </div>
       )}
@@ -326,7 +379,10 @@ function ProviderEditor({
 
   const handleFetchModels = async () => {
     const url = prov.baseUrl.trim();
-    if (!url) { setTestResult("请先填写 API URL"); return; }
+    if (!url) {
+      setTestResult("请先填写 API URL");
+      return;
+    }
     setModelLoading(true);
     setTestResult("");
     try {
@@ -342,20 +398,32 @@ function ProviderEditor({
 
   const handleTestConnection = async () => {
     const url = prov.baseUrl.trim();
-    if (!url) { setTestResult("请先填写 API URL"); return; }
-    if (!prov.model) { setTestResult("请先选择模型"); return; }
+    if (!url) {
+      setTestResult("请先填写 API URL");
+      return;
+    }
+    if (!prov.model) {
+      setTestResult("请先选择模型");
+      return;
+    }
     setTestResult("测试中...");
     try {
       const result = await testLLMConnection({ baseUrl: url, apiKey: prov.apiKey, model: prov.model });
-      setTestResult(result.success ? "连接成功 ✓" : (result.message || "连接失败"));
+      setTestResult(result.success ? "连接成功 ✓" : result.message || "连接失败");
     } catch (e) {
       setTestResult(`连接失败: ${e instanceof Error ? e.message : e}`);
     }
   };
 
   const handleSave = () => {
-    if (!prov.id.trim()) { setMessage("ID 不能为空"); return; }
-    if (!prov.name.trim()) { setMessage("名称不能为空"); return; }
+    if (!prov.id.trim()) {
+      setMessage("ID 不能为空");
+      return;
+    }
+    if (!prov.name.trim()) {
+      setMessage("名称不能为空");
+      return;
+    }
     onSave(prov);
   };
 
@@ -365,7 +433,9 @@ function ProviderEditor({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建 API 服务" : "编辑 API 服务"} ==
         </span>
-        <button onClick={onBack} style={btnStyle(T.textSub)}>[返回]</button>
+        <button onClick={onBack} style={btnStyle(T.textSub)}>
+          [返回]
+        </button>
       </div>
 
       <div style={sectionStyle}>
@@ -421,7 +491,11 @@ function ProviderEditor({
                 onChange={(e) => setProv((p) => ({ ...p, model: e.target.value }))}
               >
                 <option value="">-- 选择模型 --</option>
-                {modelList.map((m) => <option key={m} value={m}>{m}</option>)}
+                {modelList.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
               </select>
             ) : (
               <input
@@ -440,7 +514,9 @@ function ProviderEditor({
           </button>
         </div>
         {testResult && (
-          <div style={{ color: testResult.includes("✓") ? T.success : T.danger, fontSize: "12px", marginBottom: "6px" }}>
+          <div
+            style={{ color: testResult.includes("✓") ? T.success : T.danger, fontSize: "12px", marginBottom: "6px" }}
+          >
             {testResult}
           </div>
         )}
@@ -459,14 +535,18 @@ function ProviderEditor({
       </div>
 
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <button onClick={handleSave} style={btnStyle(T.successDim)}>[保存]</button>
+        <button onClick={handleSave} style={btnStyle(T.successDim)}>
+          [保存]
+        </button>
         {!isNew && (
-          <button onClick={onDelete} style={btnStyle(T.danger)}>[删除]</button>
+          <button onClick={onDelete} style={btnStyle(T.danger)}>
+            [删除]
+          </button>
         )}
-        <button onClick={onBack} style={btnStyle(T.textSub)}>[返回]</button>
-        {message && (
-          <span style={{ color: T.danger, fontSize: "12px" }}>{message}</span>
-        )}
+        <button onClick={onBack} style={btnStyle(T.textSub)}>
+          [返回]
+        </button>
+        {message && <span style={{ color: T.danger, fontSize: "12px" }}>{message}</span>}
       </div>
     </div>
   );
@@ -495,7 +575,9 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
   const loadAll = useCallback(async () => {
     try {
       const [presetList, providerList, cfg] = await Promise.all([
-        fetchLLMPresets(), fetchLLMProviders(), fetchConfig(),
+        fetchLLMPresets(),
+        fetchLLMProviders(),
+        fetchConfig(),
       ]);
       setPresets(presetList);
       setProviders(providerList);
@@ -505,7 +587,9 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
     }
   }, []);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
   // --- Preset handlers ---
 
@@ -548,8 +632,14 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
   const handleSave = async () => {
     const id = preset.id.trim();
-    if (!id) { setMessage("ID 不能为空"); return; }
-    if (!preset.name.trim()) { setMessage("名称不能为空"); return; }
+    if (!id) {
+      setMessage("ID 不能为空");
+      return;
+    }
+    if (!preset.name.trim()) {
+      setMessage("名称不能为空");
+      return;
+    }
     setSaving(true);
     setMessage("");
     try {
@@ -711,11 +801,13 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
         {subTab === "presets" && (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-                == LLM 预设 ==
-              </span>
-              <button onClick={handleNew} style={btnStyle(T.successDim)}>[+ 新建预设]</button>
+            <div
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}
+            >
+              <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== LLM 预设 ==</span>
+              <button onClick={handleNew} style={btnStyle(T.successDim)}>
+                [+ 新建预设]
+              </button>
             </div>
 
             {presets.length === 0 && (
@@ -750,16 +842,23 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                     <span style={{ fontWeight: "bold" }}>{p.name || p.id}</span>
                     {p.name && <span style={{ color: T.textDim, marginLeft: "8px", fontSize: "11px" }}>{p.id}</span>}
                   </span>
-                  <span style={{ color: T.textDim, fontSize: "11px", maxWidth: "40%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span
+                    style={{
+                      color: T.textDim,
+                      fontSize: "11px",
+                      maxWidth: "40%",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {p.description}
                   </span>
                 </button>
               ))}
             </div>
 
-            {message && (
-              <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>
-            )}
+            {message && <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>}
           </>
         )}
 
@@ -771,15 +870,25 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                 isNew={isNewProvider}
                 onSave={handleSaveProvider}
                 onDelete={handleDeleteProvider}
-                onBack={() => { setEditingProvider(null); loadAll(); }}
+                onBack={() => {
+                  setEditingProvider(null);
+                  loadAll();
+                }}
               />
             ) : (
               <>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-                    == API 服务 ==
-                  </span>
-                  <button onClick={handleNewProvider} style={btnStyle(T.successDim)}>[+ 新建]</button>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== API 服务 ==</span>
+                  <button onClick={handleNewProvider} style={btnStyle(T.successDim)}>
+                    [+ 新建]
+                  </button>
                 </div>
 
                 {providers.length === 0 && (
@@ -817,7 +926,13 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                 </div>
 
                 {providerMessage && (
-                  <div style={{ color: providerMessage === "已保存" ? T.success : T.danger, fontSize: "12px", marginTop: "8px" }}>
+                  <div
+                    style={{
+                      color: providerMessage === "已保存" ? T.success : T.danger,
+                      fontSize: "12px",
+                      marginTop: "8px",
+                    }}
+                  >
                     {providerMessage}
                   </div>
                 )}
@@ -828,9 +943,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
         {subTab === "global" && (
           <>
-            <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-              == 全局设置 ==
-            </span>
+            <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 全局设置 ==</span>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
               <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>默认预设</span>
               <select
@@ -844,7 +957,9 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
               >
                 <option value="">（无）</option>
                 {presets.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name || p.id}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.name || p.id}
+                  </option>
                 ))}
               </select>
               <span style={{ fontSize: "11px", color: T.textDim }}>所有世界通用的默认 LLM 预设</span>
@@ -852,9 +967,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
           </>
         )}
 
-        {subTab === "debug" && (
-          <LLMDebugPanel entries={debugEntries} defaultExpanded />
-        )}
+        {subTab === "debug" && <LLMDebugPanel entries={debugEntries} defaultExpanded />}
       </div>
     );
   }
@@ -869,7 +982,9 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建预设" : "编辑预设"} ==
         </span>
-        <button onClick={handleBack} style={btnStyle(T.textSub)}>[返回列表]</button>
+        <button onClick={handleBack} style={btnStyle(T.textSub)}>
+          [返回列表]
+        </button>
       </div>
 
       {/* Basic info */}
@@ -906,7 +1021,9 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
       {/* API service + parameters */}
       <div style={sectionStyle}>
-        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>API 服务 & 参数</div>
+        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>
+          API 服务 & 参数
+        </div>
         <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
           <div style={{ flex: 2 }}>
             <div style={labelStyle}>API 服务</div>
@@ -917,7 +1034,9 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
             >
               <option value="">-- 选择 API 服务 --</option>
               {providers.map((p) => (
-                <option key={p.id} value={p.id}>{p.name || p.id}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name || p.id}
+                </option>
               ))}
             </select>
           </div>
@@ -940,15 +1059,19 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
         )}
 
         {/* Generation parameters */}
-        <div style={{ color: T.textSub, fontSize: "11px", fontWeight: "bold", marginBottom: "4px", marginTop: "8px" }}>生成参数</div>
+        <div style={{ color: T.textSub, fontSize: "11px", fontWeight: "bold", marginBottom: "4px", marginTop: "8px" }}>
+          生成参数
+        </div>
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-          {([
-            ["temperature", "Temperature", preset.parameters.temperature],
-            ["maxTokens", "Max Tokens", preset.parameters.maxTokens],
-            ["topP", "Top P", preset.parameters.topP],
-            ["frequencyPenalty", "Freq Penalty", preset.parameters.frequencyPenalty],
-            ["presencePenalty", "Pres Penalty", preset.parameters.presencePenalty],
-          ] as [keyof LLMParameters, string, number][]).map(([key, label, val]) => (
+          {(
+            [
+              ["temperature", "Temperature", preset.parameters.temperature],
+              ["maxTokens", "Max Tokens", preset.parameters.maxTokens],
+              ["topP", "Top P", preset.parameters.topP],
+              ["frequencyPenalty", "Freq Penalty", preset.parameters.frequencyPenalty],
+              ["presencePenalty", "Pres Penalty", preset.parameters.presencePenalty],
+            ] as [keyof LLMParameters, string, number][]
+          ).map(([key, label, val]) => (
             <div key={key} style={{ width: "120px" }}>
               <div style={labelStyle}>{label}</div>
               <input
@@ -970,7 +1093,9 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       <div style={sectionStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
           <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold" }}>提示词条目</div>
-          <button onClick={addEntry} style={btnStyle(T.successDim)}>[+ 新增条目]</button>
+          <button onClick={addEntry} style={btnStyle(T.successDim)}>
+            [+ 新增条目]
+          </button>
         </div>
 
         {sortedEntries.length === 0 && (
@@ -1024,11 +1149,11 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
             [删除预设]
           </button>
         )}
-        <button onClick={handleBack} style={btnStyle(T.textSub)}>[返回列表]</button>
+        <button onClick={handleBack} style={btnStyle(T.textSub)}>
+          [返回列表]
+        </button>
         {message && (
-          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>
-            {message}
-          </span>
+          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

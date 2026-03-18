@@ -27,11 +27,13 @@ def list_presets() -> list[dict]:
         try:
             with open(p, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            result.append({
-                "id": data.get("id", d.name),
-                "name": data.get("name", d.name),
-                "description": data.get("description", ""),
-            })
+            result.append(
+                {
+                    "id": data.get("id", d.name),
+                    "name": data.get("name", d.name),
+                    "description": data.get("description", ""),
+                }
+            )
         except (json.JSONDecodeError, OSError):
             continue
     return result
@@ -64,5 +66,6 @@ def delete_preset(preset_id: str) -> bool:
     if not d.exists():
         return False
     import shutil
+
     shutil.rmtree(d)
     return True

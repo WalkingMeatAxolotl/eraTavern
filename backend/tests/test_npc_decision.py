@@ -20,6 +20,7 @@ from tests.conftest import make_char_data, make_character
 # _build_suggest_map
 # ========================
 
+
 class TestBuildSuggestMapEmpty:
     def test_no_history_returns_empty(self, game_state):
         """No action history -> both dicts empty."""
@@ -101,9 +102,16 @@ class TestBuildSuggestMapCategory:
 # _npc_choose_action
 # ========================
 
-def _setup_basic_action(game_state, npc_weight=10, target_type="none",
-                        action_id="act_idle", cell_key=("tavern", 1),
-                        conditions=None, category=""):
+
+def _setup_basic_action(
+    game_state,
+    npc_weight=10,
+    target_type="none",
+    action_id="act_idle",
+    cell_key=("tavern", 1),
+    conditions=None,
+    category="",
+):
     """Helper to set up a single action in cell_action_index and distance_matrix."""
     action_def = {
         "id": action_id,
@@ -148,13 +156,14 @@ class TestNpcChooseActionNoActions:
 class TestNpcChooseActionSameCell:
     def test_picks_action_at_current_cell(self, game_state, monkeypatch):
         """Action at distance=0 -> starts action immediately (returns from _npc_start_action)."""
-        action_def = _setup_basic_action(game_state)
+        _setup_basic_action(game_state)
 
         # Monkeypatch random.choices to always pick the first candidate
         import random
+
         monkeypatch.setattr(random, "choices", lambda pop, weights, k: [pop[0]])
 
-        result = _npc_choose_action(game_state, "npc1")
+        _npc_choose_action(game_state, "npc1")
         # _npc_start_action returns None for just-started actions (busy_ticks > 0)
         # but a goal should be set with busy_ticks
         goal = game_state.npc_goals.get("npc1")
@@ -167,11 +176,14 @@ class TestNpcChooseActionDistantCell:
     def test_sets_goal_with_target_pos(self, game_state, monkeypatch):
         """Action at distant cell -> sets npc_goals with targetPos."""
         distant_cell = ("tavern", 3)
-        action_def = _setup_basic_action(
-            game_state, cell_key=distant_cell, action_id="act_cook",
+        _setup_basic_action(
+            game_state,
+            cell_key=distant_cell,
+            action_id="act_cook",
         )
 
         import random
+
         monkeypatch.setattr(random, "choices", lambda pop, weights, k: [pop[0]])
 
         result = _npc_choose_action(game_state, "npc1")
@@ -188,14 +200,19 @@ class TestNpcChooseActionSenseFilter:
         """NPC target at cell not in sense_matrix should be excluded."""
         # Add npc2 at tavern cell 2
         game_state.characters["npc2"] = make_character(
-            name="Reimu", is_player=False, map_id="tavern", cell_id=2,
+            name="Reimu",
+            is_player=False,
+            map_id="tavern",
+            cell_id=2,
         )
         game_state.character_data["npc2"] = make_char_data("Reimu")
 
         # Action requiring NPC target at cell 2
         cell_key = ("tavern", 2)
-        action_def = _setup_basic_action(
-            game_state, target_type="npc", cell_key=cell_key,
+        _setup_basic_action(
+            game_state,
+            target_type="npc",
+            cell_key=cell_key,
             action_id="act_talk",
         )
 
@@ -204,6 +221,7 @@ class TestNpcChooseActionSenseFilter:
         game_state.sense_matrix[npc_pos].pop(cell_key, None)
 
         import random
+
         monkeypatch.setattr(random, "choices", lambda pop, weights, k: [pop[0]])
 
         result = _npc_choose_action(game_state, "npc1")
@@ -215,21 +233,27 @@ class TestNpcChooseActionSenseFilter:
         """NPC target at cell in sense_matrix should be available as candidate."""
         # Add npc2 at tavern cell 1 (same cell as npc1)
         game_state.characters["npc2"] = make_character(
-            name="Reimu", is_player=False, map_id="tavern", cell_id=1,
+            name="Reimu",
+            is_player=False,
+            map_id="tavern",
+            cell_id=1,
         )
         game_state.character_data["npc2"] = make_char_data("Reimu")
 
         cell_key = ("tavern", 1)
-        action_def = _setup_basic_action(
-            game_state, target_type="npc", cell_key=cell_key,
+        _setup_basic_action(
+            game_state,
+            target_type="npc",
+            cell_key=cell_key,
             action_id="act_talk",
         )
         # Sense matrix already includes cell_key from _setup_basic_action
 
         import random
+
         monkeypatch.setattr(random, "choices", lambda pop, weights, k: [pop[0]])
 
-        result = _npc_choose_action(game_state, "npc1")
+        _npc_choose_action(game_state, "npc1")
         # Should have picked act_talk with some target
         goal = game_state.npc_goals.get("npc1")
         assert goal is not None
@@ -239,6 +263,7 @@ class TestNpcChooseActionSenseFilter:
 # ========================
 # _npc_tick
 # ========================
+
 
 class TestNpcTickBusy:
     def test_busy_npc_decrements_tick(self, game_state):
@@ -287,7 +312,8 @@ class TestNpcTickMovement:
             ("tavern", 3): (10, "tavern", 2),  # next step is cell 2
         }
         game_state.character_data["npc1"]["position"] = {
-            "mapId": "tavern", "cellId": 1,
+            "mapId": "tavern",
+            "cellId": 1,
         }
 
         result = _npc_tick(game_state, "npc1")
@@ -300,22 +326,23 @@ class TestNpcTickMovement:
 # simulate_npc_ticks
 # ========================
 
+
 class TestSimulateNpcTicksSkips:
     def test_skips_player_characters(self, game_state):
         """Player characters should not be ticked."""
         # With no actions set up, NPCs will just get "待机中".
         # We verify player doesn't get an activity set.
-        log = simulate_npc_ticks(game_state, 10)
+        simulate_npc_ticks(game_state, 10)
         assert "player" not in game_state.npc_activities
 
     def test_skips_exclude_ids(self, game_state):
         """Characters in exclude_ids should not be ticked."""
-        log = simulate_npc_ticks(game_state, 10, exclude_ids=["npc1"])
+        simulate_npc_ticks(game_state, 10, exclude_ids=["npc1"])
         assert "npc1" not in game_state.npc_activities
 
     def test_skips_single_exclude_id(self, game_state):
         """Character matching exclude_id should not be ticked."""
-        log = simulate_npc_ticks(game_state, 10, exclude_id="npc1")
+        simulate_npc_ticks(game_state, 10, exclude_id="npc1")
         assert "npc1" not in game_state.npc_activities
 
 

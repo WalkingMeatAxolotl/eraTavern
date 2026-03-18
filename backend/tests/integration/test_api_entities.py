@@ -25,12 +25,16 @@ class TestCharacterCRUD:
 
     def test_create_character(self, api_client):
         client, gs = api_client
-        r = client.post("/api/game/characters/config", json={
-            "id": "npc3", "source": "test-a",
-            "basicInfo": {"name": "新NPC"},
-            "isPlayer": False,
-            "position": {"mapId": "test-a.tavern", "cellId": 1},
-        })
+        r = client.post(
+            "/api/game/characters/config",
+            json={
+                "id": "npc3",
+                "source": "test-a",
+                "basicInfo": {"name": "新NPC"},
+                "isPlayer": False,
+                "position": {"mapId": "test-a.tavern", "cellId": 1},
+            },
+        )
         assert r.status_code == 200
         assert "test-a.npc3" in gs.character_data
 
@@ -65,10 +69,14 @@ class TestCharacterCRUD:
     def test_create_character_rejects_dot_in_local_id(self, api_client):
         """ID with dot in local part should be rejected."""
         client, _ = api_client
-        r = client.post("/api/game/characters/config", json={
-            "id": "bad.dot.id", "source": "test-a",
-            "basicInfo": {"name": "Invalid"},
-        })
+        r = client.post(
+            "/api/game/characters/config",
+            json={
+                "id": "bad.dot.id",
+                "source": "test-a",
+                "basicInfo": {"name": "Invalid"},
+            },
+        )
         data = r.json()
         assert data.get("success") is False
 
@@ -83,19 +91,29 @@ class TestTraitCRUD:
 
     def test_create_trait(self, api_client):
         client, gs = api_client
-        r = client.post("/api/game/traits", json={
-            "id": "brave", "name": "勇敢", "category": "personality",
-            "source": "test-a",
-        })
+        r = client.post(
+            "/api/game/traits",
+            json={
+                "id": "brave",
+                "name": "勇敢",
+                "category": "personality",
+                "source": "test-a",
+            },
+        )
         assert r.status_code == 200
         assert "test-a.brave" in gs.trait_defs
 
     def test_update_trait(self, api_client):
         client, gs = api_client
-        r = client.put("/api/game/traits/test-a.human", json={
-            "id": "test-a.human", "name": "人类（改）", "category": "race",
-            "source": "test-a",
-        })
+        r = client.put(
+            "/api/game/traits/test-a.human",
+            json={
+                "id": "test-a.human",
+                "name": "人类（改）",
+                "category": "race",
+                "source": "test-a",
+            },
+        )
         assert r.status_code == 200
         assert gs.trait_defs["test-a.human"]["name"] == "人类（改）"
 
@@ -116,10 +134,15 @@ class TestItemCRUD:
 
     def test_create_item(self, api_client):
         client, gs = api_client
-        r = client.post("/api/game/items", json={
-            "id": "sword", "name": "铁剑", "tags": ["weapon"],
-            "source": "test-a",
-        })
+        r = client.post(
+            "/api/game/items",
+            json={
+                "id": "sword",
+                "name": "铁剑",
+                "tags": ["weapon"],
+                "source": "test-a",
+            },
+        )
         assert r.status_code == 200
         assert "test-a.sword" in gs.item_defs
 
@@ -140,10 +163,15 @@ class TestClothingCRUD:
 
     def test_create_clothing(self, api_client):
         client, gs = api_client
-        r = client.post("/api/game/clothing", json={
-            "id": "hat", "name": "帽子", "slot": "head",
-            "source": "test-a",
-        })
+        r = client.post(
+            "/api/game/clothing",
+            json={
+                "id": "hat",
+                "name": "帽子",
+                "slot": "head",
+                "source": "test-a",
+            },
+        )
         assert r.status_code == 200
         assert "test-a.hat" in gs.clothing_defs
 
@@ -171,10 +199,15 @@ class TestMapCRUD:
 
     def test_create_map(self, api_client):
         client, gs = api_client
-        r = client.post("/api/game/maps", json={
-            "id": "test-a.forest", "name": "森林",
-            "rows": 1, "cols": 1,
-        })
+        r = client.post(
+            "/api/game/maps",
+            json={
+                "id": "test-a.forest",
+                "name": "森林",
+                "rows": 1,
+                "cols": 1,
+            },
+        )
         assert r.status_code == 200
         assert "test-a.forest" in gs.maps
 

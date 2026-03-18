@@ -13,6 +13,7 @@ from game.action import _resolve_template, _select_output_template
 # _select_output_template
 # ========================
 
+
 class TestSelectOutputTemplate:
     def test_legacy_string(self, game_state):
         """Falls back to outputTemplate when no outputTemplates array."""
@@ -35,10 +36,12 @@ class TestSelectOutputTemplate:
 
     def test_condition_filters(self, game_state):
         """Only the template whose condition passes should be selected."""
-        obj = {"outputTemplates": [
-            {"text": "wrong map", "conditions": [{"type": "location", "mapId": "forest"}]},
-            {"text": "right map", "conditions": [{"type": "location", "mapId": "tavern"}]},
-        ]}
+        obj = {
+            "outputTemplates": [
+                {"text": "wrong map", "conditions": [{"type": "location", "mapId": "forest"}]},
+                {"text": "right map", "conditions": [{"type": "location", "mapId": "tavern"}]},
+            ]
+        }
         char = game_state.characters["player"]
         result = _select_output_template(obj, char, game_state, "player", None)
         assert result == "right map"
@@ -68,20 +71,24 @@ class TestSelectOutputTemplate:
 
     def test_weight_zero_excluded(self, game_state):
         """Templates with weight=0 should be excluded."""
-        obj = {"outputTemplates": [
-            {"text": "zero weight", "weight": 0},
-            {"text": "normal", "weight": 1},
-        ]}
+        obj = {
+            "outputTemplates": [
+                {"text": "zero weight", "weight": 0},
+                {"text": "normal", "weight": 1},
+            ]
+        }
         char = game_state.characters["player"]
         result = _select_output_template(obj, char, game_state, "player", None)
         assert result == "normal"
 
     def test_random_among_matching(self, game_state):
         """Multiple matching templates → one is picked (run many times for coverage)."""
-        obj = {"outputTemplates": [
-            {"text": "A", "weight": 1},
-            {"text": "B", "weight": 1},
-        ]}
+        obj = {
+            "outputTemplates": [
+                {"text": "A", "weight": 1},
+                {"text": "B", "weight": 1},
+            ]
+        }
         char = game_state.characters["player"]
         results = set()
         for _ in range(100):
@@ -91,10 +98,12 @@ class TestSelectOutputTemplate:
 
     def test_weighted_distribution(self, game_state):
         """High-weight template should appear more often."""
-        obj = {"outputTemplates": [
-            {"text": "rare", "weight": 1},
-            {"text": "common", "weight": 99},
-        ]}
+        obj = {
+            "outputTemplates": [
+                {"text": "rare", "weight": 1},
+                {"text": "common", "weight": 99},
+            ]
+        }
         char = game_state.characters["player"]
         counts = {"rare": 0, "common": 0}
         for _ in range(1000):
@@ -104,10 +113,12 @@ class TestSelectOutputTemplate:
 
     def test_mixed_conditional_unconditional(self, game_state):
         """One conditional (fails) + one unconditional → only unconditional."""
-        obj = {"outputTemplates": [
-            {"text": "conditional", "conditions": [{"type": "location", "mapId": "forest"}], "weight": 100},
-            {"text": "always", "weight": 1},
-        ]}
+        obj = {
+            "outputTemplates": [
+                {"text": "conditional", "conditions": [{"type": "location", "mapId": "forest"}], "weight": 100},
+                {"text": "always", "weight": 1},
+            ]
+        }
         char = game_state.characters["player"]
         result = _select_output_template(obj, char, game_state, "player", None)
         assert result == "always"
@@ -129,6 +140,7 @@ class TestSelectOutputTemplate:
 # ========================
 # _resolve_template
 # ========================
+
 
 class TestResolveTemplate:
     def test_self_name(self, game_state):

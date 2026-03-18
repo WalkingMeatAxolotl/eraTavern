@@ -80,8 +80,13 @@ class TestRollOutcome:
         """Weight modifier increases effective weight."""
         char = game_state.characters["player"]  # technique=3000
         outcomes = [
-            {"grade": "boosted", "label": "B", "weight": 10, "effects": [],
-             "weightModifiers": [{"type": "ability", "key": "technique", "per": 1000, "bonus": 100}]},
+            {
+                "grade": "boosted",
+                "label": "B",
+                "weight": 10,
+                "effects": [],
+                "weightModifiers": [{"type": "ability", "key": "technique", "per": 1000, "bonus": 100}],
+            },
             {"grade": "normal", "label": "N", "weight": 10, "effects": []},
         ]
         # boosted: 10 + (3*100) = 310, normal: 10
@@ -95,8 +100,15 @@ class TestRollOutcome:
     def test_weight_modifier_multiply(self, game_state):
         char = game_state.characters["player"]  # technique=3000
         outcomes = [
-            {"grade": "boosted", "label": "B", "weight": 10, "effects": [],
-             "weightModifiers": [{"type": "ability", "key": "technique", "per": 3000, "bonus": 200, "bonusMode": "multiply"}]},
+            {
+                "grade": "boosted",
+                "label": "B",
+                "weight": 10,
+                "effects": [],
+                "weightModifiers": [
+                    {"type": "ability", "key": "technique", "per": 3000, "bonus": 200, "bonusMode": "multiply"}
+                ],
+            },
             {"grade": "normal", "label": "N", "weight": 10, "effects": []},
         ]
         # boosted: (10+0) * (1+200/100) = 10*3 = 30, normal: 10
@@ -109,67 +121,88 @@ class TestRollOutcome:
 
 class TestExecuteConfigured:
     def test_basic_execution(self, game_state):
-        _setup_action(game_state, {
-            "id": "rest",
-            "name": "休息",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 0,
-            "outcomes": [{
-                "grade": "success", "label": "成功", "weight": 100,
-                "effects": [{"type": "resource", "key": "stamina", "op": "add", "value": 200, "target": "self"}],
-            }],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "rest",
+                "name": "休息",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outcomes": [
+                    {
+                        "grade": "success",
+                        "label": "成功",
+                        "weight": 100,
+                        "effects": [
+                            {"type": "resource", "key": "stamina", "op": "add", "value": 200, "target": "self"}
+                        ],
+                    }
+                ],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "rest"})
         assert result["success"]
         assert game_state.characters["player"]["resources"]["stamina"]["value"] == 1200
 
     def test_condition_failure(self, game_state):
-        _setup_action(game_state, {
-            "id": "locked",
-            "name": "锁定行动",
-            "conditions": [{"type": "location", "mapId": "nowhere"}],
-            "costs": [],
-            "timeCost": 0,
-            "outcomes": [],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "locked",
+                "name": "锁定行动",
+                "conditions": [{"type": "location", "mapId": "nowhere"}],
+                "costs": [],
+                "timeCost": 0,
+                "outcomes": [],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "locked"})
         assert not result["success"]
 
     def test_cost_failure(self, game_state):
-        _setup_action(game_state, {
-            "id": "expensive",
-            "name": "昂贵行动",
-            "conditions": [],
-            "costs": [{"type": "resource", "key": "stamina", "amount": 99999}],
-            "timeCost": 0,
-            "outcomes": [],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "expensive",
+                "name": "昂贵行动",
+                "conditions": [],
+                "costs": [{"type": "resource", "key": "stamina", "amount": 99999}],
+                "timeCost": 0,
+                "outcomes": [],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "expensive"})
         assert not result["success"]
 
     def test_costs_applied(self, game_state):
-        _setup_action(game_state, {
-            "id": "train",
-            "name": "训练",
-            "conditions": [],
-            "costs": [{"type": "resource", "key": "stamina", "amount": 300}],
-            "timeCost": 0,
-            "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "train",
+                "name": "训练",
+                "conditions": [],
+                "costs": [{"type": "resource", "key": "stamina", "amount": 300}],
+                "timeCost": 0,
+                "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "train"})
         assert result["success"]
         assert game_state.characters["player"]["resources"]["stamina"]["value"] == 700
 
     def test_time_advances(self, game_state):
-        _setup_action(game_state, {
-            "id": "nap",
-            "name": "小睡",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 30,
-            "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "nap",
+                "name": "小睡",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 30,
+                "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
+            },
+        )
         old_minute = game_state.time.minute
         execute_action(game_state, "player", {"type": "configured", "actionId": "nap"})
         assert game_state.time.minute == old_minute + 30 or game_state.time.hour > 12
@@ -179,87 +212,120 @@ class TestExecuteConfigured:
         assert not result["success"]
 
     def test_unknown_character(self, game_state):
-        _setup_action(game_state, {
-            "id": "act", "name": "A", "conditions": [], "costs": [], "timeCost": 0, "outcomes": [],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "act",
+                "name": "A",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outcomes": [],
+            },
+        )
         result = execute_action(game_state, "nobody", {"type": "configured", "actionId": "act"})
         assert not result["success"]
 
     def test_npc_target_effects(self, game_state):
         """Action with targetId applies effects to NPC."""
-        _setup_action(game_state, {
-            "id": "heal",
-            "name": "治疗",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 0,
-            "outcomes": [{
-                "grade": "s", "label": "成功", "weight": 100,
-                "effects": [
-                    {"type": "resource", "key": "stamina", "op": "add", "value": 500, "target": "self"},
-                    {"type": "resource", "key": "stamina", "op": "add", "value": 300, "target": "{{targetId}}"},
+        _setup_action(
+            game_state,
+            {
+                "id": "heal",
+                "name": "治疗",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outcomes": [
+                    {
+                        "grade": "s",
+                        "label": "成功",
+                        "weight": 100,
+                        "effects": [
+                            {"type": "resource", "key": "stamina", "op": "add", "value": 500, "target": "self"},
+                            {"type": "resource", "key": "stamina", "op": "add", "value": 300, "target": "{{targetId}}"},
+                        ],
+                    }
                 ],
-            }],
-        })
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "heal", "targetId": "npc1"})
         assert result["success"]
         assert game_state.characters["player"]["resources"]["stamina"]["value"] == 1500
         assert game_state.characters["npc1"]["resources"]["stamina"]["value"] == 1300
 
     def test_output_template_resolved(self, game_state):
-        _setup_action(game_state, {
-            "id": "greet",
-            "name": "打招呼",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 0,
-            "outputTemplates": [{"text": "{{self.name}} waves."}],
-            "outcomes": [{"grade": "s", "label": "成功", "weight": 100, "effects": []}],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "greet",
+                "name": "打招呼",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outputTemplates": [{"text": "{{self.name}} waves."}],
+                "outcomes": [{"grade": "s", "label": "成功", "weight": 100, "effects": []}],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "greet"})
         assert "Player waves." in result["message"]
 
     def test_conditional_output_template(self, game_state):
-        _setup_action(game_state, {
-            "id": "greet2",
-            "name": "打招呼2",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 0,
-            "outputTemplates": [
-                {"text": "wrong", "conditions": [{"type": "location", "mapId": "forest"}]},
-                {"text": "correct at tavern"},
-            ],
-            "outcomes": [{"grade": "s", "label": "成功", "weight": 100, "effects": []}],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "greet2",
+                "name": "打招呼2",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outputTemplates": [
+                    {"text": "wrong", "conditions": [{"type": "location", "mapId": "forest"}]},
+                    {"text": "correct at tavern"},
+                ],
+                "outcomes": [{"grade": "s", "label": "成功", "weight": 100, "effects": []}],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "greet2"})
         assert "correct at tavern" in result["message"]
 
     def test_no_outcomes_still_succeeds(self, game_state):
-        _setup_action(game_state, {
-            "id": "simple",
-            "name": "简单",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 0,
-            "outcomes": [],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "simple",
+                "name": "简单",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outcomes": [],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "simple"})
         assert result["success"]
 
     def test_result_fields_complete(self, game_state):
         """Result should contain actionId, actionName, outcomeGrade, outcomeLabel, effectsSummary."""
-        _setup_action(game_state, {
-            "id": "punch",
-            "name": "攻击",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 0,
-            "outcomes": [{
-                "grade": "hit", "label": "命中", "weight": 100,
-                "effects": [{"type": "resource", "key": "stamina", "op": "add", "value": -100, "target": "self"}],
-            }],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "punch",
+                "name": "攻击",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outcomes": [
+                    {
+                        "grade": "hit",
+                        "label": "命中",
+                        "weight": 100,
+                        "effects": [
+                            {"type": "resource", "key": "stamina", "op": "add", "value": -100, "target": "self"}
+                        ],
+                    }
+                ],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "punch"})
         assert result["success"]
         assert result["actionId"] == "punch"
@@ -270,44 +336,57 @@ class TestExecuteConfigured:
 
     def test_message_auto_appends_outcome_label(self, game_state):
         """Message should auto-append [outcome_label] and effects summary."""
-        _setup_action(game_state, {
-            "id": "drink",
-            "name": "喝酒",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 0,
-            "outcomes": [{
-                "grade": "s", "label": "微醺", "weight": 100,
-                "effects": [{"type": "resource", "key": "stamina", "op": "add", "value": 50, "target": "self"}],
-            }],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "drink",
+                "name": "喝酒",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outcomes": [
+                    {
+                        "grade": "s",
+                        "label": "微醺",
+                        "weight": 100,
+                        "effects": [{"type": "resource", "key": "stamina", "op": "add", "value": 50, "target": "self"}],
+                    }
+                ],
+            },
+        )
         result = execute_action(game_state, "player", {"type": "configured", "actionId": "drink"})
         assert "[微醺]" in result["message"]
 
     def test_npc_target_interrupts_goal(self, game_state):
         """Targeting an NPC should clear their npc_goals entry."""
         game_state.npc_goals["npc1"] = {"actionId": "patrol", "remaining": 10}
-        _setup_action(game_state, {
-            "id": "talk",
-            "name": "交谈",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 0,
-            "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "talk",
+                "name": "交谈",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 0,
+                "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
+            },
+        )
         execute_action(game_state, "player", {"type": "configured", "actionId": "talk", "targetId": "npc1"})
         assert "npc1" not in game_state.npc_goals
 
     def test_time_cost_snapped_to_tick(self, game_state):
         """timeCost not multiple of 5 should be snapped up to nearest 5."""
-        _setup_action(game_state, {
-            "id": "quick",
-            "name": "快速行动",
-            "conditions": [],
-            "costs": [],
-            "timeCost": 3,  # should snap to 5
-            "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
-        })
+        _setup_action(
+            game_state,
+            {
+                "id": "quick",
+                "name": "快速行动",
+                "conditions": [],
+                "costs": [],
+                "timeCost": 3,  # should snap to 5
+                "outcomes": [{"grade": "s", "label": "s", "weight": 100, "effects": []}],
+            },
+        )
         old_minute = game_state.time.minute
         execute_action(game_state, "player", {"type": "configured", "actionId": "quick"})
         assert game_state.time.minute == old_minute + 5
@@ -317,18 +396,28 @@ class TestExecuteMove:
     def test_basic_move(self, game_state):
         """Move to a connected cell updates position."""
         _add_connection(game_state, "tavern", 1, "tavern", 2, travel_time=5)
-        result = execute_action(game_state, "player", {
-            "type": "move", "targetCell": 2,
-        })
+        result = execute_action(
+            game_state,
+            "player",
+            {
+                "type": "move",
+                "targetCell": 2,
+            },
+        )
         assert result["success"]
         assert game_state.characters["player"]["position"]["cellId"] == 2
         assert "大厅" in result["message"]
 
     def test_move_no_connection(self, game_state):
         """Move to unconnected cell should fail."""
-        result = execute_action(game_state, "player", {
-            "type": "move", "targetCell": 3,
-        })
+        result = execute_action(
+            game_state,
+            "player",
+            {
+                "type": "move",
+                "targetCell": 3,
+            },
+        )
         assert not result["success"]
 
     def test_move_no_target_cell(self, game_state):
@@ -338,9 +427,14 @@ class TestExecuteMove:
 
     def test_move_unknown_character(self, game_state):
         """Move with unknown character should fail."""
-        result = execute_action(game_state, "nobody", {
-            "type": "move", "targetCell": 2,
-        })
+        result = execute_action(
+            game_state,
+            "nobody",
+            {
+                "type": "move",
+                "targetCell": 2,
+            },
+        )
         assert not result["success"]
 
     def test_move_advances_time(self, game_state):
@@ -353,9 +447,14 @@ class TestExecuteMove:
     def test_move_sense_only_blocked(self, game_state):
         """senseOnly connections are not traversable."""
         _add_connection(game_state, "tavern", 1, "tavern", 2, sense_only=True)
-        result = execute_action(game_state, "player", {
-            "type": "move", "targetCell": 2,
-        })
+        result = execute_action(
+            game_state,
+            "player",
+            {
+                "type": "move",
+                "targetCell": 2,
+            },
+        )
         assert not result["success"]
 
     def test_move_returns_new_position(self, game_state):
@@ -370,18 +469,28 @@ class TestExecuteLook:
     def test_look_sees_npc(self, game_state):
         """Look at a cell with an NPC shows their activity."""
         game_state.npc_activities["npc1"] = "正在打扫"
-        result = execute_action(game_state, "player", {
-            "type": "look", "targetCell": 1,
-        })
+        result = execute_action(
+            game_state,
+            "player",
+            {
+                "type": "look",
+                "targetCell": 1,
+            },
+        )
         assert result["success"]
         assert "Sakuya" in result["message"]
         assert "正在打扫" in result["message"]
 
     def test_look_empty_cell(self, game_state):
         """Look at a cell with no NPC reports empty."""
-        result = execute_action(game_state, "player", {
-            "type": "look", "targetCell": 2,
-        })
+        result = execute_action(
+            game_state,
+            "player",
+            {
+                "type": "look",
+                "targetCell": 2,
+            },
+        )
         assert result["success"]
         assert "没有人" in result["message"]
 
@@ -392,14 +501,24 @@ class TestExecuteLook:
 
     def test_look_shows_cell_name(self, game_state):
         """Look result includes cell name."""
-        result = execute_action(game_state, "player", {
-            "type": "look", "targetCell": 1,
-        })
+        result = execute_action(
+            game_state,
+            "player",
+            {
+                "type": "look",
+                "targetCell": 1,
+            },
+        )
         assert "吧台" in result["message"]
 
     def test_look_unknown_character(self, game_state):
         """Look with unknown character should fail."""
-        result = execute_action(game_state, "nobody", {
-            "type": "look", "targetCell": 1,
-        })
+        result = execute_action(
+            game_state,
+            "nobody",
+            {
+                "type": "look",
+                "targetCell": 1,
+            },
+        )
         assert not result["success"]

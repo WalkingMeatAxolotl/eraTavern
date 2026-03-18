@@ -33,7 +33,13 @@ export interface MapCell {
   description?: string;
   tags?: string[];
   backgroundImage?: string;
-  connections: { targetCell: number; targetMap?: string; travelTime?: number; senseBlocked?: boolean; senseOnly?: boolean }[];
+  connections: {
+    targetCell: number;
+    targetMap?: string;
+    travelTime?: number;
+    senseBlocked?: boolean;
+    senseOnly?: boolean;
+  }[];
 }
 
 export interface GameMap {
@@ -201,8 +207,8 @@ export interface TraitDefinition {
   category: string;
   description?: string;
   effects: TraitEffect[];
-  defaultValue?: number;       // ability category: default exp value
-  decay?: AbilityDecay | null;  // ability category: auto-decay settings
+  defaultValue?: number; // ability category: default exp value
+  decay?: AbilityDecay | null; // ability category: auto-decay settings
   source: string;
 }
 
@@ -217,8 +223,8 @@ export interface OutfitType {
 export interface ClothingDefinition {
   id: string;
   name: string;
-  slot?: string;       // legacy single slot
-  slots: string[];     // multi-slot
+  slot?: string; // legacy single slot
+  slots: string[]; // multi-slot
   occlusion: string[];
   effects?: TraitEffect[];
   source: string;
@@ -249,7 +255,17 @@ export interface ItemDefinition {
 // --- Derived variable types ---
 
 export interface VariableStep {
-  type: "ability" | "resource" | "basicInfo" | "traitCount" | "hasTrait" | "experience" | "itemCount" | "favorability" | "constant" | "variable";
+  type:
+    | "ability"
+    | "resource"
+    | "basicInfo"
+    | "traitCount"
+    | "hasTrait"
+    | "experience"
+    | "itemCount"
+    | "favorability"
+    | "constant"
+    | "variable";
   op?: "add" | "subtract" | "multiply" | "divide" | "min" | "max" | "floor" | "cap";
   source?: "self" | "target";
   key?: string;
@@ -274,8 +290,24 @@ export interface VariableDefinition {
 // --- Action definition types ---
 
 export interface ActionCondition {
-  type: "location" | "npcPresent" | "npcAbsent" | "resource" | "ability" | "experience" | "trait" | "noTrait" | "favorability" | "hasItem" | "outfit" | "clothing" | "time" | "basicInfo" | "variable" | "worldVar";
-  condTarget?: "self" | "target";  // who to check: actor (default) or action target
+  type:
+    | "location"
+    | "npcPresent"
+    | "npcAbsent"
+    | "resource"
+    | "ability"
+    | "experience"
+    | "trait"
+    | "noTrait"
+    | "favorability"
+    | "hasItem"
+    | "outfit"
+    | "clothing"
+    | "time"
+    | "basicInfo"
+    | "variable"
+    | "worldVar";
+  condTarget?: "self" | "target"; // who to check: actor (default) or action target
   mapId?: string;
   cellIds?: number[];
   cellTags?: string[];
@@ -298,7 +330,11 @@ export interface ActionCondition {
   varId?: string;
 }
 
-export type ConditionItem = ActionCondition | { and: ConditionItem[] } | { or: ConditionItem[] } | { not: ConditionItem };
+export type ConditionItem =
+  | ActionCondition
+  | { and: ConditionItem[] }
+  | { or: ConditionItem[] }
+  | { not: ConditionItem };
 
 export interface ActionCost {
   type: "resource" | "basicInfo" | "item";
@@ -315,7 +351,18 @@ export interface EffectFilterDef {
 }
 
 export interface ActionEffect {
-  type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position" | "experience" | "worldVar" | "outfit";
+  type:
+    | "resource"
+    | "ability"
+    | "basicInfo"
+    | "favorability"
+    | "trait"
+    | "item"
+    | "clothing"
+    | "position"
+    | "experience"
+    | "worldVar"
+    | "outfit";
   key?: string;
   op: string;
   value?: number | { varId: string; multiply?: number };
@@ -324,8 +371,8 @@ export interface ActionEffect {
   amount?: number;
   target?: string | { filter: EffectFilterDef };
   targetId?: string;
-  favFrom?: string;   // favorability: whose fav changes (self/{{targetId}}/npcId)
-  favTo?: string;     // favorability: towards whom (self/{{targetId}}/npcId)
+  favFrom?: string; // favorability: whose fav changes (self/{{targetId}}/npcId)
+  favTo?: string; // favorability: towards whom (self/{{targetId}}/npcId)
   traitId?: string;
   itemId?: string;
   slot?: string;
@@ -337,13 +384,13 @@ export interface ActionEffect {
 
 export interface ValueModifier {
   type: "ability" | "trait" | "favorability" | "experience" | "variable" | "worldVar";
-  key?: string;       // ability key, trait category key, or experience key
-  value?: string;     // trait value to match
-  source?: string;    // favorability: "target" (default) or "self"
-  per?: number;       // every `per` points → bonus (ability/favorability/experience)
+  key?: string; // ability key, trait category key, or experience key
+  value?: string; // trait value to match
+  source?: string; // favorability: "target" (default) or "self"
+  per?: number; // every `per` points → bonus (ability/favorability/experience)
   bonus: number;
-  bonusMode?: "add" | "multiply";  // "add" (default): +bonus, "multiply": *bonus%
-  varId?: string;     // variable: derived variable ID
+  bonusMode?: "add" | "multiply"; // "add" (default): +bonus, "multiply": *bonus%
+  varId?: string; // variable: derived variable ID
 }
 
 export type WeightModifier = ValueModifier;
@@ -351,7 +398,7 @@ export type WeightModifier = ValueModifier;
 export interface OutputTemplateEntry {
   text: string;
   conditions?: ConditionItem[];
-  weight?: number;  // default 1, random among matching entries
+  weight?: number; // default 1, random among matching entries
 }
 
 export interface SuggestNext {
@@ -576,7 +623,7 @@ export interface LLMPreset {
 
 export interface GameState {
   worldId: string;
-  gameId: string;  // legacy alias for worldId
+  gameId: string; // legacy alias for worldId
   time: GameTime;
   maps: Record<string, GameMap>;
   characters: Record<string, CharacterState>;

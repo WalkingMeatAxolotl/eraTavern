@@ -20,13 +20,15 @@ export default function AddonTabBar({ addons, selectedAddon, onSelect }: AddonTa
   if (addons.length === 0) return null;
 
   return (
-    <div style={{
-      display: "flex",
-      gap: "2px",
-      borderBottom: `1px solid ${T.border}`,
-      marginBottom: "8px",
-      flexWrap: "wrap",
-    }}>
+    <div
+      style={{
+        display: "flex",
+        gap: "2px",
+        borderBottom: `1px solid ${T.border}`,
+        marginBottom: "8px",
+        flexWrap: "wrap",
+      }}
+    >
       <button
         onClick={() => onSelect(null)}
         style={{

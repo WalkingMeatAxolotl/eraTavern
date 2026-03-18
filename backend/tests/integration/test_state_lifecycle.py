@@ -56,7 +56,9 @@ class TestEditAndSave:
         gs, base = test_env
         # Add a new trait in memory
         gs.trait_defs["test-a.brave"] = {
-            "id": "test-a.brave", "name": "勇敢", "category": "personality",
+            "id": "test-a.brave",
+            "name": "勇敢",
+            "category": "personality",
             "source": "test-a",
         }
         gs.save_all()
@@ -111,13 +113,16 @@ class TestSaveAndReload:
     def test_reload_preserves_traits(self, test_env):
         gs, _ = test_env
         gs.trait_defs["test-a.lucky"] = {
-            "id": "test-a.lucky", "name": "幸运", "category": "personality",
+            "id": "test-a.lucky",
+            "name": "幸运",
+            "category": "personality",
             "source": "test-a",
         }
         gs.save_all()
 
         # Reload
         from game.state import GameState
+
         GameState._instance = None
         gs2 = GameState()
         gs2.load_world("test-world")
@@ -131,6 +136,7 @@ class TestSaveAndReload:
         gs.save_all()
 
         from game.state import GameState
+
         GameState._instance = None
         gs2 = GameState()
         gs2.load_world("test-world")
@@ -142,6 +148,7 @@ class TestSaveAndReload:
         gs.save_all()
 
         from game.state import GameState
+
         GameState._instance = None
         gs2 = GameState()
         gs2.load_world("test-world")
@@ -160,6 +167,7 @@ class TestAddonToggle:
         gs.save_all(new_refs)
 
         from game.state import GameState
+
         GameState._instance = None
         gs2 = GameState()
         gs2.load_world("test-world")
@@ -176,6 +184,7 @@ class TestAddonToggle:
         gs.save_all(new_refs)
 
         from game.state import GameState
+
         GameState._instance = None
         gs2 = GameState()
         gs2.load_world("test-world")

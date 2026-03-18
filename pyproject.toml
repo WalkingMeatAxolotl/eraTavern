@@ -7,9 +7,6 @@ line-length = 120
 select = ["E", "F", "W", "I"]
 # Ignore rules that conflict with current code style
 ignore = [
-    "E501",   # line too long (handled by line-length setting loosely)
-    "E741",   # ambiguous variable name
-    "F841",   # local variable assigned but never used (will clean later)
     "E731",   # lambda assignment (used in a few places)
 ]
 

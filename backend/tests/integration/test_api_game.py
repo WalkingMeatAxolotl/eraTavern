@@ -39,22 +39,28 @@ class TestActionExecution:
     def test_execute_configured_action(self, api_client):
         client, gs = api_client
         player_id = gs.player_character
-        r = client.post("/api/game/action", json={
-            "characterId": player_id,
-            "type": "configured",
-            "actionId": "test-a.rest",
-        })
+        r = client.post(
+            "/api/game/action",
+            json={
+                "characterId": player_id,
+                "type": "configured",
+                "actionId": "test-a.rest",
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["success"]
 
     def test_execute_unknown_action(self, api_client):
         client, gs = api_client
-        r = client.post("/api/game/action", json={
-            "characterId": gs.player_character,
-            "type": "configured",
-            "actionId": "nonexistent",
-        })
+        r = client.post(
+            "/api/game/action",
+            json={
+                "characterId": gs.player_character,
+                "type": "configured",
+                "actionId": "nonexistent",
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert not data["success"]
@@ -78,24 +84,41 @@ class TestActionCRUD:
 
     def test_create_action(self, api_client):
         client, gs = api_client
-        r = client.post("/api/game/actions", json={
-            "id": "swim", "name": "游泳", "category": "运动",
-            "targetType": "none", "timeCost": 30, "npcWeight": 0,
-            "conditions": [], "costs": [],
-            "outcomes": [],
-            "source": "test-a",
-        })
+        r = client.post(
+            "/api/game/actions",
+            json={
+                "id": "swim",
+                "name": "游泳",
+                "category": "运动",
+                "targetType": "none",
+                "timeCost": 30,
+                "npcWeight": 0,
+                "conditions": [],
+                "costs": [],
+                "outcomes": [],
+                "source": "test-a",
+            },
+        )
         assert r.status_code == 200
         assert "test-a.swim" in gs.action_defs
 
     def test_update_action(self, api_client):
         client, gs = api_client
-        r = client.put("/api/game/actions/test-a.rest", json={
-            "id": "test-a.rest", "name": "深度休息", "category": "日常",
-            "targetType": "none", "timeCost": 60, "npcWeight": 5,
-            "conditions": [], "costs": [],
-            "outcomes": [], "source": "test-a",
-        })
+        r = client.put(
+            "/api/game/actions/test-a.rest",
+            json={
+                "id": "test-a.rest",
+                "name": "深度休息",
+                "category": "日常",
+                "targetType": "none",
+                "timeCost": 60,
+                "npcWeight": 5,
+                "conditions": [],
+                "costs": [],
+                "outcomes": [],
+                "source": "test-a",
+            },
+        )
         assert r.status_code == 200
         assert gs.action_defs["test-a.rest"]["name"] == "深度休息"
 

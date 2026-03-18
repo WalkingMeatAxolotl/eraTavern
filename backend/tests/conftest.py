@@ -52,8 +52,11 @@ class MockTime:
 
     def to_dict(self):
         return {
-            "year": self.year, "season": self.season, "day": self.day,
-            "hour": self.hour, "minute": self.minute,
+            "year": self.year,
+            "season": self.season,
+            "day": self.day,
+            "hour": self.hour,
+            "minute": self.minute,
         }
 
     def __str__(self):
@@ -107,21 +110,26 @@ def make_character(
     char = {
         "isPlayer": is_player,
         "position": {"mapId": map_id, "cellId": cell_id},
-        "basicInfo": basic_info or {
+        "basicInfo": basic_info
+        or {
             "name": {"key": "name", "label": "名前", "type": "text", "value": name},
             "money": {"key": "money", "label": "金钱", "type": "number", "value": 100},
         },
-        "resources": resources or {
+        "resources": resources
+        or {
             "stamina": {"key": "stamina", "label": "体力", "value": 1000, "max": 2000},
             "energy": {"key": "energy", "label": "气力", "value": 800, "max": 2000},
         },
-        "abilities": abilities or [
+        "abilities": abilities
+        or [
             {"key": "technique", "label": "技巧", "exp": 3000, "grade": "D"},
         ],
-        "experiences": experiences or [
+        "experiences": experiences
+        or [
             {"key": "kiss", "label": "接吻经验", "count": 0, "first": None},
         ],
-        "traits": traits or [
+        "traits": traits
+        or [
             {"key": "race", "label": "族群", "values": ["human"]},
         ],
         "clothing": clothing or [],
@@ -146,15 +154,22 @@ def game_state():
     gs = MockGameState()
 
     gs.characters["player"] = make_character(
-        name="Player", is_player=True, map_id="tavern", cell_id=1,
+        name="Player",
+        is_player=True,
+        map_id="tavern",
+        cell_id=1,
     )
     gs.characters["npc1"] = make_character(
-        name="Sakuya", is_player=False, map_id="tavern", cell_id=1,
+        name="Sakuya",
+        is_player=False,
+        map_id="tavern",
+        cell_id=1,
     )
 
     gs.character_data["player"] = make_char_data("Player")
     gs.character_data["npc1"] = make_char_data(
-        "Sakuya", favorability={"player": 200},
+        "Sakuya",
+        favorability={"player": 200},
     )
 
     gs.maps["tavern"] = {

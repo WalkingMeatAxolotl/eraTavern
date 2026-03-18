@@ -92,6 +92,7 @@ def _strip_ref(ref: str, addon_id: str) -> str:
         return local
     return ref
 
+
 SLOT_LABELS = {
     "hat": "帽子",
     "upperBody": "上半身",
@@ -125,6 +126,7 @@ def load_template(data_dir_or_path: Path | None = None) -> dict:
     """
     if data_dir_or_path is None:
         from .addon_loader import TEMPLATE_PATH
+
         path = TEMPLATE_PATH
     elif data_dir_or_path.is_file():
         path = data_dir_or_path
@@ -396,8 +398,9 @@ def load_outfit_types(data_dir_or_addons: Path | AddonDirs) -> list[dict]:
     return list(by_id.values())
 
 
-def save_clothing_defs_file(data_dir: Path, clothing_list: list[dict],
-                            outfit_types: Optional[list[dict]] = None) -> None:
+def save_clothing_defs_file(
+    data_dir: Path, clothing_list: list[dict], outfit_types: Optional[list[dict]] = None
+) -> None:
     """Write game-specific clothing.json (strips internal fields)."""
     clean = []
     for c in clothing_list:
@@ -554,9 +557,7 @@ def apply_clothing_effects(
     _apply_all_effects(state, fixed_deltas, pct_multipliers)
 
 
-def _apply_computed_effect(
-    state: dict[str, Any], target: str, fixed_delta: float, multiplier: float
-) -> None:
+def _apply_computed_effect(state: dict[str, Any], target: str, fixed_delta: float, multiplier: float) -> None:
     """Apply computed (fixed_delta, multiplier) to a target field in state."""
     # Try resources.max
     if target in state.get("resources", {}):
@@ -594,8 +595,14 @@ def load_trait_groups(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
             # Also namespace trait references within the group
             ns_traits = [namespace_id(addon_id, tid) for tid in g.get("traits", [])]
             exclusive = g.get("exclusive", True)
-            result[ns_id] = {**g, "id": ns_id, "_local_id": g["id"], "source": addon_id,
-                             "traits": ns_traits, "exclusive": exclusive}
+            result[ns_id] = {
+                **g,
+                "id": ns_id,
+                "_local_id": g["id"],
+                "source": addon_id,
+                "traits": ns_traits,
+                "exclusive": exclusive,
+            }
     return result
 
 
@@ -634,11 +641,13 @@ def get_ability_defs(trait_defs: dict[str, dict]) -> list[dict]:
     abilities = []
     for td in trait_defs.values():
         if td.get("category") == "ability":
-            abilities.append({
-                "key": td["id"],
-                "label": td["name"],
-                "defaultValue": td.get("defaultValue", 0),
-            })
+            abilities.append(
+                {
+                    "key": td["id"],
+                    "label": td["name"],
+                    "defaultValue": td.get("defaultValue", 0),
+                }
+            )
     # Stable ordering by key
     abilities.sort(key=lambda a: a["key"])
     return abilities
@@ -649,10 +658,12 @@ def get_experience_defs(trait_defs: dict[str, dict]) -> list[dict]:
     exps = []
     for td in trait_defs.values():
         if td.get("category") == "experience":
-            exps.append({
-                "key": td["id"],
-                "label": td["name"],
-            })
+            exps.append(
+                {
+                    "key": td["id"],
+                    "label": td["name"],
+                }
+            )
     exps.sort(key=lambda e: e["key"])
     return exps
 
@@ -751,9 +762,7 @@ def build_character_state(
     state["resources"] = resources
 
     # Clothing with occlusion
-    clothing_state = build_clothing_state(
-        char_data.get("clothing", {}), template["clothingSlots"], clothing_defs
-    )
+    clothing_state = build_clothing_state(char_data.get("clothing", {}), template["clothingSlots"], clothing_defs)
     state["clothing"] = clothing_state
 
     # Traits — resolve IDs to display names via trait_defs (skip ability category)
@@ -767,12 +776,14 @@ def build_character_state(
             values = [trait_defs[tid]["name"] if tid in trait_defs else to_local_id(tid) for tid in ids]
         else:
             values = [to_local_id(tid) for tid in ids]
-        traits.append({
-            "key": key,
-            "label": field["label"],
-            "values": values,
-            "multiple": field["multiple"],
-        })
+        traits.append(
+            {
+                "key": key,
+                "label": field["label"],
+                "values": values,
+                "multiple": field["multiple"],
+            }
+        )
     state["traits"] = traits
 
     # Abilities — built from ability-category trait_defs (auto-apply to all characters)
@@ -781,12 +792,14 @@ def build_character_state(
     for field in ability_defs:
         key = field["key"]
         exp = char_data.get("abilities", {}).get(key, field["defaultValue"])
-        abilities.append({
-            "key": key,
-            "label": field["label"],
-            "exp": exp,
-            "grade": exp_to_grade(exp),
-        })
+        abilities.append(
+            {
+                "key": key,
+                "label": field["label"],
+                "exp": exp,
+                "grade": exp_to_grade(exp),
+            }
+        )
     state["abilities"] = abilities
 
     # Experiences — built from experience-category trait_defs (auto-apply to all characters)
@@ -798,12 +811,14 @@ def build_character_state(
         exp_data = char_exps.get(key, {})
         count = exp_data.get("count", 0) if isinstance(exp_data, dict) else 0
         first = exp_data.get("first") if isinstance(exp_data, dict) else None
-        experiences.append({
-            "key": key,
-            "label": field["label"],
-            "count": count,
-            "first": first,
-        })
+        experiences.append(
+            {
+                "key": key,
+                "label": field["label"],
+                "count": count,
+                "first": first,
+            }
+        )
     state["experiences"] = experiences
 
     # Inventory — flat list, resolve names from item_defs
@@ -813,12 +828,14 @@ def build_character_state(
         item_id = entry.get("itemId", "")
         amount = entry.get("amount", 1)
         item_def = (item_defs or {}).get(item_id)
-        inventory.append({
-            "itemId": item_id,
-            "name": item_def["name"] if item_def else to_local_id(item_id),
-            "tags": item_def.get("tags", []) if item_def else [],
-            "amount": amount,
-        })
+        inventory.append(
+            {
+                "itemId": item_id,
+                "name": item_def["name"] if item_def else to_local_id(item_id),
+                "tags": item_def.get("tags", []) if item_def else [],
+                "amount": amount,
+            }
+        )
     state["inventory"] = inventory
 
     # Position
@@ -838,9 +855,7 @@ def build_character_state(
     return state
 
 
-def build_clothing_state(
-    char_clothing: dict, slots: list[str], clothing_defs: dict[str, dict]
-) -> list[dict]:
+def build_clothing_state(char_clothing: dict, slots: list[str], clothing_defs: dict[str, dict]) -> list[dict]:
     """Build clothing display state with occlusion calculation."""
     # First pass: collect all worn items and their occlusions
     occluded_slots: set[str] = set()
@@ -891,6 +906,7 @@ def build_clothing_state(
 # Namespace resolution for character cross-references
 # ---------------------------------------------------------------------------
 
+
 def namespace_character_data(
     char_data: dict,
     trait_defs: dict[str, dict],
@@ -908,10 +924,7 @@ def namespace_character_data(
 
     # Traits: list of trait IDs per category
     for key in list(char_data.get("traits", {}).keys()):
-        char_data["traits"][key] = [
-            resolve_ref(tid, trait_defs, default_addon)
-            for tid in char_data["traits"][key]
-        ]
+        char_data["traits"][key] = [resolve_ref(tid, trait_defs, default_addon) for tid in char_data["traits"][key]]
 
     # Clothing: itemId per slot
     for slot, data in char_data.get("clothing", {}).items():
@@ -921,10 +934,7 @@ def namespace_character_data(
     # Outfits: itemId lists per slot per outfit
     for outfit_key, outfit in char_data.get("outfits", {}).items():
         for slot, items in outfit.items():
-            outfit[slot] = [
-                resolve_ref(item_id, clothing_defs, default_addon)
-                for item_id in items if item_id
-            ]
+            outfit[slot] = [resolve_ref(item_id, clothing_defs, default_addon) for item_id in items if item_id]
 
     # Inventory: itemId per entry
     for inv in char_data.get("inventory", []):
@@ -957,13 +967,9 @@ def namespace_character_data(
 
     # Position mapId — resolve against map defs
     if char_data.get("position", {}).get("mapId"):
-        char_data["position"]["mapId"] = resolve_ref(
-            char_data["position"]["mapId"], map_defs, default_addon
-        )
+        char_data["position"]["mapId"] = resolve_ref(char_data["position"]["mapId"], map_defs, default_addon)
     if char_data.get("restPosition", {}).get("mapId"):
-        char_data["restPosition"]["mapId"] = resolve_ref(
-            char_data["restPosition"]["mapId"], map_defs, default_addon
-        )
+        char_data["restPosition"]["mapId"] = resolve_ref(char_data["restPosition"]["mapId"], map_defs, default_addon)
 
 
 def strip_character_namespaces(char_data: dict, addon_id: str = "") -> dict:
@@ -976,10 +982,7 @@ def strip_character_namespaces(char_data: dict, addon_id: str = "") -> dict:
 
     # Traits
     if "traits" in result:
-        result["traits"] = {
-            k: [s(tid) for tid in v]
-            for k, v in result["traits"].items()
-        }
+        result["traits"] = {k: [s(tid) for tid in v] for k, v in result["traits"].items()}
 
     # Clothing
     if "clothing" in result:
@@ -996,35 +999,27 @@ def strip_character_namespaces(char_data: dict, addon_id: str = "") -> dict:
         new_outfits: dict[str, Any] = {}
         for outfit_key, outfit in result["outfits"].items():
             new_outfits[outfit_key] = {
-                slot: [s(item_id) for item_id in items if item_id]
-                for slot, items in outfit.items()
+                slot: [s(item_id) for item_id in items if item_id] for slot, items in outfit.items()
             }
         result["outfits"] = new_outfits
 
     # Inventory
     if "inventory" in result:
         result["inventory"] = [
-            {**inv, "itemId": s(inv["itemId"])} if inv.get("itemId") else inv
-            for inv in result["inventory"]
+            {**inv, "itemId": s(inv["itemId"])} if inv.get("itemId") else inv for inv in result["inventory"]
         ]
 
     # Favorability
     if isinstance(result.get("favorability"), dict):
-        result["favorability"] = {
-            s(k): v for k, v in result["favorability"].items()
-        }
+        result["favorability"] = {s(k): v for k, v in result["favorability"].items()}
 
     # Abilities
     if isinstance(result.get("abilities"), dict):
-        result["abilities"] = {
-            s(k): v for k, v in result["abilities"].items()
-        }
+        result["abilities"] = {s(k): v for k, v in result["abilities"].items()}
 
     # Experiences
     if isinstance(result.get("experiences"), dict):
-        result["experiences"] = {
-            s(k): v for k, v in result["experiences"].items()
-        }
+        result["experiences"] = {s(k): v for k, v in result["experiences"].items()}
 
     # Position
     if result.get("position", {}).get("mapId"):
@@ -1038,6 +1033,7 @@ def strip_character_namespaces(char_data: dict, addon_id: str = "") -> dict:
 # ---------------------------------------------------------------------------
 # Namespace resolution for action cross-references
 # ---------------------------------------------------------------------------
+
 
 def namespace_action_refs(
     action_defs: dict[str, dict],
@@ -1060,9 +1056,14 @@ def namespace_action_refs(
                 _ns_eff(eff, trait_defs, item_defs, clothing_defs, character_defs, map_defs, addon_id)
 
 
-def _ns_cond(cond: dict, trait_defs: dict, item_defs: dict,
-             character_defs: dict, default_addon: str,
-             map_defs: Optional[dict] = None) -> None:
+def _ns_cond(
+    cond: dict,
+    trait_defs: dict,
+    item_defs: dict,
+    character_defs: dict,
+    default_addon: str,
+    map_defs: Optional[dict] = None,
+) -> None:
     """Namespace references in a single action condition."""
     if cond.get("mapId") and cond["mapId"] not in SYMBOLIC_REFS and map_defs is not None:
         cond["mapId"] = resolve_ref(cond["mapId"], map_defs, default_addon)
@@ -1076,9 +1077,15 @@ def _ns_cond(cond: dict, trait_defs: dict, item_defs: dict,
         cond["targetId"] = resolve_ref(cond["targetId"], character_defs, default_addon)
 
 
-def _ns_eff(eff: dict, trait_defs: dict, item_defs: dict,
-            clothing_defs: dict, character_defs: dict, map_defs: dict,
-            default_addon: str) -> None:
+def _ns_eff(
+    eff: dict,
+    trait_defs: dict,
+    item_defs: dict,
+    clothing_defs: dict,
+    character_defs: dict,
+    map_defs: dict,
+    default_addon: str,
+) -> None:
     """Namespace references in a single action effect."""
     if eff.get("traitId") and eff["traitId"] not in SYMBOLIC_REFS:
         eff["traitId"] = resolve_ref(eff["traitId"], trait_defs, default_addon)

@@ -217,8 +217,7 @@ def get_base_version(version: str) -> str:
     return version
 
 
-def copy_addon_version(addon_id: str, source_version: str, new_version: str,
-                       forked_from: str | None = None) -> str:
+def copy_addon_version(addon_id: str, source_version: str, new_version: str, forked_from: str | None = None) -> str:
     """Copy an addon version to a new version directory.
 
     Used for manual branching and version bumping.
@@ -248,8 +247,7 @@ def copy_addon_version(addon_id: str, source_version: str, new_version: str,
     return new_version
 
 
-def overwrite_addon_version(addon_id: str, source_version: str,
-                            target_version: str) -> None:
+def overwrite_addon_version(addon_id: str, source_version: str, target_version: str) -> None:
     """Overwrite target version's entity files with source version's content.
 
     Copies all files except addon.json (preserves target's metadata/identity).
@@ -297,10 +295,12 @@ def list_addon_versions_detail(addon_id: str) -> list[dict]:
         if not _is_version_dir(d):
             continue
         meta = _load_json_safe(d / "addon.json")
-        result.append({
-            "version": d.name,
-            "forkedFrom": meta.get("_forkedFrom"),
-        })
+        result.append(
+            {
+                "version": d.name,
+                "forkedFrom": meta.get("_forkedFrom"),
+            }
+        )
     return result
 
 
@@ -310,9 +310,7 @@ def load_template() -> dict:
         return json.load(f)
 
 
-def resolve_asset_path(
-    filename: str, subfolder: str, addon_dirs: list[tuple[str, Path]]
-) -> Path | None:
+def resolve_asset_path(filename: str, subfolder: str, addon_dirs: list[tuple[str, Path]]) -> Path | None:
     """Resolve an asset file by searching addon directories in reverse order.
 
     Checks both version-level and addon-root assets/ directories.
@@ -329,9 +327,7 @@ def resolve_asset_path(
     return None
 
 
-def find_addon_for_asset(
-    filename: str, subfolder: str, addon_dirs: list[tuple[str, Path]]
-) -> str | None:
+def find_addon_for_asset(filename: str, subfolder: str, addon_dirs: list[tuple[str, Path]]) -> str | None:
     """Find which addon contains an asset file. Returns addon_id or None.
 
     Checks both version-level and addon-root assets/ directories.
@@ -344,5 +340,3 @@ def find_addon_for_asset(
         if root_candidate.exists():
             return addon_id
     return None
-
-

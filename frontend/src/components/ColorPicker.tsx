@@ -61,14 +61,20 @@ export default function ColorPicker({ value, onChange }: Props) {
   }, []);
 
   // React onChange (= native input event) for live preview while dragging
-  const handleLivePreview = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  }, [onChange]);
+  const handleLivePreview = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange(e.target.value);
+    },
+    [onChange],
+  );
 
-  const handleSwatchClick = useCallback((color: string) => {
-    onChange(color);
-    setRecent(pushRecent(color));
-  }, [onChange]);
+  const handleSwatchClick = useCallback(
+    (color: string) => {
+      onChange(color);
+      setRecent(pushRecent(color));
+    },
+    [onChange],
+  );
 
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
@@ -82,9 +88,8 @@ export default function ColorPicker({ value, onChange }: Props) {
             width: "16px",
             height: "16px",
             backgroundColor: color,
-            border: color.toLowerCase() === value.toLowerCase()
-              ? `2px solid ${T.accent}`
-              : `1px solid ${T.borderLight}`,
+            border:
+              color.toLowerCase() === value.toLowerCase() ? `2px solid ${T.accent}` : `1px solid ${T.borderLight}`,
             borderRadius: "2px",
             cursor: "pointer",
             padding: 0,
@@ -110,17 +115,21 @@ export default function ColorPicker({ value, onChange }: Props) {
         }}
         title="选择颜色"
       >
-        <span style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "10px",
-          color: "#fff",
-          textShadow: "0 0 2px #000, 0 0 2px #000",
-          lineHeight: 1,
-        }}>+</span>
+        <span
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "10px",
+            color: "#fff",
+            textShadow: "0 0 2px #000, 0 0 2px #000",
+            lineHeight: 1,
+          }}
+        >
+          +
+        </span>
       </button>
       <input
         ref={inputRef}

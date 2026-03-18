@@ -109,13 +109,8 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                   "【？？？】"
                 ) : slot.itemId ? (
                   <>
-                    [{slot.itemName}]
-                    {slot.state === "halfWorn" && (
-                      <span style={{ color: T.danger }}> (半穿)</span>
-                    )}
-                    {slot.state === "off" && (
-                      <span style={{ color: T.danger }}> (脱下)</span>
-                    )}
+                    [{slot.itemName}]{slot.state === "halfWorn" && <span style={{ color: T.danger }}> (半穿)</span>}
+                    {slot.state === "off" && <span style={{ color: T.danger }}> (脱下)</span>}
                   </>
                 ) : (
                   "无"
@@ -131,10 +126,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
           <Section title="特质">
             {traits.map((trait) => (
               <div key={trait.key}>
-                {trait.label}:{" "}
-                {trait.values.length > 0
-                  ? trait.values.map((v) => `[${v}]`).join(" ")
-                  : "无"}
+                {trait.label}: {trait.values.length > 0 ? trait.values.map((v) => `[${v}]`).join(" ") : "无"}
               </div>
             ))}
           </Section>
@@ -149,8 +141,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
             >
               {abilities.map((ab) => (
                 <div key={ab.key}>
-                  {ab.label}: {ab.grade}{" "}
-                  <span style={{ color: T.textSub }}>{ab.exp}</span>
+                  {ab.label}: {ab.grade} <span style={{ color: T.textSub }}>{ab.exp}</span>
                 </div>
               ))}
             </div>
@@ -162,20 +153,22 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
         <Section title="经验记录">
           {experiences && experiences.length > 0 ? (
             experiences.filter((exp) => exp.count > 0).length > 0 ? (
-              experiences.filter((exp) => exp.count > 0).map((exp) => (
-                <div key={exp.key} style={{ marginBottom: "6px" }}>
-                  <div>
-                    {exp.label}: <span style={{ color: T.accent }}>{exp.count}</span>回
-                  </div>
-                  {exp.first && (
-                    <div style={{ color: T.textSub, fontSize: "11px", paddingLeft: "12px" }}>
-                      第一次: {exp.first.time ?? ""}
-                      {exp.first.location && <>，在{exp.first.location}</>}
-                      {exp.first.target && <>，和 {exp.first.target}</>}
+              experiences
+                .filter((exp) => exp.count > 0)
+                .map((exp) => (
+                  <div key={exp.key} style={{ marginBottom: "6px" }}>
+                    <div>
+                      {exp.label}: <span style={{ color: T.accent }}>{exp.count}</span>回
                     </div>
-                  )}
-                </div>
-              ))
+                    {exp.first && (
+                      <div style={{ color: T.textSub, fontSize: "11px", paddingLeft: "12px" }}>
+                        第一次: {exp.first.time ?? ""}
+                        {exp.first.location && <>，在{exp.first.location}</>}
+                        {exp.first.target && <>，和 {exp.first.target}</>}
+                      </div>
+                    )}
+                  </div>
+                ))
             ) : (
               <div style={{ color: T.textDim }}>无经验记录</div>
             )
@@ -190,7 +183,8 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
           {inventory.length > 0 ? (
             inventory.map((inv) => (
               <div key={inv.itemId}>
-                {inv.name}{inv.amount > 1 ? ` x${inv.amount}` : ""}
+                {inv.name}
+                {inv.amount > 1 ? ` x${inv.amount}` : ""}
               </div>
             ))
           ) : (
@@ -224,7 +218,9 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                     }}
                   />
                 </div>
-                <span style={{ color: T.textSub, fontSize: "12px", minWidth: "30px", textAlign: "right" }}>{fav.value}</span>
+                <span style={{ color: T.textSub, fontSize: "12px", minWidth: "30px", textAlign: "right" }}>
+                  {fav.value}
+                </span>
               </div>
             ))
           ) : (
@@ -236,13 +232,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: "12px" }}>
       <div

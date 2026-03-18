@@ -26,21 +26,28 @@ def _make_char(abilities=None, resources=None, traits=None, experiences=None, in
 # Single-direction (backward compat)
 # ========================
 
+
 class TestSingleDirection:
     def test_ability_no_target(self):
         """Single-direction variable should work without target."""
-        var_def = {"id": "v1", "steps": [
-            {"type": "ability", "key": "combat"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "ability", "key": "combat"},
+            ],
+        }
         char = _make_char(abilities=[{"key": "combat", "exp": 500}])
         result = evaluate_variable(var_def, char, {})
         assert result == 500
 
     def test_source_defaults_to_self(self):
         """Without source field, step reads from self character."""
-        var_def = {"id": "v1", "steps": [
-            {"type": "ability", "key": "combat"},  # no source field
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "ability", "key": "combat"},  # no source field
+            ],
+        }
         char = _make_char(abilities=[{"key": "combat", "exp": 300}])
         target = _make_char(abilities=[{"key": "combat", "exp": 999}])
         result = evaluate_variable(var_def, char, {}, target_state=target)
@@ -51,20 +58,27 @@ class TestSingleDirection:
 # Bidirectional — source field
 # ========================
 
+
 class TestBidirectionalSource:
     def test_source_self_reads_self(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "ability", "key": "combat", "source": "self"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "ability", "key": "combat", "source": "self"},
+            ],
+        }
         char = _make_char(abilities=[{"key": "combat", "exp": 100}])
         target = _make_char(abilities=[{"key": "combat", "exp": 900}])
         result = evaluate_variable(var_def, char, {}, target_state=target)
         assert result == 100
 
     def test_source_target_reads_target(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "ability", "key": "combat", "source": "target"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "ability", "key": "combat", "source": "target"},
+            ],
+        }
         char = _make_char(abilities=[{"key": "combat", "exp": 100}])
         target = _make_char(abilities=[{"key": "combat", "exp": 900}])
         result = evaluate_variable(var_def, char, {}, target_state=target)
@@ -72,26 +86,35 @@ class TestBidirectionalSource:
 
     def test_source_target_no_target_returns_zero(self):
         """If no target provided, source=target steps return 0."""
-        var_def = {"id": "v1", "steps": [
-            {"type": "ability", "key": "combat", "source": "target"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "ability", "key": "combat", "source": "target"},
+            ],
+        }
         char = _make_char(abilities=[{"key": "combat", "exp": 100}])
         result = evaluate_variable(var_def, char, {})
         assert result == 100  # falls back to self
 
     def test_resource_source_target(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "resource", "key": "hp", "source": "target"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "resource", "key": "hp", "source": "target"},
+            ],
+        }
         char = _make_char(resources={"hp": {"value": 50, "max": 100}})
         target = _make_char(resources={"hp": {"value": 80, "max": 100}})
         result = evaluate_variable(var_def, char, {}, target_state=target)
         assert result == 80
 
     def test_hasTrait_source_target(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "hasTrait", "traitGroup": "race", "traitId": "elf", "source": "target"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "hasTrait", "traitGroup": "race", "traitId": "elf", "source": "target"},
+            ],
+        }
         char = _make_char(traits=[{"key": "race", "values": ["human"]}])
         target = _make_char(traits=[{"key": "race", "values": ["elf"]}])
         result = evaluate_variable(var_def, char, {}, target_state=target)
@@ -99,10 +122,13 @@ class TestBidirectionalSource:
 
     def test_combined_self_and_target(self):
         """Difference: self.combat - target.combat"""
-        var_def = {"id": "v1", "steps": [
-            {"type": "ability", "key": "combat", "source": "self"},
-            {"type": "ability", "key": "combat", "source": "target", "op": "subtract"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "ability", "key": "combat", "source": "self"},
+                {"type": "ability", "key": "combat", "source": "target", "op": "subtract"},
+            ],
+        }
         char = _make_char(abilities=[{"key": "combat", "exp": 800}])
         target = _make_char(abilities=[{"key": "combat", "exp": 300}])
         result = evaluate_variable(var_def, char, {}, target_state=target)
@@ -112,6 +138,7 @@ class TestBidirectionalSource:
 # ========================
 # Favorability step
 # ========================
+
 
 class TestFavorabilityStep:
     def _make_gs(self):
@@ -123,37 +150,58 @@ class TestFavorabilityStep:
     def test_self_to_target(self):
         """source=self: self's favorability toward target."""
         gs = self._make_gs()
-        var_def = {"id": "v1", "steps": [
-            {"type": "favorability", "source": "self"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "favorability", "source": "self"},
+            ],
+        }
         result = evaluate_variable(
-            var_def, {}, {},
-            game_state=gs, char_id="alice", target_id="bob",
+            var_def,
+            {},
+            {},
+            game_state=gs,
+            char_id="alice",
+            target_id="bob",
         )
         assert result == 80  # alice → bob
 
     def test_target_to_self(self):
         """source=target: target's favorability toward self."""
         gs = self._make_gs()
-        var_def = {"id": "v1", "steps": [
-            {"type": "favorability", "source": "target"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "favorability", "source": "target"},
+            ],
+        }
         result = evaluate_variable(
-            var_def, {}, {},
-            game_state=gs, char_id="alice", target_id="bob",
+            var_def,
+            {},
+            {},
+            game_state=gs,
+            char_id="alice",
+            target_id="bob",
         )
         assert result == 50  # bob → alice
 
     def test_mutual_favorability(self):
         """Sum of both directions."""
         gs = self._make_gs()
-        var_def = {"id": "v1", "steps": [
-            {"type": "favorability", "source": "self"},
-            {"type": "favorability", "source": "target", "op": "add"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "favorability", "source": "self"},
+                {"type": "favorability", "source": "target", "op": "add"},
+            ],
+        }
         result = evaluate_variable(
-            var_def, {}, {},
-            game_state=gs, char_id="alice", target_id="bob",
+            var_def,
+            {},
+            {},
+            game_state=gs,
+            char_id="alice",
+            target_id="bob",
         )
         assert result == 130  # 80 + 50
 
@@ -161,19 +209,29 @@ class TestFavorabilityStep:
         gs = MockGameState()
         gs.character_data["alice"] = make_char_data("Alice")
         gs.character_data["bob"] = make_char_data("Bob")
-        var_def = {"id": "v1", "steps": [
-            {"type": "favorability", "source": "self"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "favorability", "source": "self"},
+            ],
+        }
         result = evaluate_variable(
-            var_def, {}, {},
-            game_state=gs, char_id="alice", target_id="bob",
+            var_def,
+            {},
+            {},
+            game_state=gs,
+            char_id="alice",
+            target_id="bob",
         )
         assert result == 0
 
     def test_no_game_state_returns_zero(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "favorability", "source": "self"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "favorability", "source": "self"},
+            ],
+        }
         result = evaluate_variable(var_def, {}, {})
         assert result == 0
 
@@ -182,11 +240,15 @@ class TestFavorabilityStep:
 # Debug trace includes source
 # ========================
 
+
 class TestDebugTrace:
     def test_debug_shows_source(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "ability", "key": "combat", "source": "target"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "ability", "key": "combat", "source": "target"},
+            ],
+        }
         char = _make_char(abilities=[{"key": "combat", "exp": 100}])
         target = _make_char(abilities=[{"key": "combat", "exp": 900}])
         result = evaluate_variable_debug(var_def, char, {}, target_state=target)
@@ -194,9 +256,12 @@ class TestDebugTrace:
         assert result["steps"][0]["source"] == "target"
 
     def test_debug_default_source_is_self(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "constant", "value": 42},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "constant", "value": 42},
+            ],
+        }
         result = evaluate_variable_debug(var_def, {}, {})
         assert result["steps"][0]["source"] == "self"
 
@@ -205,22 +270,31 @@ class TestDebugTrace:
 # Cross-variable reference with bidirectional
 # ========================
 
+
 class TestCrossVariableRef:
     def test_bidirectional_refs_bidirectional(self):
         """A bidirectional variable can reference another bidirectional."""
         all_vars = {
-            "v_inner": {"id": "v_inner", "steps": [
-                {"type": "ability", "key": "combat", "source": "target"},
-            ]},
-            "v_outer": {"id": "v_outer", "steps": [
-                {"type": "variable", "varId": "v_inner"},
-                {"type": "constant", "value": 10, "op": "add"},
-            ]},
+            "v_inner": {
+                "id": "v_inner",
+                "steps": [
+                    {"type": "ability", "key": "combat", "source": "target"},
+                ],
+            },
+            "v_outer": {
+                "id": "v_outer",
+                "steps": [
+                    {"type": "variable", "varId": "v_inner"},
+                    {"type": "constant", "value": 10, "op": "add"},
+                ],
+            },
         }
         char = _make_char(abilities=[{"key": "combat", "exp": 100}])
         target = _make_char(abilities=[{"key": "combat", "exp": 500}])
         result = evaluate_variable(
-            all_vars["v_outer"], char, all_vars,
+            all_vars["v_outer"],
+            char,
+            all_vars,
             target_state=target,
         )
         assert result == 510  # target combat (500) + 10

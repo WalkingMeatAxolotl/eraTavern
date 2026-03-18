@@ -6,6 +6,7 @@ from game.variable_engine import _apply_op, evaluate_variable, evaluate_variable
 
 # --- _apply_op tests ---
 
+
 class TestApplyOp:
     def test_add(self):
         assert _apply_op("add", 10, 5) == 15
@@ -52,9 +53,14 @@ class TestApplyOp:
 
 # --- evaluate_variable tests ---
 
+
 def _make_char_state(
-    abilities=None, resources=None, basic_info=None,
-    traits=None, experiences=None, inventory=None,
+    abilities=None,
+    resources=None,
+    basic_info=None,
+    traits=None,
+    experiences=None,
+    inventory=None,
 ):
     return {
         "abilities": abilities or [],
@@ -72,25 +78,34 @@ class TestEvaluateConstant:
         assert evaluate_variable(var_def, {}, {}) == 42
 
     def test_constant_add(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "constant", "value": 10},
-            {"type": "constant", "value": 5, "op": "add"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "constant", "value": 10},
+                {"type": "constant", "value": 5, "op": "add"},
+            ],
+        }
         assert evaluate_variable(var_def, {}, {}) == 15
 
     def test_default_op_is_add(self):
         """When op is omitted, should default to add."""
-        var_def = {"id": "v1", "steps": [
-            {"type": "constant", "value": 10},
-            {"type": "constant", "value": 5},  # no op field
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "constant", "value": 10},
+                {"type": "constant", "value": 5},  # no op field
+            ],
+        }
         assert evaluate_variable(var_def, {}, {}) == 15
 
     def test_constant_multiply(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "constant", "value": 10},
-            {"type": "constant", "value": 3, "op": "multiply"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "constant", "value": 10},
+                {"type": "constant", "value": 3, "op": "multiply"},
+            ],
+        }
         assert evaluate_variable(var_def, {}, {}) == 30
 
 
@@ -188,10 +203,13 @@ class TestEvaluateVariable:
         state = _make_char_state(abilities=[{"key": "sword", "exp": 100}])
         all_vars = {
             "base": {"id": "base", "steps": [{"type": "ability", "key": "sword"}]},
-            "derived": {"id": "derived", "steps": [
-                {"type": "variable", "varId": "base"},
-                {"type": "constant", "value": 2, "op": "multiply"},
-            ]},
+            "derived": {
+                "id": "derived",
+                "steps": [
+                    {"type": "variable", "varId": "base"},
+                    {"type": "constant", "value": 2, "op": "multiply"},
+                ],
+            },
         }
         assert evaluate_variable(all_vars["derived"], state, all_vars) == 200
 
@@ -212,17 +230,22 @@ class TestEvaluateVariable:
 class TestMultiStepFormula:
     def test_complex_formula(self):
         """sword_exp + magic_exp * 0.5, floor at 50, cap at 500."""
-        state = _make_char_state(abilities=[
-            {"key": "sword", "exp": 200},
-            {"key": "magic", "exp": 100},
-        ])
-        var_def = {"id": "power", "steps": [
-            {"type": "ability", "key": "sword"},
-            {"type": "ability", "key": "magic", "op": "add"},
-            {"type": "constant", "value": 0.5, "op": "multiply"},
-            {"type": "constant", "value": 50, "op": "floor"},
-            {"type": "constant", "value": 500, "op": "cap"},
-        ]}
+        state = _make_char_state(
+            abilities=[
+                {"key": "sword", "exp": 200},
+                {"key": "magic", "exp": 100},
+            ]
+        )
+        var_def = {
+            "id": "power",
+            "steps": [
+                {"type": "ability", "key": "sword"},
+                {"type": "ability", "key": "magic", "op": "add"},
+                {"type": "constant", "value": 0.5, "op": "multiply"},
+                {"type": "constant", "value": 50, "op": "floor"},
+                {"type": "constant", "value": 500, "op": "cap"},
+            ],
+        }
         # (200 + 100) * 0.5 = 150, floor(50) = 150, cap(500) = 150
         assert evaluate_variable(var_def, state, {}) == 150
 
@@ -233,10 +256,13 @@ class TestMultiStepFormula:
 
 class TestEvaluateDebug:
     def test_returns_trace(self):
-        var_def = {"id": "v1", "steps": [
-            {"type": "constant", "value": 10, "label": "base"},
-            {"type": "constant", "value": 5, "op": "add", "label": "bonus"},
-        ]}
+        var_def = {
+            "id": "v1",
+            "steps": [
+                {"type": "constant", "value": 10, "label": "base"},
+                {"type": "constant", "value": 5, "op": "add", "label": "bonus"},
+            ],
+        }
         result = evaluate_variable_debug(var_def, {}, {})
         assert result["result"] == 15
         assert len(result["steps"]) == 2

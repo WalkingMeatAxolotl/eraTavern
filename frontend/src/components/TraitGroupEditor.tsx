@@ -29,7 +29,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const isReadOnly = false;  // all addon entities are editable
+  const isReadOnly = false; // all addon entities are editable
   const categories = definitions.template.traits;
 
   // Traits in the same category as the group
@@ -47,14 +47,23 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
     setSaving(true);
     setMessage(null);
     try {
-      const payload = { id: data.id, name: data.name, category: data.category, traits: data.traits, exclusive: data.exclusive !== false, source: group.source };
+      const payload = {
+        id: data.id,
+        name: data.name,
+        category: data.category,
+        traits: data.traits,
+        exclusive: data.exclusive !== false,
+        source: group.source,
+      };
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(payload); } else { await addonCrud.save(group.id, payload); }
+        if (isNew) {
+          await addonCrud.create(payload);
+        } else {
+          await addonCrud.save(group.id, payload);
+        }
         return;
       }
-      const result = isNew
-        ? await createTraitGroup(payload)
-        : await saveTraitGroup(group.id, payload);
+      const result = isNew ? await createTraitGroup(payload) : await saveTraitGroup(group.id, payload);
       setMessage(result.message);
       if (result.success && isNew) {
         onBack();
@@ -70,7 +79,11 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
     if (!confirm(`确定删除特质组 "${data.name}" ？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(data.id); onBack(); return; }
+      if (addonCrud) {
+        await addonCrud.delete(data.id);
+        onBack();
+        return;
+      }
       await deleteTraitGroup(data.id);
       onBack();
     } catch (e: unknown) {
@@ -128,14 +141,25 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
           style={selectStyle()}
         >
           {categories.map((cat) => (
-            <option key={cat.key} value={cat.key}>{cat.label}</option>
+            <option key={cat.key} value={cat.key}>
+              {cat.label}
+            </option>
           ))}
         </select>
       </Row>
 
       {/* Exclusive */}
       <Row label="互斥">
-        <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", color: T.textSub }}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            cursor: "pointer",
+            fontSize: "12px",
+            color: T.textSub,
+          }}
+        >
           <input
             type="checkbox"
             checked={data.exclusive !== false}
@@ -199,14 +223,24 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
             {availableTraits
               .filter((t) => !data.traits.includes(t.id))
               .map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
               ))}
           </select>
         )}
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: `1px solid ${T.border}`, paddingTop: "12px" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginTop: "12px",
+          borderTop: `1px solid ${T.border}`,
+          paddingTop: "12px",
+        }}
+      >
         {!isReadOnly && (
           <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
             [{saving ? "提交中..." : "确定"}]
@@ -221,7 +255,13 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
           [返回]
         </button>
         {message && (
-          <span style={{ color: message.includes("fail") || message.includes("not found") ? T.danger : T.success, marginLeft: "8px", alignSelf: "center" }}>
+          <span
+            style={{
+              color: message.includes("fail") || message.includes("not found") ? T.danger : T.success,
+              marginLeft: "8px",
+              alignSelf: "center",
+            }}
+          >
             {message}
           </span>
         )}

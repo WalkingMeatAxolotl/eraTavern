@@ -29,7 +29,13 @@ const hoverStyles = `
   .cm-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
 `;
 
-export default function ClothingManager({ selectedAddon, onEditingChange }: { selectedAddon: string | null; onEditingChange?: (editing: boolean) => void }) {
+export default function ClothingManager({
+  selectedAddon,
+  onEditingChange,
+}: {
+  selectedAddon: string | null;
+  onEditingChange?: (editing: boolean) => void;
+}) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [clothing, setClothing] = useState<ClothingDefinition[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,13 +44,12 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
   const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null);
   const [isNewOutfit, setIsNewOutfit] = useState(false);
 
-  useEffect(() => { onEditingChange?.(editingId !== null); }, [editingId, onEditingChange]);
+  useEffect(() => {
+    onEditingChange?.(editingId !== null);
+  }, [editingId, onEditingChange]);
 
   const loadData = useCallback(async () => {
-    const [defs, clothingList] = await Promise.all([
-      fetchDefinitions(),
-      fetchClothingDefs(),
-    ]);
+    const [defs, clothingList] = await Promise.all([fetchDefinitions(), fetchClothingDefs()]);
     setDefinitions(defs);
     setClothing(clothingList);
   }, []);
@@ -74,11 +79,7 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
   };
 
   if (!definitions) {
-    return (
-      <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>
-        加载中...
-      </div>
-    );
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
   }
 
   // Outfit editor view
@@ -92,7 +93,11 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
         allOutfits={types}
         definitions={definitions}
         isNew={isNewOutfit}
-        onBack={() => { setEditingOutfitId(null); setIsNewOutfit(false); loadData(); }}
+        onBack={() => {
+          setEditingOutfitId(null);
+          setIsNewOutfit(false);
+          loadData();
+        }}
       />
     );
   }
@@ -120,13 +125,11 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
   }
 
   const readOnly = selectedAddon === null;
-  const filteredClothing = selectedAddon ? clothing.filter(c => c.source === selectedAddon) : clothing;
+  const filteredClothing = selectedAddon ? clothing.filter((c) => c.source === selectedAddon) : clothing;
 
   // Group clothing by slot — deduplicate accessory1/2/3 into "accessory"
   const rawSlots = definitions.template.clothingSlots;
-  const slots = [...new Set(rawSlots.map((s) =>
-    s.startsWith("accessory") ? "accessory" : s
-  ))];
+  const slots = [...new Set(rawSlots.map((s) => (s.startsWith("accessory") ? "accessory" : s)))];
   const grouped: Record<string, ClothingDefinition[]> = {};
   for (const s of slots) {
     grouped[s] = [];
@@ -154,17 +157,42 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
       <style>{hoverStyles}</style>
       {/* Header: title + both create buttons */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == 服装列表 ==
-        </span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 服装列表 ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
-            <button className="cm-action-btn" onClick={() => { setIsNewOutfit(true); setEditingOutfitId("__new__"); }}
-              style={{ padding: "4px 12px", backgroundColor: T.bg2, color: T.successDim, border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "13px" }}
-            >[+ 新建预设]</button>
-            <button className="cm-action-btn" onClick={handleNew}
-              style={{ padding: "4px 12px", backgroundColor: T.bg2, color: T.successDim, border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "13px" }}
-            >[+ 新建服装]</button>
+            <button
+              className="cm-action-btn"
+              onClick={() => {
+                setIsNewOutfit(true);
+                setEditingOutfitId("__new__");
+              }}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.successDim,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [+ 新建预设]
+            </button>
+            <button
+              className="cm-action-btn"
+              onClick={handleNew}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.successDim,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [+ 新建服装]
+            </button>
           </div>
         )}
       </div>
@@ -181,10 +209,19 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
                 <button
                   className="cm-item"
                   key={t.id}
-                  onClick={() => { setIsNewOutfit(false); setEditingOutfitId(t.id); }}
+                  onClick={() => {
+                    setIsNewOutfit(false);
+                    setEditingOutfitId(t.id);
+                  }}
                   style={{
-                    position: "relative", padding: "4px 10px", backgroundColor: T.bg1, color: T.text,
-                    border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "12px",
+                    position: "relative",
+                    padding: "4px 10px",
+                    backgroundColor: T.bg1,
+                    color: T.text,
+                    border: `1px solid ${T.border}`,
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    fontSize: "12px",
                     transition: "background-color 0.15s, border-color 0.15s",
                   }}
                 >
@@ -223,7 +260,8 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
               >
                 <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
                   {isCollapsed ? "\u25B6" : "\u25BC"}
-                </span> {SLOT_LABELS[slotKey] ?? slotKey} ({items.length})
+                </span>{" "}
+                {SLOT_LABELS[slotKey] ?? slotKey} ({items.length})
               </button>
               {!isCollapsed && items.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
@@ -245,9 +283,7 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
                       }}
                     >
                       {c.name || c.id}
-                      {c.source && (
-                        <span style={{ color: T.textSub, fontSize: "11px" }}> [{c.source}]</span>
-                      )}
+                      {c.source && <span style={{ color: T.textSub, fontSize: "11px" }}> [{c.source}]</span>}
                     </button>
                   ))}
                 </div>
@@ -276,7 +312,8 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
             >
               <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
                 {collapsed["__other__"] ? "\u25B6" : "\u25BC"}
-              </span> 未分类 ({grouped["__other__"].length})
+              </span>{" "}
+              未分类 ({grouped["__other__"].length})
             </button>
             {!collapsed["__other__"] && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
@@ -298,9 +335,7 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
                     }}
                   >
                     {c.name || c.id}
-                    {c.source && (
-                      <span style={{ color: T.textSub, fontSize: "11px" }}> [{c.source}]</span>
-                    )}
+                    {c.source && <span style={{ color: T.textSub, fontSize: "11px" }}> [{c.source}]</span>}
                   </button>
                 ))}
               </div>
@@ -314,7 +349,16 @@ export default function ClothingManager({ selectedAddon, onEditingChange }: { se
 
 function SectionDivider({ label }: { label: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "4px 0 2px", fontSize: "12px", color: T.textDim }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        margin: "4px 0 2px",
+        fontSize: "12px",
+        color: T.textDim,
+      }}
+    >
       <span style={{ color: T.accent, fontWeight: "bold" }}>{label}</span>
       <span style={{ flex: 1, height: "1px", backgroundColor: T.borderDim }} />
     </div>

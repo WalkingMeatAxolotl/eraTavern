@@ -94,6 +94,7 @@ def _validate_id(raw_id: str) -> Optional[dict]:
     Validates only the local part (after the first dot).
     """
     from game.character import NS_SEP
+
     if not raw_id:
         return _resp(False, "VALIDATION_ID_EMPTY")
     # Extract local part: 'base.sword' → 'sword', 'sword' → 'sword'
@@ -106,6 +107,7 @@ def _validate_id(raw_id: str) -> Optional[dict]:
 def _ensure_ns(entity_id: str, source: str = "") -> str:
     """Ensure an entity ID is namespaced. Auto-prefix with source if bare."""
     from game.character import NS_SEP
+
     if not entity_id or NS_SEP in entity_id:
         return entity_id
     if not source:
@@ -132,6 +134,7 @@ def _resp(success: bool, error: str, params: Optional[dict] = None, **extra) -> 
 async def lifespan(app: FastAPI):
     global game_state
     from game.addon_loader import save_world_config
+
     game_state = GameState()
 
     config = load_config()
@@ -290,6 +293,7 @@ class CreateWorldRequest(BaseModel):
 async def create_world(req: CreateWorldRequest):
     """Create a new world. Addon versions will be forked on first load."""
     from game.addon_loader import WORLDS_DIR, save_world_config
+
     if err := _validate_id(req.id):
         return err
     world_dir = WORLDS_DIR / req.id
@@ -312,6 +316,7 @@ async def delete_world(world_id: str):
     import shutil as _shutil
 
     from game.addon_loader import WORLDS_DIR
+
     world_dir = WORLDS_DIR / world_id
     if not world_dir.exists():
         return _resp(False, "WORLD_NOT_FOUND", {"id": world_id})
@@ -323,6 +328,7 @@ async def delete_world(world_id: str):
 async def update_world(world_id: str):
     """Update existing world config with current session state."""
     from game.addon_loader import WORLDS_DIR, load_world_config, save_world_config
+
     world_dir = WORLDS_DIR / world_id
     if not world_dir.exists():
         return _resp(False, "WORLD_NOT_FOUND", {"id": world_id})
@@ -336,6 +342,7 @@ async def update_world(world_id: str):
 async def update_world_meta(world_id: str, body: dict = Body(...)):
     """Update world metadata (name, description, cover)."""
     from game.addon_loader import WORLDS_DIR, load_world_config, save_world_config
+
     world_dir = WORLDS_DIR / world_id
     if not world_dir.exists():
         return _resp(False, "WORLD_NOT_FOUND", {"id": world_id})
@@ -358,6 +365,7 @@ async def update_addon_meta(addon_id: str, version: str, body: dict = Body(...))
     Writes to addons/{addonId}/meta.json (shared across all versions).
     """
     from game.addon_loader import ADDONS_DIR, load_addon_shared_meta, save_addon_shared_meta
+
     addon_base = ADDONS_DIR / addon_id
     if not addon_base.exists():
         return _resp(False, "ADDON_NOT_FOUND", {"id": addon_id})
@@ -452,6 +460,7 @@ async def create_addon(body: dict = Body(...)):
 
     # Write shared addon-level metadata
     from game.addon_loader import save_addon_shared_meta
+
     shared_meta = {
         "name": name,
         "description": body.get("description", ""),
@@ -482,13 +491,13 @@ async def delete_addon_all(addon_id: str):
 async def delete_addon(addon_id: str, version: str):
     """Delete an addon version from disk."""
     from game.addon_loader import ADDONS_DIR
+
     version_dir = ADDONS_DIR / addon_id / version
     if not version_dir.exists():
         return _resp(False, "ADDON_VERSION_NOT_FOUND", {"id": addon_id, "version": version})
 
     # Don't allow deleting if it's currently loaded
-    if any(ref.get("id") == addon_id and ref.get("version") == version
-           for ref in game_state.addon_refs):
+    if any(ref.get("id") == addon_id and ref.get("version") == version for ref in game_state.addon_refs):
         return _resp(False, "ADDON_VERSION_IN_USE", {"id": addon_id, "version": version})
 
     shutil.rmtree(version_dir)
@@ -514,10 +523,12 @@ async def restart_game():
 
 # ── Save Slot endpoints ──
 
+
 @app.get("/api/saves")
 async def list_saves_endpoint():
     """List all save slots for the current world."""
     from game.save_manager import list_saves
+
     if not game_state.world_id:
         return {"saves": []}
     saves = list_saves(game_state.world_id)
@@ -530,6 +541,7 @@ async def create_save_endpoint(body: dict = Body(...)):
     from datetime import datetime
 
     from game.save_manager import MAX_SLOTS, create_save, list_saves
+
     if not game_state.world_id:
         return _resp(False, "NO_WORLD_LOADED")
     slot_id = body.get("slotId", "")
@@ -562,6 +574,7 @@ async def create_save_endpoint(body: dict = Body(...)):
 async def load_save_endpoint(slot_id: str):
     """Load a save slot: reload world then restore runtime."""
     from game.save_manager import load_save
+
     if not game_state.world_id:
         return _resp(False, "NO_WORLD_LOADED")
     save_data = load_save(game_state.world_id, slot_id)
@@ -580,6 +593,7 @@ async def load_save_endpoint(slot_id: str):
 async def delete_save_endpoint(slot_id: str):
     """Delete a save slot."""
     from game.save_manager import delete_save
+
     if not game_state.world_id:
         return _resp(False, "NO_WORLD_LOADED")
     ok = delete_save(game_state.world_id, slot_id)
@@ -592,6 +606,7 @@ async def delete_save_endpoint(slot_id: str):
 async def rename_save_endpoint(slot_id: str, body: dict = Body(...)):
     """Rename a save slot."""
     from game.save_manager import rename_save
+
     if not game_state.world_id:
         return _resp(False, "NO_WORLD_LOADED")
     name = body.get("name", "")
@@ -678,6 +693,7 @@ async def upload_asset(
         if worldId:
             # World cover → worlds/{worldId}/about/covers/
             from game.addon_loader import WORLDS_DIR
+
             target_dir = WORLDS_DIR / worldId / "about" / "covers"
         elif addonId:
             # Addon cover → addons/{addonId}/about/covers/ (shared across versions)
@@ -755,25 +771,26 @@ async def perform_action(req: ActionRequest):
             event_msgs = [r["output"] for r in event_results if r.get("output")]
             if event_msgs:
                 existing_msg = result.get("message", "")
-                result["message"] = existing_msg + "\n" + "\n".join(event_msgs) if existing_msg else "\n".join(event_msgs)
+                result["message"] = (
+                    existing_msg + "\n" + "\n".join(event_msgs) if existing_msg else "\n".join(event_msgs)
+                )
         # Append to action log for LLM / save persistence
-        game_state.action_log.append({
-            "message": result.get("message", ""),
-            "actionId": result.get("actionId", ""),
-            "actionName": result.get("actionName", ""),
-            "outcomeGrade": result.get("outcomeGrade"),
-            "outcomeLabel": result.get("outcomeLabel"),
-            "effectsSummary": result.get("effectsSummary", []),
-            "npcLog": result.get("npcLog", []),
-            "totalDays": game_state.time.total_days,
-        })
+        game_state.action_log.append(
+            {
+                "message": result.get("message", ""),
+                "actionId": result.get("actionId", ""),
+                "actionName": result.get("actionName", ""),
+                "outcomeGrade": result.get("outcomeGrade"),
+                "outcomeLabel": result.get("outcomeLabel"),
+                "effectsSummary": result.get("effectsSummary", []),
+                "npcLog": result.get("npcLog", []),
+                "totalDays": game_state.time.total_days,
+            }
+        )
         # Trim action log to retention limit (30 game days)
         cutoff = game_state.time.total_days - game_state.ACTION_LOG_SAVE_DAYS
         if game_state.action_log and game_state.action_log[0].get("totalDays", 0) < cutoff:
-            game_state.action_log = [
-                e for e in game_state.action_log
-                if e.get("totalDays", 0) >= cutoff
-            ]
+            game_state.action_log = [e for e in game_state.action_log if e.get("totalDays", 0) >= cutoff]
         # Broadcast updated state to all SSE clients
         state = game_state.get_full_state()
         await manager.broadcast("state_update", state)
@@ -1039,13 +1056,15 @@ async def update_outfit_types(body: dict = Body(...)):
             oid = t["id"]
             if oid not in seen:
                 seen.add(oid)
-                cleaned.append({
-                    "id": oid,
-                    "name": t.get("name", oid),
-                    "description": t.get("description", ""),
-                    "copyDefault": bool(t.get("copyDefault", True)),
-                    "slots": t.get("slots", {}),
-                })
+                cleaned.append(
+                    {
+                        "id": oid,
+                        "name": t.get("name", oid),
+                        "description": t.get("description", ""),
+                        "copyDefault": bool(t.get("copyDefault", True)),
+                        "slots": t.get("slots", {}),
+                    }
+                )
     game_state.outfit_types = cleaned
     await _mark_dirty()
     return _resp(True, "ENTITY_UPDATED", {"entity": "outfitTypes"})
@@ -1353,9 +1372,13 @@ async def evaluate_variable_endpoint(var_id: str, body: dict = Body(...)):
         target_id = _ensure_ns(target_id)
     target_state = game_state.characters.get(target_id) if target_id else None
     result = evaluate_variable_debug(
-        vd, char_state, game_state.variable_defs,
-        target_state=target_state, game_state=game_state,
-        char_id=char_id, target_id=target_id or None,
+        vd,
+        char_state,
+        game_state.variable_defs,
+        target_state=target_state,
+        game_state=game_state,
+        char_id=char_id,
+        target_id=target_id or None,
     )
     return {"success": True, **result}
 
@@ -1623,6 +1646,7 @@ async def create_map_endpoint(req: CreateMapRequest):
     map_data["cell_index"] = {c["id"]: c for c in map_data["cells"]}
     game_state.maps[map_id] = map_data
     from game.map_engine import build_distance_matrix
+
     game_state.distance_matrix = build_distance_matrix(game_state.maps)
     await _mark_dirty()
     return _resp(True, "ENTITY_CREATED", {"entity": "map"})
@@ -1642,6 +1666,7 @@ async def update_map_raw(map_id: str, body: dict = Body(...)):
     body["cell_index"] = {c["id"]: c for c in body.get("cells", [])}
     game_state.maps[map_id] = body
     from game.map_engine import build_distance_matrix
+
     game_state.distance_matrix = build_distance_matrix(game_state.maps)
     await _mark_dirty()
     state = game_state.get_full_state()
@@ -1657,6 +1682,7 @@ async def delete_map_endpoint(map_id: str):
         return _resp(False, "ENTITY_NOT_FOUND", {"entity": "map", "id": map_id})
     del game_state.maps[map_id]
     from game.map_engine import build_distance_matrix
+
     game_state.distance_matrix = build_distance_matrix(game_state.maps)
     await _mark_dirty()
     state = game_state.get_full_state()
@@ -1698,6 +1724,7 @@ async def save_session(body: dict = Body({})):
 async def save_session_as(body: dict = Body(...)):
     """Create a new world from current in-memory state, fork addons, and save."""
     from game.addon_loader import WORLDS_DIR, save_world_config
+
     world_id = body.get("id", "").strip()
     world_name = body.get("name", "").strip()
     if not world_id or not world_name:
@@ -1711,7 +1738,12 @@ async def save_session_as(body: dict = Body(...)):
     for ref in game_state.addon_refs:
         if isinstance(ref, dict):
             from game.addon_loader import get_base_version, is_world_fork
-            base_ver = get_base_version(ref["version"]) if is_world_fork(ref["version"], game_state.world_id) else ref["version"]
+
+            base_ver = (
+                get_base_version(ref["version"])
+                if is_world_fork(ref["version"], game_state.world_id)
+                else ref["version"]
+            )
             fork_ver = fork_addon_version(ref["id"], base_ver, world_id)
             new_addon_refs.append({"id": ref["id"], "version": fork_ver})
         else:
@@ -1751,6 +1783,7 @@ async def _broadcast_state():
 @app.get("/api/events")
 async def sse_events(request: Request):
     """SSE endpoint for real-time server→client push."""
+
     async def event_stream():
         queue: asyncio.Queue = asyncio.Queue()
         manager.add(queue)
@@ -1854,6 +1887,7 @@ async def delete_llm_provider(provider_id: str):
 async def get_llm_models(base_url: str = Query(...), api_key: str = Query("")):
     """Proxy request to get available models from an OpenAI-compatible API."""
     import httpx
+
     url = base_url.rstrip("/") + "/models"
     headers = {}
     if api_key:
@@ -1862,10 +1896,14 @@ async def get_llm_models(base_url: str = Query(...), api_key: str = Query("")):
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(url, headers=headers)
         if resp.status_code != 200:
-            return _resp(False, "LLM_MODELS_FETCH_FAILED", {
-                "status": resp.status_code,
-                "detail": resp.text[:500],
-            })
+            return _resp(
+                False,
+                "LLM_MODELS_FETCH_FAILED",
+                {
+                    "status": resp.status_code,
+                    "detail": resp.text[:500],
+                },
+            )
         body = resp.json()
         models = [m.get("id", "") for m in body.get("data", [])]
         return _resp(True, "", models=models)
@@ -1881,6 +1919,7 @@ async def get_llm_models(base_url: str = Query(...), api_key: str = Query("")):
 async def test_llm_connection(request: Request):
     """Test LLM API connection by sending a minimal chat completion request."""
     import httpx
+
     data = await request.json()
     api = data.get("api", {})
     base_url = api.get("baseUrl", "").rstrip("/")
@@ -1908,10 +1947,14 @@ async def test_llm_connection(request: Request):
             resp = await client.post(url, json=payload, headers=headers)
         if resp.status_code == 200:
             return _resp(True, "")
-        return _resp(False, "LLM_TEST_FAILED", {
-            "status": resp.status_code,
-            "detail": resp.text[:500],
-        })
+        return _resp(
+            False,
+            "LLM_TEST_FAILED",
+            {
+                "status": resp.status_code,
+                "detail": resp.text[:500],
+            },
+        )
     except httpx.ConnectError:
         return _resp(False, "LLM_CONNECTION_FAILED")
     except httpx.TimeoutException:
@@ -1929,6 +1972,7 @@ async def llm_generate(request: Request):
         collect_variables,
         resolve_preset_id,
     )
+
     data = await request.json()
 
     # Accept either a preset id to load, or explicit raw_output + preset_id
@@ -1974,6 +2018,7 @@ async def llm_generate(request: Request):
 
     # Scan preset entries for referenced variable names
     import re as _re
+
     _var_pattern = _re.compile(r"\{\{([\w.]+(?::[\w.=]+)*)\}\}")
     referenced_vars: set[str] = set()
     for entry in preset.get("promptEntries", []):
@@ -2014,14 +2059,17 @@ async def llm_generate(request: Request):
 def _get_addon_dir_or_404(addon_id: str, version: str):
     """Get addon directory, return None if not found."""
     from game.addon_loader import get_addon_version_dir
+
     d = get_addon_version_dir(addon_id, version)
     return d if d.exists() else None
 
 
 if __name__ == "__main__":
     import uvicorn
+
     config = load_config()
     port = config.get("backendPort", 18000)
     import sys
+
     use_reload = "--reload" in sys.argv
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=use_reload)

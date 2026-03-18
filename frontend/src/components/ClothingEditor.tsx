@@ -85,7 +85,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
   const addonPrefix = clothing.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(clothing.id));
   const [name, setName] = useState(clothing.name);
-  const [selectedSlots, setSelectedSlots] = useState<string[]>(clothing.slots ?? (clothing.slot ? [clothing.slot] : []));
+  const [selectedSlots, setSelectedSlots] = useState<string[]>(
+    clothing.slots ?? (clothing.slot ? [clothing.slot] : []),
+  );
   const [occlusion, setOcclusion] = useState<string[]>([...clothing.occlusion]);
   const [effects, setEffects] = useState<TraitEffect[]>([...(clothing.effects ?? [])]);
   const [saving, setSaving] = useState(false);
@@ -93,10 +95,10 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
   const [showSlotHelp, setShowSlotHelp] = useState(false);
   const [showOcclusionHelp, setShowOcclusionHelp] = useState(false);
 
-  const isReadOnly = false;  // all addon entities are editable
-  const slots = [...new Set(definitions.template.clothingSlots.map((s) =>
-    s.startsWith("accessory") ? "accessory" : s
-  ))];
+  const isReadOnly = false; // all addon entities are editable
+  const slots = [
+    ...new Set(definitions.template.clothingSlots.map((s) => (s.startsWith("accessory") ? "accessory" : s))),
+  ];
   const targetGroups = buildTargetOptions(definitions);
   const allTargets = targetGroups.flatMap((g) => g.options);
 
@@ -110,10 +112,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
 
   const addEffect = () => {
     const firstTarget = allTargets[0]?.value ?? "";
-    setEffects((prev) => [
-      ...prev,
-      { target: firstTarget, effect: "increase", magnitudeType: "fixed", value: 0 },
-    ]);
+    setEffects((prev) => [...prev, { target: firstTarget, effect: "increase", magnitudeType: "fixed", value: 0 }]);
   };
 
   const pctHint = (value: number, direction: string) => {
@@ -132,12 +131,14 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
     try {
       const data = { id, name, slots: selectedSlots, occlusion, effects, source: clothing.source };
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(clothing.id, data); }
+        if (isNew) {
+          await addonCrud.create(data);
+        } else {
+          await addonCrud.save(clothing.id, data);
+        }
         return;
       }
-      const result = isNew
-        ? await createClothingDef(data)
-        : await saveClothingDef(clothing.id, data);
+      const result = isNew ? await createClothingDef(data) : await saveClothingDef(clothing.id, data);
       setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
@@ -153,7 +154,11 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
     if (!confirm(`确定要删除服装「${name || id}」吗？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(id); onBack(); return; }
+      if (addonCrud) {
+        await addonCrud.delete(id);
+        onBack();
+        return;
+      }
       const result = await deleteClothingDef(id);
       if (result.success) {
         onBack();
@@ -177,11 +182,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建服装" : "编辑服装"} ==
         </span>
-        {clothing.source && (
-          <span style={{ color: T.accent, fontSize: "12px" }}>
-            来源: {clothing.source}
-          </span>
-        )}
+        {clothing.source && <span style={{ color: T.accent, fontSize: "12px" }}>来源: {clothing.source}</span>}
       </div>
 
       {/* Basic info */}
@@ -189,12 +190,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         <div style={{ display: "flex", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>ID</div>
-            <PrefixedIdInput
-              prefix={addonPrefix}
-              value={id}
-              onChange={setId}
-              disabled={!isNew || isReadOnly}
-            />
+            <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>名称</div>
@@ -218,51 +214,116 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               <div style={helpP}>如连体衣同时占据上半身+下半身，穿上后这些槽位都被占据。</div>
             </HelpPanel>
           )}
-          <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
+          <div
+            style={{
+              borderLeft: `2px solid ${T.borderLight}`,
+              paddingLeft: "10px",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "4px",
+              alignItems: "center",
+            }}
+          >
             {selectedSlots.map((s, i) => (
-              <span key={s} style={{ display: "inline-flex", alignItems: "center", gap: "2px", padding: "2px 8px", backgroundColor: T.bg2, border: `1px solid ${T.borderLight}`, borderRadius: "3px", fontSize: "12px" }}>
+              <span
+                key={s}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "2px",
+                  padding: "2px 8px",
+                  backgroundColor: T.bg2,
+                  border: `1px solid ${T.borderLight}`,
+                  borderRadius: "3px",
+                  fontSize: "12px",
+                }}
+              >
                 {SLOT_LABELS[s] ?? s}
                 {!isReadOnly && i > 0 && (
-                  <button onClick={() => {
-                    const next = selectedSlots.filter((x) => x !== s);
-                    setSelectedSlots(next);
-                    setOcclusion((prev) => prev.filter((o) => !next.includes(o)));
-                  }}
-                    style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", padding: "0 2px", fontSize: "12px", lineHeight: 1 }}>x</button>
+                  <button
+                    onClick={() => {
+                      const next = selectedSlots.filter((x) => x !== s);
+                      setSelectedSlots(next);
+                      setOcclusion((prev) => prev.filter((o) => !next.includes(o)));
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: T.danger,
+                      cursor: "pointer",
+                      padding: "0 2px",
+                      fontSize: "12px",
+                      lineHeight: 1,
+                    }}
+                  >
+                    x
+                  </button>
                 )}
               </span>
             ))}
-            {!isReadOnly && (() => {
-              const available = slots.filter((s) => !selectedSlots.includes(s));
-              return available.length > 0 ? (
-                <select value="" onChange={(e) => {
-                  if (!e.target.value) return;
-                  const next = [...selectedSlots, e.target.value];
-                  setSelectedSlots(next);
-                  setOcclusion((prev) => prev.filter((o) => !next.includes(o)));
-                }} style={inputStyle}>
-                  <option value="">+</option>
-                  {available.map((s) => <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>)}
-                </select>
-              ) : null;
-            })()}
+            {!isReadOnly &&
+              (() => {
+                const available = slots.filter((s) => !selectedSlots.includes(s));
+                return available.length > 0 ? (
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const next = [...selectedSlots, e.target.value];
+                      setSelectedSlots(next);
+                      setOcclusion((prev) => prev.filter((o) => !next.includes(o)));
+                    }}
+                    style={inputStyle}
+                  >
+                    <option value="">+</option>
+                    {available.map((s) => (
+                      <option key={s} value={s}>
+                        {SLOT_LABELS[s] ?? s}
+                      </option>
+                    ))}
+                  </select>
+                ) : null;
+              })()}
           </div>
         </div>
       </div>
 
       {/* Occlusion */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub, display: "flex", alignItems: "center", gap: "6px" }}>
+        <div
+          style={{
+            ...labelStyle,
+            marginBottom: "6px",
+            fontSize: "12px",
+            color: T.textSub,
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
           遮挡槽位
           <HelpButton show={showOcclusionHelp} onToggle={() => setShowOcclusionHelp((v) => !v)} />
         </div>
         {showOcclusionHelp && (
           <HelpPanel>
-            <div style={helpP}>穿着此服装时，遮挡的其他槽位将被隐藏（显示为 <span style={helpEm}>???</span>）。</div>
-            <div style={helpP}>仅 <span style={helpEm}>worn</span> 状态生效，halfWorn 不遮挡。不影响效果计算。</div>
+            <div style={helpP}>
+              穿着此服装时，遮挡的其他槽位将被隐藏（显示为 <span style={helpEm}>???</span>）。
+            </div>
+            <div style={helpP}>
+              仅 <span style={helpEm}>worn</span> 状态生效，halfWorn 不遮挡。不影响效果计算。
+            </div>
           </HelpPanel>
         )}
-        <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
+        <div
+          style={{
+            borderLeft: `2px solid ${T.borderLight}`,
+            paddingLeft: "10px",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "4px",
+            alignItems: "center",
+          }}
+        >
           {occlusion.map((s) => (
             <span
               key={s}
@@ -307,7 +368,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             >
               <option value="">+</option>
               {occlusionOptions.map((s) => (
-                <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>
+                <option key={s} value={s}>
+                  {SLOT_LABELS[s] ?? s}
+                </option>
               ))}
             </select>
           )}
@@ -318,7 +381,15 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
       {/* Effects */}
       <div style={{ marginBottom: "16px" }}>
         <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>效果</div>
-        <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div
+          style={{
+            borderLeft: `2px solid ${T.borderLight}`,
+            paddingLeft: "10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+          }}
+        >
           {effects.map((eff, idx) => (
             <div
               key={idx}
@@ -340,7 +411,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 {targetGroups.map((g) => (
                   <optgroup key={g.label} label={g.label}>
                     {g.options.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
                     ))}
                   </optgroup>
                 ))}
@@ -463,9 +536,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>
-            {message}
-          </span>
+          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

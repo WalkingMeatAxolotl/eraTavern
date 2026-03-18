@@ -111,7 +111,6 @@ class TestShouldFireEventWhile:
 
 
 class TestUpdateEventState:
-
     def test_on_change_updates_last_match_true(self):
         state = _empty_state()
         _update_event_state("on_change", state, "npc1", True, 100, False)
@@ -160,7 +159,6 @@ class TestUpdateEventState:
 
 
 class TestEvaluateEvents:
-
     def test_scope_none_time_condition_fires(self, game_state: MockGameState):
         """scope='none' event fires when time condition met."""
         game_state.time.hour = 22

@@ -1,6 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../theme";
-import { fetchSaves, createSave, loadSave, deleteSave, renameSave, type SaveSlotMeta, fetchLLMPresets, updateWorldMeta, fetchSession } from "../api/client";
+import {
+  fetchSaves,
+  createSave,
+  loadSave,
+  deleteSave,
+  renameSave,
+  type SaveSlotMeta,
+  fetchLLMPresets,
+  updateWorldMeta,
+  fetchSession,
+} from "../api/client";
 
 const MAX_SLOTS = 10;
 
@@ -33,7 +43,7 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box" as const,
 };
 
-export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldChanged, settingsBtnStyle }: Props) {
+export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
   const [saves, setSaves] = useState<SaveSlotMeta[]>([]);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -50,21 +60,25 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
     try {
       const list = await fetchSaves();
       setSaves(list);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [worldId]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   // Load LLM presets + world preset
   useEffect(() => {
     (async () => {
       try {
-        const [presets, session] = await Promise.all([
-          fetchLLMPresets(), fetchSession(),
-        ]);
+        const [presets, session] = await Promise.all([fetchLLMPresets(), fetchSession()]);
         setPresetList(presets);
         setWorldPreset(session.llmPreset || "");
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     })();
   }, [worldId]);
 
@@ -75,11 +89,16 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
       const ts = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15);
       const slotId = `save_${ts}`;
       const res = await createSave(slotId, newName.trim());
-      if (!res.success) { alert(res.message); return; }
+      if (!res.success) {
+        alert(res.message);
+        return;
+      }
       setCreating(false);
       setNewName("");
       await refresh();
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLoad = async (slotId: string) => {
@@ -87,8 +106,13 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
     setLoading(true);
     try {
       const res = await loadSave(slotId);
-      if (!res.success) { alert(res.message); return; }
-    } finally { setLoading(false); }
+      if (!res.success) {
+        alert(res.message);
+        return;
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (slotId: string) => {
@@ -107,8 +131,8 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
 
   const addonMismatch = (saveRefs: { id: string; version: string }[]): boolean => {
     if (!saveRefs || !addonRefs) return false;
-    const current = new Set(addonRefs.map(a => `${a.id}@${a.version}`));
-    const saved = new Set(saveRefs.map(a => `${a.id}@${a.version}`));
+    const current = new Set(addonRefs.map((a) => `${a.id}@${a.version}`));
+    const saved = new Set(saveRefs.map((a) => `${a.id}@${a.version}`));
     if (current.size !== saved.size) return true;
     for (const s of saved) {
       if (!current.has(s)) return true;
@@ -118,13 +142,10 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: T.text }}>
-
       {/* Save management */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-            == 存档管理 ==
-          </span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 存档管理 ==</span>
 
           {/* Create save */}
           {!creating ? (
@@ -143,9 +164,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
                 [创建存档]
               </button>
               {saves.length >= MAX_SLOTS && (
-                <span style={{ fontSize: "11px", color: T.textDim }}>
-                  已达上限 {MAX_SLOTS} 个
-                </span>
+                <span style={{ fontSize: "11px", color: T.textDim }}>已达上限 {MAX_SLOTS} 个</span>
               )}
             </div>
           ) : (
@@ -153,8 +172,11 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
               <input
                 autoFocus
                 value={newName}
-                onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") setCreating(false); }}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreate();
+                  if (e.key === "Escape") setCreating(false);
+                }}
                 placeholder="存档名称"
                 style={{ ...inputStyle, flex: 1, maxWidth: 200 }}
               />
@@ -165,7 +187,13 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
               >
                 确定
               </button>
-              <button onClick={() => { setCreating(false); setNewName(""); }} style={btnBase}>
+              <button
+                onClick={() => {
+                  setCreating(false);
+                  setNewName("");
+                }}
+                style={btnBase}
+              >
                 取消
               </button>
             </div>
@@ -173,7 +201,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
 
           {/* Save list */}
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            {saves.map(s => {
+            {saves.map((s) => {
               const mismatch = addonMismatch(s.addonRefs);
               const isRenaming = renamingId === s.slotId;
               return (
@@ -195,12 +223,19 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
                         <input
                           autoFocus
                           value={renameValue}
-                          onChange={e => setRenameValue(e.target.value)}
-                          onKeyDown={e => { if (e.key === "Enter") handleRename(s.slotId); if (e.key === "Escape") setRenamingId(null); }}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRename(s.slotId);
+                            if (e.key === "Escape") setRenamingId(null);
+                          }}
                           style={{ ...inputStyle, flex: 1, maxWidth: 180 }}
                         />
-                        <button onClick={() => handleRename(s.slotId)} style={btnBase}>确定</button>
-                        <button onClick={() => setRenamingId(null)} style={btnBase}>取消</button>
+                        <button onClick={() => handleRename(s.slotId)} style={btnBase}>
+                          确定
+                        </button>
+                        <button onClick={() => setRenamingId(null)} style={btnBase}>
+                          取消
+                        </button>
                       </div>
                     ) : (
                       <>
@@ -226,7 +261,10 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
                         [读取]
                       </button>
                       <button
-                        onClick={() => { setRenamingId(s.slotId); setRenameValue(s.name); }}
+                        onClick={() => {
+                          setRenamingId(s.slotId);
+                          setRenameValue(s.name);
+                        }}
                         style={btnBase}
                       >
                         [重命名]
@@ -242,9 +280,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
                 </div>
               );
             })}
-            {saves.length === 0 && (
-              <div style={{ color: T.textDim, fontSize: "11px", padding: "4px 0" }}>暂无存档</div>
-            )}
+            {saves.length === 0 && <div style={{ color: T.textDim, fontSize: "11px", padding: "4px 0" }}>暂无存档</div>}
           </div>
         </>
       )}
@@ -252,9 +288,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
       {/* World-level LLM preset */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-            == LLM 预设 ==
-          </span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== LLM 预设 ==</span>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>世界级预设</span>
             <select
@@ -268,7 +302,9 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
             >
               <option value="">（跟随全局）</option>
               {presetList.map((p) => (
-                <option key={p.id} value={p.id}>{p.name || p.id}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name || p.id}
+                </option>
               ))}
             </select>
             <span style={{ fontSize: "11px", color: T.textDim }}>覆盖全局默认</span>
@@ -279,9 +315,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
       {/* Restart — destructive, placed last */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-            == 危险操作 ==
-          </span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 危险操作 ==</span>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
               onClick={onRestart}
@@ -294,9 +328,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart, onWorldCha
             >
               [重新开始游戏]
             </button>
-            <span style={{ fontSize: "11px", color: T.textDim }}>
-              重新加载所有数据，重置时间和角色状态
-            </span>
+            <span style={{ fontSize: "11px", color: T.textDim }}>重新加载所有数据，重置时间和角色状态</span>
           </div>
         </>
       )}

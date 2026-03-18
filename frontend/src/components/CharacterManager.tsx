@@ -4,19 +4,24 @@ import type { GameDefinitions, RawCharacterData } from "../types/game";
 import { fetchDefinitions, fetchCharacterConfigs, patchCharacter } from "../api/client";
 import CharacterEditor from "./CharacterEditor";
 
-export default function CharacterManager({ selectedAddon, onEditingChange }: { selectedAddon: string | null; onEditingChange?: (editing: boolean) => void }) {
+export default function CharacterManager({
+  selectedAddon,
+  onEditingChange,
+}: {
+  selectedAddon: string | null;
+  onEditingChange?: (editing: boolean) => void;
+}) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [characters, setCharacters] = useState<RawCharacterData[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
 
-  useEffect(() => { onEditingChange?.(editingId !== null); }, [editingId, onEditingChange]);
+  useEffect(() => {
+    onEditingChange?.(editingId !== null);
+  }, [editingId, onEditingChange]);
 
   const loadData = useCallback(async () => {
-    const [defs, chars] = await Promise.all([
-      fetchDefinitions(),
-      fetchCharacterConfigs(),
-    ]);
+    const [defs, chars] = await Promise.all([fetchDefinitions(), fetchCharacterConfigs()]);
     setDefinitions(defs);
     setCharacters(chars);
   }, []);
@@ -60,11 +65,7 @@ export default function CharacterManager({ selectedAddon, onEditingChange }: { s
   };
 
   if (!definitions) {
-    return (
-      <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>
-        加载中...
-      </div>
-    );
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
   }
 
   // Editor view
@@ -79,19 +80,13 @@ export default function CharacterManager({ selectedAddon, onEditingChange }: { s
       isPlayer: false,
       active: true,
       portrait: null,
-      basicInfo: Object.fromEntries(
-        template.basicInfo.map((f) => [f.key, f.defaultValue])
-      ),
+      basicInfo: Object.fromEntries(template.basicInfo.map((f) => [f.key, f.defaultValue])),
       resources: Object.fromEntries(
-        template.resources.map((f) => [f.key, { value: f.defaultValue, max: f.defaultMax }])
+        template.resources.map((f) => [f.key, { value: f.defaultValue, max: f.defaultMax }]),
       ),
       clothing: {},
-      traits: Object.fromEntries(
-        template.traits.map((f) => [f.key, []])
-      ),
-      abilities: Object.fromEntries(
-        template.abilities.map((f) => [f.key, f.defaultValue])
-      ),
+      traits: Object.fromEntries(template.traits.map((f) => [f.key, []])),
+      abilities: Object.fromEntries(template.abilities.map((f) => [f.key, f.defaultValue])),
       position: { mapId: firstMapId, cellId: 0 },
       restPosition: { mapId: firstMapId, cellId: 0 },
       source: selectedAddon ?? "",
@@ -110,7 +105,7 @@ export default function CharacterManager({ selectedAddon, onEditingChange }: { s
 
   const readOnly = selectedAddon === null;
   const filteredCharacters = selectedAddon
-    ? characters.filter(c => (c as Record<string, unknown>)._source === selectedAddon)
+    ? characters.filter((c) => (c as Record<string, unknown>)._source === selectedAddon)
     : characters;
 
   // List view
@@ -123,9 +118,7 @@ export default function CharacterManager({ selectedAddon, onEditingChange }: { s
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == 角色列表 ==
-        </span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 角色列表 ==</span>
         {!readOnly && (
           <button
             onClick={handleNew}
@@ -226,27 +219,28 @@ function ToggleSwitch({
   return (
     <div
       style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
     >
       <svg width={w} height={h} style={{ display: "block" }}>
         {/* Track */}
         <rect
-          x={1} y={1}
-          width={w - 2} height={h - 2}
-          rx={(h - 2) / 2} ry={(h - 2) / 2}
+          x={1}
+          y={1}
+          width={w - 2}
+          height={h - 2}
+          rx={(h - 2) / 2}
+          ry={(h - 2) / 2}
           fill={on ? onColor : "transparent"}
           stroke={on ? onColor : T.borderLight}
           strokeWidth={1.5}
         />
         {/* Thumb */}
-        <circle
-          cx={cx} cy={h / 2} r={r}
-          fill={on ? "#fff" : T.textSub}
-        />
+        <circle cx={cx} cy={h / 2} r={r} fill={on ? "#fff" : T.textSub} />
       </svg>
-      <span style={{ fontSize: "11px", color: on ? "#ccc" : T.borderLight, userSelect: "none" }}>
-        {label}
-      </span>
+      <span style={{ fontSize: "11px", color: on ? "#ccc" : T.borderLight, userSelect: "none" }}>{label}</span>
     </div>
   );
 }

@@ -51,7 +51,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const isReadOnly = false;  // all addon entities are editable
+  const isReadOnly = false; // all addon entities are editable
 
   // Tags from pool that aren't already selected
   const availableTags = (allTags ?? []).filter((t) => !tags.includes(t));
@@ -74,12 +74,14 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
     try {
       const data = { id, name, tags, description, maxStack, sellable, price, source: item.source };
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(item.id, data); }
+        if (isNew) {
+          await addonCrud.create(data);
+        } else {
+          await addonCrud.save(item.id, data);
+        }
         return;
       }
-      const result = isNew
-        ? await createItemDef(data)
-        : await saveItemDef(item.id, data);
+      const result = isNew ? await createItemDef(data) : await saveItemDef(item.id, data);
       setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
@@ -95,7 +97,11 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
     if (!confirm(`确定要删除物品「${name || id}」吗？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(id); onBack(); return; }
+      if (addonCrud) {
+        await addonCrud.delete(id);
+        onBack();
+        return;
+      }
       const result = await deleteItemDef(id);
       if (result.success) {
         onBack();
@@ -116,11 +122,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建物品" : "编辑物品"} ==
         </span>
-        {item.source && (
-          <span style={{ color: T.accent, fontSize: "12px" }}>
-            来源: {item.source}
-          </span>
-        )}
+        {item.source && <span style={{ color: T.accent, fontSize: "12px" }}>来源: {item.source}</span>}
       </div>
 
       {/* Basic info */}
@@ -128,12 +130,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
         <div style={{ display: "flex", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>ID</div>
-            <PrefixedIdInput
-              prefix={addonPrefix}
-              value={id}
-              onChange={setId}
-              disabled={!isNew || isReadOnly}
-            />
+            <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>名称</div>
@@ -215,9 +212,14 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") { e.preventDefault(); addTag(tagInput); }
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTag(tagInput);
+                }
               }}
-              onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
+              onBlur={() => {
+                if (tagInput.trim()) addTag(tagInput);
+              }}
               placeholder="自定义标签..."
             />
           )}
@@ -253,7 +255,9 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
           </div>
           <div>
             <div style={labelStyle}>可出售</div>
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isReadOnly ? "default" : "pointer" }}>
+            <label
+              style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isReadOnly ? "default" : "pointer" }}
+            >
               <input
                 type="checkbox"
                 checked={sellable}
@@ -328,9 +332,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>
-            {message}
-          </span>
+          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

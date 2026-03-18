@@ -55,10 +55,19 @@ def evaluate_variable(
 
 class _EvalContext:
     """Bundles all context needed for step evaluation."""
+
     __slots__ = ("char", "target", "var_defs", "visited", "game_state", "char_id", "target_id")
 
-    def __init__(self, char: dict, target: Optional[dict], var_defs: dict,
-                 visited: set, game_state: Any, char_id: Optional[str], target_id: Optional[str]):
+    def __init__(
+        self,
+        char: dict,
+        target: Optional[dict],
+        var_defs: dict,
+        visited: set,
+        game_state: Any,
+        char_id: Optional[str],
+        target_id: Optional[str],
+    ):
         self.char = char
         self.target = target
         self.var_defs = var_defs
@@ -100,15 +109,17 @@ def evaluate_variable_debug(
             result = step_value
         else:
             result = _apply_op(step.get("op", "add"), result, step_value)
-        trace.append({
-            "index": i,
-            "label": step.get("label", ""),
-            "op": step.get("op", "") if i > 0 else "(init)",
-            "type": step.get("type", ""),
-            "source": step.get("source", "self"),
-            "stepValue": step_value,
-            "accumulated": result,
-        })
+        trace.append(
+            {
+                "index": i,
+                "label": step.get("label", ""),
+                "op": step.get("op", "") if i > 0 else "(init)",
+                "type": step.get("type", ""),
+                "source": step.get("source", "self"),
+                "stepValue": step_value,
+                "accumulated": result,
+            }
+        )
 
     return {"result": result, "steps": trace}
 
@@ -197,9 +208,14 @@ def _resolve_step_value(step: dict, ctx: _EvalContext) -> float:
         if not ref_def:
             return 0.0
         return evaluate_variable(
-            ref_def, ctx.char, ctx.var_defs, ctx.visited,
-            target_state=ctx.target, game_state=ctx.game_state,
-            char_id=ctx.char_id, target_id=ctx.target_id,
+            ref_def,
+            ctx.char,
+            ctx.var_defs,
+            ctx.visited,
+            target_state=ctx.target,
+            game_state=ctx.game_state,
+            char_id=ctx.char_id,
+            target_id=ctx.target_id,
         )
 
     return 0.0

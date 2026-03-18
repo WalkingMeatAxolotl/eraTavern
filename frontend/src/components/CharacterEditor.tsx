@@ -68,8 +68,8 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
   // Trait groups by category + lookup: traitId -> group
   const { groupsByCategory, traitToGroup } = useMemo(() => {
-    const byCategory: Record<string, typeof traitGroups[string][]> = {};
-    const t2g: Record<string, typeof traitGroups[string]> = {};
+    const byCategory: Record<string, (typeof traitGroups)[string][]> = {};
+    const t2g: Record<string, (typeof traitGroups)[string]> = {};
     for (const g of Object.values(traitGroups)) {
       if (!byCategory[g.category]) byCategory[g.category] = [];
       byCategory[g.category].push(g);
@@ -115,7 +115,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       changed = true;
     }
     if (changed) setData((prev) => ({ ...prev, ...updates }));
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const posMapId = data.position.mapId;
   const mapCells = useMemo(() => maps[posMapId]?.cells ?? [], [maps, posMapId]);
@@ -130,9 +130,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
     setSaving(true);
     setMessage(null);
     try {
-      const result = isNew
-        ? await createCharacter(data)
-        : await saveCharacterConfig(data.id, data);
+      const result = isNew ? await createCharacter(data) : await saveCharacterConfig(data.id, data);
       setMessage(result.message);
       if (result.success && isNew) onBack();
     } catch (e: unknown) {
@@ -161,7 +159,9 @@ export default function CharacterEditor({ character, definitions, allCharacters,
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建角色" : `编辑: ${data.id}`} ==
         </span>
-        <button onClick={onBack} style={btnStyle(T.textSub)}>[返回列表]</button>
+        <button onClick={onBack} style={btnStyle(T.textSub)}>
+          [返回列表]
+        </button>
       </div>
 
       {/* Tab bar */}
@@ -229,13 +229,29 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               return (
                 <Row key={field.key} label={field.label}>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                    <input type="number" min={0} value={res.value}
-                      onChange={(e) => updateField("resources", { ...data.resources, [field.key]: { ...res, value: Math.max(0, Number(e.target.value)) } })}
+                    <input
+                      type="number"
+                      min={0}
+                      value={res.value}
+                      onChange={(e) =>
+                        updateField("resources", {
+                          ...data.resources,
+                          [field.key]: { ...res, value: Math.max(0, Number(e.target.value)) },
+                        })
+                      }
                       style={{ ...inputStyle(), width: "80px" }}
                     />
                     <span style={{ color: T.textSub }}>/</span>
-                    <input type="number" min={0} value={res.max}
-                      onChange={(e) => updateField("resources", { ...data.resources, [field.key]: { ...res, max: Math.max(0, Number(e.target.value)) } })}
+                    <input
+                      type="number"
+                      min={0}
+                      value={res.max}
+                      onChange={(e) =>
+                        updateField("resources", {
+                          ...data.resources,
+                          [field.key]: { ...res, max: Math.max(0, Number(e.target.value)) },
+                        })
+                      }
                       style={{ ...inputStyle(), width: "80px" }}
                     />
                   </div>
@@ -246,26 +262,64 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
           <Section title="初始位置">
             <Row label="地图">
-              <select value={posMapId} onChange={(e) => { const m = e.target.value; updateField("position", { mapId: m, cellId: maps[m]?.cells[0]?.id ?? 0 }); }} style={selectStyle()}>
-                {Object.entries(maps).map(([id, m]) => <option key={id} value={id}>{m.name} ({id})</option>)}
+              <select
+                value={posMapId}
+                onChange={(e) => {
+                  const m = e.target.value;
+                  updateField("position", { mapId: m, cellId: maps[m]?.cells[0]?.id ?? 0 });
+                }}
+                style={selectStyle()}
+              >
+                {Object.entries(maps).map(([id, m]) => (
+                  <option key={id} value={id}>
+                    {m.name} ({id})
+                  </option>
+                ))}
               </select>
             </Row>
             <Row label="区域">
-              <select value={data.position.cellId} onChange={(e) => updateField("position", { mapId: posMapId, cellId: Number(e.target.value) })} style={selectStyle()}>
-                {mapCells.map((c) => <option key={c.id} value={c.id}>{c.name ? `${c.name} (${c.id})` : `${c.id}`}</option>)}
+              <select
+                value={data.position.cellId}
+                onChange={(e) => updateField("position", { mapId: posMapId, cellId: Number(e.target.value) })}
+                style={selectStyle()}
+              >
+                {mapCells.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name ? `${c.name} (${c.id})` : `${c.id}`}
+                  </option>
+                ))}
               </select>
             </Row>
           </Section>
 
           <Section title="休息位置">
             <Row label="地图">
-              <select value={restMapId} onChange={(e) => { const m = e.target.value; updateField("restPosition", { mapId: m, cellId: maps[m]?.cells[0]?.id ?? 0 }); }} style={selectStyle()}>
-                {Object.entries(maps).map(([id, m]) => <option key={id} value={id}>{m.name} ({id})</option>)}
+              <select
+                value={restMapId}
+                onChange={(e) => {
+                  const m = e.target.value;
+                  updateField("restPosition", { mapId: m, cellId: maps[m]?.cells[0]?.id ?? 0 });
+                }}
+                style={selectStyle()}
+              >
+                {Object.entries(maps).map(([id, m]) => (
+                  <option key={id} value={id}>
+                    {m.name} ({id})
+                  </option>
+                ))}
               </select>
             </Row>
             <Row label="区域">
-              <select value={data.restPosition?.cellId ?? data.position.cellId} onChange={(e) => updateField("restPosition", { mapId: restMapId, cellId: Number(e.target.value) })} style={selectStyle()}>
-                {restMapCells.map((c) => <option key={c.id} value={c.id}>{c.name ? `${c.name} (${c.id})` : `${c.id}`}</option>)}
+              <select
+                value={data.restPosition?.cellId ?? data.position.cellId}
+                onChange={(e) => updateField("restPosition", { mapId: restMapId, cellId: Number(e.target.value) })}
+                style={selectStyle()}
+              >
+                {restMapCells.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name ? `${c.name} (${c.id})` : `${c.id}`}
+                  </option>
+                ))}
               </select>
             </Row>
           </Section>
@@ -276,18 +330,19 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {tab === "outfit" && (
         <Section title="服装预设">
           {(() => {
-            const outfits: Record<string, Record<string, string[]>> = data.outfits && Object.keys(data.outfits).length > 0
+            const outfits: Record<string, Record<string, string[]>> = data.outfits &&
+            Object.keys(data.outfits).length > 0
               ? data.outfits
               : (() => {
-                const def: Record<string, string[]> = {};
-                for (const [slot, info] of Object.entries(data.clothing)) {
-                  if (info?.itemId) def[slot] = [info.itemId];
-                }
-                return { "default": def };
-              })();
+                  const def: Record<string, string[]> = {};
+                  for (const [slot, info] of Object.entries(data.clothing)) {
+                    if (info?.itemId) def[slot] = [info.itemId];
+                  }
+                  return { default: def };
+                })();
             const outfitTypeDefs = definitions.outfitTypes ?? [];
             const outfitTypeIds = ["default", ...outfitTypeDefs.map((t) => t.id)];
-            const outfitNameMap: Record<string, string> = { "default": "默认服装" };
+            const outfitNameMap: Record<string, string> = { default: "默认服装" };
             for (const t of outfitTypeDefs) outfitNameMap[t.id] = t.name;
             const activeKey = outfitTypeIds.includes(selectedOutfit) ? selectedOutfit : "default";
             const hasCustom = !!outfits[activeKey];
@@ -314,10 +369,21 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
             return (
               <>
-                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "6px", alignItems: "center" }}>
+                <div
+                  style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "6px", alignItems: "center" }}
+                >
                   {outfitTypeIds.map((id) => (
-                    <button key={id} onClick={() => setSelectedOutfit(id)}
-                      style={{ ...btnStyle(activeKey === id ? T.accent : T.textSub), fontWeight: activeKey === id ? "bold" : "normal", borderColor: activeKey === id ? T.accent : T.border, minWidth: "60px", textAlign: "center" }}>
+                    <button
+                      key={id}
+                      onClick={() => setSelectedOutfit(id)}
+                      style={{
+                        ...btnStyle(activeKey === id ? T.accent : T.textSub),
+                        fontWeight: activeKey === id ? "bold" : "normal",
+                        borderColor: activeKey === id ? T.accent : T.border,
+                        minWidth: "60px",
+                        textAlign: "center",
+                      }}
+                    >
                       {outfitNameMap[id] ?? id}
                     </button>
                   ))}
@@ -325,20 +391,37 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
                 {activeKey !== "default" && (
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                    {hasCustom
-                      ? <>
-                          <span style={{ color: T.textDim, fontSize: "12px" }}>已自定义</span>
-                          <button style={{ ...btnStyle(T.danger), fontSize: "12px", padding: "2px 8px" }} onClick={() => { const next = { ...outfits }; delete next[activeKey]; updateOutfits(next); }}>[恢复继承]</button>
-                        </>
-                      : <>
-                          <span style={{ color: T.textDim, fontSize: "12px" }}>继承中</span>
-                          <button style={{ ...btnStyle(T.accent), fontSize: "12px", padding: "2px 8px" }} onClick={() => {
+                    {hasCustom ? (
+                      <>
+                        <span style={{ color: T.textDim, fontSize: "12px" }}>已自定义</span>
+                        <button
+                          style={{ ...btnStyle(T.danger), fontSize: "12px", padding: "2px 8px" }}
+                          onClick={() => {
+                            const next = { ...outfits };
+                            delete next[activeKey];
+                            updateOutfits(next);
+                          }}
+                        >
+                          [恢复继承]
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ color: T.textDim, fontSize: "12px" }}>继承中</span>
+                        <button
+                          style={{ ...btnStyle(T.accent), fontSize: "12px", padding: "2px 8px" }}
+                          onClick={() => {
                             const typeDef = outfitTypeDefs.find((t) => t.id === activeKey);
-                            const source = typeDef?.copyDefault ? structuredClone(outfits["default"] ?? {}) : structuredClone(typeDef?.slots ?? {});
+                            const source = typeDef?.copyDefault
+                              ? structuredClone(outfits["default"] ?? {})
+                              : structuredClone(typeDef?.slots ?? {});
                             updateOutfits({ ...outfits, [activeKey]: source });
-                          }}>[自定义]</button>
-                        </>
-                    }
+                          }}
+                        >
+                          [自定义]
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -348,28 +431,59 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   const editable = hasCustom || activeKey === "default";
                   return (
                     <div key={slot}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", minHeight: "26px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          flexWrap: "wrap",
+                          minHeight: "26px",
+                        }}
+                      >
                         <span style={{ minWidth: "100px", color: T.textSub }}>{SLOT_LABELS[slot] ?? slot}:</span>
                         {items.length === 0 && <span style={{ color: T.textDim }}>(空)</span>}
                         {items.map((itemId, i) => {
                           const def = clothingDefs[itemId];
                           return (
-                            <span key={i} style={{ color: T.text, display: "inline-flex", alignItems: "center", gap: "2px" }}>
+                            <span
+                              key={i}
+                              style={{ color: T.text, display: "inline-flex", alignItems: "center", gap: "2px" }}
+                            >
                               [{def?.name ?? itemId}]
                               {editable && (
-                                <button style={{ ...btnStyle(T.danger), padding: "0 4px", fontSize: "11px", lineHeight: "1" }}
-                                  onClick={() => { const newItems = items.filter((_, j) => j !== i); updateOutfits({ ...outfits, [activeKey]: { ...outfit, [slot]: newItems } }); }}>x</button>
+                                <button
+                                  style={{ ...btnStyle(T.danger), padding: "0 4px", fontSize: "11px", lineHeight: "1" }}
+                                  onClick={() => {
+                                    const newItems = items.filter((_, j) => j !== i);
+                                    updateOutfits({ ...outfits, [activeKey]: { ...outfit, [slot]: newItems } });
+                                  }}
+                                >
+                                  x
+                                </button>
                               )}
                             </span>
                           );
                         })}
                         {editable && (
-                          <select style={selectStyle()} value="" onChange={(e) => {
-                            if (!e.target.value) return;
-                            updateOutfits({ ...outfits, [activeKey]: { ...outfit, [slot]: [...items, e.target.value] } });
-                          }}>
+                          <select
+                            style={selectStyle()}
+                            value=""
+                            onChange={(e) => {
+                              if (!e.target.value) return;
+                              updateOutfits({
+                                ...outfits,
+                                [activeKey]: { ...outfit, [slot]: [...items, e.target.value] },
+                              });
+                            }}
+                          >
                             <option value="">+添加</option>
-                            {options.filter((c) => !items.includes(c.id)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {options
+                              .filter((c) => !items.includes(c.id))
+                              .map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.name}
+                                </option>
+                              ))}
                           </select>
                         )}
                       </div>
@@ -389,105 +503,216 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             {template.traits.filter((f) => f.key !== "ability" && f.key !== "experience").length === 0 && (
               <div style={{ color: T.textDim, fontSize: "12px" }}>无特质类别定义</div>
             )}
-            {template.traits.filter((f) => f.key !== "ability" && f.key !== "experience").map((field) => {
-              const ids = data.traits[field.key] ?? [];
-              const catGroups = groupsByCategory[field.key] ?? [];
-              const groupsNotFullySelected = catGroups.filter((g) => {
-                const isExclusive = g.exclusive !== false;
-                return isExclusive ? !g.traits.some((tid) => ids.includes(tid)) : g.traits.some((tid) => !ids.includes(tid));
-              });
-              const ungroupedAvailable = (traitsByCategory[field.key] ?? []).filter((t) => !traitToGroup[t.id] && !ids.includes(t.id));
-              const curPendingGroupId = pendingGroup[field.key];
-              const curPendingGroupDef = curPendingGroupId ? catGroups.find((g) => g.id === curPendingGroupId) : undefined;
+            {template.traits
+              .filter((f) => f.key !== "ability" && f.key !== "experience")
+              .map((field) => {
+                const ids = data.traits[field.key] ?? [];
+                const catGroups = groupsByCategory[field.key] ?? [];
+                const groupsNotFullySelected = catGroups.filter((g) => {
+                  const isExclusive = g.exclusive !== false;
+                  return isExclusive
+                    ? !g.traits.some((tid) => ids.includes(tid))
+                    : g.traits.some((tid) => !ids.includes(tid));
+                });
+                const ungroupedAvailable = (traitsByCategory[field.key] ?? []).filter(
+                  (t) => !traitToGroup[t.id] && !ids.includes(t.id),
+                );
+                const curPendingGroupId = pendingGroup[field.key];
+                const curPendingGroupDef = curPendingGroupId
+                  ? catGroups.find((g) => g.id === curPendingGroupId)
+                  : undefined;
 
-              return (
-                <Row key={field.key} label={field.label}>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
-                    {ids.map((tid) => {
-                      const def = traitDefs[tid];
-                      return (
-                        <span key={tid} style={{ display: "inline-flex", alignItems: "center", gap: "2px", padding: "1px 6px", backgroundColor: T.bg2, border: `1px solid ${T.borderLight}`, borderRadius: "3px", fontSize: "12px" }}>
-                          {def?.name ?? tid}
-                          <button onClick={() => { const nt = { ...data.traits }; nt[field.key] = ids.filter((x) => x !== tid); updateField("traits", nt); }}
-                            style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", padding: "0 2px", fontSize: "12px", lineHeight: 1 }}>x</button>
-                        </span>
-                      );
-                    })}
-                    {(groupsNotFullySelected.length > 0 || ungroupedAvailable.length > 0) && (
-                      <select value={curPendingGroupId ? `group:${curPendingGroupId}` : ""} onChange={(e) => {
-                        const val = e.target.value;
-                        if (!val) { setPendingGroup((p) => { const n = { ...p }; delete n[field.key]; return n; }); return; }
-                        if (val.startsWith("group:")) { setPendingGroup((p) => ({ ...p, [field.key]: val.slice(6) })); }
-                        else { const nt = { ...data.traits }; nt[field.key] = [...ids, val]; updateField("traits", nt); setPendingGroup((p) => { const n = { ...p }; delete n[field.key]; return n; }); }
-                      }} style={selectStyle()}>
-                        <option value="">+</option>
-                        {groupsNotFullySelected.map((g) => <option key={`group:${g.id}`} value={`group:${g.id}`}>{g.name}</option>)}
-                        {ungroupedAvailable.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                      </select>
-                    )}
-                    {curPendingGroupDef && (
-                      <select value="" onChange={(e) => {
-                        if (!e.target.value) return;
-                        const nt = { ...data.traits };
-                        const isExclusive = curPendingGroupDef.exclusive !== false;
-                        let catIds = isExclusive ? ids.filter((x) => !curPendingGroupDef.traits.includes(x)) : [...ids];
-                        if (!catIds.includes(e.target.value)) catIds.push(e.target.value);
-                        nt[field.key] = catIds;
-                        updateField("traits", nt);
-                        setPendingGroup((p) => { const n = { ...p }; delete n[field.key]; return n; });
-                      }} style={selectStyle()}>
-                        <option value="">选择...</option>
-                        {curPendingGroupDef.traits.filter((tid) => curPendingGroupDef.exclusive !== false || !ids.includes(tid)).map((tid) => {
-                          const def = traitDefs[tid];
-                          return <option key={tid} value={tid}>{def?.name ?? tid}</option>;
-                        })}
-                      </select>
-                    )}
-                  </div>
-                </Row>
-              );
-            })}
+                return (
+                  <Row key={field.key} label={field.label}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
+                      {ids.map((tid) => {
+                        const def = traitDefs[tid];
+                        return (
+                          <span
+                            key={tid}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "2px",
+                              padding: "1px 6px",
+                              backgroundColor: T.bg2,
+                              border: `1px solid ${T.borderLight}`,
+                              borderRadius: "3px",
+                              fontSize: "12px",
+                            }}
+                          >
+                            {def?.name ?? tid}
+                            <button
+                              onClick={() => {
+                                const nt = { ...data.traits };
+                                nt[field.key] = ids.filter((x) => x !== tid);
+                                updateField("traits", nt);
+                              }}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: T.danger,
+                                cursor: "pointer",
+                                padding: "0 2px",
+                                fontSize: "12px",
+                                lineHeight: 1,
+                              }}
+                            >
+                              x
+                            </button>
+                          </span>
+                        );
+                      })}
+                      {(groupsNotFullySelected.length > 0 || ungroupedAvailable.length > 0) && (
+                        <select
+                          value={curPendingGroupId ? `group:${curPendingGroupId}` : ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) {
+                              setPendingGroup((p) => {
+                                const n = { ...p };
+                                delete n[field.key];
+                                return n;
+                              });
+                              return;
+                            }
+                            if (val.startsWith("group:")) {
+                              setPendingGroup((p) => ({ ...p, [field.key]: val.slice(6) }));
+                            } else {
+                              const nt = { ...data.traits };
+                              nt[field.key] = [...ids, val];
+                              updateField("traits", nt);
+                              setPendingGroup((p) => {
+                                const n = { ...p };
+                                delete n[field.key];
+                                return n;
+                              });
+                            }
+                          }}
+                          style={selectStyle()}
+                        >
+                          <option value="">+</option>
+                          {groupsNotFullySelected.map((g) => (
+                            <option key={`group:${g.id}`} value={`group:${g.id}`}>
+                              {g.name}
+                            </option>
+                          ))}
+                          {ungroupedAvailable.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {curPendingGroupDef && (
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const nt = { ...data.traits };
+                            const isExclusive = curPendingGroupDef.exclusive !== false;
+                            const catIds = isExclusive
+                              ? ids.filter((x) => !curPendingGroupDef.traits.includes(x))
+                              : [...ids];
+                            if (!catIds.includes(e.target.value)) catIds.push(e.target.value);
+                            nt[field.key] = catIds;
+                            updateField("traits", nt);
+                            setPendingGroup((p) => {
+                              const n = { ...p };
+                              delete n[field.key];
+                              return n;
+                            });
+                          }}
+                          style={selectStyle()}
+                        >
+                          <option value="">选择...</option>
+                          {curPendingGroupDef.traits
+                            .filter((tid) => curPendingGroupDef.exclusive !== false || !ids.includes(tid))
+                            .map((tid) => {
+                              const def = traitDefs[tid];
+                              return (
+                                <option key={tid} value={tid}>
+                                  {def?.name ?? tid}
+                                </option>
+                              );
+                            })}
+                        </select>
+                      )}
+                    </div>
+                  </Row>
+                );
+              })}
           </Section>
 
           <Section title="初始能力">
             {(template.abilities ?? []).length === 0 ? (
               <div style={{ color: T.textDim, fontSize: "12px" }}>无能力定义 (在属性页面添加「能力」类别的特质)</div>
             ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "4px 12px" }}>
-              {template.abilities.map((field) => {
-                const exp = data.abilities[field.key] ?? field.defaultValue;
-                return (
-                  <div key={field.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ minWidth: "80px" }}>{field.label}:</span>
-                    <input type="number" min={0} value={exp}
-                      onChange={(e) => updateField("abilities", { ...data.abilities, [field.key]: Math.max(0, Number(e.target.value)) })}
-                      style={{ ...inputStyle(), width: "70px" }} />
-                    <span style={{ color: T.textSub }}>{expToGrade(exp)}</span>
-                  </div>
-                );
-              })}
-            </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gap: "4px 12px",
+                }}
+              >
+                {template.abilities.map((field) => {
+                  const exp = data.abilities[field.key] ?? field.defaultValue;
+                  return (
+                    <div key={field.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ minWidth: "80px" }}>{field.label}:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={exp}
+                        onChange={(e) =>
+                          updateField("abilities", {
+                            ...data.abilities,
+                            [field.key]: Math.max(0, Number(e.target.value)),
+                          })
+                        }
+                        style={{ ...inputStyle(), width: "70px" }}
+                      />
+                      <span style={{ color: T.textSub }}>{expToGrade(exp)}</span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </Section>
 
           <Section title="初始经验">
             {(template.experiences ?? []).length > 0 ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "4px 12px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gap: "4px 12px",
+                }}
+              >
                 {(template.experiences ?? []).map((field: { key: string; label: string }) => {
                   const expData = data.experiences?.[field.key];
                   const count = expData?.count ?? 0;
                   return (
                     <div key={field.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <span style={{ minWidth: "80px" }}>{field.label}:</span>
-                      <input type="number" min={0} value={count}
+                      <input
+                        type="number"
+                        min={0}
+                        value={count}
                         onChange={(e) => {
                           const nc = Math.max(0, Number(e.target.value));
                           const ne = { ...(data.experiences ?? {}) };
                           const ex = ne[field.key] ?? {};
-                          ne[field.key] = { ...ex, count: nc, first: nc > 0 ? (ex.first ?? { event: "未知", location: "未知", target: "未知" }) : undefined };
+                          ne[field.key] = {
+                            ...ex,
+                            count: nc,
+                            first:
+                              nc > 0 ? (ex.first ?? { event: "未知", location: "未知", target: "未知" }) : undefined,
+                          };
                           updateField("experiences", ne);
                         }}
-                        style={{ ...inputStyle(), width: "70px" }} />
+                        style={{ ...inputStyle(), width: "70px" }}
+                      />
                     </div>
                   );
                 })}
@@ -509,11 +734,29 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               return (
                 <div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
                   <span style={{ minWidth: "80px", color: T.textSub }}>{itemName}:</span>
-                  <input type="number" value={entry.amount} min={1} max={def?.maxStack ?? 99}
-                    onChange={(e) => { const ni = [...(data.inventory ?? [])]; ni[idx] = { ...entry, amount: Math.max(1, Number(e.target.value)) }; updateField("inventory", ni); }}
-                    style={{ ...inputStyle(), width: "60px" }} />
-                  <button onClick={() => updateField("inventory", (data.inventory ?? []).filter((_, i) => i !== idx))}
-                    style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}>[x]</button>
+                  <input
+                    type="number"
+                    value={entry.amount}
+                    min={1}
+                    max={def?.maxStack ?? 99}
+                    onChange={(e) => {
+                      const ni = [...(data.inventory ?? [])];
+                      ni[idx] = { ...entry, amount: Math.max(1, Number(e.target.value)) };
+                      updateField("inventory", ni);
+                    }}
+                    style={{ ...inputStyle(), width: "60px" }}
+                  />
+                  <button
+                    onClick={() =>
+                      updateField(
+                        "inventory",
+                        (data.inventory ?? []).filter((_, i) => i !== idx),
+                      )
+                    }
+                    style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}
+                  >
+                    [x]
+                  </button>
                 </div>
               );
             })}
@@ -522,12 +765,20 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               const available = Object.values(itemDefs).filter((d) => !existingIds.includes(d.id));
               if (available.length === 0) return null;
               return (
-                <select value="" onChange={(e) => {
-                  if (!e.target.value) return;
-                  updateField("inventory", [...(data.inventory ?? []), { itemId: e.target.value, amount: 1 }]);
-                }} style={selectStyle()}>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    updateField("inventory", [...(data.inventory ?? []), { itemId: e.target.value, amount: 1 }]);
+                  }}
+                  style={selectStyle()}
+                >
                   <option value="">+ 添加物品</option>
-                  {available.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                  {available.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
                 </select>
               );
             })()}
@@ -543,11 +794,24 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               return (
                 <div key={targetId} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
                   <span style={{ minWidth: "80px", color: T.textSub }}>{tn}:</span>
-                  <input type="number" value={val}
-                    onChange={(e) => updateField("favorability", { ...data.favorability, [targetId]: Number(e.target.value) })}
-                    style={{ ...inputStyle(), width: "60px" }} />
-                  <button onClick={() => { const nf = { ...(data.favorability ?? {}) }; delete nf[targetId]; updateField("favorability", nf); }}
-                    style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}>[x]</button>
+                  <input
+                    type="number"
+                    value={val}
+                    onChange={(e) =>
+                      updateField("favorability", { ...data.favorability, [targetId]: Number(e.target.value) })
+                    }
+                    style={{ ...inputStyle(), width: "60px" }}
+                  />
+                  <button
+                    onClick={() => {
+                      const nf = { ...(data.favorability ?? {}) };
+                      delete nf[targetId];
+                      updateField("favorability", nf);
+                    }}
+                    style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}
+                  >
+                    [x]
+                  </button>
                 </div>
               );
             })}
@@ -556,9 +820,20 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               const available = allCharacters.filter((c) => c.id !== data.id && !existing.includes(c.id));
               if (available.length === 0) return null;
               return (
-                <select value="" onChange={(e) => { if (!e.target.value) return; updateField("favorability", { ...data.favorability, [e.target.value]: 0 }); }} style={selectStyle()}>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    updateField("favorability", { ...data.favorability, [e.target.value]: 0 });
+                  }}
+                  style={selectStyle()}
+                >
                   <option value="">+ 添加好感度</option>
-                  {available.map((c) => <option key={c.id} value={c.id}>{String(c.basicInfo?.name || c.id)}</option>)}
+                  {available.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {String(c.basicInfo?.name || c.id)}
+                    </option>
+                  ))}
                 </select>
               );
             })()}
@@ -580,40 +855,95 @@ export default function CharacterEditor({ character, definitions, allCharacters,
           {Object.entries(data.llm ?? {}).map(([key, val]) => (
             <div key={key} style={{ marginBottom: "6px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
-                <input value={key} onChange={(e) => {
-                  const nk = e.target.value;
-                  if (!nk || nk === key) return;
-                  const llm = { ...(data.llm ?? {}) };
-                  const v = llm[key]; delete llm[key]; llm[nk] = v;
-                  updateField("llm", llm);
-                }} placeholder="字段名" style={{ ...inputStyle(), width: "120px", fontSize: "12px" }} />
-                <button onClick={() => { const llm = { ...(data.llm ?? {}) }; delete llm[key]; updateField("llm", llm); }}
-                  style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}>[x]</button>
+                <input
+                  value={key}
+                  onChange={(e) => {
+                    const nk = e.target.value;
+                    if (!nk || nk === key) return;
+                    const llm = { ...(data.llm ?? {}) };
+                    const v = llm[key];
+                    delete llm[key];
+                    llm[nk] = v;
+                    updateField("llm", llm);
+                  }}
+                  placeholder="字段名"
+                  style={{ ...inputStyle(), width: "120px", fontSize: "12px" }}
+                />
+                <button
+                  onClick={() => {
+                    const llm = { ...(data.llm ?? {}) };
+                    delete llm[key];
+                    updateField("llm", llm);
+                  }}
+                  style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}
+                >
+                  [x]
+                </button>
               </div>
-              <textarea value={val} onChange={(e) => updateField("llm", { ...(data.llm ?? {}), [key]: e.target.value })}
-                style={{ ...inputStyle(), width: "100%", minHeight: "50px", resize: "vertical", fontSize: "12px", boxSizing: "border-box" }} />
+              <textarea
+                value={val}
+                onChange={(e) => updateField("llm", { ...(data.llm ?? {}), [key]: e.target.value })}
+                style={{
+                  ...inputStyle(),
+                  width: "100%",
+                  minHeight: "50px",
+                  resize: "vertical",
+                  fontSize: "12px",
+                  boxSizing: "border-box",
+                }}
+              />
             </div>
           ))}
-          <select value="" onChange={(e) => { if (!e.target.value) return; updateField("llm", { ...(data.llm ?? {}), [e.target.value]: "" }); }}
-            style={{ ...inputStyle(), width: "auto", fontSize: "12px" }}>
+          <select
+            value=""
+            onChange={(e) => {
+              if (!e.target.value) return;
+              updateField("llm", { ...(data.llm ?? {}), [e.target.value]: "" });
+            }}
+            style={{ ...inputStyle(), width: "auto", fontSize: "12px" }}
+          >
             <option value="">+ 添加字段</option>
-            {["personality", "appearance", "speech", "background"].filter((k) => !(data.llm ?? {})[k]).map((k) => <option key={k} value={k}>{k}</option>)}
+            {["personality", "appearance", "speech", "background"]
+              .filter((k) => !(data.llm ?? {})[k])
+              .map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
             <option value={`custom-${Date.now()}`}>自定义...</option>
           </select>
         </SectionWithHelp>
       )}
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: `1px solid ${T.border}`, paddingTop: "12px" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginTop: "12px",
+          borderTop: `1px solid ${T.border}`,
+          paddingTop: "12px",
+        }}
+      >
         <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
           [{saving ? "提交中..." : "确定"}]
         </button>
         {!isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>[删除]</button>
+          <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
+            [删除]
+          </button>
         )}
-        <button onClick={onBack} style={btnStyle(T.textSub)}>[返回列表]</button>
+        <button onClick={onBack} style={btnStyle(T.textSub)}>
+          [返回列表]
+        </button>
         {message && (
-          <span style={{ color: message.includes("fail") || message.includes("not found") ? T.danger : T.success, marginLeft: "8px", alignSelf: "center" }}>
+          <span
+            style={{
+              color: message.includes("fail") || message.includes("not found") ? T.danger : T.success,
+              marginLeft: "8px",
+              alignSelf: "center",
+            }}
+          >
             {message}
           </span>
         )}
@@ -627,7 +957,15 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: "12px" }}>
-      <div style={{ color: T.accent, borderBottom: `1px solid ${T.border}`, marginBottom: "6px", paddingBottom: "2px", fontWeight: "bold" }}>
+      <div
+        style={{
+          color: T.accent,
+          borderBottom: `1px solid ${T.border}`,
+          marginBottom: "6px",
+          paddingBottom: "2px",
+          fontWeight: "bold",
+        }}
+      >
         == {title} ==
       </div>
       {children}
@@ -635,7 +973,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function SectionWithHelp({ title, showHelp, onToggleHelp, helpContent, children }: {
+function SectionWithHelp({
+  title,
+  showHelp,
+  onToggleHelp,
+  helpContent,
+  children,
+}: {
   title: string;
   showHelp: boolean;
   onToggleHelp: () => void;
@@ -644,7 +988,18 @@ function SectionWithHelp({ title, showHelp, onToggleHelp, helpContent, children 
 }) {
   return (
     <div style={{ marginBottom: "12px" }}>
-      <div style={{ color: T.accent, borderBottom: `1px solid ${T.border}`, marginBottom: "6px", paddingBottom: "2px", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
+      <div
+        style={{
+          color: T.accent,
+          borderBottom: `1px solid ${T.border}`,
+          marginBottom: "6px",
+          paddingBottom: "2px",
+          fontWeight: "bold",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
         == {title} ==
         <HelpButton show={showHelp} onToggle={onToggleHelp} />
       </div>
@@ -705,7 +1060,9 @@ function btnStyle(color: string): React.CSSProperties {
 }
 
 function PortraitPicker({
-  portrait, characterId, onChange,
+  portrait,
+  characterId,
+  onChange,
 }: {
   portrait: string | null;
   characterId: string;
@@ -721,7 +1078,7 @@ function PortraitPicker({
     const result = await uploadAsset(file, "characters", characterId, { addonId });
     if (result.success && result.filename) {
       onChange(result.filename);
-      setCacheBust(n => n + 1);
+      setCacheBust((n) => n + 1);
     }
     e.target.value = "";
   };
@@ -729,12 +1086,27 @@ function PortraitPicker({
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
       {portrait && (
-        <img src={`/assets/characters/${portrait}?t=${cacheBust}`} alt=""
-          style={{ height: "40px", width: "40px", objectFit: "cover", borderRadius: "3px", border: `1px solid ${T.border}` }} />
+        <img
+          src={`/assets/characters/${portrait}?t=${cacheBust}`}
+          alt=""
+          style={{
+            height: "40px",
+            width: "40px",
+            objectFit: "cover",
+            borderRadius: "3px",
+            border: `1px solid ${T.border}`,
+          }}
+        />
       )}
       <span style={{ fontSize: "12px", color: T.textSub, minWidth: "60px" }}>{portrait ?? "无"}</span>
-      <button onClick={() => fileRef.current?.click()} style={btnStyle(T.accent)}>[选择图片]</button>
-      {portrait && <button onClick={() => onChange(null)} style={btnStyle(T.danger)}>[清除]</button>}
+      <button onClick={() => fileRef.current?.click()} style={btnStyle(T.accent)}>
+        [选择图片]
+      </button>
+      {portrait && (
+        <button onClick={() => onChange(null)} style={btnStyle(T.danger)}>
+          [清除]
+        </button>
+      )}
       <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
     </div>
   );

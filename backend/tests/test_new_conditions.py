@@ -13,6 +13,7 @@ from game.action import _evaluate_conditions
 # Experience condition
 # ========================
 
+
 class TestExperienceCondition:
     def test_experience_gte_pass(self, game_state):
         game_state.character_data["player"]["experiences"] = {"kiss": {"count": 5}}
@@ -48,6 +49,7 @@ class TestExperienceCondition:
 # ========================
 # Weather condition (via time type)
 # ========================
+
 
 class TestWeatherCondition:
     def test_weather_match(self, game_state):
@@ -88,6 +90,7 @@ class TestWeatherCondition:
 # Outfit condition
 # ========================
 
+
 class TestOutfitCondition:
     def test_outfit_match(self, game_state):
         game_state.character_data["player"]["currentOutfit"] = "battle"
@@ -117,6 +120,7 @@ class TestOutfitCondition:
 # ========================
 # hasItem with quantity
 # ========================
+
 
 class TestHasItemQuantity:
     def test_hasItem_basic_presence(self, game_state):
@@ -171,6 +175,7 @@ class TestHasItemQuantity:
 # Legacy types still work (backward compat)
 # ========================
 
+
 class TestLegacyConditions:
     def test_npcAbsent_still_works(self, game_state):
         """npcAbsent should still evaluate (backend alias)."""
@@ -192,5 +197,6 @@ class TestLegacyConditions:
         char = game_state.characters["player"]
         cond_legacy = [{"type": "noTrait", "key": "race", "traitId": "elf"}]
         cond_not = [{"not": {"type": "trait", "key": "race", "traitId": "elf"}}]
-        assert _evaluate_conditions(cond_legacy, char, game_state, char_id="player") == \
-               _evaluate_conditions(cond_not, char, game_state, char_id="player")
+        assert _evaluate_conditions(cond_legacy, char, game_state, char_id="player") == _evaluate_conditions(
+            cond_not, char, game_state, char_id="player"
+        )

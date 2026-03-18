@@ -13,6 +13,7 @@ from game.action import _evaluate_conditions
 # Location conditions
 # ========================
 
+
 class TestLocationCondition:
     def test_exact_cell_match(self, game_state):
         char = game_state.characters["player"]
@@ -55,6 +56,7 @@ class TestLocationCondition:
 # Resource conditions
 # ========================
 
+
 class TestResourceCondition:
     def test_resource_gte_pass(self, game_state):
         char = game_state.characters["player"]
@@ -81,6 +83,7 @@ class TestResourceCondition:
 # Ability conditions
 # ========================
 
+
 class TestAbilityCondition:
     def test_ability_pass(self, game_state):
         char = game_state.characters["player"]
@@ -101,6 +104,7 @@ class TestAbilityCondition:
 # ========================
 # Trait conditions
 # ========================
+
 
 class TestTraitCondition:
     def test_has_trait(self, game_state):
@@ -132,6 +136,7 @@ class TestTraitCondition:
 # NPC presence conditions
 # ========================
 
+
 class TestNpcPresenceCondition:
     def test_npc_present(self, game_state):
         char = game_state.characters["player"]
@@ -158,6 +163,7 @@ class TestNpcPresenceCondition:
 # ========================
 # NPC absent conditions
 # ========================
+
 
 class TestNpcAbsentCondition:
     def test_npc_absent_any(self, game_state):
@@ -190,6 +196,7 @@ class TestNpcAbsentCondition:
 # ========================
 # Time conditions
 # ========================
+
 
 class TestTimeCondition:
     def test_hour_range_pass(self, game_state):
@@ -237,12 +244,19 @@ class TestTimeCondition:
 # Clothing conditions
 # ========================
 
+
 class TestClothingCondition:
     def test_clothing_slot_state(self, game_state):
         """Check clothing slot has specific state."""
         game_state.characters["player"]["clothing"] = [
-            {"slot": "hat", "itemId": "wizard_hat", "itemName": "巫师帽",
-             "state": "worn", "occluded": False, "slotLabel": "帽子"},
+            {
+                "slot": "hat",
+                "itemId": "wizard_hat",
+                "itemName": "巫师帽",
+                "state": "worn",
+                "occluded": False,
+                "slotLabel": "帽子",
+            },
         ]
         char = game_state.characters["player"]
         cond = [{"type": "clothing", "slot": "hat", "state": "worn"}]
@@ -250,8 +264,14 @@ class TestClothingCondition:
 
     def test_clothing_wrong_state(self, game_state):
         game_state.characters["player"]["clothing"] = [
-            {"slot": "hat", "itemId": "wizard_hat", "itemName": "巫师帽",
-             "state": "none", "occluded": False, "slotLabel": "帽子"},
+            {
+                "slot": "hat",
+                "itemId": "wizard_hat",
+                "itemName": "巫师帽",
+                "state": "none",
+                "occluded": False,
+                "slotLabel": "帽子",
+            },
         ]
         char = game_state.characters["player"]
         cond = [{"type": "clothing", "slot": "hat", "state": "worn"}]
@@ -262,10 +282,12 @@ class TestClothingCondition:
 # Variable conditions
 # ========================
 
+
 class TestVariableCondition:
     def test_variable_check(self, game_state):
         game_state.variable_defs["power"] = {
-            "id": "power", "steps": [{"type": "constant", "value": 50}],
+            "id": "power",
+            "steps": [{"type": "constant", "value": 50}],
         }
         char = game_state.characters["player"]
         cond = [{"type": "variable", "varId": "power", "op": ">=", "value": 30}]
@@ -273,7 +295,8 @@ class TestVariableCondition:
 
     def test_variable_check_fail(self, game_state):
         game_state.variable_defs["power"] = {
-            "id": "power", "steps": [{"type": "constant", "value": 10}],
+            "id": "power",
+            "steps": [{"type": "constant", "value": 10}],
         }
         char = game_state.characters["player"]
         cond = [{"type": "variable", "varId": "power", "op": ">=", "value": 30}]
@@ -283,6 +306,7 @@ class TestVariableCondition:
 # ========================
 # WorldVar conditions
 # ========================
+
 
 class TestWorldVarCondition:
     def test_world_var_check(self, game_state):
@@ -301,6 +325,7 @@ class TestWorldVarCondition:
 # ========================
 # Favorability conditions
 # ========================
+
 
 class TestFavorabilityCondition:
     def test_fav_from_target(self, game_state):
@@ -323,6 +348,7 @@ class TestFavorabilityCondition:
 # ========================
 # HasItem conditions
 # ========================
+
 
 class TestHasItemCondition:
     def test_has_item(self, game_state):
@@ -351,6 +377,7 @@ class TestHasItemCondition:
 # BasicInfo conditions
 # ========================
 
+
 class TestBasicInfoCondition:
     def test_money_check(self, game_state):
         char = game_state.characters["player"]
@@ -367,37 +394,54 @@ class TestBasicInfoCondition:
 # Composite conditions (AND/OR/NOT)
 # ========================
 
+
 class TestCompositeConditions:
     def test_and_all_true(self, game_state):
         char = game_state.characters["player"]
-        cond = [{"and": [
-            {"type": "location", "mapId": "tavern"},
-            {"type": "resource", "key": "stamina", "op": ">=", "value": 100},
-        ]}]
+        cond = [
+            {
+                "and": [
+                    {"type": "location", "mapId": "tavern"},
+                    {"type": "resource", "key": "stamina", "op": ">=", "value": 100},
+                ]
+            }
+        ]
         assert _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_and_one_false(self, game_state):
         char = game_state.characters["player"]
-        cond = [{"and": [
-            {"type": "location", "mapId": "tavern"},
-            {"type": "resource", "key": "stamina", "op": ">=", "value": 99999},
-        ]}]
+        cond = [
+            {
+                "and": [
+                    {"type": "location", "mapId": "tavern"},
+                    {"type": "resource", "key": "stamina", "op": ">=", "value": 99999},
+                ]
+            }
+        ]
         assert not _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_or_one_true(self, game_state):
         char = game_state.characters["player"]
-        cond = [{"or": [
-            {"type": "location", "mapId": "forest"},  # false
-            {"type": "location", "mapId": "tavern"},  # true
-        ]}]
+        cond = [
+            {
+                "or": [
+                    {"type": "location", "mapId": "forest"},  # false
+                    {"type": "location", "mapId": "tavern"},  # true
+                ]
+            }
+        ]
         assert _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_or_all_false(self, game_state):
         char = game_state.characters["player"]
-        cond = [{"or": [
-            {"type": "location", "mapId": "forest"},
-            {"type": "location", "mapId": "dungeon"},
-        ]}]
+        cond = [
+            {
+                "or": [
+                    {"type": "location", "mapId": "forest"},
+                    {"type": "location", "mapId": "dungeon"},
+                ]
+            }
+        ]
         assert not _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_not(self, game_state):
@@ -413,10 +457,16 @@ class TestCompositeConditions:
     def test_nested_not_or(self, game_state):
         """NOT(OR(forest, dungeon)) → NOT(false) → true."""
         char = game_state.characters["player"]
-        cond = [{"not": {"or": [
-            {"type": "location", "mapId": "forest"},
-            {"type": "location", "mapId": "dungeon"},
-        ]}}]
+        cond = [
+            {
+                "not": {
+                    "or": [
+                        {"type": "location", "mapId": "forest"},
+                        {"type": "location", "mapId": "dungeon"},
+                    ]
+                }
+            }
+        ]
         assert _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_skip_target_dependent(self, game_state):

@@ -178,12 +178,16 @@ class TestInactiveCharacters:
 
         # Rebuild characters
         from game.character import build_character_state
+
         gs.characters = {}
         for char_id, char_data in gs.character_data.items():
             if char_data.get("active", True) is False:
                 continue
             gs.characters[char_id] = build_character_state(
-                char_data, gs.template, gs.clothing_defs, gs.trait_defs,
+                char_data,
+                gs.template,
+                gs.clothing_defs,
+                gs.trait_defs,
                 gs.item_defs,
             )
 

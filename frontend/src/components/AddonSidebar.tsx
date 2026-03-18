@@ -1,6 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { AddonInfo } from "../types/game";
-import { fetchAddons, fetchAddonVersions, fetchAddonVersionsDetail, forkAddon, updateAddonMeta, copyAddonVersion, overwriteAddonVersion, deleteAddon, createAddon, deleteAddonAll, uploadAsset } from "../api/client";
+import {
+  fetchAddons,
+  fetchAddonVersions,
+  fetchAddonVersionsDetail,
+  forkAddon,
+  updateAddonMeta,
+  copyAddonVersion,
+  overwriteAddonVersion,
+  deleteAddon,
+  createAddon,
+  deleteAddonAll,
+  uploadAsset,
+} from "../api/client";
 import type { AddonVersionInfo } from "../api/client";
 import T from "../theme";
 
@@ -23,32 +35,39 @@ function isWorldFork(version: string): boolean {
   return getBaseVersion(version) !== version;
 }
 
-function getForkWorldId(version: string): string | null {
-  if (!isWorldFork(version)) return null;
-  return version.slice(getBaseVersion(version).length + 1);
-}
-
 /* ── Toggle Switch ─────────────────────────────────── */
 
 function ToggleSwitch({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); onChange(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onChange();
+      }}
       style={{
-        width: "34px", height: "18px", borderRadius: "9px",
+        width: "34px",
+        height: "18px",
+        borderRadius: "9px",
         border: `1.5px solid ${enabled ? T.accent : T.textFaint}`,
         background: enabled ? `${T.accent}30` : T.bg1,
-        position: "relative", cursor: "pointer", padding: 0,
+        position: "relative",
+        cursor: "pointer",
+        padding: 0,
         transition: "all 0.2s",
       }}
     >
-      <div style={{
-        width: "12px", height: "12px", borderRadius: "50%",
-        background: enabled ? T.accent : T.textFaint,
-        position: "absolute", top: "2px",
-        left: enabled ? "18px" : "2px",
-        transition: "all 0.2s",
-      }} />
+      <div
+        style={{
+          width: "12px",
+          height: "12px",
+          borderRadius: "50%",
+          background: enabled ? T.accent : T.textFaint,
+          position: "absolute",
+          top: "2px",
+          left: enabled ? "18px" : "2px",
+          transition: "all 0.2s",
+        }}
+      />
     </button>
   );
 }
@@ -60,17 +79,27 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
     <div
       onClick={onClose}
       style={{
-        position: "fixed", inset: 0, zIndex: 9999,
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
         backgroundColor: "rgba(0,0,0,0.7)",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: T.bg2, border: `1px solid ${T.textFaint}`, borderRadius: "8px",
-          padding: "24px", width: "380px", maxWidth: "90vw",
-          display: "flex", flexDirection: "column", gap: "16px",
+          backgroundColor: T.bg2,
+          border: `1px solid ${T.textFaint}`,
+          borderRadius: "8px",
+          padding: "24px",
+          width: "380px",
+          maxWidth: "90vw",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
           boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
         }}
       >
@@ -80,16 +109,29 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
   );
 }
 
-function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onCancel }: {
-  title: string; message: string; confirmLabel: string; danger?: boolean;
-  onConfirm: () => void; onCancel: () => void;
+function ConfirmModal({
+  title,
+  message,
+  confirmLabel,
+  danger,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
 }) {
   return (
     <Overlay onClose={onCancel}>
       <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{title}</div>
       <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>{message}</div>
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>取消</button>
+        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>
+          取消
+        </button>
         <button onClick={onConfirm} style={modalBtnStyle(danger ? T.dangerBg : T.bg2, danger ? T.danger : T.success)}>
           {confirmLabel}
         </button>
@@ -98,32 +140,49 @@ function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onCance
   );
 }
 
-function ForkModal({ addon, versions, worldId, onChoice, onCancel }: {
-  addon: AddonInfo; versions: AddonVersionInfo[]; worldId: string;
-  onChoice: (createFork: boolean, selectedVersion: string) => void; onCancel: () => void;
+function ForkModal({
+  addon,
+  versions,
+  worldId,
+  onChoice,
+  onCancel,
+}: {
+  addon: AddonInfo;
+  versions: AddonVersionInfo[];
+  worldId: string;
+  onChoice: (createFork: boolean, selectedVersion: string) => void;
+  onCancel: () => void;
 }) {
   const defaultVer = addon.version;
   const [selectedVersion, setSelectedVersion] = useState(defaultVer);
 
   const grouped = groupVersions(versions);
   const choiceBtn: React.CSSProperties = {
-    width: "100%", padding: "12px 14px", borderRadius: "6px", cursor: "pointer",
-    fontSize: "12px", textAlign: "left", border: "none",
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "12px",
+    textAlign: "left",
+    border: "none",
   };
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>
-        启用 Add-on
-      </div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>启用 Add-on</div>
       <div style={{ color: T.text, fontSize: "12px" }}>
         首次在此世界启用 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>，选择源版本：
       </div>
       {/* Version selector */}
       <div style={{ borderLeft: `2px solid ${T.accent}`, paddingLeft: "10px" }}>
-        <div style={{
-          display: "flex", flexDirection: "column", gap: "3px",
-          maxHeight: "200px", overflowY: "auto",
-        }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "3px",
+            maxHeight: "200px",
+            overflowY: "auto",
+          }}
+        >
           {grouped.map(({ info, indent }) => (
             <VersionRow
               key={info.version}
@@ -136,15 +195,21 @@ function ForkModal({ addon, versions, worldId, onChoice, onCancel }: {
           ))}
         </div>
       </div>
-      <button onClick={() => onChoice(true, selectedVersion)}
+      <button
+        onClick={() => onChoice(true, selectedVersion)}
         style={{ ...choiceBtn, backgroundColor: T.bg3, color: T.success, border: `1px solid ${T.successDim}` }}
       >
         <div style={{ fontWeight: "bold", marginBottom: "4px" }}>创建世界专属分支</div>
         <div style={{ color: T.successDim, fontSize: "11px" }}>
-          复制为 <span style={{ color: T.success }}>v{selectedVersion}-{worldId}</span>，修改不影响其他世界
+          复制为{" "}
+          <span style={{ color: T.success }}>
+            v{selectedVersion}-{worldId}
+          </span>
+          ，修改不影响其他世界
         </div>
       </button>
-      <button onClick={() => onChoice(false, selectedVersion)}
+      <button
+        onClick={() => onChoice(false, selectedVersion)}
         style={{ ...choiceBtn, backgroundColor: T.bg3, color: T.accent, border: `1px solid ${T.accentDim}` }}
       >
         <div style={{ fontWeight: "bold", marginBottom: "4px" }}>使用现有版本</div>
@@ -152,8 +217,16 @@ function ForkModal({ addon, versions, worldId, onChoice, onCancel }: {
           使用 <span style={{ color: T.accent }}>v{selectedVersion}</span>，修改会影响所有使用此版本的世界
         </div>
       </button>
-      <button onClick={onCancel}
-        style={{ ...choiceBtn, backgroundColor: "transparent", color: T.textSub, border: `1px solid ${T.textFaint}`, textAlign: "center", padding: "8px" }}
+      <button
+        onClick={onCancel}
+        style={{
+          ...choiceBtn,
+          backgroundColor: "transparent",
+          color: T.textSub,
+          border: `1px solid ${T.textFaint}`,
+          textAlign: "center",
+          padding: "8px",
+        }}
       >
         取消
       </button>
@@ -161,21 +234,27 @@ function ForkModal({ addon, versions, worldId, onChoice, onCancel }: {
   );
 }
 
-function CreateAddonModal({ onCreated, onCancel }: {
-  onCreated: () => void; onCancel: () => void;
-}) {
+function CreateAddonModal({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [version, setVersion] = useState("1.0.0");
   const [busy, setBusy] = useState(false);
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "6px 8px", fontSize: "12px", boxSizing: "border-box",
-    backgroundColor: T.bg2, color: T.text, border: `1px solid ${T.borderDim}`,
-    borderRadius: "4px", outline: "none",
+    width: "100%",
+    padding: "6px 8px",
+    fontSize: "12px",
+    boxSizing: "border-box",
+    backgroundColor: T.bg2,
+    color: T.text,
+    border: `1px solid ${T.borderDim}`,
+    borderRadius: "4px",
+    outline: "none",
   };
   const labelStyle: React.CSSProperties = {
-    fontSize: "11px", color: T.textSub, marginBottom: "2px",
+    fontSize: "11px",
+    color: T.textSub,
+    marginBottom: "2px",
   };
 
   const handleCreate = async () => {
@@ -183,36 +262,61 @@ function CreateAddonModal({ onCreated, onCancel }: {
     setBusy(true);
     const result = await createAddon({ id: id.trim(), name: name.trim(), version: version.trim() || "1.0.0" });
     setBusy(false);
-    if (!result.success) { alert(result.message); return; }
+    if (!result.success) {
+      alert(result.message);
+      return;
+    }
     onCreated();
   };
 
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>
-        新建 Add-on
-      </div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>新建 Add-on</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <div>
           <div style={labelStyle}>ID（唯一标识，不可修改）</div>
-          <input style={inputStyle} value={id} onChange={e => setId(e.target.value)} placeholder="my-addon" />
+          <input style={inputStyle} value={id} onChange={(e) => setId(e.target.value)} placeholder="my-addon" />
         </div>
         <div>
           <div style={labelStyle}>名称</div>
-          <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="我的扩展包" />
+          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="我的扩展包" />
         </div>
         <div>
           <div style={labelStyle}>初始版本</div>
-          <input style={inputStyle} value={version} onChange={e => setVersion(e.target.value)} placeholder="1.0.0" />
+          <input style={inputStyle} value={version} onChange={(e) => setVersion(e.target.value)} placeholder="1.0.0" />
         </div>
       </div>
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button onClick={onCancel}
-          style={{ padding: "6px 14px", fontSize: "12px", borderRadius: "4px", cursor: "pointer", backgroundColor: "transparent", color: T.textSub, border: `1px solid ${T.textFaint}` }}
-        >取消</button>
-        <button onClick={handleCreate} disabled={busy || !id.trim() || !name.trim()}
-          style={{ padding: "6px 14px", fontSize: "12px", borderRadius: "4px", cursor: "pointer", backgroundColor: T.accent, color: T.bg0, border: "none", opacity: busy || !id.trim() || !name.trim() ? 0.5 : 1 }}
-        >{busy ? "创建中..." : "创建"}</button>
+        <button
+          onClick={onCancel}
+          style={{
+            padding: "6px 14px",
+            fontSize: "12px",
+            borderRadius: "4px",
+            cursor: "pointer",
+            backgroundColor: "transparent",
+            color: T.textSub,
+            border: `1px solid ${T.textFaint}`,
+          }}
+        >
+          取消
+        </button>
+        <button
+          onClick={handleCreate}
+          disabled={busy || !id.trim() || !name.trim()}
+          style={{
+            padding: "6px 14px",
+            fontSize: "12px",
+            borderRadius: "4px",
+            cursor: "pointer",
+            backgroundColor: T.accent,
+            color: T.bg0,
+            border: "none",
+            opacity: busy || !id.trim() || !name.trim() ? 0.5 : 1,
+          }}
+        >
+          {busy ? "创建中..." : "创建"}
+        </button>
       </div>
     </Overlay>
   );
@@ -220,12 +324,24 @@ function CreateAddonModal({ onCreated, onCancel }: {
 
 function modalBtnStyle(bg: string, color: string): React.CSSProperties {
   return {
-    padding: "7px 16px", backgroundColor: bg, color, border: `1px solid ${T.textFaint}`,
-    borderRadius: "4px", cursor: "pointer", fontSize: "12px",
+    padding: "7px 16px",
+    backgroundColor: bg,
+    color,
+    border: `1px solid ${T.textFaint}`,
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "12px",
   };
 }
 
-function DependencyModal({ action, addon, related, onChain, onOnly, onCancel }: {
+function DependencyModal({
+  action,
+  addon,
+  related,
+  onChain,
+  onOnly,
+  onCancel,
+}: {
   action: "enable" | "disable";
   addon: AddonInfo;
   related: AddonInfo[];
@@ -236,21 +352,31 @@ function DependencyModal({ action, addon, related, onChain, onOnly, onCancel }: 
   const isEnable = action === "enable";
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>
-        {isEnable ? "依赖检查" : "依赖警告"}
-      </div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{isEnable ? "依赖检查" : "依赖警告"}</div>
       <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>
-        {isEnable
-          ? <>启用 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> 需要以下依赖：</>
-          : <>以下 Add-on 依赖 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>：</>
-        }
+        {isEnable ? (
+          <>
+            启用 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> 需要以下依赖：
+          </>
+        ) : (
+          <>
+            以下 Add-on 依赖 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>：
+          </>
+        )}
       </div>
-      <div style={{
-        display: "flex", flexDirection: "column", gap: "4px",
-        padding: "8px", backgroundColor: T.bg1, borderRadius: "4px",
-        maxHeight: "200px", overflowY: "auto",
-      }}>
-        {related.map(r => (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px",
+          padding: "8px",
+          backgroundColor: T.bg1,
+          borderRadius: "4px",
+          maxHeight: "200px",
+          overflowY: "auto",
+        }}
+      >
+        {related.map((r) => (
           <div key={r.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
             <span style={{ color: isEnable ? T.accent : T.danger, fontWeight: "bold" }}>{r.name}</span>
             <span style={{ color: T.textDim, fontSize: "11px" }}>({r.id})</span>
@@ -258,28 +384,35 @@ function DependencyModal({ action, addon, related, onChain, onOnly, onCancel }: 
         ))}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <button onClick={onChain}
+        <button
+          onClick={onChain}
           style={{
             ...modalBtnStyle(isEnable ? T.bg2 : T.dangerBg, isEnable ? T.success : T.danger),
-            width: "100%", textAlign: "center",
-          }}>
-          {isEnable
-            ? `全部启用 (${related.length + 1} 个)`
-            : `全部禁用 (${related.length + 1} 个)`
-          }
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          {isEnable ? `全部启用 (${related.length + 1} 个)` : `全部禁用 (${related.length + 1} 个)`}
         </button>
-        <button onClick={onOnly}
+        <button
+          onClick={onOnly}
           style={{
             ...modalBtnStyle(T.bg2, T.accent),
-            width: "100%", textAlign: "center",
-          }}>
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
           {isEnable ? `仅启用 ${addon.name}` : `仅禁用 ${addon.name}`}
         </button>
-        <button onClick={onCancel}
+        <button
+          onClick={onCancel}
           style={{
             ...modalBtnStyle("transparent", T.textSub),
-            width: "100%", textAlign: "center", border: `1px solid ${T.textFaint}`,
-          }}>
+            width: "100%",
+            textAlign: "center",
+            border: `1px solid ${T.textFaint}`,
+          }}
+        >
           取消
         </button>
       </div>
@@ -289,7 +422,11 @@ function DependencyModal({ action, addon, related, onChain, onOnly, onCancel }: 
 
 /* ── Version Switch List (clean, read-only) ───────── */
 
-function VersionSwitchList({ addonId, selectedVersion, onSwitch }: {
+function VersionSwitchList({
+  addonId,
+  selectedVersion,
+  onSwitch,
+}: {
   addonId: string;
   selectedVersion: string;
   onSwitch: (version: string) => void;
@@ -304,27 +441,38 @@ function VersionSwitchList({ addonId, selectedVersion, onSwitch }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-      <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "2px", fontWeight: "bold" }}>
-        切换版本
-      </div>
+      <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "2px", fontWeight: "bold" }}>切换版本</div>
       {versions.length === 0 ? (
         <div style={{ fontSize: "11px", color: T.textFaint, padding: "2px 0" }}>无版本</div>
-      ) : grouped.map(({ info: vi, indent }) => {
-        const ver = vi.version;
-        const isCurrent = ver === selectedVersion;
-        const isBase = !vi.forkedFrom;
-        return (
-          <VersionRow key={ver} ver={ver} indent={indent} isCurrent={isCurrent} isBase={isBase}
-            onClick={() => !isCurrent && onSwitch(ver)} />
-        );
-      })}
+      ) : (
+        grouped.map(({ info: vi, indent }) => {
+          const ver = vi.version;
+          const isCurrent = ver === selectedVersion;
+          const isBase = !vi.forkedFrom;
+          return (
+            <VersionRow
+              key={ver}
+              ver={ver}
+              indent={indent}
+              isCurrent={isCurrent}
+              isBase={isBase}
+              onClick={() => !isCurrent && onSwitch(ver)}
+            />
+          );
+        })
+      )}
     </div>
   );
 }
 
 /* ── Version Management Panel (dangerous ops) ─────── */
 
-function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh }: {
+function VersionManagePanel({
+  addonId,
+  selectedVersion,
+  onNewVersion,
+  onRefresh,
+}: {
   addonId: string;
   selectedVersion: string;
   onNewVersion: () => void;
@@ -339,7 +487,9 @@ function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh 
     fetchAddonVersionsDetail(addonId).then(setVersions);
   }, [addonId]);
 
-  useEffect(() => { loadVersions(); }, [loadVersions]);
+  useEffect(() => {
+    loadVersions();
+  }, [loadVersions]);
 
   const grouped = groupVersions(versions);
 
@@ -349,7 +499,10 @@ function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh 
     setBusy(true);
     const result = await overwriteAddonVersion(addonId, copySource, target);
     setBusy(false);
-    if (!result.success) { alert(result.message); return; }
+    if (!result.success) {
+      alert(result.message);
+      return;
+    }
     setCopySource(null);
     loadVersions();
     onRefresh();
@@ -360,7 +513,10 @@ function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh 
     setBusy(true);
     const result = await deleteAddon(addonId, ver);
     setBusy(false);
-    if (!result.success) { alert(result.message); return; }
+    if (!result.success) {
+      alert(result.message);
+      return;
+    }
     loadVersions();
     onRefresh();
   };
@@ -376,10 +532,15 @@ function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh 
       </div>
 
       {copySource && (
-        <div style={{
-          padding: "4px 8px", backgroundColor: `${T.accent}15`, borderRadius: "3px",
-          fontSize: "10px", color: T.accent,
-        }}>
+        <div
+          style={{
+            padding: "4px 8px",
+            backgroundColor: `${T.accent}15`,
+            borderRadius: "3px",
+            fontSize: "10px",
+            color: T.accent,
+          }}
+        >
           源：<b>{copySource}</b> → 点击目标版本粘贴
         </div>
       )}
@@ -392,23 +553,35 @@ function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh 
         const isCopyTarget = copySource !== null && copySource !== ver;
 
         return (
-          <div key={ver} style={{
-            display: "flex", alignItems: "center", gap: "6px",
-            padding: "4px 8px", borderRadius: "4px",
-            marginLeft: indent ? "14px" : 0,
-            backgroundColor: isCopyTarget ? `${T.accent}10` : T.bg1,
-            border: `1px solid ${isCopyTarget ? T.accent + "40" : T.borderDim}`,
-            cursor: isCopyTarget ? "pointer" : "default",
-            fontSize: "11px", opacity: busy ? 0.5 : 1,
-          }}
+          <div
+            key={ver}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              marginLeft: indent ? "14px" : 0,
+              backgroundColor: isCopyTarget ? `${T.accent}10` : T.bg1,
+              border: `1px solid ${isCopyTarget ? T.accent + "40" : T.borderDim}`,
+              cursor: isCopyTarget ? "pointer" : "default",
+              fontSize: "11px",
+              opacity: busy ? 0.5 : 1,
+            }}
             onClick={() => isCopyTarget && handleCopy(ver)}
           >
             {indent && <span style={{ color: T.textFaint, fontSize: "10px", marginRight: "-2px" }}>└</span>}
 
-            <span style={{
-              flex: 1, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              fontWeight: isCurrent ? "bold" : "normal",
-            }}>
+            <span
+              style={{
+                flex: 1,
+                color: T.text,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                fontWeight: isCurrent ? "bold" : "normal",
+              }}
+            >
               {ver}
             </span>
 
@@ -424,11 +597,20 @@ function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh 
             {/* Delete — only non-current */}
             {!copySource && !isCurrent && (
               <button
-                onClick={(e) => { e.stopPropagation(); setDeleteConfirm(ver); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteConfirm(ver);
+                }}
                 style={{
-                  background: "none", border: `1px solid ${T.danger}30`, padding: "1px 5px",
-                  color: T.danger, cursor: "pointer", fontSize: "10px",
-                  borderRadius: "3px", flexShrink: 0, opacity: 0.6,
+                  background: "none",
+                  border: `1px solid ${T.danger}30`,
+                  padding: "1px 5px",
+                  color: T.danger,
+                  cursor: "pointer",
+                  fontSize: "10px",
+                  borderRadius: "3px",
+                  flexShrink: 0,
+                  opacity: 0.6,
                 }}
               >
                 删除
@@ -440,17 +622,32 @@ function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh 
 
       {/* Delete confirmation */}
       {deleteConfirm && (
-        <div style={{
-          padding: "6px 8px", backgroundColor: T.dangerBg,
-          borderRadius: "4px", border: `1px solid ${T.danger}40`,
-          fontSize: "11px", color: T.text,
-        }}>
-          <div>确认删除 <span style={{ color: T.danger, fontWeight: "bold" }}>{deleteConfirm}</span>？此操作不可撤销。</div>
+        <div
+          style={{
+            padding: "6px 8px",
+            backgroundColor: T.dangerBg,
+            borderRadius: "4px",
+            border: `1px solid ${T.danger}40`,
+            fontSize: "11px",
+            color: T.text,
+          }}
+        >
+          <div>
+            确认删除 <span style={{ color: T.danger, fontWeight: "bold" }}>{deleteConfirm}</span>？此操作不可撤销。
+          </div>
           <div style={{ display: "flex", gap: "6px", marginTop: "6px", justifyContent: "flex-end" }}>
-            <button onClick={() => setDeleteConfirm(null)}
-              style={{ ...modalBtnStyle(T.bg2, T.textSub), padding: "3px 10px", fontSize: "11px" }}>取消</button>
-            <button onClick={() => handleDelete(deleteConfirm)}
-              style={{ ...modalBtnStyle(T.dangerBg, T.danger), padding: "3px 10px", fontSize: "11px" }}>删除</button>
+            <button
+              onClick={() => setDeleteConfirm(null)}
+              style={{ ...modalBtnStyle(T.bg2, T.textSub), padding: "3px 10px", fontSize: "11px" }}
+            >
+              取消
+            </button>
+            <button
+              onClick={() => handleDelete(deleteConfirm)}
+              style={{ ...modalBtnStyle(T.dangerBg, T.danger), padding: "3px 10px", fontSize: "11px" }}
+            >
+              删除
+            </button>
           </div>
         </div>
       )}
@@ -460,14 +657,19 @@ function VersionManagePanel({ addonId, selectedVersion, onNewVersion, onRefresh 
 
 function ToggleBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{
-      padding: "4px 10px", fontSize: "11px", cursor: "pointer",
-      backgroundColor: active ? T.bg2 : T.bg1,
-      color: active ? T.accent : T.textSub,
-      border: `1px solid ${active ? T.accent + "60" : T.borderDim}`,
-      borderBottom: active ? `2px solid ${T.accent}` : `1px solid ${T.borderDim}`,
-      borderRadius: "3px",
-    }}>
+    <button
+      onClick={onClick}
+      style={{
+        padding: "4px 10px",
+        fontSize: "11px",
+        cursor: "pointer",
+        backgroundColor: active ? T.bg2 : T.bg1,
+        color: active ? T.accent : T.textSub,
+        border: `1px solid ${active ? T.accent + "60" : T.borderDim}`,
+        borderBottom: active ? `2px solid ${T.accent}` : `1px solid ${T.borderDim}`,
+        borderRadius: "3px",
+      }}
+    >
       {label}
     </button>
   );
@@ -475,11 +677,18 @@ function ToggleBtn({ label, active, onClick }: { label: string; active: boolean;
 
 function MiniBtn({ onClick, active, children }: { onClick: () => void; active?: boolean; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} style={{
-      padding: "3px 8px", fontSize: "10px", cursor: "pointer",
-      backgroundColor: active ? T.bg2 : T.bg1, color: active ? T.accent : T.textSub,
-      border: `1px solid ${active ? T.accent + "40" : T.borderDim}`, borderRadius: "3px",
-    }}>
+    <button
+      onClick={onClick}
+      style={{
+        padding: "3px 8px",
+        fontSize: "10px",
+        cursor: "pointer",
+        backgroundColor: active ? T.bg2 : T.bg1,
+        color: active ? T.accent : T.textSub,
+        border: `1px solid ${active ? T.accent + "40" : T.borderDim}`,
+        borderRadius: "3px",
+      }}
+    >
       {children}
     </button>
   );
@@ -488,13 +697,13 @@ function MiniBtn({ onClick, active, children }: { onClick: () => void; active?: 
 /* ── Shared: group versions into tree ─────────────── */
 
 function groupVersions(versions: AddonVersionInfo[]): { info: AddonVersionInfo; indent: boolean }[] {
-  const bases = versions.filter(v => !v.forkedFrom);
-  const branches = versions.filter(v => v.forkedFrom);
+  const bases = versions.filter((v) => !v.forkedFrom);
+  const branches = versions.filter((v) => v.forkedFrom);
   const grouped: { info: AddonVersionInfo; indent: boolean }[] = [];
   const assigned = new Set<string>();
   for (const base of bases) {
     grouped.push({ info: base, indent: false });
-    for (const br of branches.filter(b => b.forkedFrom === base.version)) {
+    for (const br of branches.filter((b) => b.forkedFrom === base.version)) {
       grouped.push({ info: br, indent: true });
       assigned.add(br.version);
     }
@@ -507,15 +716,28 @@ function groupVersions(versions: AddonVersionInfo[]): { info: AddonVersionInfo; 
 
 /* ── Shared version row (for switch list) ─────────── */
 
-function VersionRow({ ver, indent, isCurrent, isBase, onClick }: {
-  ver: string; indent: boolean; isCurrent: boolean; isBase: boolean; onClick: () => void;
+function VersionRow({
+  ver,
+  indent,
+  isCurrent,
+  isBase,
+  onClick,
+}: {
+  ver: string;
+  indent: boolean;
+  isCurrent: boolean;
+  isBase: boolean;
+  onClick: () => void;
 }) {
   return (
     <div
       onClick={onClick}
       style={{
-        display: "flex", alignItems: "center", gap: "6px",
-        padding: "4px 8px", borderRadius: "4px",
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "4px 8px",
+        borderRadius: "4px",
         marginLeft: indent ? "14px" : 0,
         backgroundColor: isCurrent ? T.bg2 : T.bg1,
         border: `1px solid ${isCurrent ? T.borderLight : T.borderDim}`,
@@ -524,15 +746,26 @@ function VersionRow({ ver, indent, isCurrent, isBase, onClick }: {
       }}
     >
       {indent && <span style={{ color: T.textFaint, fontSize: "10px", marginRight: "-2px" }}>└</span>}
-      <div style={{
-        width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0,
-        border: `2px solid ${isCurrent ? T.accent : T.textFaint}`,
-        backgroundColor: isCurrent ? T.accent : "transparent",
-      }} />
-      <span style={{
-        color: T.text, fontWeight: isCurrent ? "bold" : "normal",
-        flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-      }}>
+      <div
+        style={{
+          width: "8px",
+          height: "8px",
+          borderRadius: "50%",
+          flexShrink: 0,
+          border: `2px solid ${isCurrent ? T.accent : T.textFaint}`,
+          backgroundColor: isCurrent ? T.accent : "transparent",
+        }}
+      />
+      <span
+        style={{
+          color: T.text,
+          fontWeight: isCurrent ? "bold" : "normal",
+          flex: 1,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
         {ver}
       </span>
       {isCurrent && <Tag color={T.accent}>当前</Tag>}
@@ -544,43 +777,47 @@ function VersionRow({ ver, indent, isCurrent, isBase, onClick }: {
 
 function Tag({ color, children }: { color: string; children: React.ReactNode }) {
   return (
-    <span style={{
-      fontSize: "11px", padding: "1px 6px", borderRadius: "3px",
-      backgroundColor: `${color}20`, color, border: `1px solid ${color}40`,
-      lineHeight: 1.4, fontWeight: "bold",
-    }}>
-      {children}
-    </span>
-  );
-}
-
-function PagerBtn({ disabled, onClick, children }: { disabled: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      disabled={disabled} onClick={onClick}
+    <span
       style={{
-        background: "none", border: `1px solid ${T.textFaint}`,
-        color: disabled ? T.border : T.textSub,
-        cursor: disabled ? "default" : "pointer",
-        padding: "2px 8px", borderRadius: "3px",
         fontSize: "11px",
+        padding: "1px 6px",
+        borderRadius: "3px",
+        backgroundColor: `${color}20`,
+        color,
+        border: `1px solid ${color}40`,
+        lineHeight: 1.4,
+        fontWeight: "bold",
       }}
     >
       {children}
-    </button>
+    </span>
   );
 }
 
 /* ── Addon Meta Editor ─────────────────────────────── */
 
 const fieldInputStyle: React.CSSProperties = {
-  width: "100%", padding: "4px 6px", fontSize: "11px",
-  backgroundColor: T.bg1, color: T.text, border: `1px solid ${T.borderDim}`,
-  borderRadius: "3px", outline: "none", boxSizing: "border-box",
+  width: "100%",
+  padding: "4px 6px",
+  fontSize: "11px",
+  backgroundColor: T.bg1,
+  color: T.text,
+  border: `1px solid ${T.borderDim}`,
+  borderRadius: "3px",
+  outline: "none",
+  boxSizing: "border-box",
 };
 
-function AddonMetaEditor({ addon, displayVersion, onUpdated, onClose }: {
-  addon: AddonInfo; displayVersion: string; onUpdated: () => void; onClose: () => void;
+function AddonMetaEditor({
+  addon,
+  displayVersion,
+  onUpdated,
+  onClose,
+}: {
+  addon: AddonInfo;
+  displayVersion: string;
+  onUpdated: () => void;
+  onClose: () => void;
 }) {
   const [name, setName] = useState(addon.name);
   const [author, setAuthor] = useState(addon.author ?? "");
@@ -604,9 +841,14 @@ function AddonMetaEditor({ addon, displayVersion, onUpdated, onClose }: {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const cats = categories.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+      const cats = categories
+        .split(/[,，]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       await updateAddonMeta(addon.id, displayVersion, {
-        name, author: author || undefined, description: description || undefined,
+        name,
+        author: author || undefined,
+        description: description || undefined,
         cover: cover || undefined,
         categories: cats.length > 0 ? cats : undefined,
       });
@@ -635,7 +877,8 @@ function AddonMetaEditor({ addon, displayVersion, onUpdated, onClose }: {
       <div style={{ display: "flex", gap: "4px", fontSize: "11px" }}>
         <span style={{ color: T.textSub, width: "32px", flexShrink: 0, paddingTop: "4px" }}>简介</span>
         <textarea
-          value={description} onChange={e => setDescription(e.target.value)}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           rows={2}
           style={{ ...fieldInputStyle, resize: "vertical" }}
         />
@@ -644,34 +887,72 @@ function AddonMetaEditor({ addon, displayVersion, onUpdated, onClose }: {
         <span style={{ color: T.textSub, width: "32px", flexShrink: 0 }}>封面</span>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
           {cover && (
-            <img src={`/assets/${addon.id}/covers/${cover}?t=${cover}`} alt=""
-              style={{ width: "28px", height: "28px", objectFit: "cover", borderRadius: "3px", border: `1px solid ${T.borderDim}` }}
+            <img
+              src={`/assets/${addon.id}/covers/${cover}?t=${cover}`}
+              alt=""
+              style={{
+                width: "28px",
+                height: "28px",
+                objectFit: "cover",
+                borderRadius: "3px",
+                border: `1px solid ${T.borderDim}`,
+              }}
             />
           )}
-          <span style={{ fontSize: "11px", color: T.textFaint, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span
+            style={{
+              fontSize: "11px",
+              color: T.textFaint,
+              flex: 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {cover || "无"}
           </span>
-          <input type="file" accept="image/*" ref={coverFileRef} style={{ display: "none" }} onChange={handleCoverUpload} />
-          <button onClick={() => coverFileRef.current?.click()}
-            style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.textSub }}>
+          <input
+            type="file"
+            accept="image/*"
+            ref={coverFileRef}
+            style={{ display: "none" }}
+            onChange={handleCoverUpload}
+          />
+          <button
+            onClick={() => coverFileRef.current?.click()}
+            style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.textSub }}
+          >
             选择
           </button>
           {cover && (
-            <button onClick={() => setCover("")}
-              style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.danger }}>
+            <button
+              onClick={() => setCover("")}
+              style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.danger }}
+            >
               移除
             </button>
           )}
         </div>
       </div>
       <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
-        <button onClick={onClose}
-          style={{ ...fieldInputStyle, width: "auto", padding: "3px 10px", cursor: "pointer", color: T.textSub }}>
+        <button
+          onClick={onClose}
+          style={{ ...fieldInputStyle, width: "auto", padding: "3px 10px", cursor: "pointer", color: T.textSub }}
+        >
           取消
         </button>
-        <button onClick={handleSave} disabled={saving || !name.trim()}
-          style={{ ...fieldInputStyle, width: "auto", padding: "3px 10px", cursor: "pointer",
-            color: T.success, borderColor: T.successDim }}>
+        <button
+          onClick={handleSave}
+          disabled={saving || !name.trim()}
+          style={{
+            ...fieldInputStyle,
+            width: "auto",
+            padding: "3px 10px",
+            cursor: "pointer",
+            color: T.success,
+            borderColor: T.successDim,
+          }}
+        >
           {saving ? "保存中..." : "保存"}
         </button>
       </div>
@@ -679,14 +960,23 @@ function AddonMetaEditor({ addon, displayVersion, onUpdated, onClose }: {
   );
 }
 
-function MetaField({ label, value, onChange, placeholder }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+function MetaField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
 }) {
   return (
     <div style={{ display: "flex", gap: "4px", alignItems: "center", fontSize: "11px" }}>
       <span style={{ color: T.textSub, width: "32px", flexShrink: 0 }}>{label}</span>
       <input
-        value={value} onChange={e => onChange(e.target.value)}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         style={fieldInputStyle}
       />
@@ -696,9 +986,18 @@ function MetaField({ label, value, onChange, placeholder }: {
 
 /* ── New Version / Branch Modal ───────────────────── */
 
-function NewVersionModal({ addonId, sourceVersion, existingVersions, onCreated, onCancel }: {
-  addonId: string; sourceVersion: string; existingVersions: string[];
-  onCreated: (newVersion: string) => void; onCancel: () => void;
+function NewVersionModal({
+  addonId,
+  sourceVersion,
+  existingVersions,
+  onCreated,
+  onCancel,
+}: {
+  addonId: string;
+  sourceVersion: string;
+  existingVersions: string[];
+  onCreated: (newVersion: string) => void;
+  onCancel: () => void;
 }) {
   const [mode, setMode] = useState<"bump" | "branch">("bump");
   const [version, setVersion] = useState(() => {
@@ -716,9 +1015,10 @@ function NewVersionModal({ addonId, sourceVersion, existingVersions, onCreated, 
   const [error, setError] = useState("");
 
   const targetVersion = mode === "bump" ? version : `${getBaseVersion(sourceVersion)}-${branchName}`;
-  const valid = mode === "bump"
-    ? version.trim().length > 0 && /^\d+\.\d+\.\d+$/.test(version.trim())
-    : branchName.trim().length > 0 && /^[a-zA-Z0-9_-]+$/.test(branchName.trim());
+  const valid =
+    mode === "bump"
+      ? version.trim().length > 0 && /^\d+\.\d+\.\d+$/.test(version.trim())
+      : branchName.trim().length > 0 && /^[a-zA-Z0-9_-]+$/.test(branchName.trim());
   const conflict = existingVersions.includes(targetVersion);
 
   const handleCreate = async () => {
@@ -742,24 +1042,31 @@ function NewVersionModal({ addonId, sourceVersion, existingVersions, onCreated, 
 
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>
-        创建新版本
-      </div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>创建新版本</div>
       <div style={{ color: T.textSub, fontSize: "11px" }}>
-        基于 <span style={{ color: T.accent }}>{addonId}@{sourceVersion}</span>
+        基于{" "}
+        <span style={{ color: T.accent }}>
+          {addonId}@{sourceVersion}
+        </span>
       </div>
 
       {/* Mode tabs */}
       <div style={{ display: "flex", gap: "4px" }}>
-        {(["bump", "branch"] as const).map(m => (
-          <button key={m} onClick={() => setMode(m)}
+        {(["bump", "branch"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
             style={{
-              flex: 1, padding: "6px", fontSize: "12px", cursor: "pointer",
+              flex: 1,
+              padding: "6px",
+              fontSize: "12px",
+              cursor: "pointer",
               backgroundColor: mode === m ? T.bg3 : T.bg1,
               color: mode === m ? T.text : T.textSub,
               border: `1px solid ${mode === m ? T.borderLight : T.borderDim}`,
               borderRadius: "4px",
-            }}>
+            }}
+          >
             {m === "bump" ? "版本升级" : "创建分支"}
           </button>
         ))}
@@ -767,45 +1074,45 @@ function NewVersionModal({ addonId, sourceVersion, existingVersions, onCreated, 
 
       {mode === "bump" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <div style={{ color: T.textSub, fontSize: "11px" }}>
-            新的独立版本号（X.Y.Z 格式）：
-          </div>
-          <input value={version} onChange={e => setVersion(e.target.value)}
+          <div style={{ color: T.textSub, fontSize: "11px" }}>新的独立版本号（X.Y.Z 格式）：</div>
+          <input
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
             placeholder="例如 1.1.0"
-            style={{ ...fieldInputStyle, fontSize: "13px", padding: "6px 8px" }} />
+            style={{ ...fieldInputStyle, fontSize: "13px", padding: "6px 8px" }}
+          />
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <div style={{ color: T.textSub, fontSize: "11px" }}>
-            分支名称（字母、数字、下划线、横线）：
-          </div>
+          <div style={{ color: T.textSub, fontSize: "11px" }}>分支名称（字母、数字、下划线、横线）：</div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <span style={{ color: T.textDim, fontSize: "12px" }}>{getBaseVersion(sourceVersion)}-</span>
-            <input value={branchName} onChange={e => setBranchName(e.target.value)}
+            <input
+              value={branchName}
+              onChange={(e) => setBranchName(e.target.value)}
               placeholder="my-branch"
-              style={{ ...fieldInputStyle, fontSize: "13px", padding: "6px 8px", flex: 1 }} />
+              style={{ ...fieldInputStyle, fontSize: "13px", padding: "6px 8px", flex: 1 }}
+            />
           </div>
         </div>
       )}
 
-      {conflict && (
-        <div style={{ color: T.danger, fontSize: "11px" }}>
-          版本 {targetVersion} 已存在
-        </div>
-      )}
-      {error && (
-        <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>
-      )}
+      {conflict && <div style={{ color: T.danger, fontSize: "11px" }}>版本 {targetVersion} 已存在</div>}
+      {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
 
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>取消</button>
-        <button onClick={handleCreate}
+        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>
+          取消
+        </button>
+        <button
+          onClick={handleCreate}
           disabled={!valid || conflict || saving}
           style={{
             ...modalBtnStyle(T.bg2, T.success),
-            opacity: (!valid || conflict || saving) ? 0.5 : 1,
-            cursor: (!valid || conflict || saving) ? "default" : "pointer",
-          }}>
+            opacity: !valid || conflict || saving ? 0.5 : 1,
+            cursor: !valid || conflict || saving ? "default" : "pointer",
+          }}
+        >
           {saving ? "创建中..." : "创建"}
         </button>
       </div>
@@ -821,8 +1128,16 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
   const [forkPrompt, setForkPrompt] = useState<{ addon: AddonInfo; versions: AddonVersionInfo[] } | null>(null);
   const [disablePrompt, setDisablePrompt] = useState<{ addon: AddonInfo } | null>(null);
   const [depPrompt, setDepPrompt] = useState<{ addon: AddonInfo; missing: AddonInfo[]; action: "enable" } | null>(null);
-  const [depDisablePrompt, setDepDisablePrompt] = useState<{ addon: AddonInfo; dependents: AddonInfo[]; action: "disable" } | null>(null);
-  const [newVersionPrompt, setNewVersionPrompt] = useState<{ addonId: string; sourceVersion: string; existingVersions: string[] } | null>(null);
+  const [depDisablePrompt, setDepDisablePrompt] = useState<{
+    addon: AddonInfo;
+    dependents: AddonInfo[];
+    action: "disable";
+  } | null>(null);
+  const [newVersionPrompt, setNewVersionPrompt] = useState<{
+    addonId: string;
+    sourceVersion: string;
+    existingVersions: string[];
+  } | null>(null);
   const [editingMetaId, setEditingMetaId] = useState<string | null>(null);
   const [versionManageId, setVersionManageId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -832,7 +1147,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
   const refresh = useCallback(() => {
     fetchAddons().then((addons) => {
-      const enabledMap = new Map(enabledAddons.map(a => [a.id, a.version]));
+      const enabledMap = new Map(enabledAddons.map((a) => [a.id, a.version]));
       const byId = new Map<string, AddonInfo>();
       for (const addon of addons) {
         const existing = byId.get(addon.id);
@@ -854,21 +1169,22 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
     });
   }, [enabledAddons]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  const isStagedEnabled = (addonId: string) =>
-    stagedAddons.some((a) => a.id === addonId);
+  const isStagedEnabled = (addonId: string) => stagedAddons.some((a) => a.id === addonId);
 
   // ── Dependency helpers ──
 
   /** Recursively collect all missing dependencies for an addon */
   const collectMissingDeps = (addon: AddonInfo, staged: { id: string }[]): AddonInfo[] => {
-    const stagedIds = new Set(staged.map(a => a.id));
+    const stagedIds = new Set(staged.map((a) => a.id));
     const collected = new Map<string, AddonInfo>();
     const visit = (a: AddonInfo) => {
       for (const dep of a.dependencies ?? []) {
         if (stagedIds.has(dep.id) || collected.has(dep.id)) continue;
-        const depAddon = allAddons.find(x => x.id === dep.id);
+        const depAddon = allAddons.find((x) => x.id === dep.id);
         if (depAddon) {
           collected.set(dep.id, depAddon);
           visit(depAddon); // recurse into dependency's dependencies
@@ -885,15 +1201,17 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
     const visit = (id: string) => {
       for (const s of staged) {
         if (toDisable.has(s.id) || s.id === addonId) continue;
-        const info = allAddons.find(x => x.id === s.id);
-        if (info?.dependencies?.some(d => d.id === id)) {
+        const info = allAddons.find((x) => x.id === s.id);
+        if (info?.dependencies?.some((d) => d.id === id)) {
           toDisable.add(s.id);
           visit(s.id); // recurse: addons depending on this dependent
         }
       }
     };
     visit(addonId);
-    return Array.from(toDisable).map(id => allAddons.find(x => x.id === id)!).filter(Boolean);
+    return Array.from(toDisable)
+      .map((id) => allAddons.find((x) => x.id === id)!)
+      .filter(Boolean);
   };
 
   // ── Toggle handler ──
@@ -923,7 +1241,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
   /** Start enabling an addon (check fork, show fork prompt if needed) */
   const startEnableAddon = async (addon: AddonInfo) => {
     const versionsDetail = await fetchAddonVersionsDetail(addon.id);
-    const versionNames = versionsDetail.map(v => v.version);
+    const versionNames = versionsDetail.map((v) => v.version);
     const baseVer = getBaseVersion(addon.version);
     const forkVersion = `${baseVer}-${worldId}`;
     if (versionNames.includes(forkVersion)) {
@@ -940,9 +1258,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
     if (vsRef) {
       // Version switch: replace version in staged
       pendingVersionSwitch.current = null;
-      onStagedChange(newStaged.map(a =>
-        a.id === vsRef.addonId ? { ...a, version: vsRef.newVersion } : a
-      ));
+      onStagedChange(newStaged.map((a) => (a.id === vsRef.addonId ? { ...a, version: vsRef.newVersion } : a)));
     } else {
       // New enable: add addon (already in newStaged or needs fork prompt)
       onStagedChange(newStaged);
@@ -957,7 +1273,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
     // Auto-enable all deps: use existing fork or create one automatically
     let newStaged = [...stagedAddons];
     for (const dep of missing) {
-      if (newStaged.some(s => s.id === dep.id)) continue; // already staged
+      if (newStaged.some((s) => s.id === dep.id)) continue; // already staged
       const versions = await fetchAddonVersions(dep.id);
       const baseVer = getBaseVersion(dep.version);
       const forkVersion = `${baseVer}-${worldId}`;
@@ -979,7 +1295,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
     } else {
       // New enable: handle main addon fork
       const versionsDetail = await fetchAddonVersionsDetail(addon.id);
-      const versionNames = versionsDetail.map(v => v.version);
+      const versionNames = versionsDetail.map((v) => v.version);
       const baseVer = getBaseVersion(addon.version);
       const forkVersion = `${baseVer}-${worldId}`;
       if (versionNames.includes(forkVersion)) {
@@ -1001,9 +1317,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
     if (pendingVersionSwitch.current) {
       const vsRef = pendingVersionSwitch.current;
       pendingVersionSwitch.current = null;
-      onStagedChange(stagedAddons.map(a =>
-        a.id === vsRef.addonId ? { ...a, version: vsRef.newVersion } : a
-      ));
+      onStagedChange(stagedAddons.map((a) => (a.id === vsRef.addonId ? { ...a, version: vsRef.newVersion } : a)));
     } else {
       await startEnableAddon(addon);
     }
@@ -1037,7 +1351,10 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
     const addon = deleteAddonConfirm;
     setDeleteAddonConfirm(null);
     const result = await deleteAddonAll(addon.id);
-    if (!result.success) { alert(result.message); return; }
+    if (!result.success) {
+      alert(result.message);
+      return;
+    }
     setExpandedId(null);
     refresh();
   };
@@ -1046,26 +1363,26 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
   const handleChainDisable = () => {
     if (!depDisablePrompt) return;
     const { addon, dependents } = depDisablePrompt;
-    const removeIds = new Set([addon.id, ...dependents.map(d => d.id)]);
-    onStagedChange(stagedAddons.filter(a => !removeIds.has(a.id)));
+    const removeIds = new Set([addon.id, ...dependents.map((d) => d.id)]);
+    onStagedChange(stagedAddons.filter((a) => !removeIds.has(a.id)));
     setDepDisablePrompt(null);
   };
 
   /** Handle "disable only this" — skip dependents */
   const handleDisableOnly = () => {
     if (!depDisablePrompt) return;
-    onStagedChange(stagedAddons.filter(a => a.id !== depDisablePrompt.addon.id));
+    onStagedChange(stagedAddons.filter((a) => a.id !== depDisablePrompt.addon.id));
     setDepDisablePrompt(null);
   };
 
   const handleVersionSwitch = async (addonId: string, newVersion: string) => {
     // Fetch all addons to get the target version's dependency info
     const allVersions = await fetchAddons();
-    const targetAddon = allVersions.find(a => a.id === addonId && a.version === newVersion);
+    const targetAddon = allVersions.find((a) => a.id === addonId && a.version === newVersion);
     if (targetAddon) {
       // Check dependencies of the new version against currently staged addons
       // (exclude the addon being switched itself from staged for the check)
-      const stagedWithoutSelf = stagedAddons.filter(a => a.id !== addonId);
+      const stagedWithoutSelf = stagedAddons.filter((a) => a.id !== addonId);
       const missing = collectMissingDeps(targetAddon, stagedWithoutSelf);
       if (missing.length > 0) {
         // Reuse enable dep prompt — but the action is just switching version
@@ -1075,25 +1392,28 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
         return;
       }
     }
-    onStagedChange(stagedAddons.map(a =>
-      a.id === addonId ? { ...a, version: newVersion } : a
-    ));
+    onStagedChange(stagedAddons.map((a) => (a.id === addonId ? { ...a, version: newVersion } : a)));
   };
 
   return (
     <>
       {forkPrompt && (
         <ForkModal
-          addon={forkPrompt.addon} versions={forkPrompt.versions} worldId={worldId}
-          onChoice={handleForkChoice} onCancel={() => setForkPrompt(null)}
+          addon={forkPrompt.addon}
+          versions={forkPrompt.versions}
+          worldId={worldId}
+          onChoice={handleForkChoice}
+          onCancel={() => setForkPrompt(null)}
         />
       )}
       {disablePrompt && (
         <ConfirmModal
           title="禁用 Add-on"
           message={`确认禁用「${disablePrompt.addon.name}」？禁用后该 Add-on 的内容将从当前世界移除。`}
-          confirmLabel="确认禁用" danger
-          onConfirm={handleDisableConfirm} onCancel={() => setDisablePrompt(null)}
+          confirmLabel="确认禁用"
+          danger
+          onConfirm={handleDisableConfirm}
+          onCancel={() => setDisablePrompt(null)}
         />
       )}
 
@@ -1104,7 +1424,10 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
           related={depPrompt.missing}
           onChain={handleChainEnable}
           onOnly={handleEnableOnly}
-          onCancel={() => { setDepPrompt(null); pendingVersionSwitch.current = null; }}
+          onCancel={() => {
+            setDepPrompt(null);
+            pendingVersionSwitch.current = null;
+          }}
         />
       )}
 
@@ -1128,11 +1451,11 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
             setNewVersionPrompt(null);
             refresh();
             // If currently enabled, switch to the new version
-            const stagedRef = stagedAddons.find(a => a.id === newVersionPrompt.addonId);
+            const stagedRef = stagedAddons.find((a) => a.id === newVersionPrompt.addonId);
             if (stagedRef) {
-              onStagedChange(stagedAddons.map(a =>
-                a.id === newVersionPrompt.addonId ? { ...a, version: newVer } : a
-              ));
+              onStagedChange(
+                stagedAddons.map((a) => (a.id === newVersionPrompt.addonId ? { ...a, version: newVer } : a)),
+              );
             }
           }}
           onCancel={() => setNewVersionPrompt(null)}
@@ -1141,7 +1464,10 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
       {showCreateModal && (
         <CreateAddonModal
-          onCreated={() => { setShowCreateModal(false); refresh(); }}
+          onCreated={() => {
+            setShowCreateModal(false);
+            refresh();
+          }}
           onCancel={() => setShowCreateModal(false)}
         />
       )}
@@ -1149,36 +1475,69 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
         <ConfirmModal
           title="删除 Add-on"
           message={`确认删除「${deleteAddonConfirm.name}」(${deleteAddonConfirm.id}) 的所有版本？此操作不可撤销。`}
-          confirmLabel="确认删除" danger
-          onConfirm={handleDeleteAddon} onCancel={() => setDeleteAddonConfirm(null)}
+          confirmLabel="确认删除"
+          danger
+          onConfirm={handleDeleteAddon}
+          onCancel={() => setDeleteAddonConfirm(null)}
         />
       )}
 
-      <div style={{
-        width: "100%", height: "100vh", borderLeft: `1px solid ${T.border}`,
-        display: "flex", flexDirection: "column", fontSize: "12px",
-        overflow: "hidden", paddingTop: 40, boxSizing: "border-box",
-        backgroundColor: T.bg0,
-      }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100vh",
+          borderLeft: `1px solid ${T.border}`,
+          display: "flex",
+          flexDirection: "column",
+          fontSize: "12px",
+          overflow: "hidden",
+          paddingTop: 40,
+          boxSizing: "border-box",
+          backgroundColor: T.bg0,
+        }}
+      >
         {/* Header */}
-        <div style={{
-          padding: "10px 12px", borderBottom: `1px solid ${T.borderDim}`,
-          display: "flex", alignItems: "center", gap: "6px",
-        }}>
+        <div
+          style={{
+            padding: "10px 12px",
+            borderBottom: `1px solid ${T.borderDim}`,
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
           <span style={{ color: T.accent, fontSize: "13px", fontWeight: "bold" }}>Add-on</span>
           <span style={{ color: T.textDim, fontSize: "11px" }}>({allAddons.length})</span>
           <span style={{ flex: 1 }} />
-          <button onClick={() => setShowCreateModal(true)} style={{
-            background: "none", border: `1px solid ${T.textFaint}`, borderRadius: "3px",
-            color: T.textSub, cursor: "pointer", padding: "1px 7px", fontSize: "13px", lineHeight: 1.2,
-          }}>+</button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              background: "none",
+              border: `1px solid ${T.textFaint}`,
+              borderRadius: "3px",
+              color: T.textSub,
+              cursor: "pointer",
+              padding: "1px 7px",
+              fontSize: "13px",
+              lineHeight: 1.2,
+            }}
+          >
+            +
+          </button>
         </div>
 
         {/* Addon cards */}
-        <div style={{
-          flex: 1, minHeight: 0, overflowY: "scroll", padding: "8px",
-          display: "flex", flexDirection: "column", gap: "8px",
-        }}>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "scroll",
+            padding: "8px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
           {allAddons.length === 0 ? (
             <div style={{ color: T.textDim, fontSize: "11px", padding: "16px 8px", textAlign: "center" }}>
               没有已安装的 Add-on
@@ -1187,7 +1546,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
             allAddons.map((addon) => {
               const enabled = isStagedEnabled(addon.id);
               const expanded = expandedId === addon.id;
-              const stagedRef = stagedAddons.find(a => a.id === addon.id);
+              const stagedRef = stagedAddons.find((a) => a.id === addon.id);
               const displayVersion = stagedRef?.version ?? addon.version;
               const isFork = isWorldFork(displayVersion);
 
@@ -1202,7 +1561,9 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                   {/* Card header */}
                   <div
                     style={{
-                      display: "flex", alignItems: "center", gap: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
                       padding: "8px 10px",
                       backgroundColor: enabled ? T.bg1 : T.bg1,
                       cursor: "pointer",
@@ -1214,35 +1575,51 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                         src={`/assets/${addon.id}/covers/${addon.cover}?t=${addon.cover}`}
                         alt=""
                         style={{
-                          width: "64px", height: "64px", objectFit: "cover",
-                          borderRadius: "4px", border: `1px solid ${T.borderDim}`, flexShrink: 0,
+                          width: "64px",
+                          height: "64px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                          border: `1px solid ${T.borderDim}`,
+                          flexShrink: 0,
                         }}
                       />
                     ) : (
-                      <div style={{
-                        width: "64px", height: "64px", borderRadius: "4px",
-                        border: `1px solid ${T.borderDim}`, flexShrink: 0,
-                        backgroundColor: T.bg2, display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: "24px", fontWeight: "bold", color: T.textDim,
-                      }}>{(addon.name || addon.id || "?")[0]}</div>
+                      <div
+                        style={{
+                          width: "64px",
+                          height: "64px",
+                          borderRadius: "4px",
+                          border: `1px solid ${T.borderDim}`,
+                          flexShrink: 0,
+                          backgroundColor: T.bg2,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "24px",
+                          fontWeight: "bold",
+                          color: T.textDim,
+                        }}
+                      >
+                        {(addon.name || addon.id || "?")[0]}
+                      </div>
                     )}
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: "13px",
-                        color: enabled ? T.text : T.textSub,
-                        fontWeight: "bold",
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      }}>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: enabled ? T.text : T.textSub,
+                          fontWeight: "bold",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {addon.name}
                       </div>
-                      <div style={{ fontSize: "11px", color: T.textSub, marginTop: "2px" }}>
-                        {addon.id}
-                      </div>
+                      <div style={{ fontSize: "11px", color: T.textSub, marginTop: "2px" }}>{addon.id}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
-                        <span style={{ fontSize: "11px", color: T.text }}>
-                          v{displayVersion}
-                        </span>
+                        <span style={{ fontSize: "11px", color: T.text }}>v{displayVersion}</span>
                         {isFork && <Tag color="#6ab">分支</Tag>}
                       </div>
                     </div>
@@ -1255,26 +1632,28 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
                   {/* Expanded panel */}
                   {expanded && (
-                    <div style={{
-                      padding: "10px 12px",
-                      backgroundColor: T.bg0,
-                      borderTop: `1px solid ${T.borderDim}`,
-                      display: "flex", flexDirection: "column", gap: "8px",
-                      fontSize: "11px",
-                    }}>
+                    <div
+                      style={{
+                        padding: "10px 12px",
+                        backgroundColor: T.bg0,
+                        borderTop: `1px solid ${T.borderDim}`,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                        fontSize: "11px",
+                      }}
+                    >
                       {addon.description && (
                         <div style={{ color: T.textSub, lineHeight: 1.5 }}>{addon.description}</div>
                       )}
 
                       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                        {addon.author && (
-                          <InfoRow label="作者" value={addon.author} />
-                        )}
+                        {addon.author && <InfoRow label="作者" value={addon.author} />}
                         {addon.categories && addon.categories.length > 0 && (
                           <InfoRow label="内容" value={addon.categories.join(", ")} />
                         )}
                         {addon.dependencies && addon.dependencies.length > 0 && (
-                          <InfoRow label="依赖" value={addon.dependencies.map(d => d.id).join(", ")} />
+                          <InfoRow label="依赖" value={addon.dependencies.map((d) => d.id).join(", ")} />
                         )}
                       </div>
 
@@ -1283,21 +1662,35 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                         <ToggleBtn
                           label="编辑信息"
                           active={editingMetaId === addon.id}
-                          onClick={() => { setEditingMetaId(editingMetaId === addon.id ? null : addon.id); setVersionManageId(null); }}
+                          onClick={() => {
+                            setEditingMetaId(editingMetaId === addon.id ? null : addon.id);
+                            setVersionManageId(null);
+                          }}
                         />
                         <ToggleBtn
                           label="版本管理"
                           active={versionManageId === addon.id}
-                          onClick={() => { setVersionManageId(versionManageId === addon.id ? null : addon.id); setEditingMetaId(null); }}
+                          onClick={() => {
+                            setVersionManageId(versionManageId === addon.id ? null : addon.id);
+                            setEditingMetaId(null);
+                          }}
                         />
                         <span style={{ flex: 1 }} />
                         {!enabled && (
-                          <button onClick={() => setDeleteAddonConfirm(addon)} style={{
-                            padding: "3px 8px", fontSize: "11px", cursor: "pointer",
-                            backgroundColor: T.bg2, color: T.danger,
-                            border: `1px solid ${T.border}`,
-                            borderRadius: "3px",
-                          }}>[删除]</button>
+                          <button
+                            onClick={() => setDeleteAddonConfirm(addon)}
+                            style={{
+                              padding: "3px 8px",
+                              fontSize: "11px",
+                              cursor: "pointer",
+                              backgroundColor: T.bg2,
+                              color: T.danger,
+                              border: `1px solid ${T.border}`,
+                              borderRadius: "3px",
+                            }}
+                          >
+                            [删除]
+                          </button>
                         )}
                       </div>
 

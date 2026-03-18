@@ -3,11 +3,19 @@ import { useEffect, useState } from "react";
 import { fetchMapsRaw, createMap } from "../api/client";
 import MapEditor from "./MapEditor";
 
-export default function MapManager({ selectedAddon, onEditingChange }: { selectedAddon: string | null; onEditingChange?: (editing: boolean) => void }) {
+export default function MapManager({
+  selectedAddon,
+  onEditingChange,
+}: {
+  selectedAddon: string | null;
+  onEditingChange?: (editing: boolean) => void;
+}) {
   const [maps, setMaps] = useState<{ id: string; name: string; source?: string }[]>([]);
   const [editingMapId, setEditingMapId] = useState<string | null>(null);
 
-  useEffect(() => { onEditingChange?.(editingMapId !== null); }, [editingMapId, onEditingChange]);
+  useEffect(() => {
+    onEditingChange?.(editingMapId !== null);
+  }, [editingMapId, onEditingChange]);
 
   const [creating, setCreating] = useState(false);
   const [newId, setNewId] = useState("");
@@ -43,7 +51,7 @@ export default function MapManager({ selectedAddon, onEditingChange }: { selecte
   };
 
   const readOnly = selectedAddon === null;
-  const filteredMaps = selectedAddon ? maps.filter(m => m.source === selectedAddon) : maps;
+  const filteredMaps = selectedAddon ? maps.filter((m) => m.source === selectedAddon) : maps;
 
   if (editingMapId) {
     return (
@@ -67,9 +75,7 @@ export default function MapManager({ selectedAddon, onEditingChange }: { selecte
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ color: T.accent, fontSize: "15px", fontWeight: "bold" }}>
-        == 地图管理 ==
-      </div>
+      <div style={{ color: T.accent, fontSize: "15px", fontWeight: "bold" }}>== 地图管理 ==</div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
         {filteredMaps.map((m) => (
@@ -121,12 +127,7 @@ export default function MapManager({ selectedAddon, onEditingChange }: { selecte
           <div style={{ color: T.textSub, fontSize: "13px" }}>新建地图</div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>ID</span>
-            <input
-              value={newId}
-              onChange={(e) => setNewId(e.target.value)}
-              placeholder="map-id"
-              style={inputStyle}
-            />
+            <input value={newId} onChange={(e) => setNewId(e.target.value)} placeholder="map-id" style={inputStyle} />
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>名称</span>

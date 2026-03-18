@@ -8,6 +8,7 @@ from game.character import build_character_state, build_clothing_state, exp_to_g
 # Helper factories
 # ---------------------------------------------------------------------------
 
+
 def make_template(**overrides):
     """Build a minimal character template dict."""
     tpl = {
@@ -57,6 +58,7 @@ def make_char_data(**overrides):
 # exp_to_grade
 # ---------------------------------------------------------------------------
 
+
 class TestExpToGrade:
     def test_zero(self):
         assert exp_to_grade(0) == "G"
@@ -84,6 +86,7 @@ class TestExpToGrade:
 # build_character_state — identity fields
 # ---------------------------------------------------------------------------
 
+
 class TestBuildCharacterStateIdentity:
     def test_id_set(self):
         state = build_character_state(make_char_data(), make_template(), {})
@@ -109,6 +112,7 @@ class TestBuildCharacterStateIdentity:
 # build_character_state — basicInfo
 # ---------------------------------------------------------------------------
 
+
 class TestBuildCharacterStateBasicInfo:
     def test_values_from_char_data(self):
         state = build_character_state(make_char_data(), make_template(), {})
@@ -132,6 +136,7 @@ class TestBuildCharacterStateBasicInfo:
 # build_character_state — resources
 # ---------------------------------------------------------------------------
 
+
 class TestBuildCharacterStateResources:
     def test_values_from_char_data(self):
         state = build_character_state(make_char_data(), make_template(), {})
@@ -151,6 +156,7 @@ class TestBuildCharacterStateResources:
 # ---------------------------------------------------------------------------
 # build_clothing_state
 # ---------------------------------------------------------------------------
+
 
 class TestBuildClothingState:
     def test_empty_clothing(self):
@@ -216,6 +222,7 @@ class TestBuildClothingState:
 # build_character_state — traits
 # ---------------------------------------------------------------------------
 
+
 class TestBuildCharacterStateTraits:
     def test_ability_and_experience_categories_skipped(self):
         state = build_character_state(make_char_data(), make_template(), {})
@@ -250,6 +257,7 @@ class TestBuildCharacterStateTraits:
 # ---------------------------------------------------------------------------
 # build_character_state — abilities
 # ---------------------------------------------------------------------------
+
 
 class TestBuildCharacterStateAbilities:
     def test_abilities_from_trait_defs(self):
@@ -286,9 +294,11 @@ class TestBuildCharacterStateAbilities:
         assert ab["grade"] == "G"
 
     def test_no_trait_defs_uses_template_abilities(self):
-        tpl = make_template(abilities=[
-            {"key": "technique", "label": "技巧", "defaultValue": 0},
-        ])
+        tpl = make_template(
+            abilities=[
+                {"key": "technique", "label": "技巧", "defaultValue": 0},
+            ]
+        )
         data = make_char_data(abilities={"technique": 5000})
         state = build_character_state(data, tpl, {})
         ab = state["abilities"][0]
@@ -299,6 +309,7 @@ class TestBuildCharacterStateAbilities:
 # ---------------------------------------------------------------------------
 # build_character_state — experiences
 # ---------------------------------------------------------------------------
+
 
 class TestBuildCharacterStateExperiences:
     def test_experiences_from_trait_defs(self):
@@ -337,6 +348,7 @@ class TestBuildCharacterStateExperiences:
 # build_character_state — inventory
 # ---------------------------------------------------------------------------
 
+
 class TestBuildCharacterStateInventory:
     def test_inventory_resolves_item_names(self):
         item_defs = {
@@ -368,6 +380,7 @@ class TestBuildCharacterStateInventory:
 # build_character_state — position
 # ---------------------------------------------------------------------------
 
+
 class TestBuildCharacterStatePosition:
     def test_position_from_char_data(self):
         state = build_character_state(make_char_data(), make_template(), {})
@@ -387,6 +400,7 @@ class TestBuildCharacterStatePosition:
 # build_character_state — favorability
 # ---------------------------------------------------------------------------
 
+
 class TestBuildCharacterStateFavorability:
     def test_favorability_passed_through(self):
         data = make_char_data(favorability={"addon1.bob": 200})
@@ -403,6 +417,7 @@ class TestBuildCharacterStateFavorability:
 # ---------------------------------------------------------------------------
 # build_character_state — trait effects applied
 # ---------------------------------------------------------------------------
+
 
 class TestBuildCharacterStateTraitEffects:
     def test_trait_effect_modifies_resource_max(self):
@@ -430,6 +445,7 @@ class TestBuildCharacterStateTraitEffects:
 # ---------------------------------------------------------------------------
 # build_character_state — clothing effects applied
 # ---------------------------------------------------------------------------
+
 
 class TestBuildCharacterStateClothingEffects:
     def test_clothing_effect_on_worn_item(self):

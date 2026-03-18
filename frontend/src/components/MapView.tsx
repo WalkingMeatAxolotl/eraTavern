@@ -38,26 +38,24 @@ export default function MapView({ map, playerCellId, onCellClick }: MapViewProps
           key={`${rowIdx}-${colIdx}`}
           style={style}
           onClick={isMovable ? () => onCellClick(cell.cellId!) : undefined}
-          title={
-            isPlayerHere
-              ? "当前位置"
-              : isMovable
-                ? `移动到 ${cell.text}号`
-                : undefined
-          }
+          title={isPlayerHere ? "当前位置" : isMovable ? `移动到 ${cell.text}号` : undefined}
         >
           {cell.text || "\u00A0"}
         </span>
       );
     },
-    [playerCellId, onCellClick]
+    [playerCellId, onCellClick],
   );
 
   return (
     <div
       style={{
         fontSize: "14px",
-        backgroundColor: map.defaultColor + Math.round((map.mapOverlayOpacity ?? 0.7) * 255).toString(16).padStart(2, "0"),
+        backgroundColor:
+          map.defaultColor +
+          Math.round((map.mapOverlayOpacity ?? 0.7) * 255)
+            .toString(16)
+            .padStart(2, "0"),
         padding: "12px",
         borderRadius: "4px",
         overflowX: "auto",

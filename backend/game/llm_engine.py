@@ -12,6 +12,7 @@ import httpx
 # Variable helpers
 # ---------------------------------------------------------------------------
 
+
 def _get_player_char(game_state: Any) -> Optional[dict]:
     """Get the player's runtime character dict."""
     pid = game_state.player_character
@@ -36,6 +37,7 @@ def _get_player_id(game_state: Any) -> str:
 # ---------------------------------------------------------------------------
 # Format functions — character data
 # ---------------------------------------------------------------------------
+
 
 def _format_name(char: dict) -> str:
     return char.get("basicInfo", {}).get("name", {}).get("value", "")
@@ -304,6 +306,7 @@ def _format_char_llm(char: dict) -> str:
 # Format functions — scene & environment
 # ---------------------------------------------------------------------------
 
+
 def _get_cell_info(game_state: Any, map_id: str, cell_id: int) -> dict:
     """Get cell dict from map data."""
     m = game_state.maps.get(map_id, {})
@@ -396,6 +399,7 @@ def _format_world_vars(game_state: Any) -> str:
 # Format functions — history (dynamic / parameterized)
 # ---------------------------------------------------------------------------
 
+
 def _format_recent_actions(game_state: Any, count: int = 5) -> str:
     """Recent player actions from action_log."""
     log = getattr(game_state, "action_log", [])
@@ -457,6 +461,7 @@ def _format_previous_narrative(previous_narratives: list, count: int = 1) -> str
 # Lorebook
 # ---------------------------------------------------------------------------
 
+
 def _format_lorebook(game_state: Any, variables: dict[str, str]) -> str:
     """Match lorebook entries by keyword against current context, return combined content."""
     lorebook_defs = getattr(game_state, "lorebook_defs", {})
@@ -496,6 +501,7 @@ def _format_lorebook(game_state: Any, variables: dict[str, str]) -> str:
 # Variable collection — main entry point
 # ---------------------------------------------------------------------------
 
+
 def _collect_char_variables(
     prefix: str,
     char: Optional[dict],
@@ -504,11 +510,22 @@ def _collect_char_variables(
     """Collect all variables for a character (player or target)."""
     if not char:
         keys = [
-            "", ".name", ".money", ".resources",
-            ".traits", ".traits.names", ".abilities", ".experiences",
-            ".clothing", ".clothing.detail", ".outfit",
-            ".inventory", ".inventory.detail",
-            ".favorability", ".variables", ".llm",
+            "",
+            ".name",
+            ".money",
+            ".resources",
+            ".traits",
+            ".traits.names",
+            ".abilities",
+            ".experiences",
+            ".clothing",
+            ".clothing.detail",
+            ".outfit",
+            ".inventory",
+            ".inventory.detail",
+            ".favorability",
+            ".variables",
+            ".llm",
         ]
         return {f"{prefix}{k}": "" for k in keys}
 
@@ -574,8 +591,15 @@ def collect_variables(
         variables["npcsHere"] = _format_npcs_here(game_state, mid, cid, player_id)
         variables["npcsNearby"] = _format_npcs_nearby(game_state, player_id)
     else:
-        for k in ["location", "location.description", "location.neighbors",
-                   "mapName", "mapName.description", "npcsHere", "npcsNearby"]:
+        for k in [
+            "location",
+            "location.description",
+            "location.neighbors",
+            "mapName",
+            "mapName.description",
+            "npcsHere",
+            "npcsNearby",
+        ]:
             variables[k] = ""
 
     # Time & weather
@@ -598,7 +622,6 @@ def collect_variables(
     # World variables
     variables["worldVars"] = _format_world_vars(game_state)
     wv = getattr(game_state, "world_variables", {})
-    wv_defs = getattr(game_state, "world_variable_defs", {})
     for var_id, value in wv.items():
         variables[f"worldVar.{var_id}"] = str(value)
 
@@ -618,6 +641,7 @@ def collect_variables(
 # ---------------------------------------------------------------------------
 # Parameterized variable parsing & dynamic resolution
 # ---------------------------------------------------------------------------
+
 
 def _parse_var(raw: str) -> tuple[str, dict[str, str]]:
     """Parse 'recentActions:count=10:format=brief' → ('recentActions', {'count':'10','format':'brief'})."""
@@ -668,6 +692,7 @@ def _interpolate(
     context: dict,
 ) -> str:
     """Replace {{varName}} and {{varName:key=val}} placeholders with values."""
+
     def replacer(m: re.Match) -> str:
         raw = m.group(1)
         name, params = _parse_var(raw)
@@ -680,6 +705,7 @@ def _interpolate(
             return result
         # Unknown — keep original
         return m.group(0)
+
     return _VAR_REGEX.sub(replacer, content)
 
 
@@ -727,6 +753,7 @@ def _merge_consecutive(messages: list[dict[str, str]]) -> list[dict[str, str]]:
 # Preset resolution
 # ---------------------------------------------------------------------------
 
+
 def resolve_preset_id(
     game_state: Any,
     action_def: Optional[dict] = None,
@@ -739,6 +766,7 @@ def resolve_preset_id(
         return world_preset
     try:
         from pathlib import Path
+
         cfg_path = Path(__file__).resolve().parent.parent.parent / "config.json"
         with open(cfg_path, "r", encoding="utf-8") as f:
             cfg = json.load(f)
@@ -753,6 +781,7 @@ def resolve_preset_id(
 # ---------------------------------------------------------------------------
 # Raw output assembly
 # ---------------------------------------------------------------------------
+
 
 def build_raw_output(action_result: dict) -> str:
     """Build the {{rawOutput}} string from an action execution result."""
@@ -772,6 +801,7 @@ def build_raw_output(action_result: dict) -> str:
 # ---------------------------------------------------------------------------
 # LLM API call
 # ---------------------------------------------------------------------------
+
 
 async def call_llm_streaming(
     api_config: dict,
@@ -813,10 +843,13 @@ async def call_llm_streaming(
                 async with client.stream("POST", url, json=payload, headers=headers) as resp:
                     if resp.status_code != 200:
                         body = await resp.aread()
-                        yield ("llm_error", {
-                            "error": "LLM_API_ERROR",
-                            "detail": f"HTTP {resp.status_code}: {body.decode('utf-8', errors='replace')[:500]}",
-                        })
+                        yield (
+                            "llm_error",
+                            {
+                                "error": "LLM_API_ERROR",
+                                "detail": f"HTTP {resp.status_code}: {body.decode('utf-8', errors='replace')[:500]}",
+                            },
+                        )
                         return
                     async for line in resp.aiter_lines():
                         if not line.startswith("data: "):
@@ -830,11 +863,7 @@ async def call_llm_streaming(
                             continue
                         if chunk.get("usage"):
                             usage = chunk["usage"]
-                        delta = (
-                            chunk.get("choices", [{}])[0]
-                            .get("delta", {})
-                            .get("content", "")
-                        )
+                        delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
                         if delta:
                             full_text += delta
                             yield ("llm_chunk", {"text": delta})
@@ -845,17 +874,16 @@ async def call_llm_streaming(
             else:
                 resp = await client.post(url, json=payload, headers=headers)
                 if resp.status_code != 200:
-                    yield ("llm_error", {
-                        "error": "LLM_API_ERROR",
-                        "detail": f"HTTP {resp.status_code}: {resp.text[:500]}",
-                    })
+                    yield (
+                        "llm_error",
+                        {
+                            "error": "LLM_API_ERROR",
+                            "detail": f"HTTP {resp.status_code}: {resp.text[:500]}",
+                        },
+                    )
                     return
                 body = resp.json()
-                text = (
-                    body.get("choices", [{}])[0]
-                    .get("message", {})
-                    .get("content", "")
-                )
+                text = body.get("choices", [{}])[0].get("message", {}).get("content", "")
                 done_data = {"fullText": text}
                 if body.get("usage"):
                     done_data["usage"] = body["usage"]

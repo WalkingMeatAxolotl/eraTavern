@@ -13,7 +13,14 @@ interface LocationHeaderProps {
 
 const PAGE_SIZE = 3;
 
-export default function LocationHeader({ time, map, cellId, charactersAtLocation, selectedCharacterId, onSelectCharacter }: LocationHeaderProps) {
+export default function LocationHeader({
+  time,
+  map,
+  cellId,
+  charactersAtLocation,
+  selectedCharacterId,
+  onSelectCharacter,
+}: LocationHeaderProps) {
   const [page, setPage] = useState(0);
 
   const cell = map.cells.find((c) => c.id === cellId);
@@ -67,7 +74,8 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.4) 100%)",
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.4) 100%)",
           pointerEvents: "none",
         }}
       />
@@ -133,7 +141,7 @@ export default function LocationHeader({ time, map, cellId, charactersAtLocation
               <img
                 key={char.id}
                 src={`/assets/${char.portrait}`}
-                alt={char.basicInfo.name?.value as string ?? char.id}
+                alt={(char.basicInfo.name?.value as string) ?? char.id}
                 onClick={() => onSelectCharacter(isSelected ? null : char.id)}
                 style={{
                   width: "30%",

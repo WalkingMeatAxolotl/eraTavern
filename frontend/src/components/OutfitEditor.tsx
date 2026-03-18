@@ -87,9 +87,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
     setMessage("");
     try {
       const entry: OutfitType = { id, name, description, copyDefault, slots };
-      const next = isNew
-        ? [...allOutfits, entry]
-        : allOutfits.map((o) => (o.id === outfit.id ? entry : o));
+      const next = isNew ? [...allOutfits, entry] : allOutfits.map((o) => (o.id === outfit.id ? entry : o));
       const result = await saveOutfitTypes(next);
       setMessage(result.success ? "已保存" : result.message);
       if (result.success && isNew) {
@@ -162,7 +160,16 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
           />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: T.textSub, fontSize: "12px" }}>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              color: T.textSub,
+              fontSize: "12px",
+            }}
+          >
             <input type="checkbox" checked={copyDefault} onChange={() => setCopyDefault(!copyDefault)} />
             初始继承默认服装
           </label>
@@ -181,7 +188,15 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
       {/* Slots editor (only when copyDefault is off) */}
       {!copyDefault && (
         <div style={{ marginBottom: "16px" }}>
-          <div style={{ color: T.accent, borderBottom: `1px solid ${T.border}`, marginBottom: "6px", paddingBottom: "2px", fontWeight: "bold" }}>
+          <div
+            style={{
+              color: T.accent,
+              borderBottom: `1px solid ${T.border}`,
+              marginBottom: "6px",
+              paddingBottom: "2px",
+              fontWeight: "bold",
+            }}
+          >
             == 默认槽位内容 ==
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -189,7 +204,10 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
               const items = slots[slot] ?? [];
               const options = clothingBySlot[slot] ?? [];
               return (
-                <div key={slot} style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "2px" }}>
+                <div
+                  key={slot}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "2px" }}
+                >
                   <span style={{ minWidth: "100px", color: T.textSub }}>{SLOT_LABELS[slot] ?? slot}:</span>
                   {items.length === 0 && <span style={{ color: T.textDim }}>(空)</span>}
                   {items.map((itemId, i) => {
@@ -198,12 +216,21 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
                       <span key={i} style={{ color: T.text, display: "inline-flex", alignItems: "center", gap: "2px" }}>
                         [{def?.name ?? itemId}]
                         <button
-                          style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", padding: "0 2px", fontSize: "11px" }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: T.danger,
+                            cursor: "pointer",
+                            padding: "0 2px",
+                            fontSize: "11px",
+                          }}
                           onClick={() => {
                             const newSlots = { ...slots, [slot]: items.filter((_, j) => j !== i) };
                             setSlots(newSlots);
                           }}
-                        >x</button>
+                        >
+                          x
+                        </button>
                       </span>
                     );
                   })}
@@ -217,9 +244,13 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
                     }}
                   >
                     <option value="">+添加</option>
-                    {options.filter((c) => !items.includes(c.id)).map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
+                    {options
+                      .filter((c) => !items.includes(c.id))
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
               );
@@ -237,22 +268,60 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
       <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
         <button
           onClick={onBack}
-          style={{ padding: "4px 12px", backgroundColor: "transparent", color: T.textSub, border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "13px" }}
-        >[返回]</button>
+          style={{
+            padding: "4px 12px",
+            backgroundColor: "transparent",
+            color: T.textSub,
+            border: `1px solid ${T.border}`,
+            borderRadius: "3px",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          [返回]
+        </button>
         <button
           onClick={handleSave}
           disabled={saving}
-          style={{ padding: "4px 12px", backgroundColor: "transparent", color: T.successDim, border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "13px" }}
-        >[保存]</button>
+          style={{
+            padding: "4px 12px",
+            backgroundColor: "transparent",
+            color: T.successDim,
+            border: `1px solid ${T.border}`,
+            borderRadius: "3px",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          [保存]
+        </button>
         {!isNew && (
           <button
             onClick={handleDelete}
             disabled={saving}
-            style={{ padding: "4px 12px", backgroundColor: "transparent", color: T.danger, border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "13px" }}
-          >[删除]</button>
+            style={{
+              padding: "4px 12px",
+              backgroundColor: "transparent",
+              color: T.danger,
+              border: `1px solid ${T.border}`,
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontSize: "13px",
+            }}
+          >
+            [删除]
+          </button>
         )}
         {message && (
-          <span style={{ color: message.includes("失败") || message.includes("不能") || message.includes("已存在") ? T.danger : T.successDim, fontSize: "12px" }}>
+          <span
+            style={{
+              color:
+                message.includes("失败") || message.includes("不能") || message.includes("已存在")
+                  ? T.danger
+                  : T.successDim,
+              fontSize: "12px",
+            }}
+          >
             {message}
           </span>
         )}

@@ -2,12 +2,22 @@ import { useState, useEffect, useCallback } from "react";
 import T from "../theme";
 import { HelpButton, HelpPanel, helpSub, helpP, helpEm, helpDim } from "./HelpToggle";
 import type {
-  EventDefinition, WorldVariableDefinition, GameDefinitions,
-  ActionCondition, ConditionItem, ActionEffect,
+  EventDefinition,
+  WorldVariableDefinition,
+  GameDefinitions,
+  ActionCondition,
+  ConditionItem,
+  ActionEffect,
 } from "../types/game";
 import {
-  fetchEventDefs, createEventDef, saveEventDef, deleteEventDef,
-  fetchWorldVariableDefs, createWorldVariableDef, saveWorldVariableDef, deleteWorldVariableDef,
+  fetchEventDefs,
+  createEventDef,
+  saveEventDef,
+  deleteEventDef,
+  fetchWorldVariableDefs,
+  createWorldVariableDef,
+  saveWorldVariableDef,
+  deleteWorldVariableDef,
   fetchDefinitions,
 } from "../api/client";
 import PrefixedIdInput from "./PrefixedIdInput";
@@ -20,24 +30,43 @@ function toLocalId(nsId: string): string {
 // ── Styles ──────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
-  padding: "4px 8px", backgroundColor: T.bg3, color: T.text,
-  border: `1px solid ${T.borderLight}`, borderRadius: "3px", fontSize: "12px",
+  padding: "4px 8px",
+  backgroundColor: T.bg3,
+  color: T.text,
+  border: `1px solid ${T.borderLight}`,
+  borderRadius: "3px",
+  fontSize: "12px",
   outline: "none",
 };
 
 const btnBase: React.CSSProperties = {
-  padding: "3px 10px", backgroundColor: T.bg2, border: `1px solid ${T.border}`,
-  borderRadius: "3px", cursor: "pointer", fontSize: "11px", color: T.text,
+  padding: "3px 10px",
+  backgroundColor: T.bg2,
+  border: `1px solid ${T.border}`,
+  borderRadius: "3px",
+  cursor: "pointer",
+  fontSize: "11px",
+  color: T.text,
 };
 
 const addBtnStyle: React.CSSProperties = {
-  padding: "2px 8px", backgroundColor: "#0a1a0a", color: T.successDim,
-  border: "1px solid #2a4a2a", borderRadius: "3px", cursor: "pointer", fontSize: "11px",
+  padding: "2px 8px",
+  backgroundColor: "#0a1a0a",
+  color: T.successDim,
+  border: "1px solid #2a4a2a",
+  borderRadius: "3px",
+  cursor: "pointer",
+  fontSize: "11px",
 };
 
 const delBtnStyle: React.CSSProperties = {
-  padding: "2px 8px", backgroundColor: "#1a0808", color: T.danger,
-  border: "1px solid #3a2a2a", borderRadius: "3px", cursor: "pointer", fontSize: "11px",
+  padding: "2px 8px",
+  backgroundColor: "#1a0808",
+  color: T.danger,
+  border: "1px solid #3a2a2a",
+  borderRadius: "3px",
+  cursor: "pointer",
+  fontSize: "11px",
 };
 
 const SEC = {
@@ -47,25 +76,40 @@ const SEC = {
 };
 
 const sectionStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
-  marginBottom: "12px", padding: "0 0 8px 0",
-  borderLeft: `3px solid ${SEC[sec].color}`, backgroundColor: SEC[sec].bg,
+  marginBottom: "12px",
+  padding: "0 0 8px 0",
+  borderLeft: `3px solid ${SEC[sec].color}`,
+  backgroundColor: SEC[sec].bg,
   borderRadius: "0 4px 4px 0",
 });
 
 const sectionTitleStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
-  padding: "5px 10px", marginBottom: "8px",
-  backgroundColor: `${SEC[sec].color}15`, borderBottom: `1px solid ${SEC[sec].color}25`,
-  display: "flex", justifyContent: "space-between", alignItems: "center",
+  padding: "5px 10px",
+  marginBottom: "8px",
+  backgroundColor: `${SEC[sec].color}15`,
+  borderBottom: `1px solid ${SEC[sec].color}25`,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
 });
 
-const rowBg = (idx: number) => idx % 2 === 0 ? T.bg1 : T.bg2;
+const rowBg = (idx: number) => (idx % 2 === 0 ? T.bg1 : T.bg2);
 
 const SLOT_LABELS: Record<string, string> = {
-  hat: "帽子", upperBody: "上半身", upperUnderwear: "上半身内衣",
-  lowerBody: "下半身", lowerUnderwear: "下半身内衣",
-  hands: "手", feet: "脚", shoes: "鞋子",
-  mainHand: "主手", offHand: "副手", back: "背部",
-  accessory1: "装饰品1", accessory2: "装饰品2", accessory3: "装饰品3",
+  hat: "帽子",
+  upperBody: "上半身",
+  upperUnderwear: "上半身内衣",
+  lowerBody: "下半身",
+  lowerUnderwear: "下半身内衣",
+  hands: "手",
+  feet: "脚",
+  shoes: "鞋子",
+  mainHand: "主手",
+  offHand: "副手",
+  back: "背部",
+  accessory1: "装饰品1",
+  accessory2: "装饰品2",
+  accessory3: "装饰品3",
 };
 
 const CONDITION_TYPES: { value: ActionCondition["type"]; label: string; group?: string }[] = [
@@ -116,7 +160,10 @@ function isOrGroup(item: ConditionItem): item is { or: ConditionItem[] } {
 
 // ── Main ────────────────────────────────────────────────
 
-export default function EventManager({ selectedAddon, onEditingChange }: {
+export default function EventManager({
+  selectedAddon,
+  onEditingChange,
+}: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
 }) {
@@ -128,30 +175,52 @@ export default function EventManager({ selectedAddon, onEditingChange }: {
   const [editingType, setEditingType] = useState<"event" | "worldVar">("event");
   const [isNew, setIsNew] = useState(false);
 
-  useEffect(() => { onEditingChange?.(editingId !== null); }, [editingId, onEditingChange]);
+  useEffect(() => {
+    onEditingChange?.(editingId !== null);
+  }, [editingId, onEditingChange]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [evtList, wvList, defs] = await Promise.all([
-      fetchEventDefs(), fetchWorldVariableDefs(), fetchDefinitions(),
-    ]);
+    const [evtList, wvList, defs] = await Promise.all([fetchEventDefs(), fetchWorldVariableDefs(), fetchDefinitions()]);
     setEvents(evtList);
     setWorldVars(wvList);
     setDefinitions(defs);
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-  const handleEditEvent = (id: string) => { setEditingType("event"); setIsNew(false); setEditingId(id); };
-  const handleNewEvent = () => { setEditingType("event"); setIsNew(true); setEditingId("__new__"); };
-  const handleEditWV = (id: string) => { setEditingType("worldVar"); setIsNew(false); setEditingId(id); };
-  const handleNewWV = () => { setEditingType("worldVar"); setIsNew(true); setEditingId("__new__"); };
-  const handleBack = () => { setEditingId(null); setIsNew(false); loadData(); };
+  const handleEditEvent = (id: string) => {
+    setEditingType("event");
+    setIsNew(false);
+    setEditingId(id);
+  };
+  const handleNewEvent = () => {
+    setEditingType("event");
+    setIsNew(true);
+    setEditingId("__new__");
+  };
+  const handleEditWV = (id: string) => {
+    setEditingType("worldVar");
+    setIsNew(false);
+    setEditingId(id);
+  };
+  const handleNewWV = () => {
+    setEditingType("worldVar");
+    setIsNew(true);
+    setEditingId("__new__");
+  };
+  const handleBack = () => {
+    setEditingId(null);
+    setIsNew(false);
+    loadData();
+  };
 
   const readOnly = selectedAddon === null;
-  const filteredEvents = selectedAddon ? events.filter(e => e.source === selectedAddon) : events;
-  const filteredWVs = selectedAddon ? worldVars.filter(v => v.source === selectedAddon) : worldVars;
+  const filteredEvents = selectedAddon ? events.filter((e) => e.source === selectedAddon) : events;
+  const filteredWVs = selectedAddon ? worldVars.filter((v) => v.source === selectedAddon) : worldVars;
 
   if (loading) {
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
@@ -160,23 +229,34 @@ export default function EventManager({ selectedAddon, onEditingChange }: {
   // ── Editor view ──
   if (editingId !== null) {
     if (editingType === "worldVar") {
-      const existing = worldVars.find(v => v.id === editingId);
+      const existing = worldVars.find((v) => v.id === editingId);
       const blank: WorldVariableDefinition = {
-        id: "", name: "", description: "", type: "number", default: 0,
+        id: "",
+        name: "",
+        description: "",
+        type: "number",
+        default: 0,
         source: selectedAddon ?? "",
       };
       return <WorldVarEditor variable={isNew ? blank : (existing ?? blank)} isNew={isNew} onBack={handleBack} />;
     }
-    const existing = events.find(e => e.id === editingId);
+    const existing = events.find((e) => e.id === editingId);
     const blank: EventDefinition = {
-      id: "", name: "", description: "", triggerMode: "on_change",
-      targetScope: "each_character", conditions: [], effects: [],
-      outputTemplate: "", source: selectedAddon ?? "",
+      id: "",
+      name: "",
+      description: "",
+      triggerMode: "on_change",
+      targetScope: "each_character",
+      conditions: [],
+      effects: [],
+      outputTemplate: "",
+      source: selectedAddon ?? "",
     };
     return (
       <EventEditor
         event={isNew ? blank : (existing ?? blank)}
-        isNew={isNew} definitions={definitions}
+        isNew={isNew}
+        definitions={definitions}
         worldVars={worldVars}
         onBack={handleBack}
       />
@@ -192,19 +272,43 @@ export default function EventManager({ selectedAddon, onEditingChange }: {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 世界变量 ==</span>
         {!readOnly && (
-          <button className="em-action-btn" onClick={handleNewWV} style={{
-            padding: "4px 12px", backgroundColor: T.bg2, color: T.successDim,
-            border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "13px",
-          }}>[+ 添加变量]</button>
+          <button
+            className="em-action-btn"
+            onClick={handleNewWV}
+            style={{
+              padding: "4px 12px",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontSize: "13px",
+            }}
+          >
+            [+ 添加变量]
+          </button>
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "16px" }}>
-        {filteredWVs.map(v => (
-          <button key={v.id} className="em-item" onClick={() => handleEditWV(v.id)} style={{
-            display: "flex", alignItems: "center", gap: "8px", width: "100%",
-            padding: "5px 12px", backgroundColor: T.bg1, border: `1px solid ${T.border}`,
-            borderRadius: "3px", cursor: "pointer", fontSize: "12px", textAlign: "left",
-          }}>
+        {filteredWVs.map((v) => (
+          <button
+            key={v.id}
+            className="em-item"
+            onClick={() => handleEditWV(v.id)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              width: "100%",
+              padding: "5px 12px",
+              backgroundColor: T.bg1,
+              border: `1px solid ${T.border}`,
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontSize: "12px",
+              textAlign: "left",
+            }}
+          >
             <span style={{ color: T.text }}>{v.name || v.id}</span>
             <span style={{ color: T.textDim, fontSize: "11px" }}>{v.type}</span>
             <span style={{ color: T.textDim, fontSize: "11px" }}>默认: {v.default}</span>
@@ -219,22 +323,47 @@ export default function EventManager({ selectedAddon, onEditingChange }: {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 全局事件 ==</span>
         {!readOnly && (
-          <button className="em-action-btn" onClick={handleNewEvent} style={{
-            padding: "4px 12px", backgroundColor: T.bg2, color: T.successDim,
-            border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "13px",
-          }}>[+ 新建事件]</button>
+          <button
+            className="em-action-btn"
+            onClick={handleNewEvent}
+            style={{
+              padding: "4px 12px",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontSize: "13px",
+            }}
+          >
+            [+ 新建事件]
+          </button>
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {filteredEvents.map(evt => {
-          const modeLabel = evt.triggerMode === "on_change" ? "变化触发" : evt.triggerMode === "while" ? "持续触发" : "一次性";
+        {filteredEvents.map((evt) => {
+          const modeLabel =
+            evt.triggerMode === "on_change" ? "变化触发" : evt.triggerMode === "while" ? "持续触发" : "一次性";
           const scopeLabel = evt.targetScope === "each_character" ? "每个角色" : "无目标";
           return (
-            <button key={evt.id} className="em-item" onClick={() => handleEditEvent(evt.id)} style={{
-              display: "flex", alignItems: "center", gap: "8px", width: "100%",
-              padding: "5px 12px", backgroundColor: T.bg1, border: `1px solid ${T.border}`,
-              borderRadius: "3px", cursor: "pointer", fontSize: "12px", textAlign: "left",
-            }}>
+            <button
+              key={evt.id}
+              className="em-item"
+              onClick={() => handleEditEvent(evt.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                width: "100%",
+                padding: "5px 12px",
+                backgroundColor: T.bg1,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "12px",
+                textAlign: "left",
+              }}
+            >
               <span style={{ color: T.text }}>{evt.name || evt.id}</span>
               <span style={{ color: "#c78dff", fontSize: "11px" }}>{modeLabel}</span>
               <span style={{ color: T.textDim, fontSize: "11px" }}>{scopeLabel}</span>
@@ -252,7 +381,11 @@ export default function EventManager({ selectedAddon, onEditingChange }: {
 
 // ── World Variable Editor ─────────────────────────────
 
-function WorldVarEditor({ variable, isNew, onBack }: {
+function WorldVarEditor({
+  variable,
+  isNew,
+  onBack,
+}: {
   variable: WorldVariableDefinition;
   isNew: boolean;
   onBack: () => void;
@@ -273,19 +406,30 @@ function WorldVarEditor({ variable, isNew, onBack }: {
       if (isNew) {
         data.source = variable.source;
         const res = await createWorldVariableDef(data);
-        if (!res.success) { alert(res.message); return; }
+        if (!res.success) {
+          alert(res.message);
+          return;
+        }
       } else {
         const res = await saveWorldVariableDef(variable.id, data);
-        if (!res.success) { alert(res.message); return; }
+        if (!res.success) {
+          alert(res.message);
+          return;
+        }
       }
       onBack();
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!confirm("确定删除此世界变量？")) return;
     const res = await deleteWorldVariableDef(variable.id);
-    if (!res.success) { alert(res.message); return; }
+    if (!res.success) {
+      alert(res.message);
+      return;
+    }
     onBack();
   };
 
@@ -297,8 +441,14 @@ function WorldVarEditor({ variable, isNew, onBack }: {
           == {isNew ? "新建世界变量" : `编辑: ${variable.name || variable.id}`} ==
         </span>
         <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>[返回]</button>
-          {!isNew && <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>[删除]</button>}
+          <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
+            [返回]
+          </button>
+          {!isNew && (
+            <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
+              [删除]
+            </button>
+          )}
           <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
             {saving ? "保存中..." : "[确定]"}
           </button>
@@ -313,29 +463,37 @@ function WorldVarEditor({ variable, isNew, onBack }: {
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>名称</label>
-          <input style={{ ...inputStyle, flex: 1 }} value={name}
-            onChange={e => setName(e.target.value)} />
+          <input style={{ ...inputStyle, flex: 1 }} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>说明</label>
-          <input style={{ ...inputStyle, flex: 1 }} value={description}
-            onChange={e => setDescription(e.target.value)} placeholder="可选" />
+          <input
+            style={{ ...inputStyle, flex: 1 }}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="可选"
+          />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>类型</label>
-          <select style={{ ...inputStyle }} value={type}
-            onChange={e => setType(e.target.value as "number" | "boolean")}>
+          <select
+            style={{ ...inputStyle }}
+            value={type}
+            onChange={(e) => setType(e.target.value as "number" | "boolean")}
+          >
             <option value="number">number</option>
             <option value="boolean">boolean</option>
           </select>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>默认值</label>
-          <input style={{ ...inputStyle, width: "80px" }} type="number" value={defaultVal}
-            onChange={e => setDefaultVal(Number(e.target.value))} />
-          {type === "boolean" && (
-            <span style={{ color: T.textDim, fontSize: "11px" }}>0 = false, 1 = true</span>
-          )}
+          <input
+            style={{ ...inputStyle, width: "80px" }}
+            type="number"
+            value={defaultVal}
+            onChange={(e) => setDefaultVal(Number(e.target.value))}
+          />
+          {type === "boolean" && <span style={{ color: T.textDim, fontSize: "11px" }}>0 = false, 1 = true</span>}
         </div>
       </div>
     </div>
@@ -344,7 +502,13 @@ function WorldVarEditor({ variable, isNew, onBack }: {
 
 // ── Event Editor ──────────────────────────────────────
 
-function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
+function EventEditor({
+  event,
+  isNew,
+  definitions,
+  worldVars,
+  onBack,
+}: {
   event: EventDefinition;
   isNew: boolean;
   definitions: GameDefinitions | null;
@@ -368,19 +532,21 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
   const [showScopeHelp, setShowScopeHelp] = useState(false);
 
   // Derived lists from definitions
-  const resourceKeys = definitions?.template.resources.map(r => ({ key: r.key, label: r.label })) ?? [];
-  const abilityKeys = definitions?.template.abilities?.map(a => ({ key: a.key, label: a.label })) ?? [];
-  const experienceKeys = (definitions?.template.experiences ?? []).map((e: { key: string; label: string }) => ({ key: e.key, label: e.label }));
-  const basicInfoNumKeys = definitions?.template.basicInfo
-    .filter(f => f.type === "number").map(f => ({ key: f.key, label: f.label })) ?? [];
-  const traitCategories = definitions?.template.traits?.map(t => ({ key: t.key, label: t.label })) ?? [];
+  const resourceKeys = definitions?.template.resources.map((r) => ({ key: r.key, label: r.label })) ?? [];
+  const abilityKeys = definitions?.template.abilities?.map((a) => ({ key: a.key, label: a.label })) ?? [];
+  const experienceKeys = (definitions?.template.experiences ?? []).map((e: { key: string; label: string }) => ({
+    key: e.key,
+    label: e.label,
+  }));
+  const basicInfoNumKeys =
+    definitions?.template.basicInfo.filter((f) => f.type === "number").map((f) => ({ key: f.key, label: f.label })) ??
+    [];
+  const traitCategories = definitions?.template.traits?.map((t) => ({ key: t.key, label: t.label })) ?? [];
   const clothingSlots = definitions?.template.clothingSlots ?? [];
   const mapList = definitions ? Object.values(definitions.maps) : [];
   const traitList = definitions ? Object.values(definitions.traitDefs) : [];
   const itemList = definitions ? Object.values(definitions.itemDefs) : [];
-  const npcList = definitions
-    ? Object.values(definitions.characters).filter(c => !c.isPlayer)
-    : [];
+  const npcList = definitions ? Object.values(definitions.characters).filter((c) => !c.isPlayer) : [];
   const variableList = definitions ? Object.values(definitions.variableDefs) : [];
   const wvList = worldVars;
 
@@ -389,8 +555,13 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
     setSaving(true);
     try {
       const data: any = {
-        id, name, description: description || undefined,
-        triggerMode, targetScope, conditions, effects,
+        id,
+        name,
+        description: description || undefined,
+        triggerMode,
+        targetScope,
+        conditions,
+        effects,
         outputTemplate: outputTemplate || undefined,
         enabled,
       };
@@ -398,19 +569,30 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
       if (isNew) {
         data.source = event.source;
         const res = await createEventDef(data);
-        if (!res.success) { alert(res.message); return; }
+        if (!res.success) {
+          alert(res.message);
+          return;
+        }
       } else {
         const res = await saveEventDef(event.id, data);
-        if (!res.success) { alert(res.message); return; }
+        if (!res.success) {
+          alert(res.message);
+          return;
+        }
       }
       onBack();
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!confirm("确定删除此事件？")) return;
     const res = await deleteEventDef(event.id);
-    if (!res.success) { alert(res.message); return; }
+    if (!res.success) {
+      alert(res.message);
+      return;
+    }
     onBack();
   };
 
@@ -418,19 +600,41 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
   const addCondition = () => setConditions([...conditions, { type: "location" } as ActionCondition]);
   const addOrGroup = () => setConditions([...conditions, { or: [{ type: "location" } as ActionCondition] }]);
   const updateCondition = (idx: number, item: ConditionItem) => {
-    const next = [...conditions]; next[idx] = item; setConditions(next);
+    const next = [...conditions];
+    next[idx] = item;
+    setConditions(next);
   };
   const removeCondition = (idx: number) => setConditions(conditions.filter((_, i) => i !== idx));
 
   // Effect CRUD
   const addEffect = () => setEffects([...effects, { type: "resource", op: "add" } as ActionEffect]);
   const updateEffect = (idx: number, eff: ActionEffect) => {
-    const next = [...effects]; next[idx] = eff; setEffects(next);
+    const next = [...effects];
+    next[idx] = eff;
+    setEffects(next);
   };
   const removeEffect = (idx: number) => setEffects(effects.filter((_, i) => i !== idx));
 
-  const outfitTypes = [{id: "default", name: "默认服装"}, ...(definitions?.outfitTypes ?? []).map((t) => ({id: t.id, name: t.name}))];
-  const condCtx = { resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, mapList, traitList, itemList, npcList, outfitTypes, variableList, wvList, clothingSlots, definitions };
+  const outfitTypes = [
+    { id: "default", name: "默认服装" },
+    ...(definitions?.outfitTypes ?? []).map((t) => ({ id: t.id, name: t.name })),
+  ];
+  const condCtx = {
+    resourceKeys,
+    abilityKeys,
+    experienceKeys,
+    basicInfoNumKeys,
+    traitCategories,
+    mapList,
+    traitList,
+    itemList,
+    npcList,
+    outfitTypes,
+    variableList,
+    wvList,
+    clothingSlots,
+    definitions,
+  };
 
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
@@ -440,8 +644,14 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
           == {isNew ? "新建事件" : `编辑: ${event.name || event.id}`} ==
         </span>
         <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>[返回]</button>
-          {!isNew && <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>[删除]</button>}
+          <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
+            [返回]
+          </button>
+          {!isNew && (
+            <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
+              [删除]
+            </button>
+          )}
           <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
             {saving ? "保存中..." : "[确定]"}
           </button>
@@ -456,18 +666,24 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>名称</label>
-          <input style={{ ...inputStyle, flex: 1 }} value={name}
-            onChange={e => setName(e.target.value)} />
+          <input style={{ ...inputStyle, flex: 1 }} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>说明</label>
-          <input style={{ ...inputStyle, flex: 1 }} value={description}
-            onChange={e => setDescription(e.target.value)} placeholder="可选" />
+          <input
+            style={{ ...inputStyle, flex: 1 }}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="可选"
+          />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>触发模式</label>
-          <select style={inputStyle} value={triggerMode}
-            onChange={e => setTriggerMode(e.target.value as EventDefinition["triggerMode"])}>
+          <select
+            style={inputStyle}
+            value={triggerMode}
+            onChange={(e) => setTriggerMode(e.target.value as EventDefinition["triggerMode"])}
+          >
             <option value="on_change">on_change (变化触发)</option>
             <option value="while">while (持续触发)</option>
             <option value="once">once (一次性)</option>
@@ -475,8 +691,13 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
           {triggerMode === "while" && (
             <>
               <label style={{ color: T.textSub, fontSize: "11px" }}>冷却(分钟)</label>
-              <input style={{ ...inputStyle, width: "60px" }} type="number" step={5} value={cooldown}
-                onChange={e => setCooldown(Math.max(5, Math.ceil(Number(e.target.value) / 5) * 5))} />
+              <input
+                style={{ ...inputStyle, width: "60px" }}
+                type="number"
+                step={5}
+                value={cooldown}
+                onChange={(e) => setCooldown(Math.max(5, Math.ceil(Number(e.target.value) / 5) * 5))}
+              />
             </>
           )}
           <HelpButton show={showTriggerHelp} onToggle={() => setShowTriggerHelp((v) => !v)} />
@@ -485,22 +706,33 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
           <HelpPanel>
             <div style={{ ...helpP, marginBottom: "2px" }}>控制事件在条件满足时何时触发。</div>
             <div style={helpSub}>on_change — 变化触发</div>
-            <div style={helpP}>条件从 <span style={helpEm}>不满足 → 满足</span> 的瞬间触发一次。条件持续满足期间不会重复触发，必须先变回不满足、再次满足时才会再次触发。</div>
+            <div style={helpP}>
+              条件从 <span style={helpEm}>不满足 → 满足</span>{" "}
+              的瞬间触发一次。条件持续满足期间不会重复触发，必须先变回不满足、再次满足时才会再次触发。
+            </div>
             <div style={helpDim}>适合"进入某状态时"的事件。例：好感度首次达到 50 时触发特殊对话。</div>
             <div style={helpSub}>while — 持续触发</div>
             <div style={helpP}>每次检查时只要条件满足就触发，受冷却时间（分钟）限制避免过于频繁。</div>
             <div style={helpDim}>适合持续性效果。例：天气为雨天时，每 10 分钟所有人心情 -1。</div>
             <div style={helpSub}>once — 一次性</div>
-            <div style={helpP}>条件满足时触发 <span style={helpEm}>一次</span> 后永久标记为已完成，之后不会再触发。</div>
+            <div style={helpP}>
+              条件满足时触发 <span style={helpEm}>一次</span> 后永久标记为已完成，之后不会再触发。
+            </div>
             <div style={helpDim}>适合一次性剧情事件。例：第一次击败 Boss 后解锁新区域。</div>
             <div style={helpSub}>on_change vs once 的区别</div>
-            <div style={helpP}><span style={helpEm}>on_change</span> 在条件恢复不满足后可以再次触发（多次），<span style={helpEm}>once</span> 触发后永远不再触发（仅一次）。</div>
+            <div style={helpP}>
+              <span style={helpEm}>on_change</span> 在条件恢复不满足后可以再次触发（多次），
+              <span style={helpEm}>once</span> 触发后永远不再触发（仅一次）。
+            </div>
           </HelpPanel>
         )}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>目标范围</label>
-          <select style={inputStyle} value={targetScope}
-            onChange={e => setTargetScope(e.target.value as EventDefinition["targetScope"])}>
+          <select
+            style={inputStyle}
+            value={targetScope}
+            onChange={(e) => setTargetScope(e.target.value as EventDefinition["targetScope"])}
+          >
             <option value="each_character">each_character (每个角色)</option>
             <option value="none">none (无目标)</option>
           </select>
@@ -510,38 +742,53 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
           <HelpPanel>
             <div style={{ ...helpP, marginBottom: "2px" }}>控制事件对谁评估和执行效果。</div>
             <div style={helpSub}>each_character — 每个角色</div>
-            <div style={helpP}>对每个角色 <span style={helpEm}>分别</span> 评估条件、分别执行效果。效果中的 <span style={helpEm}>self</span> 指当前被评估的角色。</div>
+            <div style={helpP}>
+              对每个角色 <span style={helpEm}>分别</span> 评估条件、分别执行效果。效果中的{" "}
+              <span style={helpEm}>self</span> 指当前被评估的角色。
+            </div>
             <div style={helpDim}>例：任何角色 HP 低于 10 时自动获得特质"濒死"——每个角色独立判断。</div>
             <div style={helpSub}>none — 无目标</div>
-            <div style={helpP}>无角色上下文，仅在玩家行动后评估一次。条件只能使用 <span style={helpEm}>世界变量</span>、<span style={helpEm}>时间</span> 等全局条件，效果只能修改 <span style={helpEm}>世界变量</span>。</div>
+            <div style={helpP}>
+              无角色上下文，仅在玩家行动后评估一次。条件只能使用 <span style={helpEm}>世界变量</span>、
+              <span style={helpEm}>时间</span> 等全局条件，效果只能修改 <span style={helpEm}>世界变量</span>。
+            </div>
             <div style={helpDim}>例：当世界变量 tavern_open = 1 时，设置 customers_arriving = 1。</div>
           </HelpPanel>
         )}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>启用</label>
-          <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
         </div>
       </div>
 
       {/* Conditions */}
       <div style={sectionStyle("cond")}>
         <div style={sectionTitleStyle("cond")}>
-          <span style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>
-            条件 (AND)
-          </span>
+          <span style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>条件 (AND)</span>
           <div style={{ display: "flex", gap: "4px" }}>
-            <button onClick={addCondition} style={addBtnStyle}>[+ 条件]</button>
-            <button onClick={addOrGroup} style={addBtnStyle}>[+ OR]</button>
+            <button onClick={addCondition} style={addBtnStyle}>
+              [+ 条件]
+            </button>
+            <button onClick={addOrGroup} style={addBtnStyle}>
+              [+ OR]
+            </button>
           </div>
         </div>
         <div style={{ padding: "0 8px" }}>
           {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无条件（始终满足）</div>}
           {conditions.map((item, idx) => (
-            <div key={idx} style={{ backgroundColor: rowBg(idx), padding: "3px 4px", borderRadius: "2px",
-              borderBottom: idx < conditions.length - 1 ? `1px solid ${T.borderDim}` : "none" }}>
+            <div
+              key={idx}
+              style={{
+                backgroundColor: rowBg(idx),
+                padding: "3px 4px",
+                borderRadius: "2px",
+                borderBottom: idx < conditions.length - 1 ? `1px solid ${T.borderDim}` : "none",
+              }}
+            >
               <ConditionItemEditor
                 item={item}
-                onChange={newItem => updateCondition(idx, newItem)}
+                onChange={(newItem) => updateCondition(idx, newItem)}
                 onRemove={() => removeCondition(idx)}
                 ctx={condCtx}
                 depth={0}
@@ -554,23 +801,28 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
       {/* Effects */}
       <div style={sectionStyle("eff")}>
         <div style={sectionTitleStyle("eff")}>
-          <span style={{ color: SEC.eff.color, fontSize: "12px", fontWeight: "bold" }}>
-            效果
-          </span>
-          <button onClick={addEffect} style={addBtnStyle}>[+ 效果]</button>
+          <span style={{ color: SEC.eff.color, fontSize: "12px", fontWeight: "bold" }}>效果</span>
+          <button onClick={addEffect} style={addBtnStyle}>
+            [+ 效果]
+          </button>
         </div>
         <div style={{ padding: "0 8px" }}>
           {effects.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无效果</div>}
           {effects.map((eff, idx) => (
-            <div key={idx} style={{ backgroundColor: rowBg(idx), padding: "3px 4px", borderRadius: "2px",
-              borderBottom: idx < effects.length - 1 ? `1px solid ${T.borderDim}` : "none" }}>
+            <div
+              key={idx}
+              style={{
+                backgroundColor: rowBg(idx),
+                padding: "3px 4px",
+                borderRadius: "2px",
+                borderBottom: idx < effects.length - 1 ? `1px solid ${T.borderDim}` : "none",
+              }}
+            >
               <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
-                <EffectFieldEditor
-                  effect={eff}
-                  onChange={e => updateEffect(idx, e)}
-                  ctx={condCtx}
-                />
-                <button onClick={() => removeEffect(idx)} style={delBtnStyle}>x</button>
+                <EffectFieldEditor effect={eff} onChange={(e) => updateEffect(idx, e)} ctx={condCtx} />
+                <button onClick={() => removeEffect(idx)} style={delBtnStyle}>
+                  x
+                </button>
               </div>
             </div>
           ))}
@@ -581,22 +833,31 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
       <div style={sectionStyle("tpl")}>
         <div style={sectionTitleStyle("tpl")}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ color: SEC.tpl.color, fontSize: "12px", fontWeight: "bold" }}>
-              输出模板
-            </span>
-            <button onClick={() => setShowVarHelp(v => !v)}
-              style={{ ...btnBase, color: showVarHelp ? T.danger : T.textSub, fontSize: "11px" }}>[?]</button>
+            <span style={{ color: SEC.tpl.color, fontSize: "12px", fontWeight: "bold" }}>输出模板</span>
+            <button
+              onClick={() => setShowVarHelp((v) => !v)}
+              style={{ ...btnBase, color: showVarHelp ? T.danger : T.textSub, fontSize: "11px" }}
+            >
+              [?]
+            </button>
           </div>
         </div>
         <div style={{ padding: "0 8px" }}>
-          <input style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }} value={outputTemplate}
-            onChange={e => setOutputTemplate(e.target.value)}
-            placeholder="例: {{self.name}} 踩到了陷阱！" />
+          <input
+            style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+            value={outputTemplate}
+            onChange={(e) => setOutputTemplate(e.target.value)}
+            placeholder="例: {{self.name}} 踩到了陷阱！"
+          />
           {showVarHelp && (
             <EventTemplateVarHelp
-              resourceKeys={resourceKeys} abilityKeys={abilityKeys}
-              basicInfoNumKeys={basicInfoNumKeys} traitCategories={traitCategories}
-              clothingSlots={clothingSlots} targetScope={targetScope} />
+              resourceKeys={resourceKeys}
+              abilityKeys={abilityKeys}
+              basicInfoNumKeys={basicInfoNumKeys}
+              traitCategories={traitCategories}
+              clothingSlots={clothingSlots}
+              targetScope={targetScope}
+            />
           )}
         </div>
       </div>
@@ -621,7 +882,13 @@ type CondCtx = {
   definitions: GameDefinitions | null;
 };
 
-function ConditionItemEditor({ item, onChange, onRemove, ctx, depth }: {
+function ConditionItemEditor({
+  item,
+  onChange,
+  onRemove,
+  ctx,
+  depth,
+}: {
   item: ConditionItem;
   onChange: (item: ConditionItem) => void;
   onRemove: () => void;
@@ -633,28 +900,41 @@ function ConditionItemEditor({ item, onChange, onRemove, ctx, depth }: {
   if (isAndGroup(item)) {
     return (
       <ConditionGroupEditor
-        label="AND" items={item.and}
-        onChange={items => onChange({ and: items })}
-        onRemove={onRemove} ctx={ctx} depth={depth}
+        label="AND"
+        items={item.and}
+        onChange={(items) => onChange({ and: items })}
+        onRemove={onRemove}
+        ctx={ctx}
+        depth={depth}
       />
     );
   }
   if (isOrGroup(item)) {
     return (
       <ConditionGroupEditor
-        label="OR" items={(item as { or: ConditionItem[] }).or}
-        onChange={items => onChange({ or: items })}
-        onRemove={onRemove} ctx={ctx} depth={depth}
+        label="OR"
+        items={(item as { or: ConditionItem[] }).or}
+        onChange={(items) => onChange({ or: items })}
+        onRemove={onRemove}
+        ctx={ctx}
+        depth={depth}
       />
     );
   }
 
   // Leaf condition
   const cond = item as ActionCondition;
-  return <ConditionLeafEditor condition={cond} onChange={c => onChange(c)} onRemove={onRemove} ctx={ctx} />;
+  return <ConditionLeafEditor condition={cond} onChange={(c) => onChange(c)} onRemove={onRemove} ctx={ctx} />;
 }
 
-function ConditionGroupEditor({ label, items, onChange, onRemove, ctx, depth }: {
+function ConditionGroupEditor({
+  label,
+  items,
+  onChange,
+  onRemove,
+  ctx,
+  depth,
+}: {
   label: string;
   items: ConditionItem[];
   onChange: (items: ConditionItem[]) => void;
@@ -664,7 +944,9 @@ function ConditionGroupEditor({ label, items, onChange, onRemove, ctx, depth }: 
 }) {
   const addChild = () => onChange([...items, { type: "location" } as ActionCondition]);
   const updateChild = (idx: number, item: ConditionItem) => {
-    const next = [...items]; next[idx] = item; onChange(next);
+    const next = [...items];
+    next[idx] = item;
+    onChange(next);
   };
   const removeChild = (idx: number) => onChange(items.filter((_, i) => i !== idx));
 
@@ -673,16 +955,21 @@ function ConditionGroupEditor({ label, items, onChange, onRemove, ctx, depth }: 
     <div style={{ borderLeft: `2px solid ${color}`, paddingLeft: "8px", marginLeft: "4px" }}>
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
         <span style={{ color, fontSize: "11px", fontWeight: "bold" }}>{label}</span>
-        <button onClick={addChild} style={addBtnStyle}>[+]</button>
-        <button onClick={onRemove} style={delBtnStyle}>x</button>
+        <button onClick={addChild} style={addBtnStyle}>
+          [+]
+        </button>
+        <button onClick={onRemove} style={delBtnStyle}>
+          x
+        </button>
       </div>
       {items.map((child, idx) => (
         <div key={idx} style={{ marginBottom: "2px" }}>
           <ConditionItemEditor
             item={child}
-            onChange={c => updateChild(idx, c)}
+            onChange={(c) => updateChild(idx, c)}
             onRemove={() => removeChild(idx)}
-            ctx={ctx} depth={depth + 1}
+            ctx={ctx}
+            depth={depth + 1}
           />
         </div>
       ))}
@@ -690,15 +977,19 @@ function ConditionGroupEditor({ label, items, onChange, onRemove, ctx, depth }: 
   );
 }
 
-function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
+function ConditionLeafEditor({
+  condition,
+  onChange,
+  onRemove,
+  ctx,
+}: {
   condition: ActionCondition;
   onChange: (c: ActionCondition) => void;
   onRemove: () => void;
   ctx: CondCtx;
 }) {
-  const effectiveType = condition.type === "npcAbsent" ? "npcPresent"
-    : condition.type === "noTrait" ? "trait"
-    : condition.type;
+  const effectiveType =
+    condition.type === "npcAbsent" ? "npcPresent" : condition.type === "noTrait" ? "trait" : condition.type;
   const update = (patch: Partial<ActionCondition>) => {
     const merged = { ...condition, ...patch };
     if ((condition.type === "npcAbsent" || condition.type === "noTrait") && !patch.type)
@@ -708,17 +999,28 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
 
   return (
     <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
-      <select style={{ ...inputStyle, fontSize: "11px" }} value={effectiveType}
-        onChange={e => onChange({ type: e.target.value as ActionCondition["type"] })}>
+      <select
+        style={{ ...inputStyle, fontSize: "11px" }}
+        value={effectiveType}
+        onChange={(e) => onChange({ type: e.target.value as ActionCondition["type"] })}
+      >
         {(() => {
           let lastGroup = "";
           return CONDITION_TYPES.map((t) => {
             const els: React.ReactNode[] = [];
             if (t.group && t.group !== lastGroup) {
               lastGroup = t.group;
-              els.push(<option key={`g-${t.group}`} disabled style={{ fontWeight: "bold" }}>── {t.group} ──</option>);
+              els.push(
+                <option key={`g-${t.group}`} disabled style={{ fontWeight: "bold" }}>
+                  ── {t.group} ──
+                </option>,
+              );
             }
-            els.push(<option key={t.value} value={t.value}>{t.label}</option>);
+            els.push(
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>,
+            );
             return els;
           }).flat();
         })()}
@@ -727,62 +1029,113 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       {/* Location */}
       {effectiveType === "location" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.mapId ?? ""}
-            onChange={e => update({ mapId: e.target.value || undefined })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.mapId ?? ""}
+            onChange={(e) => update({ mapId: e.target.value || undefined })}
+          >
             <option value="">选择地图</option>
-            {ctx.mapList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            {ctx.mapList.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
           </select>
-          <input style={{ ...inputStyle, width: "80px", fontSize: "11px" }}
+          <input
+            style={{ ...inputStyle, width: "80px", fontSize: "11px" }}
             value={(condition.cellIds ?? []).join(",")}
-            onChange={e => update({ cellIds: e.target.value ? e.target.value.split(",").map(Number) : undefined })}
-            placeholder="格子ID(逗号)" />
+            onChange={(e) => update({ cellIds: e.target.value ? e.target.value.split(",").map(Number) : undefined })}
+            placeholder="格子ID(逗号)"
+          />
         </>
       )}
 
       {/* NPC present */}
       {effectiveType === "npcPresent" && (
-        <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.npcId ?? ""}
-          onChange={e => update({ npcId: e.target.value || undefined })}>
+        <select
+          style={{ ...inputStyle, fontSize: "11px" }}
+          value={condition.npcId ?? ""}
+          onChange={(e) => update({ npcId: e.target.value || undefined })}
+        >
           <option value="">任意NPC</option>
-          {ctx.npcList.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
+          {ctx.npcList.map((n) => (
+            <option key={n.id} value={n.id}>
+              {n.name}
+            </option>
+          ))}
         </select>
       )}
 
       {/* Resource / Ability / Experience / BasicInfo */}
-      {(["resource", "ability", "experience", "basicInfo"].includes(effectiveType)) && (
+      {["resource", "ability", "experience", "basicInfo"].includes(effectiveType) && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.key ?? ""}
-            onChange={e => update({ key: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.key ?? ""}
+            onChange={(e) => update({ key: e.target.value })}
+          >
             <option value="">选择</option>
-            {(effectiveType === "resource" ? ctx.resourceKeys
-              : effectiveType === "ability" ? ctx.abilityKeys
-              : effectiveType === "experience" ? ctx.experienceKeys
-              : ctx.basicInfoNumKeys
-            ).map(k => <option key={k.key} value={k.key}>{k.label}</option>)}
+            {(effectiveType === "resource"
+              ? ctx.resourceKeys
+              : effectiveType === "ability"
+                ? ctx.abilityKeys
+                : effectiveType === "experience"
+                  ? ctx.experienceKeys
+                  : ctx.basicInfoNumKeys
+            ).map((k) => (
+              <option key={k.key} value={k.key}>
+                {k.label}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, width: "50px", fontSize: "11px" }} value={condition.op ?? ">="}
-            onChange={e => update({ op: e.target.value })}>
-            {OPS.map(o => <option key={o} value={o}>{o}</option>)}
+          <select
+            style={{ ...inputStyle, width: "50px", fontSize: "11px" }}
+            value={condition.op ?? ">="}
+            onChange={(e) => update({ op: e.target.value })}
+          >
+            {OPS.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
           </select>
-          <input style={{ ...inputStyle, width: "60px", fontSize: "11px" }} type="number"
+          <input
+            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            type="number"
             value={condition.value ?? 0}
-            onChange={e => update({ value: Number(e.target.value) })} />
+            onChange={(e) => update({ value: Number(e.target.value) })}
+          />
         </>
       )}
 
       {/* Trait */}
       {effectiveType === "trait" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.key ?? ""}
-            onChange={e => update({ key: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.key ?? ""}
+            onChange={(e) => update({ key: e.target.value })}
+          >
             <option value="">分类</option>
-            {ctx.traitCategories.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+            {ctx.traitCategories.map((c) => (
+              <option key={c.key} value={c.key}>
+                {c.label}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.traitId ?? ""}
-            onChange={e => update({ traitId: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.traitId ?? ""}
+            onChange={(e) => update({ traitId: e.target.value })}
+          >
             <option value="">特质</option>
-            {ctx.traitList.filter(t => !condition.key || t.category === condition.key)
-              .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {ctx.traitList
+              .filter((t) => !condition.key || t.category === condition.key)
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
           </select>
         </>
       )}
@@ -790,101 +1143,199 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       {/* Favorability */}
       {effectiveType === "favorability" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.targetId ?? ""}
-            onChange={e => update({ targetId: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.targetId ?? ""}
+            onChange={(e) => update({ targetId: e.target.value })}
+          >
             <option value="">选择对象</option>
             <option value="{{player}}">玩家</option>
-            {ctx.npcList.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
+            {ctx.npcList.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.name}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, width: "50px", fontSize: "11px" }} value={condition.op ?? ">="}
-            onChange={e => update({ op: e.target.value })}>
-            {OPS.map(o => <option key={o} value={o}>{o}</option>)}
+          <select
+            style={{ ...inputStyle, width: "50px", fontSize: "11px" }}
+            value={condition.op ?? ">="}
+            onChange={(e) => update({ op: e.target.value })}
+          >
+            {OPS.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
           </select>
-          <input style={{ ...inputStyle, width: "60px", fontSize: "11px" }} type="number"
+          <input
+            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            type="number"
             value={condition.value ?? 0}
-            onChange={e => update({ value: Number(e.target.value) })} />
+            onChange={(e) => update({ value: Number(e.target.value) })}
+          />
         </>
       )}
 
       {/* Has item */}
       {effectiveType === "hasItem" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.itemId ?? ""}
-            onChange={e => update({ itemId: e.target.value || undefined })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.itemId ?? ""}
+            onChange={(e) => update({ itemId: e.target.value || undefined })}
+          >
             <option value="">任意物品</option>
-            {ctx.itemList.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+            {ctx.itemList.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.name}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }} value={condition.op ?? ""}
-            onChange={e => update({ op: e.target.value || undefined, value: e.target.value ? (condition.value ?? 1) : undefined })}>
+          <select
+            style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+            value={condition.op ?? ""}
+            onChange={(e) =>
+              update({ op: e.target.value || undefined, value: e.target.value ? (condition.value ?? 1) : undefined })
+            }
+          >
             <option value="">不限数量</option>
-            {OPS.map(o => <option key={o} value={o}>{o}</option>)}
+            {OPS.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
           </select>
           {condition.op && (
-            <input type="number" style={{ ...inputStyle, width: "50px", fontSize: "11px" }} value={condition.value ?? 1}
-              onChange={e => update({ value: Number(e.target.value) })} />
+            <input
+              type="number"
+              style={{ ...inputStyle, width: "50px", fontSize: "11px" }}
+              value={condition.value ?? 1}
+              onChange={(e) => update({ value: Number(e.target.value) })}
+            />
           )}
         </>
       )}
 
       {/* Outfit */}
       {effectiveType === "outfit" && (
-        <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.outfitId ?? ""}
-          onChange={e => update({ outfitId: e.target.value })}>
+        <select
+          style={{ ...inputStyle, fontSize: "11px" }}
+          value={condition.outfitId ?? ""}
+          onChange={(e) => update({ outfitId: e.target.value })}
+        >
           <option value="">选择预设</option>
-          {ctx.outfitTypes.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+          {ctx.outfitTypes.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.name}
+            </option>
+          ))}
         </select>
       )}
 
       {/* Clothing */}
-      {effectiveType === "clothing" && (() => {
-        const slotClothing = condition.slot && ctx.definitions
-          ? Object.values(ctx.definitions.clothingDefs).filter(c => (c.slots ?? [c.slot]).includes(condition.slot))
-          : [];
-        return (
-          <>
-            <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.slot ?? ""}
-              onChange={e => update({ slot: e.target.value, itemId: undefined })}>
-              <option value="">槽位</option>
-              {ctx.clothingSlots.map(s => <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>)}
-            </select>
-            <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.itemId ?? ""}
-              onChange={e => update({ itemId: e.target.value || undefined })}>
-              <option value="">任意衣物</option>
-              {slotClothing.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.state ?? ""}
-              onChange={e => update({ state: e.target.value || undefined })}>
-              <option value="">任意状态</option>
-              <option value="worn">穿着</option>
-              <option value="halfWorn">半穿</option>
-              <option value="empty">空</option>
-            </select>
-          </>
-        );
-      })()}
+      {effectiveType === "clothing" &&
+        (() => {
+          const slotClothing =
+            condition.slot && ctx.definitions
+              ? Object.values(ctx.definitions.clothingDefs).filter((c) =>
+                  (c.slots ?? [c.slot]).includes(condition.slot),
+                )
+              : [];
+          return (
+            <>
+              <select
+                style={{ ...inputStyle, fontSize: "11px" }}
+                value={condition.slot ?? ""}
+                onChange={(e) => update({ slot: e.target.value, itemId: undefined })}
+              >
+                <option value="">槽位</option>
+                {ctx.clothingSlots.map((s) => (
+                  <option key={s} value={s}>
+                    {SLOT_LABELS[s] ?? s}
+                  </option>
+                ))}
+              </select>
+              <select
+                style={{ ...inputStyle, fontSize: "11px" }}
+                value={condition.itemId ?? ""}
+                onChange={(e) => update({ itemId: e.target.value || undefined })}
+              >
+                <option value="">任意衣物</option>
+                {slotClothing.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                style={{ ...inputStyle, fontSize: "11px" }}
+                value={condition.state ?? ""}
+                onChange={(e) => update({ state: e.target.value || undefined })}
+              >
+                <option value="">任意状态</option>
+                <option value="worn">穿着</option>
+                <option value="halfWorn">半穿</option>
+                <option value="empty">空</option>
+              </select>
+            </>
+          );
+        })()}
 
       {/* Time */}
       {effectiveType === "time" && (
         <>
-          <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number" min={0} max={23}
-            value={condition.hourMin ?? ""} placeholder="起"
-            onChange={e => update({ hourMin: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })} />
+          <input
+            style={{ ...inputStyle, width: "40px", fontSize: "11px" }}
+            type="number"
+            min={0}
+            max={23}
+            value={condition.hourMin ?? ""}
+            placeholder="起"
+            onChange={(e) =>
+              update({ hourMin: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })
+            }
+          />
           <span style={{ color: T.textDim, fontSize: "11px" }}>~</span>
-          <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number" min={0} max={23}
-            value={condition.hourMax ?? ""} placeholder="止"
-            onChange={e => update({ hourMax: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })} />
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.season ?? ""}
-            onChange={e => update({ season: e.target.value || undefined })}>
+          <input
+            style={{ ...inputStyle, width: "40px", fontSize: "11px" }}
+            type="number"
+            min={0}
+            max={23}
+            value={condition.hourMax ?? ""}
+            placeholder="止"
+            onChange={(e) =>
+              update({ hourMax: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })
+            }
+          />
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.season ?? ""}
+            onChange={(e) => update({ season: e.target.value || undefined })}
+          >
             <option value="">任意季节</option>
-            {["春", "夏", "秋", "冬"].map(s => <option key={s} value={s}>{s}</option>)}
+            {["春", "夏", "秋", "冬"].map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.dayOfWeek ?? ""}
-            onChange={e => update({ dayOfWeek: e.target.value || undefined })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.dayOfWeek ?? ""}
+            onChange={(e) => update({ dayOfWeek: e.target.value || undefined })}
+          >
             <option value="">任意星期</option>
-            {["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map(d => <option key={d} value={d}>{d}</option>)}
+            {["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.weather ?? ""}
-            onChange={e => update({ weather: e.target.value || undefined })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.weather ?? ""}
+            onChange={(e) => update({ weather: e.target.value || undefined })}
+          >
             <option value="">任意天气</option>
             <option value="sunny">☀ 晴天</option>
             <option value="cloudy">☁ 多云</option>
@@ -897,47 +1348,87 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       {/* Variable */}
       {effectiveType === "variable" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.varId ?? ""}
-            onChange={e => update({ varId: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.varId ?? ""}
+            onChange={(e) => update({ varId: e.target.value })}
+          >
             <option value="">选择变量</option>
-            {ctx.variableList.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+            {ctx.variableList.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, width: "50px", fontSize: "11px" }} value={condition.op ?? ">="}
-            onChange={e => update({ op: e.target.value })}>
-            {OPS.map(o => <option key={o} value={o}>{o}</option>)}
+          <select
+            style={{ ...inputStyle, width: "50px", fontSize: "11px" }}
+            value={condition.op ?? ">="}
+            onChange={(e) => update({ op: e.target.value })}
+          >
+            {OPS.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
           </select>
-          <input style={{ ...inputStyle, width: "60px", fontSize: "11px" }} type="number"
+          <input
+            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            type="number"
             value={condition.value ?? 0}
-            onChange={e => update({ value: Number(e.target.value) })} />
+            onChange={(e) => update({ value: Number(e.target.value) })}
+          />
         </>
       )}
 
       {/* WorldVar */}
       {effectiveType === "worldVar" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.key ?? ""}
-            onChange={e => update({ key: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={condition.key ?? ""}
+            onChange={(e) => update({ key: e.target.value })}
+          >
             <option value="">选择世界变量</option>
-            {ctx.wvList.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+            {ctx.wvList.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, width: "50px", fontSize: "11px" }} value={condition.op ?? "=="}
-            onChange={e => update({ op: e.target.value })}>
-            {OPS.map(o => <option key={o} value={o}>{o}</option>)}
+          <select
+            style={{ ...inputStyle, width: "50px", fontSize: "11px" }}
+            value={condition.op ?? "=="}
+            onChange={(e) => update({ op: e.target.value })}
+          >
+            {OPS.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
           </select>
-          <input style={{ ...inputStyle, width: "60px", fontSize: "11px" }} type="number"
+          <input
+            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            type="number"
             value={condition.value ?? 0}
-            onChange={e => update({ value: Number(e.target.value) })} />
+            onChange={(e) => update({ value: Number(e.target.value) })}
+          />
         </>
       )}
 
-      <button onClick={onRemove} style={delBtnStyle}>x</button>
+      <button onClick={onRemove} style={delBtnStyle}>
+        x
+      </button>
     </div>
   );
 }
 
 // ── Effect Editor ─────────────────────────────────────
 
-function EffectFieldEditor({ effect, onChange, ctx }: {
+function EffectFieldEditor({
+  effect,
+  onChange,
+  ctx,
+}: {
   effect: ActionEffect;
   onChange: (e: ActionEffect) => void;
   ctx: CondCtx;
@@ -946,65 +1437,111 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
 
   return (
     <>
-      <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.type}
-        onChange={e => onChange({ type: e.target.value as ActionEffect["type"], op: "add" })}>
-        {EFFECT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+      <select
+        style={{ ...inputStyle, fontSize: "11px" }}
+        value={effect.type}
+        onChange={(e) => onChange({ type: e.target.value as ActionEffect["type"], op: "add" })}
+      >
+        {EFFECT_TYPES.map((t) => (
+          <option key={t.value} value={t.value}>
+            {t.label}
+          </option>
+        ))}
       </select>
 
       {/* Resource / Ability / BasicInfo */}
       {(effect.type === "resource" || effect.type === "ability" || effect.type === "basicInfo") && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.key ?? ""}
-            onChange={e => update({ key: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.key ?? ""}
+            onChange={(e) => update({ key: e.target.value })}
+          >
             <option value="">选择</option>
-            {(effect.type === "resource" ? ctx.resourceKeys
-              : effect.type === "ability" ? ctx.abilityKeys
-              : ctx.basicInfoNumKeys
-            ).map(k => <option key={k.key} value={k.key}>{k.label}</option>)}
+            {(effect.type === "resource"
+              ? ctx.resourceKeys
+              : effect.type === "ability"
+                ? ctx.abilityKeys
+                : ctx.basicInfoNumKeys
+            ).map((k) => (
+              <option key={k.key} value={k.key}>
+                {k.label}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.op}
-            onChange={e => update({ op: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.op}
+            onChange={(e) => update({ op: e.target.value })}
+          >
             <option value="add">增加</option>
             <option value="set">设为</option>
           </select>
-          <input style={{ ...inputStyle, width: "60px", fontSize: "11px" }} type="number"
+          <input
+            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            type="number"
             value={typeof effect.value === "number" ? effect.value : 0}
-            onChange={e => update({ value: Number(e.target.value) })} />
+            onChange={(e) => update({ value: Number(e.target.value) })}
+          />
         </>
       )}
 
       {/* Favorability */}
       {effect.type === "favorability" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.op}
-            onChange={e => update({ op: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.op}
+            onChange={(e) => update({ op: e.target.value })}
+          >
             <option value="add">增加</option>
             <option value="set">设为</option>
           </select>
-          <input style={{ ...inputStyle, width: "60px", fontSize: "11px" }} type="number"
+          <input
+            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            type="number"
             value={typeof effect.value === "number" ? effect.value : 0}
-            onChange={e => update({ value: Number(e.target.value) })} />
+            onChange={(e) => update({ value: Number(e.target.value) })}
+          />
         </>
       )}
 
       {/* Trait */}
       {effect.type === "trait" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.op}
-            onChange={e => update({ op: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.op}
+            onChange={(e) => update({ op: e.target.value })}
+          >
             <option value="add">添加</option>
             <option value="remove">移除</option>
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.key ?? ""}
-            onChange={e => update({ key: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.key ?? ""}
+            onChange={(e) => update({ key: e.target.value })}
+          >
             <option value="">分类</option>
-            {ctx.traitCategories.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+            {ctx.traitCategories.map((c) => (
+              <option key={c.key} value={c.key}>
+                {c.label}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.traitId ?? ""}
-            onChange={e => update({ traitId: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.traitId ?? ""}
+            onChange={(e) => update({ traitId: e.target.value })}
+          >
             <option value="">特质</option>
-            {ctx.traitList.filter(t => !effect.key || t.category === effect.key)
-              .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {ctx.traitList
+              .filter((t) => !effect.key || t.category === effect.key)
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
           </select>
         </>
       )}
@@ -1012,32 +1549,55 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
       {/* Item */}
       {effect.type === "item" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.op}
-            onChange={e => update({ op: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.op}
+            onChange={(e) => update({ op: e.target.value })}
+          >
             <option value="add">给予</option>
             <option value="remove">移除</option>
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.itemId ?? ""}
-            onChange={e => update({ itemId: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.itemId ?? ""}
+            onChange={(e) => update({ itemId: e.target.value })}
+          >
             <option value="">选择物品</option>
-            {ctx.itemList.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+            {ctx.itemList.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.name}
+              </option>
+            ))}
           </select>
-          <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number"
+          <input
+            style={{ ...inputStyle, width: "40px", fontSize: "11px" }}
+            type="number"
             value={effect.amount ?? 1}
-            onChange={e => update({ amount: Number(e.target.value) })} />
+            onChange={(e) => update({ amount: Number(e.target.value) })}
+          />
         </>
       )}
 
       {/* Clothing */}
       {effect.type === "clothing" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.slot ?? ""}
-            onChange={e => update({ slot: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.slot ?? ""}
+            onChange={(e) => update({ slot: e.target.value })}
+          >
             <option value="">槽位</option>
-            {ctx.clothingSlots.map(s => <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>)}
+            {ctx.clothingSlots.map((s) => (
+              <option key={s} value={s}>
+                {SLOT_LABELS[s] ?? s}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.state ?? "worn"}
-            onChange={e => update({ state: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.state ?? "worn"}
+            onChange={(e) => update({ state: e.target.value })}
+          >
             <option value="worn">穿着</option>
             <option value="halfWorn">半穿</option>
             <option value="off">脱下</option>
@@ -1049,17 +1609,30 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
       {/* Position */}
       {effect.type === "position" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.mapId ?? ""}
-            onChange={e => update({ mapId: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.mapId ?? ""}
+            onChange={(e) => update({ mapId: e.target.value })}
+          >
             <option value="">选择地图</option>
-            {ctx.mapList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            {ctx.mapList.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
           </select>
           {effect.mapId && (
-            <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.cellId ?? ""}
-              onChange={e => update({ cellId: Number(e.target.value) })}>
+            <select
+              style={{ ...inputStyle, fontSize: "11px" }}
+              value={effect.cellId ?? ""}
+              onChange={(e) => update({ cellId: Number(e.target.value) })}
+            >
               <option value="">选择格子</option>
-              {(ctx.mapList.find(m => m.id === effect.mapId)?.cells ?? [])
-                .map(c => <option key={c.id} value={c.id}>{c.name || `#${c.id}`}</option>)}
+              {(ctx.mapList.find((m) => m.id === effect.mapId)?.cells ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name || `#${c.id}`}
+                </option>
+              ))}
             </select>
           )}
         </>
@@ -1068,32 +1641,50 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
       {/* Experience */}
       {effect.type === "experience" && (
         <>
-          <input style={{ ...inputStyle, width: "80px", fontSize: "11px" }}
+          <input
+            style={{ ...inputStyle, width: "80px", fontSize: "11px" }}
             value={effect.key ?? ""}
-            onChange={e => update({ key: e.target.value })}
-            placeholder="经验key" />
-          <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number"
+            onChange={(e) => update({ key: e.target.value })}
+            placeholder="经验key"
+          />
+          <input
+            style={{ ...inputStyle, width: "40px", fontSize: "11px" }}
+            type="number"
             value={typeof effect.value === "number" ? effect.value : 1}
-            onChange={e => update({ value: Number(e.target.value) })} />
+            onChange={(e) => update({ value: Number(e.target.value) })}
+          />
         </>
       )}
 
       {/* WorldVar */}
       {effect.type === "worldVar" && (
         <>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.key ?? ""}
-            onChange={e => update({ key: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.key ?? ""}
+            onChange={(e) => update({ key: e.target.value })}
+          >
             <option value="">选择世界变量</option>
-            {ctx.wvList.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+            {ctx.wvList.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
           </select>
-          <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.op}
-            onChange={e => update({ op: e.target.value })}>
+          <select
+            style={{ ...inputStyle, fontSize: "11px" }}
+            value={effect.op}
+            onChange={(e) => update({ op: e.target.value })}
+          >
             <option value="set">设为</option>
             <option value="add">增加</option>
           </select>
-          <input style={{ ...inputStyle, width: "60px", fontSize: "11px" }} type="number"
+          <input
+            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            type="number"
             value={typeof effect.value === "number" ? effect.value : 0}
-            onChange={e => update({ value: Number(e.target.value) })} />
+            onChange={(e) => update({ value: Number(e.target.value) })}
+          />
         </>
       )}
     </>
@@ -1106,7 +1697,14 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
 
 type KeyLabel = { key: string; label: string };
 
-function EventTemplateVarHelp({ resourceKeys, abilityKeys, basicInfoNumKeys, traitCategories, clothingSlots, targetScope }: {
+function EventTemplateVarHelp({
+  resourceKeys,
+  abilityKeys,
+  basicInfoNumKeys,
+  traitCategories,
+  clothingSlots,
+  targetScope,
+}: {
   resourceKeys: KeyLabel[];
   abilityKeys: KeyLabel[];
   basicInfoNumKeys: KeyLabel[];
@@ -1116,7 +1714,13 @@ function EventTemplateVarHelp({ resourceKeys, abilityKeys, basicInfoNumKeys, tra
 }) {
   const s: React.CSSProperties = { color: "#0ff", fontSize: "11px" };
   const d: React.CSSProperties = { color: T.textSub, fontSize: "11px" };
-  const cat: React.CSSProperties = { color: "#e9a045", fontSize: "11px", fontWeight: "bold", marginTop: "6px", marginBottom: "2px" };
+  const cat: React.CSSProperties = {
+    color: "#e9a045",
+    fontSize: "11px",
+    fontWeight: "bold",
+    marginTop: "6px",
+    marginBottom: "2px",
+  };
   const row = (v: string, desc: string) => (
     <div key={v} style={{ display: "flex", gap: "8px", marginBottom: "1px" }}>
       <span style={{ ...s, minWidth: "220px" }}>{`{{${v}}}`}</span>
@@ -1127,7 +1731,17 @@ function EventTemplateVarHelp({ resourceKeys, abilityKeys, basicInfoNumKeys, tra
   const isNone = targetScope === "none";
 
   return (
-    <div style={{ marginTop: "6px", padding: "8px", backgroundColor: T.bg3, border: `1px solid ${T.border}`, borderRadius: "3px", maxHeight: "300px", overflowY: "auto" }}>
+    <div
+      style={{
+        marginTop: "6px",
+        padding: "8px",
+        backgroundColor: T.bg3,
+        border: `1px solid ${T.border}`,
+        borderRadius: "3px",
+        maxHeight: "300px",
+        overflowY: "auto",
+      }}
+    >
       <div style={{ color: T.accent, fontSize: "11px", fontWeight: "bold", marginBottom: "4px" }}>
         可用变量 {isNone ? "(目标范围为 none，无角色上下文，self/target 变量不可用)" : "(self = 当前评估的角色)"}
       </div>
@@ -1142,19 +1756,19 @@ function EventTemplateVarHelp({ resourceKeys, abilityKeys, basicInfoNumKeys, tra
           {row("location", "当前角色所在地点")}
 
           <div style={cat}>资源 (self.resource.X)</div>
-          {resourceKeys.map(r => row(`self.resource.${r.key}`, r.label))}
+          {resourceKeys.map((r) => row(`self.resource.${r.key}`, r.label))}
 
           <div style={cat}>能力 (self.ability.X = 等级, self.abilityExp.X = 经验值)</div>
-          {abilityKeys.map(a => row(`self.ability.${a.key}`, `${a.label} 等级`))}
+          {abilityKeys.map((a) => row(`self.ability.${a.key}`, `${a.label} 等级`))}
 
           <div style={cat}>基本属性 (self.basicInfo.X)</div>
-          {basicInfoNumKeys.map(b => row(`self.basicInfo.${b.key}`, b.label))}
+          {basicInfoNumKeys.map((b) => row(`self.basicInfo.${b.key}`, b.label))}
 
           <div style={cat}>服装 (self.clothing.X)</div>
-          {clothingSlots.map(sl => row(`self.clothing.${sl}`, `${sl} 槽位衣物名`))}
+          {clothingSlots.map((sl) => row(`self.clothing.${sl}`, `${sl} 槽位衣物名`))}
 
           <div style={cat}>特质 (self.trait.X)</div>
-          {traitCategories.map(t => row(`self.trait.${t.key}`, `${t.label} 值`))}
+          {traitCategories.map((t) => row(`self.trait.${t.key}`, `${t.label} 值`))}
         </>
       )}
     </div>

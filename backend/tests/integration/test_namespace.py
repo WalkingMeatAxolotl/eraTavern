@@ -145,13 +145,17 @@ class TestSymbolicRefs:
             "costs": [],
             "timeCost": 0,
             "npcWeight": 0,
-            "outcomes": [{
-                "grade": "s", "label": "s", "weight": 100,
-                "effects": [
-                    {"type": "resource", "key": "stamina", "op": "add", "value": 10, "target": "self"},
-                    {"type": "resource", "key": "stamina", "op": "add", "value": 10, "target": "{{targetId}}"},
-                ],
-            }],
+            "outcomes": [
+                {
+                    "grade": "s",
+                    "label": "s",
+                    "weight": 100,
+                    "effects": [
+                        {"type": "resource", "key": "stamina", "op": "add", "value": 10, "target": "self"},
+                        {"type": "resource", "key": "stamina", "op": "add", "value": 10, "target": "{{targetId}}"},
+                    ],
+                }
+            ],
         }
         gs.action_defs["test-a.sym"] = action_with_refs
 

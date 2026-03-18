@@ -17,15 +17,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 ADDON_A_META = {"name": "Test Addon A", "description": "For testing", "author": "test"}
 
 ADDON_A_JSON = {
-    "id": "test-a", "version": "1.0.0", "dependencies": [],
+    "id": "test-a",
+    "version": "1.0.0",
+    "dependencies": [],
 }
 
-ADDON_A_TRAITS = {"traits": [
-    {"id": "human", "name": "人类", "category": "race"},
-    {"id": "cooking", "name": "料理", "category": "ability",
-     "decay": {"type": "fixed", "amount": 10, "intervalMinutes": 60}},
-    {"id": "stealth", "name": "隐匿", "category": "ability"},
-]}
+ADDON_A_TRAITS = {
+    "traits": [
+        {"id": "human", "name": "人类", "category": "race"},
+        {
+            "id": "cooking",
+            "name": "料理",
+            "category": "ability",
+            "decay": {"type": "fixed", "amount": 10, "intervalMinutes": 60},
+        },
+        {"id": "stealth", "name": "隐匿", "category": "ability"},
+    ]
+}
 
 ADDON_A_ITEMS = {
     "items": [
@@ -35,42 +43,76 @@ ADDON_A_ITEMS = {
     "tags": ["consumable", "quest"],
 }
 
-ADDON_A_CLOTHING = {"clothing": [
-    {"id": "shirt", "name": "衬衫", "slot": "upperBody", "occlusion": []},
-]}
+ADDON_A_CLOTHING = {
+    "clothing": [
+        {"id": "shirt", "name": "衬衫", "slot": "upperBody", "occlusion": []},
+    ]
+}
 
-ADDON_A_ACTIONS = {"actions": [
-    {
-        "id": "rest", "name": "休息", "category": "日常",
-        "targetType": "none", "timeCost": 30, "npcWeight": 5,
-        "conditions": [],
-        "costs": [],
-        "outcomes": [{
-            "grade": "success", "label": "成功", "weight": 100,
-            "effects": [{"type": "resource", "key": "stamina", "op": "add", "value": 500, "target": "self"}],
-        }],
-    },
-    {
-        "id": "cook", "name": "做饭", "category": "日常",
-        "targetType": "none", "timeCost": 60, "npcWeight": 3,
-        "conditions": [{"type": "location", "mapId": "tavern", "cellIds": [2]}],
-        "costs": [{"type": "resource", "key": "stamina", "amount": 100}],
-        "outcomes": [{
-            "grade": "success", "label": "成功", "weight": 100,
-            "effects": [{"type": "ability", "key": "cooking", "op": "add", "value": 50, "target": "self"}],
-        }],
-    },
-]}
+ADDON_A_ACTIONS = {
+    "actions": [
+        {
+            "id": "rest",
+            "name": "休息",
+            "category": "日常",
+            "targetType": "none",
+            "timeCost": 30,
+            "npcWeight": 5,
+            "conditions": [],
+            "costs": [],
+            "outcomes": [
+                {
+                    "grade": "success",
+                    "label": "成功",
+                    "weight": 100,
+                    "effects": [{"type": "resource", "key": "stamina", "op": "add", "value": 500, "target": "self"}],
+                }
+            ],
+        },
+        {
+            "id": "cook",
+            "name": "做饭",
+            "category": "日常",
+            "targetType": "none",
+            "timeCost": 60,
+            "npcWeight": 3,
+            "conditions": [{"type": "location", "mapId": "tavern", "cellIds": [2]}],
+            "costs": [{"type": "resource", "key": "stamina", "amount": 100}],
+            "outcomes": [
+                {
+                    "grade": "success",
+                    "label": "成功",
+                    "weight": 100,
+                    "effects": [{"type": "ability", "key": "cooking", "op": "add", "value": 50, "target": "self"}],
+                }
+            ],
+        },
+    ]
+}
 
 ADDON_A_MAP = {
-    "id": "tavern", "name": "酒馆",
-    "rows": 1, "cols": 2,
+    "id": "tavern",
+    "name": "酒馆",
+    "rows": 1,
+    "cols": 2,
     "grid": [["吧台", "厨房"]],
     "cells": [
-        {"id": 1, "name": "吧台", "row": 0, "col": 0, "tags": ["bar"],
-         "connections": [{"targetCell": 2, "travelTime": 5}]},
-        {"id": 2, "name": "厨房", "row": 0, "col": 1, "tags": ["kitchen"],
-         "connections": [{"targetCell": 1, "travelTime": 5}]},
+        {
+            "id": 1,
+            "name": "吧台",
+            "row": 0,
+            "col": 0,
+            "tags": ["bar"],
+            "connections": [{"targetCell": 2, "travelTime": 5}],
+        },
+        {
+            "id": 2,
+            "name": "厨房",
+            "row": 0,
+            "col": 1,
+            "tags": ["kitchen"],
+            "connections": [{"targetCell": 1, "travelTime": 5}],
+        },
     ],
 }
 
@@ -118,13 +160,16 @@ ADDON_A_EVENTS = {
 ADDON_B_META = {"name": "Test Addon B", "description": "Cross-addon test", "author": "test"}
 
 ADDON_B_JSON = {
-    "id": "test-b", "version": "1.0.0",
+    "id": "test-b",
+    "version": "1.0.0",
     "dependencies": [{"id": "test-a"}],
 }
 
-ADDON_B_TRAITS = {"traits": [
-    {"id": "elf", "name": "精灵", "category": "race"},
-]}
+ADDON_B_TRAITS = {
+    "traits": [
+        {"id": "elf", "name": "精灵", "category": "race"},
+    ]
+}
 
 ADDON_B_CHAR_NPC2 = {
     "id": "npc2",
@@ -247,6 +292,7 @@ def api_client(tmp_path, monkeypatch):
     gs.load_world("test-world")
 
     import main
+
     monkeypatch.setattr(main, "game_state", gs)
 
     config_path = tmp_path / "config.json"
@@ -255,6 +301,7 @@ def api_client(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "CONFIG_PATH", config_path)
 
     from fastapi.testclient import TestClient
+
     client = TestClient(main.app, raise_server_exceptions=False)
 
     yield client, gs

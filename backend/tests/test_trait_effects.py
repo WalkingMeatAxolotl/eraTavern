@@ -8,38 +8,58 @@ from game.character import _apply_all_effects, _collect_effects
 class TestCollectEffects:
     def test_fixed_increase(self):
         fd, pm = {}, {}
-        _collect_effects([
-            {"target": "stamina", "effect": "increase", "magnitudeType": "fixed", "value": 20},
-        ], fd, pm)
+        _collect_effects(
+            [
+                {"target": "stamina", "effect": "increase", "magnitudeType": "fixed", "value": 20},
+            ],
+            fd,
+            pm,
+        )
         assert fd["stamina"] == 20
 
     def test_fixed_decrease(self):
         fd, pm = {}, {}
-        _collect_effects([
-            {"target": "stamina", "effect": "decrease", "magnitudeType": "fixed", "value": 10},
-        ], fd, pm)
+        _collect_effects(
+            [
+                {"target": "stamina", "effect": "decrease", "magnitudeType": "fixed", "value": 10},
+            ],
+            fd,
+            pm,
+        )
         assert fd["stamina"] == -10
 
     def test_percentage_increase(self):
         fd, pm = {}, {}
-        _collect_effects([
-            {"target": "stamina", "effect": "increase", "magnitudeType": "percentage", "value": 120},
-        ], fd, pm)
+        _collect_effects(
+            [
+                {"target": "stamina", "effect": "increase", "magnitudeType": "percentage", "value": 120},
+            ],
+            fd,
+            pm,
+        )
         assert pm["stamina"] == [1.2]  # 120/100 = 1.2
 
     def test_percentage_decrease(self):
         fd, pm = {}, {}
-        _collect_effects([
-            {"target": "stamina", "effect": "decrease", "magnitudeType": "percentage", "value": 120},
-        ], fd, pm)
+        _collect_effects(
+            [
+                {"target": "stamina", "effect": "decrease", "magnitudeType": "percentage", "value": 120},
+            ],
+            fd,
+            pm,
+        )
         assert pm["stamina"] == [0.8]  # 2.0 - 1.2 = 0.8
 
     def test_multiple_fixed_accumulate(self):
         fd, pm = {}, {}
-        _collect_effects([
-            {"target": "stamina", "effect": "increase", "magnitudeType": "fixed", "value": 10},
-            {"target": "stamina", "effect": "increase", "magnitudeType": "fixed", "value": 5},
-        ], fd, pm)
+        _collect_effects(
+            [
+                {"target": "stamina", "effect": "increase", "magnitudeType": "fixed", "value": 10},
+                {"target": "stamina", "effect": "increase", "magnitudeType": "fixed", "value": 5},
+            ],
+            fd,
+            pm,
+        )
         assert fd["stamina"] == 15
 
 

@@ -1,6 +1,18 @@
 import T from "../theme";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "lorebook" | "maps" | "settings" | "llm" | "system";
+type NavPage =
+  | "characters"
+  | "traits"
+  | "clothing"
+  | "items"
+  | "actions"
+  | "variables"
+  | "events"
+  | "lorebook"
+  | "maps"
+  | "settings"
+  | "llm"
+  | "system";
 
 interface NavBarProps {
   navPage: NavPage | null;
@@ -115,9 +127,7 @@ export default function NavBar({
             <button
               key={item.key}
               style={btnStyle(navPage === item.key)}
-              onClick={() =>
-                onNavChange(navPage === item.key ? null : item.key)
-              }
+              onClick={() => onNavChange(navPage === item.key ? null : item.key)}
             >
               [{item.label}]
             </button>
@@ -130,9 +140,7 @@ export default function NavBar({
             <button
               key={item.key}
               style={btnStyle(navPage === item.key)}
-              onClick={() =>
-                onNavChange(navPage === item.key ? null : item.key)
-              }
+              onClick={() => onNavChange(navPage === item.key ? null : item.key)}
             >
               [{item.label}]
             </button>

@@ -7,9 +7,7 @@ from typing import Any
 from .character import apply_ability_decay
 
 
-def get_available_actions(
-    game_state: Any, character_id: str, target_id: str | None = None
-) -> list[dict]:
+def get_available_actions(game_state: Any, character_id: str, target_id: str | None = None) -> list[dict]:
     """Get list of available actions for a character."""
     char = game_state.characters.get(character_id)
     if not char:
@@ -20,20 +18,25 @@ def get_available_actions(
     # Built-in actions (move, look)
     pos = char["position"]
     from .map_engine import get_connections
+
     connections = get_connections(game_state.maps, pos["mapId"], pos["cellId"])
     if connections:
-        actions.append({
-            "id": "move",
-            "name": "移动",
-            "type": "move",
-            "targets": connections,
-        })
-        actions.append({
-            "id": "look",
-            "name": "查看",
-            "type": "look",
-            "targets": connections,
-        })
+        actions.append(
+            {
+                "id": "move",
+                "name": "移动",
+                "type": "move",
+                "targets": connections,
+            }
+        )
+        actions.append(
+            {
+                "id": "look",
+                "name": "查看",
+                "type": "look",
+                "targets": connections,
+            }
+        )
 
     # Built-in: changeOutfit (only if outfit types exist)
     if game_state.outfit_types:
@@ -41,6 +44,7 @@ def get_available_actions(
         current_outfit = char_data.get("currentOutfit", "default")
         outfits_data = char_data.get("outfits", {})
         outfit_targets = []
+
         def _resolve_slot_names(slots_data: dict) -> dict:
             """Convert {slot: [id, ...]} to {slot: [{id, name}, ...]}."""
             result = {}
@@ -53,12 +57,14 @@ def get_available_actions(
 
         # Always include default
         default_items = outfits_data.get("default", {})
-        outfit_targets.append({
-            "outfitId": "default",
-            "outfitName": "默认服装",
-            "current": current_outfit == "default",
-            "slots": _resolve_slot_names(default_items),
-        })
+        outfit_targets.append(
+            {
+                "outfitId": "default",
+                "outfitName": "默认服装",
+                "current": current_outfit == "default",
+                "slots": _resolve_slot_names(default_items),
+            }
+        )
         # Add all global outfit types
         for ot in game_state.outfit_types:
             oid = ot.get("id", "")
@@ -69,24 +75,30 @@ def get_available_actions(
                 resolved = default_items
             else:
                 resolved = ot.get("slots", {})
-            outfit_targets.append({
-                "outfitId": oid,
-                "outfitName": ot.get("name", oid),
-                "current": current_outfit == oid,
-                "slots": _resolve_slot_names(resolved),
-            })
-        actions.append({
-            "id": "changeOutfit",
-            "name": "换装",
-            "type": "changeOutfit",
-            "outfitTargets": outfit_targets,
-        })
+            outfit_targets.append(
+                {
+                    "outfitId": oid,
+                    "outfitName": ot.get("name", oid),
+                    "current": current_outfit == oid,
+                    "slots": _resolve_slot_names(resolved),
+                }
+            )
+        actions.append(
+            {
+                "id": "changeOutfit",
+                "name": "换装",
+                "type": "changeOutfit",
+                "outfitTargets": outfit_targets,
+            }
+        )
 
     # Configured actions from actions.json
     for action_def in game_state.action_defs.values():
         # If target provided, evaluate all conditions; otherwise skip target-dependent ones
         if not _evaluate_conditions(
-            action_def.get("conditions", []), char, game_state,
+            action_def.get("conditions", []),
+            char,
+            game_state,
             target_id=target_id,
             skip_target_conds=(target_id is None),
             char_id=character_id,
@@ -112,9 +124,7 @@ def get_available_actions(
     return actions
 
 
-def execute_action(
-    game_state: Any, character_id: str, action: dict
-) -> dict:
+def execute_action(game_state: Any, character_id: str, action: dict) -> dict:
     """Execute an action and return the result."""
     action_type = action.get("type")
 
@@ -140,6 +150,7 @@ def execute_action(
 # Condition evaluation
 # ========================
 
+
 def _contains_target_dep(item: dict) -> bool:
     """Check if a condition tree contains any condTarget='target' leaf."""
     if "and" in item:
@@ -152,7 +163,9 @@ def _contains_target_dep(item: dict) -> bool:
 
 
 def _evaluate_conditions(
-    conditions: list, char: dict, game_state: Any,
+    conditions: list,
+    char: dict,
+    game_state: Any,
     target_id: str | None = None,
     skip_target_conds: bool = False,
     char_id: str = "",
@@ -167,7 +180,9 @@ def _evaluate_conditions(
 
 
 def _evaluate_item(
-    item: dict, char: dict, game_state: Any,
+    item: dict,
+    char: dict,
+    game_state: Any,
     target_id: str | None = None,
     char_id: str = "",
     depth: int = 0,
@@ -176,15 +191,9 @@ def _evaluate_item(
     if depth > 8:
         return False  # prevent infinite recursion
     if "and" in item:
-        return all(
-            _evaluate_item(c, char, game_state, target_id, char_id, depth + 1)
-            for c in item["and"]
-        )
+        return all(_evaluate_item(c, char, game_state, target_id, char_id, depth + 1) for c in item["and"])
     if "or" in item:
-        return any(
-            _evaluate_item(c, char, game_state, target_id, char_id, depth + 1)
-            for c in item["or"]
-        )
+        return any(_evaluate_item(c, char, game_state, target_id, char_id, depth + 1) for c in item["or"])
     if "not" in item:
         return not _evaluate_item(item["not"], char, game_state, target_id, char_id, depth + 1)
     # Leaf condition
@@ -192,7 +201,9 @@ def _evaluate_item(
 
 
 def _evaluate_leaf(
-    cond: dict, char: dict, game_state: Any,
+    cond: dict,
+    char: dict,
+    game_state: Any,
     target_id: str | None = None,
     char_id: str = "",
 ) -> bool:
@@ -392,6 +403,7 @@ def _evaluate_leaf(
         if not var_def:
             return False
         from .variable_engine import evaluate_variable
+
         # For bidirectional variables: self=check_char, target=the other character
         cond_target = cond.get("condTarget", "self")
         if cond_target == "target":
@@ -401,9 +413,13 @@ def _evaluate_leaf(
             var_self_id, var_target_id = char_id, target_id
             var_target_state = game_state.characters.get(target_id) if target_id else None
         var_value = evaluate_variable(
-            var_def, check_char, game_state.variable_defs,
-            target_state=var_target_state, game_state=game_state,
-            char_id=var_self_id, target_id=var_target_id,
+            var_def,
+            check_char,
+            game_state.variable_defs,
+            target_state=var_target_state,
+            game_state=game_state,
+            char_id=var_self_id,
+            target_id=var_target_id,
         )
         return _compare(var_value, cond.get("op", ">="), cond.get("value", 0))
 
@@ -450,6 +466,7 @@ def _compare(left: float, op: str, right: float) -> bool:
 # Cost checking
 # ========================
 
+
 def _check_costs(costs: list[dict], char: dict) -> tuple[bool, str]:
     """Check if character can afford all costs. Returns (enabled, reason)."""
     for cost in costs:
@@ -485,9 +502,13 @@ def _check_costs(costs: list[dict], char: dict) -> tuple[bool, str]:
 # Template resolution
 # ========================
 
+
 def _select_output_template(
-    obj: dict, char: dict, game_state: Any,
-    char_id: str, target_id: str | None,
+    obj: dict,
+    char: dict,
+    game_state: Any,
+    char_id: str,
+    target_id: str | None,
 ) -> str:
     """Select an output template from obj.outputTemplate / obj.outputTemplates.
 
@@ -508,8 +529,11 @@ def _select_output_template(
         conds = entry.get("conditions", [])
         if conds:
             if not _evaluate_conditions(
-                conds, char, game_state,
-                target_id=target_id, char_id=char_id,
+                conds,
+                char,
+                game_state,
+                target_id=target_id,
+                char_id=char_id,
             ):
                 continue
         weight = entry.get("weight", 1)
@@ -535,8 +559,12 @@ def _select_output_template(
 
 
 def _resolve_template(
-    template: str, char: dict, target_char: dict | None,
-    game_state: Any, outcome: dict | None, effects_summary: list[str]
+    template: str,
+    char: dict,
+    target_char: dict | None,
+    game_state: Any,
+    outcome: dict | None,
+    effects_summary: list[str],
 ) -> str:
     """Resolve template variables like {{self.clothing.上衣}}."""
     import re
@@ -673,6 +701,7 @@ DISTANCE_PENALTY = 0.5  # desire reduction per minute of travel distance
 def _snap_to_tick(minutes: int | float) -> int:
     """Snap a minute value up to the nearest multiple of TICK_MINUTES."""
     import math
+
     return max(TICK_MINUTES, math.ceil(minutes / TICK_MINUTES) * TICK_MINUTES)
 
 
@@ -713,9 +742,7 @@ def _expand_location_cells(location_cond: dict, maps: dict) -> list[tuple[str, i
     return [(target_map, cid) for cid in target_cells]
 
 
-def build_cell_action_index(
-    action_defs: dict, maps: dict
-) -> tuple[dict[tuple, list[dict]], list[dict]]:
+def build_cell_action_index(action_defs: dict, maps: dict) -> tuple[dict[tuple, list[dict]], list[dict]]:
     """Build cell->actions inverted index and no-location actions list.
 
     Returns (cell_action_index, no_location_actions).
@@ -767,8 +794,10 @@ def _build_suggest_map(game_state: Any, npc_id: str) -> tuple[dict[str, float], 
 
 
 def simulate_npc_ticks(
-    game_state: Any, elapsed_minutes: int,
-    exclude_id: str = "", exclude_ids: list[str] | None = None,
+    game_state: Any,
+    elapsed_minutes: int,
+    exclude_id: str = "",
+    exclude_ids: list[str] | None = None,
 ) -> list[dict]:
     """Simulate NPC ticks for elapsed time.
 
@@ -789,8 +818,10 @@ def simulate_npc_ticks(
         game_state.time.advance(TICK_MINUTES)
         # Apply ability decay for all characters each tick
         apply_ability_decay(
-            game_state.characters, game_state.trait_defs,
-            TICK_MINUTES, game_state.decay_accumulators,
+            game_state.characters,
+            game_state.trait_defs,
+            TICK_MINUTES,
+            game_state.decay_accumulators,
         )
         for npc_id, npc in list(game_state.characters.items()):
             if npc.get("isPlayer") or npc_id in skip:
@@ -816,18 +847,14 @@ def simulate_npc_ticks(
     # Store entries for LLM, trim to cache limit (60 game days)
     game_state.npc_full_log.extend(log)
     from .state import GameState
+
     cutoff = current_days - GameState.NPC_LOG_CACHE_DAYS
     if game_state.npc_full_log and game_state.npc_full_log[0].get("totalDays", 0) < cutoff:
-        game_state.npc_full_log = [
-            e for e in game_state.npc_full_log
-            if e.get("totalDays", 0) >= cutoff
-        ]
+        game_state.npc_full_log = [e for e in game_state.npc_full_log if e.get("totalDays", 0) >= cutoff]
     return log
 
 
-def filter_visible_npc_log(
-    log: list[dict], player_pos: dict, game_state: Any, player_id: str
-) -> list[str]:
+def filter_visible_npc_log(log: list[dict], player_pos: dict, game_state: Any, player_id: str) -> list[str]:
     """Filter NPC log entries to only those visible to the player.
 
     Visible if NPC is within the player's sense range (sense_matrix).
@@ -928,9 +955,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
         for action_def in cell_actions:
             npc_weight = action_def.get("npcWeight", 0)
             target_type = action_def.get("targetType", "none")
-            _, npc_present_cond, hard_conds = _split_conditions(
-                action_def.get("conditions", [])
-            )
+            _, npc_present_cond, hard_conds = _split_conditions(action_def.get("conditions", []))
 
             # Hard conditions (self-only check) — early exit
             if hard_conds and not _evaluate_conditions(
@@ -951,10 +976,15 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
                         continue
                     add, mul = _calc_modifier_bonus(
                         action_def.get("npcWeightModifiers", []),
-                        npc, game_state, npc_id, tid,
+                        npc,
+                        game_state,
+                        npc_id,
+                        tid,
                     )
                     desire = (npc_weight + add) * mul
-                    desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
+                    desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(
+                        action_def.get("category", ""), 0
+                    )
                     effective = desire - distance * DISTANCE_PENALTY
                     if effective > 0:
                         candidates.append((effective, action_def, distance, cell_key, tid))
@@ -962,10 +992,15 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
                 # === No-target location action ===
                 add, mul = _calc_modifier_bonus(
                     action_def.get("npcWeightModifiers", []),
-                    npc, game_state, npc_id, None,
+                    npc,
+                    game_state,
+                    npc_id,
+                    None,
                 )
                 desire = (npc_weight + add) * mul
-                desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
+                desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(
+                    action_def.get("category", ""), 0
+                )
                 effective = desire - distance * DISTANCE_PENALTY
                 if effective > 0:
                     candidates.append((effective, action_def, distance, cell_key, None))
@@ -980,9 +1015,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
         _, npc_present_cond, hard_conds = _split_conditions(conditions)
 
         # Hard conditions (self-only) first
-        if hard_conds and not _evaluate_conditions(
-            hard_conds, npc, game_state, char_id=npc_id, skip_target_conds=True
-        ):
+        if hard_conds and not _evaluate_conditions(hard_conds, npc, game_state, char_id=npc_id, skip_target_conds=True):
             continue
 
         if target_type == "npc" or npc_present_cond:
@@ -999,10 +1032,15 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
                         continue
                     add, mul = _calc_modifier_bonus(
                         action_def.get("npcWeightModifiers", []),
-                        npc, game_state, npc_id, tid,
+                        npc,
+                        game_state,
+                        npc_id,
+                        tid,
                     )
                     desire = (npc_weight + add) * mul
-                    desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
+                    desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(
+                        action_def.get("category", ""), 0
+                    )
                     effective = desire - cell_dist * DISTANCE_PENALTY
                     if effective > 0:
                         candidates.append((effective, action_def, cell_dist, cell_key, tid))
@@ -1012,7 +1050,10 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
                 continue
             add, mul = _calc_modifier_bonus(
                 action_def.get("npcWeightModifiers", []),
-                npc, game_state, npc_id, None,
+                npc,
+                game_state,
+                npc_id,
+                None,
             )
             desire = (npc_weight + add) * mul
             desire += action_suggest.get(action_def["id"], 0) + category_suggest.get(action_def.get("category", ""), 0)
@@ -1043,9 +1084,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
         return None
 
 
-def _npc_start_action(
-    game_state: Any, npc_id: str, action_def: dict, target_npc_id: str | None
-) -> str | None:
+def _npc_start_action(game_state: Any, npc_id: str, action_def: dict, target_npc_id: str | None) -> str | None:
     """Start executing an action for this NPC."""
     npc = game_state.characters.get(npc_id)
     if not npc:
@@ -1053,8 +1092,11 @@ def _npc_start_action(
 
     # Final condition check
     if not _evaluate_conditions(
-        action_def.get("conditions", []), npc, game_state,
-        target_id=target_npc_id, char_id=npc_id,
+        action_def.get("conditions", []),
+        npc,
+        game_state,
+        target_id=target_npc_id,
+        char_id=npc_id,
     ):
         game_state.npc_goals.pop(npc_id, None)
         return None
@@ -1082,9 +1124,7 @@ def _npc_start_action(
     }
 
     # Set activity text (what NPC is currently doing)
-    action_tpl = _select_output_template(
-        action_def, npc, game_state, npc_id, target_npc_id
-    )
+    action_tpl = _select_output_template(action_def, npc, game_state, npc_id, target_npc_id)
     target_char = game_state.characters.get(target_npc_id) if target_npc_id else None
     activity_text = _resolve_template(action_tpl, npc, target_char, game_state, None, [])
     game_state.npc_activities[npc_id] = activity_text or action_def["name"]
@@ -1092,9 +1132,7 @@ def _npc_start_action(
     return None  # Action just started, no completion log yet
 
 
-def _npc_complete_action(
-    game_state: Any, npc_id: str, goal: dict
-) -> str | None:
+def _npc_complete_action(game_state: Any, npc_id: str, goal: dict) -> str | None:
     """Complete an NPC's action: apply effects, return activity text."""
     npc = game_state.characters.get(npc_id)
     if not npc:
@@ -1112,12 +1150,8 @@ def _npc_complete_action(
     applied = _apply_effects(effects, npc, game_state, npc_id, target_npc_id)
 
     # Resolve templates for activity text
-    action_tpl = _select_output_template(
-        action_def, npc, game_state, npc_id, target_npc_id
-    )
-    outcome_tpl = _select_output_template(
-        outcome, npc, game_state, npc_id, target_npc_id
-    ) if outcome else ""
+    action_tpl = _select_output_template(action_def, npc, game_state, npc_id, target_npc_id)
+    outcome_tpl = _select_output_template(outcome, npc, game_state, npc_id, target_npc_id) if outcome else ""
     parts = [p for p in (action_tpl, outcome_tpl) if p]
     template = "\n".join(parts)
 
@@ -1144,25 +1178,23 @@ def _npc_complete_action(
             history = game_state.npc_action_history.get(npc_id, [])
             # Clean expired records (all suggestNext past their decay)
             history = [
-                r for r in history
-                if any(
-                    (current_time - r.get("completedAt", 0)) < s.get("decay", 0)
-                    for s in r.get("suggestNext", [])
-                )
+                r
+                for r in history
+                if any((current_time - r.get("completedAt", 0)) < s.get("decay", 0) for s in r.get("suggestNext", []))
             ]
-            history.append({
-                "actionId": action_def["id"],
-                "suggestNext": suggest_next,
-                "completedAt": current_time,
-            })
+            history.append(
+                {
+                    "actionId": action_def["id"],
+                    "suggestNext": suggest_next,
+                    "completedAt": current_time,
+                }
+            )
             game_state.npc_action_history[npc_id] = history
 
     return text
 
 
-def _npc_move_step(
-    game_state: Any, npc_id: str, target: dict
-) -> bool:
+def _npc_move_step(game_state: Any, npc_id: str, target: dict) -> bool:
     """Move NPC one cell closer to target. Returns True if moved."""
     npc = game_state.characters.get(npc_id)
     if not npc:
@@ -1189,9 +1221,8 @@ def _npc_move_step(
 # Execution
 # ========================
 
-def _execute_configured(
-    game_state: Any, character_id: str, action_def: dict, action: dict
-) -> dict:
+
+def _execute_configured(game_state: Any, character_id: str, action_def: dict, action: dict) -> dict:
     """Execute a configured action from actions.json."""
 
     char = game_state.characters.get(character_id)
@@ -1201,8 +1232,11 @@ def _execute_configured(
     # Re-check conditions (including target-dependent ones)
     target_id = action.get("targetId")
     if not _evaluate_conditions(
-        action_def.get("conditions", []), char, game_state,
-        target_id=target_id, char_id=character_id,
+        action_def.get("conditions", []),
+        char,
+        game_state,
+        target_id=target_id,
+        char_id=character_id,
     ):
         return {"success": False, "message": "条件不满足"}
 
@@ -1235,12 +1269,8 @@ def _execute_configured(
     applied = _apply_effects(effects, char, game_state, character_id, target_id)
 
     # Build result text: action template + outcome template + auto effects
-    action_tpl = _select_output_template(
-        action_def, char, game_state, character_id, target_id
-    )
-    outcome_tpl = _select_output_template(
-        outcome, char, game_state, character_id, target_id
-    ) if outcome else ""
+    action_tpl = _select_output_template(action_def, char, game_state, character_id, target_id)
+    outcome_tpl = _select_output_template(outcome, char, game_state, character_id, target_id) if outcome else ""
     parts = [p for p in (action_tpl, outcome_tpl) if p]
     template = "\n".join(parts)
 
@@ -1279,8 +1309,7 @@ def _execute_configured(
 
 
 def _calc_modifier_bonus(
-    modifiers: list[dict], char: dict,
-    game_state: Any, char_id: str, target_id: str | None
+    modifiers: list[dict], char: dict, game_state: Any, char_id: str, target_id: str | None
 ) -> tuple[int, float]:
     """Calculate additive and multiplicative bonuses from modifiers.
 
@@ -1376,6 +1405,7 @@ def _calc_modifier_bonus(
                 var_def = game_state.variable_defs.get(var_id)
                 if var_def:
                     from .variable_engine import evaluate_variable
+
                     # For bidirectional: modTarget determines direction
                     if mod_target == "target" and target_id:
                         var_self = game_state.characters.get(target_id, check_char)
@@ -1386,9 +1416,13 @@ def _calc_modifier_bonus(
                         var_target = game_state.characters.get(target_id) if target_id else None
                         var_self_id, var_target_id = char_id, target_id
                     var_value = evaluate_variable(
-                        var_def, var_self, game_state.variable_defs,
-                        target_state=var_target, game_state=game_state,
-                        char_id=var_self_id, target_id=var_target_id,
+                        var_def,
+                        var_self,
+                        game_state.variable_defs,
+                        target_state=var_target,
+                        game_state=game_state,
+                        char_id=var_self_id,
+                        target_id=var_target_id,
                     )
                     per = mod.get("per", 1)
                     if per > 0:
@@ -1402,26 +1436,20 @@ def _calc_modifier_bonus(
                 raw_bonus = (int(val) // per) * bonus
 
         if mode == "multiply":
-            mul_total *= (1 + raw_bonus / 100)
+            mul_total *= 1 + raw_bonus / 100
         else:
             add_total += raw_bonus
     return add_total, mul_total
 
 
-def _roll_outcome(
-    outcomes: list[dict], char: dict,
-    game_state: Any, char_id: str, target_id: str | None
-) -> dict:
+def _roll_outcome(outcomes: list[dict], char: dict, game_state: Any, char_id: str, target_id: str | None) -> dict:
     """Roll a weighted random outcome, with modifiers from ability/trait/favorability."""
     import random
 
     weights = []
     for o in outcomes:
         w = o.get("weight", 1)
-        w_add, w_mul = _calc_modifier_bonus(
-            o.get("weightModifiers", []), char,
-            game_state, char_id, target_id
-        )
+        w_add, w_mul = _calc_modifier_bonus(o.get("weightModifiers", []), char, game_state, char_id, target_id)
         w = (w + w_add) * w_mul
         weights.append(max(0, w))
 
@@ -1474,6 +1502,7 @@ def _resolve_effect_value(eff: dict, char: dict, game_state: Any) -> float:
             var_def = game_state.variable_defs.get(var_id)
             if var_def:
                 from .variable_engine import evaluate_variable
+
                 result = evaluate_variable(var_def, char, game_state.variable_defs)
                 return result * raw.get("multiply", 1)
         return 0
@@ -1481,7 +1510,11 @@ def _resolve_effect_value(eff: dict, char: dict, game_state: Any) -> float:
 
 
 def _resolve_effect_targets(
-    target: Any, char: dict, char_id: str, target_id: str | None, game_state: Any,
+    target: Any,
+    char: dict,
+    char_id: str,
+    target_id: str | None,
+    game_state: Any,
 ) -> list[str]:
     """Resolve effect target to a list of character IDs."""
     if target == "self" or not target:
@@ -1496,20 +1529,27 @@ def _resolve_effect_targets(
         cell_f = f.get("cell")
         if cell_f == "current":
             pos = char["position"]
-            candidates = [c for c in candidates
-                          if game_state.characters[c]["position"]["mapId"] == pos["mapId"]
-                          and game_state.characters[c]["position"]["cellId"] == pos["cellId"]]
+            candidates = [
+                c
+                for c in candidates
+                if game_state.characters[c]["position"]["mapId"] == pos["mapId"]
+                and game_state.characters[c]["position"]["cellId"] == pos["cellId"]
+            ]
         elif isinstance(cell_f, dict):
-            candidates = [c for c in candidates
-                          if game_state.characters[c]["position"]["mapId"] == cell_f.get("mapId")
-                          and game_state.characters[c]["position"]["cellId"] == cell_f.get("cellId")]
+            candidates = [
+                c
+                for c in candidates
+                if game_state.characters[c]["position"]["mapId"] == cell_f.get("mapId")
+                and game_state.characters[c]["position"]["cellId"] == cell_f.get("cellId")
+            ]
 
         # trait filter
         trait_f = f.get("trait")
         if trait_f:
             key, tid = trait_f.get("key", ""), trait_f.get("traitId", "")
-            candidates = [c for c in candidates
-                          if tid in game_state.character_data.get(c, {}).get("traits", {}).get(key, [])]
+            candidates = [
+                c for c in candidates if tid in game_state.character_data.get(c, {}).get("traits", {}).get(key, [])
+            ]
 
         # variable filter (bidirectional)
         var_f = f.get("variable")
@@ -1517,14 +1557,19 @@ def _resolve_effect_targets(
             var_def = game_state.variable_defs.get(var_f.get("varId", ""))
             if var_def:
                 from .variable_engine import evaluate_variable
+
                 filtered = []
                 for c in candidates:
                     c_state = game_state.characters.get(c)
                     if c_state:
                         val = evaluate_variable(
-                            var_def, char, game_state.variable_defs,
-                            target_state=c_state, game_state=game_state,
-                            char_id=char_id, target_id=c,
+                            var_def,
+                            char,
+                            game_state.variable_defs,
+                            target_state=c_state,
+                            game_state=game_state,
+                            char_id=char_id,
+                            target_id=c,
                         )
                         if _compare(val, var_f.get("op", ">="), var_f.get("value", 0)):
                             filtered.append(c)
@@ -1542,10 +1587,7 @@ def _resolve_effect_targets(
     return []
 
 
-def _apply_effects(
-    effects: list[dict], char: dict, game_state: Any,
-    char_id: str, target_id: str | None
-) -> list[str]:
+def _apply_effects(effects: list[dict], char: dict, game_state: Any, char_id: str, target_id: str | None) -> list[str]:
     """Apply effects and return human-readable summaries."""
     summaries: list[str] = []
 
@@ -1563,19 +1605,23 @@ def _apply_effects(
                 continue
 
             _apply_single_effect(
-                eff, etype, op, char, target_char, char_id, resolved_tid,
-                target_id, game_state, summaries
+                eff, etype, op, char, target_char, char_id, resolved_tid, target_id, game_state, summaries
             )
 
     return summaries
 
 
 def _apply_single_effect(
-    eff: dict, etype: str, op: str,
-    char: dict, target_char: dict,
-    char_id: str, target_id: str,
+    eff: dict,
+    etype: str,
+    op: str,
+    char: dict,
+    target_char: dict,
+    char_id: str,
+    target_id: str,
     action_target_id: str | None,
-    game_state: Any, summaries: list[str],
+    game_state: Any,
+    summaries: list[str],
 ) -> None:
     """Apply a single effect to a single target character."""
     # Build target name prefix for summaries (empty for self)
@@ -1588,8 +1634,7 @@ def _apply_single_effect(
 
     # Apply valueModifiers to the effect value
     value_mod_add, value_mod_mul = _calc_modifier_bonus(
-        eff.get("valueModifiers", []), char,
-        game_state, char_id, target_id
+        eff.get("valueModifiers", []), char, game_state, char_id, target_id
     )
 
     if etype == "resource":
@@ -1626,6 +1671,7 @@ def _apply_single_effect(
                     suffix = f"{value}{'%' if is_pct else ''}"
                     summaries.append(f"{target_prefix}{ab['label']} → {suffix}")
                 from .character import exp_to_grade
+
                 ab["grade"] = exp_to_grade(ab["exp"])
                 break
 
@@ -1707,12 +1753,14 @@ def _apply_single_effect(
                     break
             if not found:
                 item_def = game_state.item_defs.get(item_id, {})
-                inventory.append({
-                    "itemId": item_id,
-                    "name": item_def.get("name", item_id),
-                    "tags": item_def.get("tags", []),
-                    "amount": amount,
-                })
+                inventory.append(
+                    {
+                        "itemId": item_id,
+                        "name": item_def.get("name", item_id),
+                        "tags": item_def.get("tags", []),
+                        "amount": amount,
+                    }
+                )
             summaries.append(f"{target_prefix}获得 {item_id} x{amount}")
         elif op in ("remove", "removeItem"):
             for inv in inventory:
@@ -1779,6 +1827,7 @@ def _apply_single_effect(
 
     elif etype == "outfit":
         import random
+
         # Resolve target (same pattern as clothing)
         out_target = eff.get("target", "self")
         if out_target == "{{targetId}}" and action_target_id:
@@ -1960,9 +2009,8 @@ def _apply_single_effect(
 # Built-in: Move
 # ========================
 
-def _execute_move(
-    game_state: Any, character_id: str, action: dict
-) -> dict:
+
+def _execute_move(game_state: Any, character_id: str, action: dict) -> dict:
     """Execute a move action."""
     from .map_engine import validate_move
 
@@ -1977,9 +2025,7 @@ def _execute_move(
     if target_cell is None:
         return {"success": False, "message": "未指定目标方格"}
 
-    travel_time = validate_move(
-        game_state.maps, pos["mapId"], pos["cellId"], target_map, target_cell
-    )
+    travel_time = validate_move(game_state.maps, pos["mapId"], pos["cellId"], target_map, target_cell)
     if travel_time is None:
         return {"success": False, "message": "无法移动到目标方格"}
 
@@ -2017,9 +2063,8 @@ def _execute_move(
 # Built-in: Look
 # ========================
 
-def _execute_look(
-    game_state: Any, character_id: str, action: dict
-) -> dict:
+
+def _execute_look(game_state: Any, character_id: str, action: dict) -> dict:
     """Look at a nearby cell and report what NPCs are doing there."""
     char = game_state.characters.get(character_id)
     if not char:
@@ -2059,9 +2104,7 @@ def _execute_look(
     }
 
 
-def _execute_change_outfit(
-    game_state: Any, character_id: str, action: dict
-) -> dict:
+def _execute_change_outfit(game_state: Any, character_id: str, action: dict) -> dict:
     """Execute a player outfit change. Fixed 5-minute time cost."""
     char = game_state.characters.get(character_id)
     if not char:
@@ -2119,9 +2162,14 @@ def _execute_change_outfit(
 # Global event evaluation
 # ========================
 
+
 def _should_fire_event(
-    mode: str, state: dict, key: str, matched: bool,
-    current_time: int, event_def: dict,
+    mode: str,
+    state: dict,
+    key: str,
+    matched: bool,
+    current_time: int,
+    event_def: dict,
 ) -> bool:
     """Determine whether an event should fire based on triggerMode."""
     if mode == "once":
@@ -2148,8 +2196,12 @@ def _should_fire_event(
 
 
 def _update_event_state(
-    mode: str, state: dict, key: str, matched: bool,
-    current_time: int, fired: bool,
+    mode: str,
+    state: dict,
+    key: str,
+    matched: bool,
+    current_time: int,
+    fired: bool,
 ) -> None:
     """Update event runtime state after evaluation."""
     if mode == "on_change":
@@ -2202,44 +2254,54 @@ def evaluate_events(
             for char_id, char in chars.items():
                 matched = _evaluate_conditions(
                     event_def.get("conditions", []),
-                    char, game_state, char_id=char_id,
+                    char,
+                    game_state,
+                    char_id=char_id,
                 )
                 if _should_fire_event(mode, state, char_id, matched, current_time, event_def):
                     summaries = _apply_effects(
                         event_def.get("effects", []),
-                        char, game_state, char_id, None,
+                        char,
+                        game_state,
+                        char_id,
+                        None,
                     )
                     # Resolve output template
                     tpl = _select_output_template(event_def, char, game_state, char_id, None)
                     output = _resolve_template(tpl, char, None, game_state, None, summaries)
-                    results.append({
-                        "event": event_def["name"],
-                        "charId": char_id,
-                        "effectsSummary": summaries,
-                        "output": output,
-                    })
+                    results.append(
+                        {
+                            "event": event_def["name"],
+                            "charId": char_id,
+                            "effectsSummary": summaries,
+                            "output": output,
+                        }
+                    )
                     _update_event_state(mode, state, char_id, matched, current_time, True)
                 else:
                     _update_event_state(mode, state, char_id, matched, current_time, False)
 
         elif scope == "none":
             # No character context — only global conditions (time, weather, worldVar)
-            matched = _evaluate_global_conditions(
-                event_def.get("conditions", []), game_state
-            )
+            matched = _evaluate_global_conditions(event_def.get("conditions", []), game_state)
             if _should_fire_event(mode, state, "__global__", matched, current_time, event_def):
                 summaries = _apply_effects(
                     event_def.get("effects", []),
-                    {}, game_state, "", None,
+                    {},
+                    game_state,
+                    "",
+                    None,
                 )
                 tpl = _select_output_template(event_def, {}, game_state, "", None)
                 output = _resolve_template(tpl, {}, None, game_state, None, summaries)
-                results.append({
-                    "event": event_def["name"],
-                    "charId": None,
-                    "effectsSummary": summaries,
-                    "output": output,
-                })
+                results.append(
+                    {
+                        "event": event_def["name"],
+                        "charId": None,
+                        "effectsSummary": summaries,
+                        "output": output,
+                    }
+                )
                 _update_event_state(mode, state, "__global__", matched, current_time, True)
             else:
                 _update_event_state(mode, state, "__global__", matched, current_time, False)
@@ -2248,7 +2310,8 @@ def evaluate_events(
 
 
 def _evaluate_global_conditions(
-    conditions: list, game_state: Any,
+    conditions: list,
+    game_state: Any,
 ) -> bool:
     """Evaluate conditions that don't require a character context.
 

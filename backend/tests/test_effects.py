@@ -13,6 +13,7 @@ from game.action import _apply_effects
 # Resource effects
 # ========================
 
+
 class TestResourceEffects:
     def test_add_resource(self, game_state):
         char = game_state.characters["player"]
@@ -41,7 +42,9 @@ class TestResourceEffects:
 
     def test_percent_add(self, game_state):
         char = game_state.characters["player"]  # stamina=1000
-        effects = [{"type": "resource", "key": "stamina", "op": "add", "value": 50, "valuePercent": True, "target": "self"}]
+        effects = [
+            {"type": "resource", "key": "stamina", "op": "add", "value": 50, "valuePercent": True, "target": "self"}
+        ]
         _apply_effects(effects, char, game_state, "player", None)
         assert char["resources"]["stamina"]["value"] == 1500  # 1000 + 50%*1000
 
@@ -64,6 +67,7 @@ class TestResourceEffects:
 # ========================
 # Ability effects
 # ========================
+
 
 class TestAbilityEffects:
     def test_add_ability_exp(self, game_state):
@@ -92,6 +96,7 @@ class TestAbilityEffects:
 # ========================
 # Experience effects
 # ========================
+
 
 class TestExperienceEffects:
     def test_add_experience(self, game_state):
@@ -125,7 +130,14 @@ class TestExperienceEffects:
     def test_first_occurrence_not_overwritten(self, game_state):
         """Second increment should not overwrite first occurrence."""
         char = game_state.characters["player"]
-        char["experiences"] = [{"key": "kiss", "label": "接吻经验", "count": 3, "first": {"event": "kiss", "location": "old", "target": "old", "time": "old"}}]
+        char["experiences"] = [
+            {
+                "key": "kiss",
+                "label": "接吻经验",
+                "count": 3,
+                "first": {"event": "kiss", "location": "old", "target": "old", "time": "old"},
+            }
+        ]
         effects = [{"type": "experience", "key": "kiss", "value": 1, "target": "self"}]
         _apply_effects(effects, char, game_state, "player", "npc1")
         exp = next(e for e in char["experiences"] if e["key"] == "kiss")
@@ -151,6 +163,7 @@ class TestExperienceEffects:
 # BasicInfo effects
 # ========================
 
+
 class TestBasicInfoEffects:
     def test_add_money(self, game_state):
         char = game_state.characters["player"]  # money=100
@@ -168,6 +181,7 @@ class TestBasicInfoEffects:
 # ========================
 # Item effects
 # ========================
+
 
 class TestItemEffects:
     def test_add_item_new(self, game_state):
@@ -214,6 +228,7 @@ class TestItemEffects:
 # Trait effects
 # ========================
 
+
 class TestTraitEffects:
     def test_add_trait(self, game_state):
         effects = [{"type": "trait", "key": "bodyTrait", "traitId": "strong", "op": "addTrait", "target": "self"}]
@@ -242,6 +257,7 @@ class TestTraitEffects:
 # Favorability effects
 # ========================
 
+
 class TestFavorabilityEffects:
     def test_add_fav(self, game_state):
         effects = [{"type": "favorability", "favFrom": "{{targetId}}", "favTo": "self", "op": "add", "value": 50}]
@@ -268,37 +284,58 @@ class TestFavorabilityEffects:
 # Value modifiers on effects
 # ========================
 
+
 class TestEffectValueModifiers:
     def test_additive_modifier(self, game_state):
         """Effect value gets additive bonus from ability modifier."""
         char = game_state.characters["player"]  # technique=3000
-        effects = [{
-            "type": "resource", "key": "stamina", "op": "add", "value": 100, "target": "self",
-            "valueModifiers": [{"type": "ability", "key": "technique", "per": 1000, "bonus": 10}],
-        }]
+        effects = [
+            {
+                "type": "resource",
+                "key": "stamina",
+                "op": "add",
+                "value": 100,
+                "target": "self",
+                "valueModifiers": [{"type": "ability", "key": "technique", "per": 1000, "bonus": 10}],
+            }
+        ]
         _apply_effects(effects, char, game_state, "player", None)
         # value = (100 + 30) * 1.0 = 130
         assert char["resources"]["stamina"]["value"] == 1130
 
     def test_multiply_modifier(self, game_state):
         char = game_state.characters["player"]  # technique=3000
-        effects = [{
-            "type": "resource", "key": "stamina", "op": "add", "value": 100, "target": "self",
-            "valueModifiers": [{"type": "ability", "key": "technique", "per": 1000, "bonus": 50, "bonusMode": "multiply"}],
-        }]
+        effects = [
+            {
+                "type": "resource",
+                "key": "stamina",
+                "op": "add",
+                "value": 100,
+                "target": "self",
+                "valueModifiers": [
+                    {"type": "ability", "key": "technique", "per": 1000, "bonus": 50, "bonusMode": "multiply"}
+                ],
+            }
+        ]
         _apply_effects(effects, char, game_state, "player", None)
         # raw_bonus = 3*50=150 → mul = 1+150/100=2.5 → value = int((100+0)*2.5)=250
         assert char["resources"]["stamina"]["value"] == 1250
 
     def test_mixed_modifiers(self, game_state):
         char = game_state.characters["player"]  # technique=3000
-        effects = [{
-            "type": "resource", "key": "stamina", "op": "add", "value": 100, "target": "self",
-            "valueModifiers": [
-                {"type": "ability", "key": "technique", "per": 1000, "bonus": 10, "bonusMode": "add"},
-                {"type": "ability", "key": "technique", "per": 3000, "bonus": 100, "bonusMode": "multiply"},
-            ],
-        }]
+        effects = [
+            {
+                "type": "resource",
+                "key": "stamina",
+                "op": "add",
+                "value": 100,
+                "target": "self",
+                "valueModifiers": [
+                    {"type": "ability", "key": "technique", "per": 1000, "bonus": 10, "bonusMode": "add"},
+                    {"type": "ability", "key": "technique", "per": 3000, "bonus": 100, "bonusMode": "multiply"},
+                ],
+            }
+        ]
         _apply_effects(effects, char, game_state, "player", None)
         # add_bonus=30, mul=1+100/100=2.0 → value = int((100+30)*2.0) = 260
         assert char["resources"]["stamina"]["value"] == 1260
@@ -307,6 +344,7 @@ class TestEffectValueModifiers:
 # ========================
 # Target prefix in summaries
 # ========================
+
 
 class TestTargetPrefixSummaries:
     def test_self_no_prefix(self, game_state):
@@ -325,6 +363,7 @@ class TestTargetPrefixSummaries:
 # ========================
 # Clothing effects
 # ========================
+
 
 class TestClothingEffects:
     def test_set_clothing_state(self, game_state):
@@ -348,6 +387,7 @@ class TestClothingEffects:
 # Position effects
 # ========================
 
+
 class TestPositionEffects:
     def test_change_position(self, game_state):
         char = game_state.characters["player"]
@@ -357,7 +397,8 @@ class TestPositionEffects:
 
     def test_change_position_map(self, game_state):
         game_state.maps["forest"] = {
-            "id": "forest", "name": "森林",
+            "id": "forest",
+            "name": "森林",
             "cells": [{"id": 1, "name": "入口"}],
             "cell_index": {1: {"name": "入口"}},
         }
@@ -371,6 +412,7 @@ class TestPositionEffects:
 # ========================
 # WorldVar effects
 # ========================
+
 
 class TestWorldVarEffects:
     def test_add_world_var(self, game_state):

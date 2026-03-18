@@ -15,18 +15,30 @@ def _setup_multi_char():
     """Create game state with player + 3 NPCs at various locations."""
     gs = MockGameState()
     gs.characters["player"] = make_character(
-        name="Player", is_player=True, map_id="tavern", cell_id=1,
+        name="Player",
+        is_player=True,
+        map_id="tavern",
+        cell_id=1,
     )
     gs.characters["npc_a"] = make_character(
-        name="Alice", is_player=False, map_id="tavern", cell_id=1,
+        name="Alice",
+        is_player=False,
+        map_id="tavern",
+        cell_id=1,
         traits=[{"key": "race", "values": ["human"]}],
     )
     gs.characters["npc_b"] = make_character(
-        name="Bob", is_player=False, map_id="tavern", cell_id=1,
+        name="Bob",
+        is_player=False,
+        map_id="tavern",
+        cell_id=1,
         traits=[{"key": "race", "values": ["elf"]}],
     )
     gs.characters["npc_c"] = make_character(
-        name="Carol", is_player=False, map_id="tavern", cell_id=2,
+        name="Carol",
+        is_player=False,
+        map_id="tavern",
+        cell_id=2,
         traits=[{"key": "race", "values": ["human"]}],
     )
 
@@ -48,6 +60,7 @@ def _setup_multi_char():
 # ========================
 # _resolve_effect_targets
 # ========================
+
 
 class TestResolveEffectTargets:
     def test_self(self):
@@ -79,19 +92,14 @@ class TestResolveEffectTargets:
         """cell='current' → only characters at player's location."""
         gs = _setup_multi_char()
         char = gs.characters["player"]
-        result = _resolve_effect_targets(
-            {"filter": {"cell": "current"}}, char, "player", None, gs
-        )
+        result = _resolve_effect_targets({"filter": {"cell": "current"}}, char, "player", None, gs)
         assert set(result) == {"player", "npc_a", "npc_b"}  # all at cell 1
         assert "npc_c" not in result  # cell 2
 
     def test_filter_current_cell_exclude_self(self):
         gs = _setup_multi_char()
         char = gs.characters["player"]
-        result = _resolve_effect_targets(
-            {"filter": {"cell": "current", "excludeSelf": True}},
-            char, "player", None, gs
-        )
+        result = _resolve_effect_targets({"filter": {"cell": "current", "excludeSelf": True}}, char, "player", None, gs)
         assert set(result) == {"npc_a", "npc_b"}
         assert "player" not in result
 
@@ -99,8 +107,7 @@ class TestResolveEffectTargets:
         gs = _setup_multi_char()
         char = gs.characters["player"]
         result = _resolve_effect_targets(
-            {"filter": {"cell": {"mapId": "tavern", "cellId": 2}}},
-            char, "player", None, gs
+            {"filter": {"cell": {"mapId": "tavern", "cellId": 2}}}, char, "player", None, gs
         )
         assert result == ["npc_c"]
 
@@ -109,8 +116,7 @@ class TestResolveEffectTargets:
         gs = _setup_multi_char()
         char = gs.characters["player"]
         result = _resolve_effect_targets(
-            {"filter": {"trait": {"key": "race", "traitId": "human"}}},
-            char, "player", None, gs
+            {"filter": {"trait": {"key": "race", "traitId": "human"}}}, char, "player", None, gs
         )
         assert set(result) == {"player", "npc_a", "npc_c"}
         assert "npc_b" not in result  # elf
@@ -120,8 +126,7 @@ class TestResolveEffectTargets:
         gs = _setup_multi_char()
         char = gs.characters["player"]
         result = _resolve_effect_targets(
-            {"filter": {"cell": "current", "trait": {"key": "race", "traitId": "human"}}},
-            char, "player", None, gs
+            {"filter": {"cell": "current", "trait": {"key": "race", "traitId": "human"}}}, char, "player", None, gs
         )
         assert set(result) == {"player", "npc_a"}  # human at cell 1
         assert "npc_b" not in result  # elf at cell 1
@@ -133,7 +138,10 @@ class TestResolveEffectTargets:
         char = gs.characters["player"]
         result = _resolve_effect_targets(
             {"filter": {"cell": "current", "trait": {"key": "race", "traitId": "human"}, "excludeSelf": True}},
-            char, "player", None, gs
+            char,
+            "player",
+            None,
+            gs,
         )
         assert result == ["npc_a"]
 
@@ -144,14 +152,21 @@ class TestResolveEffectTargets:
         gs.character_data["npc_b"]["favorability"] = {"player": 20}
         gs.character_data["npc_c"]["favorability"] = {"player": 60}
         gs.variable_defs = {
-            "rel": {"id": "rel", "isBidirectional": True, "steps": [
-                {"type": "favorability", "source": "target"},  # target→self
-            ]},
+            "rel": {
+                "id": "rel",
+                "isBidirectional": True,
+                "steps": [
+                    {"type": "favorability", "source": "target"},  # target→self
+                ],
+            },
         }
         char = gs.characters["player"]
         result = _resolve_effect_targets(
             {"filter": {"variable": {"varId": "rel", "op": ">=", "value": 50}, "excludeSelf": True}},
-            char, "player", None, gs
+            char,
+            "player",
+            None,
+            gs,
         )
         assert set(result) == {"npc_a", "npc_c"}  # 80 and 60 >= 50
         assert "npc_b" not in result  # 20 < 50
@@ -168,18 +183,21 @@ class TestResolveEffectTargets:
 # Multi-target effects
 # ========================
 
+
 class TestMultiTargetEffects:
     def test_filter_applies_to_all(self):
         """Effect with filter target should apply to all matched characters."""
         gs = _setup_multi_char()
         char = gs.characters["player"]
-        effects = [{
-            "type": "resource",
-            "key": "stamina",
-            "op": "add",
-            "value": 100,
-            "target": {"filter": {"cell": "current", "excludeSelf": True}},
-        }]
+        effects = [
+            {
+                "type": "resource",
+                "key": "stamina",
+                "op": "add",
+                "value": 100,
+                "target": {"filter": {"cell": "current", "excludeSelf": True}},
+            }
+        ]
         summaries = _apply_effects(effects, char, gs, "player", None)
         # npc_a and npc_b at cell 1 should get +100 stamina
         assert gs.characters["npc_a"]["resources"]["stamina"]["value"] == 1100
@@ -205,10 +223,15 @@ class TestMultiTargetEffects:
         char = gs.characters["player"]
         effects = [
             {"type": "resource", "key": "stamina", "op": "add", "value": 50, "target": "self"},
-            {"type": "resource", "key": "stamina", "op": "add", "value": -200,
-             "target": {"filter": {"cell": "current", "excludeSelf": True}}},
+            {
+                "type": "resource",
+                "key": "stamina",
+                "op": "add",
+                "value": -200,
+                "target": {"filter": {"cell": "current", "excludeSelf": True}},
+            },
         ]
-        summaries = _apply_effects(effects, char, gs, "player", None)
+        _apply_effects(effects, char, gs, "player", None)
         assert gs.characters["player"]["resources"]["stamina"]["value"] == 1050  # +50
         assert gs.characters["npc_a"]["resources"]["stamina"]["value"] == 800  # -200
         assert gs.characters["npc_b"]["resources"]["stamina"]["value"] == 800  # -200
@@ -218,8 +241,7 @@ class TestMultiTargetEffects:
         """Empty filter = all characters."""
         gs = _setup_multi_char()
         char = gs.characters["player"]
-        effects = [{"type": "resource", "key": "stamina", "op": "add", "value": 10,
-                     "target": {"filter": {}}}]
+        effects = [{"type": "resource", "key": "stamina", "op": "add", "value": 10, "target": {"filter": {}}}]
         _apply_effects(effects, char, gs, "player", None)
         for cid in ["player", "npc_a", "npc_b", "npc_c"]:
             assert gs.characters[cid]["resources"]["stamina"]["value"] == 1010
@@ -228,8 +250,15 @@ class TestMultiTargetEffects:
         """Filter that matches nobody → no effects applied."""
         gs = _setup_multi_char()
         char = gs.characters["player"]
-        effects = [{"type": "resource", "key": "stamina", "op": "add", "value": 999,
-                     "target": {"filter": {"cell": {"mapId": "forest", "cellId": 1}}}}]
+        effects = [
+            {
+                "type": "resource",
+                "key": "stamina",
+                "op": "add",
+                "value": 999,
+                "target": {"filter": {"cell": {"mapId": "forest", "cellId": 1}}},
+            }
+        ]
         _apply_effects(effects, char, gs, "player", None)
         for cid in ["player", "npc_a", "npc_b", "npc_c"]:
             assert gs.characters[cid]["resources"]["stamina"]["value"] == 1000

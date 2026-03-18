@@ -44,17 +44,13 @@ class TestCheckCosts:
         assert not ok
 
     def test_item_sufficient(self):
-        char = make_character(inventory=[
-            {"itemId": "potion", "name": "药水", "tags": [], "amount": 3}
-        ])
+        char = make_character(inventory=[{"itemId": "potion", "name": "药水", "tags": [], "amount": 3}])
         costs = [{"type": "item", "itemId": "potion", "amount": 2}]
         ok, reason = _check_costs(costs, char)
         assert ok
 
     def test_item_insufficient(self):
-        char = make_character(inventory=[
-            {"itemId": "potion", "name": "药水", "tags": [], "amount": 1}
-        ])
+        char = make_character(inventory=[{"itemId": "potion", "name": "药水", "tags": [], "amount": 1}])
         costs = [{"type": "item", "itemId": "potion", "amount": 5}]
         ok, reason = _check_costs(costs, char)
         assert not ok
@@ -66,9 +62,7 @@ class TestCheckCosts:
         assert not ok
 
     def test_multiple_costs_all_met(self):
-        char = make_character(inventory=[
-            {"itemId": "potion", "name": "药水", "tags": [], "amount": 5}
-        ])
+        char = make_character(inventory=[{"itemId": "potion", "name": "药水", "tags": [], "amount": 5}])
         costs = [
             {"type": "resource", "key": "stamina", "amount": 100},
             {"type": "basicInfo", "key": "money", "amount": 10},
@@ -104,15 +98,11 @@ class TestApplyCosts:
         assert char["basicInfo"]["money"]["value"] == 70
 
     def test_apply_item_cost(self):
-        char = make_character(inventory=[
-            {"itemId": "potion", "name": "药水", "tags": [], "amount": 3}
-        ])
+        char = make_character(inventory=[{"itemId": "potion", "name": "药水", "tags": [], "amount": 3}])
         _apply_costs([{"type": "item", "itemId": "potion", "amount": 2}], char)
         assert char["inventory"][0]["amount"] == 1
 
     def test_apply_item_cost_removes_when_zero(self):
-        char = make_character(inventory=[
-            {"itemId": "potion", "name": "药水", "tags": [], "amount": 1}
-        ])
+        char = make_character(inventory=[{"itemId": "potion", "name": "药水", "tags": [], "amount": 1}])
         _apply_costs([{"type": "item", "itemId": "potion", "amount": 1}], char)
         assert len(char["inventory"]) == 0

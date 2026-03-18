@@ -12,8 +12,13 @@ interface MapTabsProps {
 }
 
 export default function MapTabs({
-  maps, activeMapId, playerMapId, playerCellName,
-  mapExpanded, onToggleMap, onSelectMap,
+  maps,
+  activeMapId,
+  playerMapId,
+  playerCellName,
+  mapExpanded,
+  onToggleMap,
+  onSelectMap,
 }: MapTabsProps) {
   const mapList = Object.values(maps);
 

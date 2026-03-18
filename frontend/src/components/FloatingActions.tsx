@@ -70,9 +70,7 @@ export default function FloatingActions({
         boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
       }}
     >
-      <span style={{ color: T.textDim, fontSize: "11px", whiteSpace: "nowrap" }}>
-        有未保存的配置改动
-      </span>
+      <span style={{ color: T.textDim, fontSize: "11px", whiteSpace: "nowrap" }}>有未保存的配置改动</span>
       <button
         onClick={onRevert}
         disabled={busy}

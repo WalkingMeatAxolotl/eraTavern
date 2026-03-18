@@ -130,7 +130,7 @@ class TestMultiplyMode:
             {"type": "ability", "key": "technique", "per": 1000, "bonus": 50, "bonusMode": "multiply"},
         ]
         add, mul = _calc_modifier_bonus(mods, char, game_state, "player", None)
-        assert add == 30   # 3*10
+        assert add == 30  # 3*10
         assert abs(mul - 2.5) < 0.001  # 1 + 150/100
 
     def test_multiple_multipliers_stack(self, game_state):
@@ -159,7 +159,8 @@ class TestMultiplyMode:
 class TestVariableModifier:
     def test_variable_modifier(self, game_state):
         game_state.variable_defs["power"] = {
-            "id": "power", "steps": [{"type": "constant", "value": 60}],
+            "id": "power",
+            "steps": [{"type": "constant", "value": 60}],
         }
         char = game_state.characters["player"]
         mods = [{"type": "variable", "varId": "power", "per": 10, "bonus": 2}]

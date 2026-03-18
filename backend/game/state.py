@@ -51,14 +51,16 @@ def list_available_worlds() -> list[dict[str, Any]]:
     worlds = _list_worlds()
     result: list[dict[str, Any]] = []
     for w in worlds:
-        result.append({
-            "id": w["id"],
-            "name": w["name"],
-            "description": w.get("description", ""),
-            "cover": w.get("cover", ""),
-            "addons": w.get("addons", []),
-            "playerCharacter": w.get("playerCharacter", ""),
-        })
+        result.append(
+            {
+                "id": w["id"],
+                "name": w["name"],
+                "description": w.get("description", ""),
+                "cover": w.get("cover", ""),
+                "addons": w.get("addons", []),
+                "playerCharacter": w.get("playerCharacter", ""),
+            }
+        )
     return result
 
 
@@ -127,8 +129,8 @@ class GameState:
         self.time = GameTime()
 
     # Log retention limits (in game days)
-    NPC_LOG_CACHE_DAYS = 60   # runtime buffer
-    NPC_LOG_SAVE_DAYS = 30    # persisted to save file
+    NPC_LOG_CACHE_DAYS = 60  # runtime buffer
+    NPC_LOG_SAVE_DAYS = 30  # persisted to save file
     ACTION_LOG_SAVE_DAYS = 30
 
     def load_empty(self) -> None:
@@ -183,12 +185,20 @@ class GameState:
         """
         for char_data in self.character_data.values():
             namespace_character_data(
-                char_data, self.trait_defs, self.item_defs,
-                self.clothing_defs, self.character_data, self.maps,
+                char_data,
+                self.trait_defs,
+                self.item_defs,
+                self.clothing_defs,
+                self.character_data,
+                self.maps,
             )
         namespace_action_refs(
-            self.action_defs, self.trait_defs, self.item_defs,
-            self.clothing_defs, self.character_data, self.maps,
+            self.action_defs,
+            self.trait_defs,
+            self.item_defs,
+            self.clothing_defs,
+            self.character_data,
+            self.maps,
         )
 
     def load_session_addons(self, addon_refs: list[dict[str, str]]) -> None:
@@ -202,6 +212,7 @@ class GameState:
 
         # Load from addons
         from .map_engine import build_distance_matrix, build_sense_matrix
+
         collection = load_map_collection(self.addon_dirs)
         self.maps = collection["maps"]
         self.distance_matrix = build_distance_matrix(self.maps)
@@ -230,15 +241,17 @@ class GameState:
             if char_data.get("active", True) is False:
                 continue
             self.characters[char_id] = build_character_state(
-                char_data, self.template, self.clothing_defs, self.trait_defs,
+                char_data,
+                self.template,
+                self.clothing_defs,
+                self.trait_defs,
                 self.item_defs,
             )
 
         # Build cell->action inverted index for NPC decision-making
         from .action import build_cell_action_index
-        self.cell_action_index, self.no_location_actions = build_cell_action_index(
-            self.action_defs, self.maps
-        )
+
+        self.cell_action_index, self.no_location_actions = build_cell_action_index(self.action_defs, self.maps)
 
         self.time = GameTime()
         self.npc_goals = {}
@@ -274,6 +287,7 @@ class GameState:
 
         # Pre-compute distance matrix and sense matrix for NPC pathfinding
         from .map_engine import build_distance_matrix, build_sense_matrix
+
         self.distance_matrix = build_distance_matrix(self.maps)
         self.sense_matrix = build_sense_matrix(self.maps)
 
@@ -301,10 +315,9 @@ class GameState:
 
         # Namespace player_character reference
         from .character import NS_SEP
+
         if self.player_character and NS_SEP not in self.player_character:
-            self.player_character = resolve_ref(
-                self.player_character, self.character_data, ""
-            )
+            self.player_character = resolve_ref(self.player_character, self.character_data, "")
 
         # Build character states (active only)
         self.characters = {}
@@ -312,15 +325,17 @@ class GameState:
             if char_data.get("active", True) is False:
                 continue
             self.characters[char_id] = build_character_state(
-                char_data, self.template, self.clothing_defs, self.trait_defs,
+                char_data,
+                self.template,
+                self.clothing_defs,
+                self.trait_defs,
                 self.item_defs,
             )
 
         # Build cell->action inverted index for NPC decision-making
         from .action import build_cell_action_index
-        self.cell_action_index, self.no_location_actions = build_cell_action_index(
-            self.action_defs, self.maps
-        )
+
+        self.cell_action_index, self.no_location_actions = build_cell_action_index(self.action_defs, self.maps)
 
         # Reset time and NPC state
         self.time = GameTime()
@@ -473,10 +488,7 @@ class GameState:
                     save_character(target_dir, cdata, source)
 
             # Maps
-            src_maps = {
-                mid: mdata for mid, mdata in self.maps.items()
-                if mdata.get("_source") == source
-            }
+            src_maps = {mid: mdata for mid, mdata in self.maps.items() if mdata.get("_source") == source}
             if src_maps:
                 maps_dir = target_dir / "maps"
                 maps_dir.mkdir(parents=True, exist_ok=True)
@@ -713,7 +725,8 @@ class GameState:
                     if "experiences" not in char_data:
                         char_data["experiences"] = {}
                     char_data["experiences"][exp["key"]] = {
-                        "count": exp["count"], "first": exp["first"],
+                        "count": exp["count"],
+                        "first": exp["first"],
                     }
             # Restore inventory
             if char_id in snapshot["inventories"]:
@@ -722,7 +735,10 @@ class GameState:
             if char_data.get("active", True) is False:
                 continue
             self.characters[char_id] = build_character_state(
-                char_data, self.template, self.clothing_defs, self.trait_defs,
+                char_data,
+                self.template,
+                self.clothing_defs,
+                self.trait_defs,
                 self.item_defs,
             )
         self.time = snapshot["time"]
@@ -741,7 +757,7 @@ class GameState:
 
         addon_list_changed = False
         if new_addon_refs is not None:
-            addon_list_changed = (new_addon_refs != self.addon_refs)
+            addon_list_changed = new_addon_refs != self.addon_refs
             self.addon_refs = new_addon_refs
 
         if addon_list_changed:
@@ -754,6 +770,7 @@ class GameState:
             collection = load_map_collection(self.addon_dirs)
             self.maps = collection["maps"]
             from .map_engine import build_distance_matrix, build_sense_matrix
+
             self.distance_matrix = build_distance_matrix(self.maps)
             self.sense_matrix = build_sense_matrix(self.maps)
             self.decor_presets = load_decor_presets(self.addon_dirs)
@@ -774,9 +791,8 @@ class GameState:
 
         # Always rebuild cell->action index (action defs may have been edited)
         from .action import build_cell_action_index
-        self.cell_action_index, self.no_location_actions = build_cell_action_index(
-            self.action_defs, self.maps
-        )
+
+        self.cell_action_index, self.no_location_actions = build_cell_action_index(self.action_defs, self.maps)
 
         # Reset NPC goals — outcome snapshots may reference stale definitions
         self.npc_goals = {}
@@ -813,6 +829,7 @@ class GameState:
         collection = load_map_collection(self.addon_dirs)
         self.maps = collection["maps"]
         from .map_engine import build_distance_matrix, build_sense_matrix
+
         self.distance_matrix = build_distance_matrix(self.maps)
         self.sense_matrix = build_sense_matrix(self.maps)
 
@@ -863,15 +880,18 @@ class GameState:
             if char_data.get("active", True) is False:
                 continue
             display_characters[char_id] = build_character_state(
-                char_data, self.template, self.clothing_defs, self.trait_defs,
+                char_data,
+                self.template,
+                self.clothing_defs,
+                self.trait_defs,
                 self.item_defs,
             )
             # Copy runtime resource values
             if char_id in self.characters:
                 for key in display_characters[char_id]["resources"]:
-                    display_characters[char_id]["resources"][key]["value"] = (
-                        self.characters[char_id]["resources"][key]["value"]
-                    )
+                    display_characters[char_id]["resources"][key]["value"] = self.characters[char_id]["resources"][key][
+                        "value"
+                    ]
             # Include portrait from raw data
             portrait = char_data.get("portrait")
             if portrait:
@@ -888,10 +908,7 @@ class GameState:
                 if target_id == char_id:
                     continue
                 target_data = self.character_data.get(target_id)
-                target_name = (
-                    target_data.get("basicInfo", {}).get("name", target_id)
-                    if target_data else target_id
-                )
+                target_name = target_data.get("basicInfo", {}).get("name", target_id) if target_data else target_id
                 fav_list.append({"id": target_id, "name": target_name, "value": value})
             display_characters[char_id]["favorability"] = fav_list
 
@@ -946,7 +963,10 @@ class GameState:
         """Build display state for a single character."""
         char_data = self.character_data[char_id]
         state = build_character_state(
-            char_data, self.template, self.clothing_defs, self.trait_defs,
+            char_data,
+            self.template,
+            self.clothing_defs,
+            self.trait_defs,
             self.item_defs,
         )
         portrait = char_data.get("portrait")
@@ -1029,7 +1049,8 @@ class GameState:
                 if "experiences" not in cd:
                     cd["experiences"] = {}
                 cd["experiences"][exp["key"]] = {
-                    "count": exp["count"], "first": exp["first"],
+                    "count": exp["count"],
+                    "first": exp["first"],
                 }
             # inventory
             cd["inventory"] = char_state.get("inventory", [])
@@ -1053,15 +1074,9 @@ class GameState:
         # Trim logs for save (30 game days)
         current_days = self.time.total_days
         cutoff_save = current_days - self.NPC_LOG_SAVE_DAYS
-        trimmed_npc_log = [
-            e for e in self.npc_full_log
-            if e.get("totalDays", 0) >= cutoff_save
-        ]
+        trimmed_npc_log = [e for e in self.npc_full_log if e.get("totalDays", 0) >= cutoff_save]
         cutoff_action = current_days - self.ACTION_LOG_SAVE_DAYS
-        trimmed_action_log = [
-            e for e in self.action_log
-            if e.get("totalDays", 0) >= cutoff_action
-        ]
+        trimmed_action_log = [e for e in self.action_log if e.get("totalDays", 0) >= cutoff_action]
 
         return {
             "time": self.time.to_dict(),
@@ -1124,7 +1139,10 @@ class GameState:
             if char_data.get("active", True) is False:
                 continue
             self.characters[char_id] = build_character_state(
-                char_data, self.template, self.clothing_defs, self.trait_defs,
+                char_data,
+                self.template,
+                self.clothing_defs,
+                self.trait_defs,
                 self.item_defs,
             )
 

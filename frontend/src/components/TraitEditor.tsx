@@ -88,13 +88,11 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
   const [effects, setEffects] = useState<TraitEffect[]>([...trait.effects]);
   const [defaultValue, setDefaultValue] = useState<number>(trait.defaultValue ?? 0);
   const [decayEnabled, setDecayEnabled] = useState<boolean>(!!trait.decay);
-  const [decay, setDecay] = useState<AbilityDecay>(
-    trait.decay ?? { amount: 0, type: "fixed", intervalMinutes: 60 }
-  );
+  const [decay, setDecay] = useState<AbilityDecay>(trait.decay ?? { amount: 0, type: "fixed", intervalMinutes: 60 });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const isReadOnly = false;  // all addon entities are editable
+  const isReadOnly = false; // all addon entities are editable
   const targetGroups = buildTargetOptions(definitions);
   const allTargets = targetGroups.flatMap((g) => g.options);
 
@@ -108,10 +106,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
   const addEffect = () => {
     const firstTarget = allTargets[0]?.value ?? "";
-    setEffects((prev) => [
-      ...prev,
-      { target: firstTarget, effect: "increase", magnitudeType: "fixed", value: 0 },
-    ]);
+    setEffects((prev) => [...prev, { target: firstTarget, effect: "increase", magnitudeType: "fixed", value: 0 }]);
   };
 
   const handleSave = async () => {
@@ -128,12 +123,14 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         data.decay = decayEnabled ? decay : null;
       }
       if (addonCrud) {
-        if (isNew) { await addonCrud.create(data); } else { await addonCrud.save(trait.id, data); }
+        if (isNew) {
+          await addonCrud.create(data);
+        } else {
+          await addonCrud.save(trait.id, data);
+        }
         return;
       }
-      const result = isNew
-        ? await createTraitDef(data)
-        : await saveTraitDef(trait.id, data);
+      const result = isNew ? await createTraitDef(data) : await saveTraitDef(trait.id, data);
       setMessage(result.success ? "已确定" : result.message);
       if (result.success && isNew) {
         // Return to list after creating
@@ -150,7 +147,11 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     if (!confirm(`确定要删除特质「${name || id}」吗？`)) return;
     setSaving(true);
     try {
-      if (addonCrud) { await addonCrud.delete(id); onBack(); return; }
+      if (addonCrud) {
+        await addonCrud.delete(id);
+        onBack();
+        return;
+      }
       const result = await deleteTraitDef(id);
       if (result.success) {
         onBack();
@@ -178,11 +179,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建特质" : "编辑特质"} ==
         </span>
-        {trait.source && (
-          <span style={{ color: T.accent, fontSize: "12px" }}>
-            来源: {trait.source}
-          </span>
-        )}
+        {trait.source && <span style={{ color: T.accent, fontSize: "12px" }}>来源: {trait.source}</span>}
       </div>
 
       {/* Basic info */}
@@ -190,12 +187,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         <div style={{ display: "flex", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>ID</div>
-            <PrefixedIdInput
-              prefix={addonPrefix}
-              value={id}
-              onChange={setId}
-              disabled={!isNew || isReadOnly}
-            />
+            <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>名称</div>
@@ -217,7 +209,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               disabled={isReadOnly}
             >
               {definitions.template.traits.map((t) => (
-                <option key={t.key} value={t.key}>{t.label}</option>
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
               ))}
             </select>
           </div>
@@ -237,7 +231,15 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       {category === "experience" && (
         <div style={{ marginBottom: "16px" }}>
           <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>经验设定</div>
-          <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", color: T.textDim, fontSize: "12px", lineHeight: 1.5 }}>
+          <div
+            style={{
+              borderLeft: `2px solid ${T.borderLight}`,
+              paddingLeft: "10px",
+              color: T.textDim,
+              fontSize: "12px",
+              lineHeight: 1.5,
+            }}
+          >
             经验会自动作用于全部角色，记录事件发生的次数。
             <br />
             通过行动效果中的「经验」类型来增加次数，首次触发时自动记录事件/地点/对象。
@@ -249,82 +251,95 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       {category === "ability" && (
         <div style={{ marginBottom: "16px" }}>
           <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>能力设定</div>
-          <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <div style={{ flex: 1 }}>
-              <div style={labelStyle}>默认经验值</div>
-              <input
-                type="number" min={0}
-                style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-                value={defaultValue}
-                onChange={(e) => setDefaultValue(Math.max(0, Number(e.target.value)))}
-                disabled={isReadOnly}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={labelStyle}>等级预览</div>
-              <div style={{ ...inputStyle, backgroundColor: "transparent", border: "none", paddingTop: "6px" }}>
-                {(() => {
-                  const grades = ["G", "F", "E", "D", "C", "B", "A", "S"];
-                  const level = Math.min(Math.floor(defaultValue / 1000), grades.length - 1);
-                  return grades[Math.max(0, level)];
-                })()}
+          <div
+            style={{
+              borderLeft: `2px solid ${T.borderLight}`,
+              paddingLeft: "10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+          >
+            <div style={{ display: "flex", gap: "12px" }}>
+              <div style={{ flex: 1 }}>
+                <div style={labelStyle}>默认经验值</div>
+                <input
+                  type="number"
+                  min={0}
+                  style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                  value={defaultValue}
+                  onChange={(e) => setDefaultValue(Math.max(0, Number(e.target.value)))}
+                  disabled={isReadOnly}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={labelStyle}>等级预览</div>
+                <div style={{ ...inputStyle, backgroundColor: "transparent", border: "none", paddingTop: "6px" }}>
+                  {(() => {
+                    const grades = ["G", "F", "E", "D", "C", "B", "A", "S"];
+                    const level = Math.min(Math.floor(defaultValue / 1000), grades.length - 1);
+                    return grades[Math.max(0, level)];
+                  })()}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Decay settings */}
-          <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={decayEnabled}
-                onChange={(e) => setDecayEnabled(e.target.checked)}
-                disabled={isReadOnly}
-              />
-              <span style={{ ...labelStyle, marginBottom: 0 }}>启用数值回落</span>
-            </label>
-            {decayEnabled && (
-              <div style={{ display: "flex", gap: "12px", marginTop: "6px" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={labelStyle}>每隔(游戏分钟)</div>
-                  <input
-                    type="number" min={5} step={5}
-                    style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-                    value={decay.intervalMinutes}
-                    onChange={(e) => setDecay({ ...decay, intervalMinutes: Math.max(5, Number(e.target.value)) })}
-                    disabled={isReadOnly}
-                  />
+            {/* Decay settings */}
+            <div>
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={decayEnabled}
+                  onChange={(e) => setDecayEnabled(e.target.checked)}
+                  disabled={isReadOnly}
+                />
+                <span style={{ ...labelStyle, marginBottom: 0 }}>启用数值回落</span>
+              </label>
+              {decayEnabled && (
+                <div style={{ display: "flex", gap: "12px", marginTop: "6px" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={labelStyle}>每隔(游戏分钟)</div>
+                    <input
+                      type="number"
+                      min={5}
+                      step={5}
+                      style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                      value={decay.intervalMinutes}
+                      onChange={(e) => setDecay({ ...decay, intervalMinutes: Math.max(5, Number(e.target.value)) })}
+                      disabled={isReadOnly}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={labelStyle}>下降类型</div>
+                    <select
+                      style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                      value={decay.type}
+                      onChange={(e) => setDecay({ ...decay, type: e.target.value as "fixed" | "percentage" })}
+                      disabled={isReadOnly}
+                    >
+                      <option value="fixed">固定值</option>
+                      <option value="percentage">百分比</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={labelStyle}>下降量{decay.type === "percentage" ? "(%)" : ""}</div>
+                    <input
+                      type="number"
+                      min={1}
+                      max={decay.type === "percentage" ? 100 : undefined}
+                      style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                      value={decay.amount}
+                      onChange={(e) => {
+                        let v = Math.max(1, Number(e.target.value));
+                        if (decay.type === "percentage") v = Math.min(100, v);
+                        setDecay({ ...decay, amount: v });
+                      }}
+                      disabled={isReadOnly}
+                    />
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={labelStyle}>下降类型</div>
-                  <select
-                    style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-                    value={decay.type}
-                    onChange={(e) => setDecay({ ...decay, type: e.target.value as "fixed" | "percentage" })}
-                    disabled={isReadOnly}
-                  >
-                    <option value="fixed">固定值</option>
-                    <option value="percentage">百分比</option>
-                  </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={labelStyle}>下降量{decay.type === "percentage" ? "(%)" : ""}</div>
-                  <input
-                    type="number" min={1} max={decay.type === "percentage" ? 100 : undefined}
-                    style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-                    value={decay.amount}
-                    onChange={(e) => {
-                      let v = Math.max(1, Number(e.target.value));
-                      if (decay.type === "percentage") v = Math.min(100, v);
-                      setDecay({ ...decay, amount: v });
-                    }}
-                    disabled={isReadOnly}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -332,7 +347,15 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       {/* Effects */}
       <div style={{ marginBottom: "16px" }}>
         <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>效果</div>
-        <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px", display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div
+          style={{
+            borderLeft: `2px solid ${T.borderLight}`,
+            paddingLeft: "10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+          }}
+        >
           {effects.map((eff, idx) => (
             <div
               key={idx}
@@ -355,7 +378,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 {targetGroups.map((g) => (
                   <optgroup key={g.label} label={g.label}>
                     {g.options.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
                     ))}
                   </optgroup>
                 ))}
@@ -489,9 +514,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           [返回列表]
         </button>
         {message && (
-          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>
-            {message}
-          </span>
+          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

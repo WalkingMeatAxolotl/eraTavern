@@ -24,36 +24,48 @@ function HelpTip({ text }: { text: string }) {
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
       style={{
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: "14px", height: "14px", borderRadius: "50%",
-        backgroundColor: T.bg3, color: T.textDim, fontSize: "10px",
-        cursor: "help", userSelect: "none", flexShrink: 0,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "14px",
+        height: "14px",
+        borderRadius: "50%",
+        backgroundColor: T.bg3,
+        color: T.textDim,
+        fontSize: "10px",
+        cursor: "help",
+        userSelect: "none",
+        flexShrink: 0,
       }}
     >
       ?
-      {show && ref.current && (() => {
-        const rect = ref.current!.getBoundingClientRect();
-        return (
-          <span style={{
-            position: "fixed",
-            left: rect.left + rect.width / 2,
-            top: rect.top - 4,
-            transform: "translate(-50%, -100%)",
-            padding: "4px 10px",
-            backgroundColor: T.bg3,
-            color: T.text,
-            border: `1px solid ${T.borderLight}`,
-            borderRadius: "3px",
-            fontSize: "11px",
-            whiteSpace: "nowrap",
-            maxWidth: "350px",
-            pointerEvents: "none",
-            zIndex: 1000,
-          }}>
-            {text}
-          </span>
-        );
-      })()}
+      {show &&
+        ref.current &&
+        (() => {
+          const rect = ref.current!.getBoundingClientRect();
+          return (
+            <span
+              style={{
+                position: "fixed",
+                left: rect.left + rect.width / 2,
+                top: rect.top - 4,
+                transform: "translate(-50%, -100%)",
+                padding: "4px 10px",
+                backgroundColor: T.bg3,
+                color: T.text,
+                border: `1px solid ${T.borderLight}`,
+                borderRadius: "3px",
+                fontSize: "11px",
+                whiteSpace: "nowrap",
+                maxWidth: "350px",
+                pointerEvents: "none",
+                zIndex: 1000,
+              }}
+            >
+              {text}
+            </span>
+          );
+        })()}
     </span>
   );
 }
@@ -84,47 +96,41 @@ export default function MapEditor({ mapId, onBack }: Props) {
     fetchMapsRaw().then(setAllMaps);
   }, [mapId]);
 
-  const updateGrid = useCallback(
-    (row: number, col: number, value: RawMapGrid) => {
-      setMapData((prev) => {
-        if (!prev) return prev;
-        const newGrid = prev.grid.map((r) => [...r]);
-        // Ensure row/col exists
-        while (newGrid.length <= row) newGrid.push(Array(prev.grid[0]?.length ?? 1).fill(""));
-        while (newGrid[row].length <= col) newGrid[row].push("");
-        newGrid[row][col] = value;
-        return { ...prev, grid: newGrid };
-      });
-    },
-    []
-  );
+  const updateGrid = useCallback((row: number, col: number, value: RawMapGrid) => {
+    setMapData((prev) => {
+      if (!prev) return prev;
+      const newGrid = prev.grid.map((r) => [...r]);
+      // Ensure row/col exists
+      while (newGrid.length <= row) newGrid.push(Array(prev.grid[0]?.length ?? 1).fill(""));
+      while (newGrid[row].length <= col) newGrid[row].push("");
+      newGrid[row][col] = value;
+      return { ...prev, grid: newGrid };
+    });
+  }, []);
 
   const findCellAt = useCallback(
     (row: number, col: number): MapCell | undefined => {
       return mapData?.cells.find((c) => c.row === row && c.col === col);
     },
-    [mapData?.cells]
+    [mapData?.cells],
   );
 
-  const removeCellAt = useCallback(
-    (row: number, col: number) => {
-      setMapData((prev) => {
-        if (!prev) return prev;
-        const cellAtPos = prev.cells.find((c) => c.row === row && c.col === col);
-        if (!cellAtPos) return prev;
-        const removedId = cellAtPos.id;
-        // Remove cell and clean connections referencing it
-        const newCells = prev.cells
-          .filter((c) => c.id !== removedId)
-          .map((c) => ({
-            ...c,
-            connections: c.connections.filter((conn) => conn.targetCell !== removedId),
-          }));
-        return { ...prev, cells: newCells };
-      });
-    },
-    []
-  );
+  const removeCellAt = useCallback((row: number, col: number) => {
+    setMapData((prev) => {
+      if (!prev) return prev;
+      const cellAtPos = prev.cells.find((c) => c.row === row && c.col === col);
+      if (!cellAtPos) return prev;
+      const removedId = cellAtPos.id;
+      // Remove cell and clean connections referencing it
+      const newCells = prev.cells
+        .filter((c) => c.id !== removedId)
+        .map((c) => ({
+          ...c,
+          connections: c.connections.filter((conn) => conn.targetCell !== removedId),
+        }));
+      return { ...prev, cells: newCells };
+    });
+  }, []);
 
   const handleGridClick = useCallback(
     (row: number, col: number) => {
@@ -170,7 +176,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
         }
       }
     },
-    [mapData, tool, findCellAt, removeCellAt, updateGrid]
+    [mapData, tool, findCellAt, removeCellAt, updateGrid],
   );
 
   const handleSave = async () => {
@@ -322,9 +328,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
     >
       {/* ── Header ── */}
       <div style={{ marginBottom: "2px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == 编辑: {mapData.name} ==
-        </span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 编辑: {mapData.name} ==</span>
       </div>
 
       {/* ── Section: 地图属性 ── */}
@@ -345,10 +349,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
           />
         </Row>
         <Row label="背景色">
-          <ColorPicker
-            value={mapData.defaultColor}
-            onChange={(c) => setMapData({ ...mapData, defaultColor: c })}
-          />
+          <ColorPicker value={mapData.defaultColor} onChange={(c) => setMapData({ ...mapData, defaultColor: c })} />
         </Row>
         <Row label="地图背景图">
           <BgImagePicker
@@ -373,7 +374,12 @@ export default function MapEditor({ mapId, onBack }: Props) {
               max={100}
               step={5}
               value={Math.round((mapData.mapOverlayOpacity ?? 0.7) * 100)}
-              onChange={(e) => setMapData({ ...mapData, mapOverlayOpacity: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) / 100 })}
+              onChange={(e) =>
+                setMapData({
+                  ...mapData,
+                  mapOverlayOpacity: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) / 100,
+                })
+              }
               style={{ ...inputStyle, width: "60px" }}
             />
             <span style={{ color: T.textDim, fontSize: "11px" }}>%</span>
@@ -387,16 +393,34 @@ export default function MapEditor({ mapId, onBack }: Props) {
         <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap", marginBottom: "6px" }}>
           <span style={{ color: T.textSub, minWidth: "46px" }}>尺寸:</span>
           <span style={{ color: T.textDim }}>行:</span>
-          <button onClick={addRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>[↑+]</button>
-          <button onClick={removeRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>[↑-]</button>
-          <button onClick={addRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>[↓+]</button>
-          <button onClick={removeRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>[↓-]</button>
+          <button onClick={addRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>
+            [↑+]
+          </button>
+          <button onClick={removeRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>
+            [↑-]
+          </button>
+          <button onClick={addRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>
+            [↓+]
+          </button>
+          <button onClick={removeRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>
+            [↓-]
+          </button>
           <span style={{ color: T.textDim }}>列:</span>
-          <button onClick={addColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>[←+]</button>
-          <button onClick={removeColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>[←-]</button>
-          <button onClick={addColRight} style={{ ...btnStyle, padding: "2px 8px" }}>[→+]</button>
-          <button onClick={removeColRight} style={{ ...btnStyle, padding: "2px 8px" }}>[→-]</button>
-          <span style={{ color: T.textDim }}>{rows} × {cols}</span>
+          <button onClick={addColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>
+            [←+]
+          </button>
+          <button onClick={removeColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>
+            [←-]
+          </button>
+          <button onClick={addColRight} style={{ ...btnStyle, padding: "2px 8px" }}>
+            [→+]
+          </button>
+          <button onClick={removeColRight} style={{ ...btnStyle, padding: "2px 8px" }}>
+            [→-]
+          </button>
+          <span style={{ color: T.textDim }}>
+            {rows} × {cols}
+          </span>
           <span style={{ flex: 1 }} />
           <button
             onClick={() => setShowConnections((v) => !v)}
@@ -431,7 +455,12 @@ export default function MapEditor({ mapId, onBack }: Props) {
                 <ToolButton
                   key={i}
                   label={p.text}
-                  active={typeof tool === "object" && "preset" in tool && tool.preset.text === p.text && tool.preset.color === p.color}
+                  active={
+                    typeof tool === "object" &&
+                    "preset" in tool &&
+                    tool.preset.text === p.text &&
+                    tool.preset.color === p.color
+                  }
                   onClick={() => setTool({ preset: p })}
                   color={p.color}
                 />
@@ -454,12 +483,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
 
         {showPresetEditor && (
           <div style={{ marginBottom: "6px" }}>
-            <PresetEditor
-              presets={presets}
-              inputStyle={inputStyle}
-              btnStyle={btnStyle}
-              onSaved={reloadPresets}
-            />
+            <PresetEditor presets={presets} inputStyle={inputStyle} btnStyle={btnStyle} onSaved={reloadPresets} />
           </div>
         )}
 
@@ -470,7 +494,9 @@ export default function MapEditor({ mapId, onBack }: Props) {
             border: `1px solid ${T.border}`,
             borderRadius: "3px",
             background: mapData.defaultColor,
-            backgroundImage: mapData.backgroundImage ? `url(/assets/backgrounds/${mapData.backgroundImage})` : undefined,
+            backgroundImage: mapData.backgroundImage
+              ? `url(/assets/backgrounds/${mapData.backgroundImage})`
+              : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
             padding: "4px",
@@ -519,17 +545,11 @@ export default function MapEditor({ mapId, onBack }: Props) {
                           : isCell
                             ? "rgba(26, 42, 26, 0.5)"
                             : "rgba(15, 15, 26, 0.35)",
-                        border: isCell
-                          ? "1px dashed #4CAF50"
-                          : `1px solid ${T.bg2}`,
+                        border: isCell ? "1px dashed #4CAF50" : `1px solid ${T.bg2}`,
                         cursor: "pointer",
                         boxSizing: "border-box",
                       }}
-                      title={
-                        isCell
-                          ? `区格 #${cellId} (${ri},${ci})`
-                          : `(${ri},${ci})`
-                      }
+                      title={isCell ? `区格 #${cellId} (${ri},${ci})` : `(${ri},${ci})`}
                     >
                       {text || "\u00A0"}
                     </div>
@@ -591,21 +611,20 @@ export default function MapEditor({ mapId, onBack }: Props) {
       )}
 
       {/* ── Footer actions ── */}
-      <div style={{
-        display: "flex", gap: "8px", alignItems: "center",
-        paddingTop: "8px", borderTop: `1px solid ${T.border}`, marginTop: "4px",
-      }}>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{ ...btnStyle, color: T.successDim }}
-        >
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          alignItems: "center",
+          paddingTop: "8px",
+          borderTop: `1px solid ${T.border}`,
+          marginTop: "4px",
+        }}
+      >
+        <button onClick={handleSave} disabled={saving} style={{ ...btnStyle, color: T.successDim }}>
           {saving ? "[提交中...]" : "[确定]"}
         </button>
-        <button
-          onClick={handleDelete}
-          style={{ ...btnStyle, color: T.danger }}
-        >
+        <button onClick={handleDelete} style={{ ...btnStyle, color: T.danger }}>
           [删除]
         </button>
         <button onClick={onBack} style={{ ...btnStyle, color: T.textSub }}>
@@ -621,13 +640,15 @@ export default function MapEditor({ mapId, onBack }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: "4px" }}>
-      <div style={{
-        color: T.accent,
-        borderBottom: `1px solid ${T.border}`,
-        marginBottom: "6px",
-        paddingBottom: "2px",
-        fontWeight: "bold",
-      }}>
+      <div
+        style={{
+          color: T.accent,
+          borderBottom: `1px solid ${T.border}`,
+          marginBottom: "6px",
+          paddingBottom: "2px",
+          fontWeight: "bold",
+        }}
+      >
         == {title} ==
       </div>
       {children}
@@ -648,13 +669,11 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function ConnectionOverlay({
   cells,
-  gridRef,
   gridRows,
   gridCols,
   selectedCellId,
 }: {
   cells: MapCell[];
-  gridRef: React.RefObject<HTMLDivElement | null>;
   gridRows: number;
   gridCols: number;
   selectedCellId: number | null;
@@ -679,8 +698,13 @@ function ConnectionOverlay({
 
   // Collect all connection lines (same-map only)
   const lines: {
-    x1: number; y1: number; x2: number; y2: number;
-    connType: "normal" | "blocked" | "senseOnly"; highlight: boolean; key: string;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    connType: "normal" | "blocked" | "senseOnly";
+    highlight: boolean;
+    key: string;
   }[] = [];
 
   for (const cell of cells) {
@@ -699,7 +723,10 @@ function ConnectionOverlay({
       const connType = conn.senseOnly ? "senseOnly" : conn.senseBlocked ? "blocked" : "normal";
 
       lines.push({
-        x1, y1, x2, y2,
+        x1,
+        y1,
+        x2,
+        y2,
         connType,
         highlight,
         key: `${cell.id}->${conn.targetCell}${conn.senseBlocked ? "s" : ""}${conn.senseOnly ? "o" : ""}`,
@@ -728,17 +755,19 @@ function ConnectionOverlay({
     const dy = y2 - y1;
     const len = Math.sqrt(dx * dx + dy * dy);
     if (len === 0) return { x1, y1, x2, y2 };
-    const nx = -dy / len * offset;
-    const ny = dx / len * offset;
+    const nx = (-dy / len) * offset;
+    const ny = (dx / len) * offset;
     return { x1: x1 + nx, y1: y1 + ny, x2: x2 + nx, y2: y2 + ny };
   };
 
   // Detect bidirectional pairs for offsetting
-  const edgeSet = new Set(lines.map((l) => {
-    const [from, rest] = l.key.split("->");
-    const to = rest?.replace(/[so]/g, "");
-    return `${from}->${to}`;
-  }));
+  const edgeSet = new Set(
+    lines.map((l) => {
+      const [from, rest] = l.key.split("->");
+      const to = rest?.replace(/[so]/g, "");
+      return `${from}->${to}`;
+    }),
+  );
   const pairSet = new Set<string>();
   for (const line of lines) {
     const [from, rest] = line.key.split("->");
@@ -845,16 +874,14 @@ function PresetEditor({
   onSaved: () => void;
 }) {
   const [editing, setEditing] = useState<DecorPreset[]>(
-    presets.filter((p) => p.source === "game").map((p) => ({ text: p.text, color: p.color }))
+    presets.filter((p) => p.source === "game").map((p) => ({ text: p.text, color: p.color })),
   );
   const [newText, setNewText] = useState("");
   const [newColor, setNewColor] = useState("#FFFFFF");
 
   // Sync when presets reload
   useEffect(() => {
-    setEditing(
-      presets.filter((p) => p.source === "game").map((p) => ({ text: p.text, color: p.color }))
-    );
+    setEditing(presets.filter((p) => p.source === "game").map((p) => ({ text: p.text, color: p.color })));
   }, [presets]);
 
   const handleSave = async () => {
@@ -883,14 +910,18 @@ function PresetEditor({
         gap: "6px",
       }}
     >
-      <div style={{ color: T.textSub, fontWeight: "bold", fontSize: "12px" }}>
-        装饰性区隔预设
-      </div>
+      <div style={{ color: T.textSub, fontWeight: "bold", fontSize: "12px" }}>装饰性区隔预设</div>
       {editing.map((p, i) => (
-        <div key={i} style={{
-          display: "flex", gap: "6px", alignItems: "center",
-          paddingLeft: "4px", borderLeft: `2px solid ${T.border}`,
-        }}>
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            gap: "6px",
+            alignItems: "center",
+            paddingLeft: "4px",
+            borderLeft: `2px solid ${T.border}`,
+          }}
+        >
           <span
             style={{
               display: "inline-flex",
@@ -935,10 +966,15 @@ function PresetEditor({
         </div>
       ))}
 
-      <div style={{
-        display: "flex", gap: "6px", alignItems: "center",
-        paddingTop: "4px", borderTop: `1px solid ${T.borderDim}`,
-      }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "6px",
+          alignItems: "center",
+          paddingTop: "4px",
+          borderTop: `1px solid ${T.borderDim}`,
+        }}
+      >
         <input
           value={newText}
           onChange={(e) => setNewText(e.target.value)}
@@ -946,10 +982,7 @@ function PresetEditor({
           style={{ ...inputStyle, width: "50px" }}
           maxLength={2}
         />
-        <ColorPicker
-          value={newColor}
-          onChange={(c) => setNewColor(c)}
-        />
+        <ColorPicker value={newColor} onChange={(c) => setNewColor(c)} />
         <button
           onClick={handleAdd}
           style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
@@ -1030,10 +1063,7 @@ function CellEditor({
         />
       </Row>
       <Row label="颜色">
-        <ColorPicker
-          value={displayColor}
-          onChange={(c) => onUpdateGridText(displayText, c)}
-        />
+        <ColorPicker value={displayColor} onChange={(c) => onUpdateGridText(displayText, c)} />
       </Row>
       <Row label="场景背景">
         <BgImagePicker
@@ -1050,16 +1080,37 @@ function CellEditor({
       <Row label="标签">
         <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
           {(cell.tags ?? []).map((tag, i) => (
-            <span key={i} style={{
-              display: "inline-flex", alignItems: "center", gap: "3px",
-              padding: "1px 6px", fontSize: "11px",
-              backgroundColor: "#1a3a2a", border: "1px solid #3a6a3a", borderRadius: "3px", color: "#8f8",
-            }}>
+            <span
+              key={i}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "3px",
+                padding: "1px 6px",
+                fontSize: "11px",
+                backgroundColor: "#1a3a2a",
+                border: "1px solid #3a6a3a",
+                borderRadius: "3px",
+                color: "#8f8",
+              }}
+            >
               {tag}
-              <button onClick={() => {
-                const next = (cell.tags ?? []).filter((_, j) => j !== i);
-                onChange({ ...cell, tags: next });
-              }} style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", padding: 0, fontSize: "11px" }}>×</button>
+              <button
+                onClick={() => {
+                  const next = (cell.tags ?? []).filter((_, j) => j !== i);
+                  onChange({ ...cell, tags: next });
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: T.danger,
+                  cursor: "pointer",
+                  padding: 0,
+                  fontSize: "11px",
+                }}
+              >
+                ×
+              </button>
             </span>
           ))}
           <input
@@ -1083,27 +1134,43 @@ function CellEditor({
         <div style={{ color: T.textSub, marginBottom: "4px", fontWeight: "bold" }}>连接</div>
         {cell.connections.map((conn, i) => {
           const targetMapId = conn.targetMap ?? currentMapId;
-          const targetMapCells =
-            targetMapId === currentMapId
-              ? mapData.cells
-              : [];
+          const targetMapCells = targetMapId === currentMapId ? mapData.cells : [];
           return (
-            <div key={i} style={{
-              display: "flex", gap: "6px", alignItems: "center", marginBottom: "4px",
-              paddingLeft: "4px", borderLeft: `2px solid ${T.border}`,
-            }}>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                gap: "6px",
+                alignItems: "center",
+                marginBottom: "4px",
+                paddingLeft: "4px",
+                borderLeft: `2px solid ${T.border}`,
+              }}
+            >
               <select
                 value={targetMapId}
                 onChange={(e) => {
                   const newMapId = e.target.value === currentMapId ? undefined : e.target.value;
                   const curTarget = cell.connections[i].targetCell;
-                  if (cell.connections.some((c, j) => j !== i && c.targetCell === curTarget && (c.targetMap ?? currentMapId) === (newMapId ?? currentMapId))) return;
+                  if (
+                    cell.connections.some(
+                      (c, j) =>
+                        j !== i &&
+                        c.targetCell === curTarget &&
+                        (c.targetMap ?? currentMapId) === (newMapId ?? currentMapId),
+                    )
+                  )
+                    return;
                   const newConns = [...cell.connections];
                   if (!newMapId) {
                     const { targetMap: _, senseBlocked: __, ...rest } = newConns[i];
                     newConns[i] = rest;
                   } else {
-                    newConns[i] = { ...newConns[i], targetMap: newMapId, senseBlocked: newConns[i].senseBlocked ?? true };
+                    newConns[i] = {
+                      ...newConns[i],
+                      targetMap: newMapId,
+                      senseBlocked: newConns[i].senseBlocked ?? true,
+                    };
                   }
                   onChange({ ...cell, connections: newConns });
                 }}
@@ -1126,7 +1193,15 @@ function CellEditor({
                   style={{ ...inputStyle, width: "130px" }}
                 >
                   {targetMapCells
-                    .filter((c) => c.id !== cell.id && (c.id === conn.targetCell || !cell.connections.some((cn, j) => j !== i && cn.targetCell === c.id && (cn.targetMap ?? currentMapId) === currentMapId)))
+                    .filter(
+                      (c) =>
+                        c.id !== cell.id &&
+                        (c.id === conn.targetCell ||
+                          !cell.connections.some(
+                            (cn, j) =>
+                              j !== i && cn.targetCell === c.id && (cn.targetMap ?? currentMapId) === currentMapId,
+                          )),
+                    )
                     .map((c) => (
                       <option key={c.id} value={c.id}>
                         #{c.id} {c.name ?? ""}
@@ -1140,7 +1215,10 @@ function CellEditor({
                   onChange={(e) => {
                     const newTarget = Number(e.target.value);
                     const newMap = cell.connections[i].targetMap;
-                    if (cell.connections.some((c, j) => j !== i && c.targetCell === newTarget && c.targetMap === newMap)) return;
+                    if (
+                      cell.connections.some((c, j) => j !== i && c.targetCell === newTarget && c.targetMap === newMap)
+                    )
+                      return;
                     const newConns = [...cell.connections];
                     newConns[i] = { ...newConns[i], targetCell: newTarget };
                     onChange({ ...cell, connections: newConns });
@@ -1184,7 +1262,11 @@ function CellEditor({
                   checked={!!conn.senseOnly}
                   onChange={(e) => {
                     const newConns = [...cell.connections];
-                    newConns[i] = { ...newConns[i], senseOnly: e.target.checked || undefined, senseBlocked: e.target.checked ? undefined : newConns[i].senseBlocked };
+                    newConns[i] = {
+                      ...newConns[i],
+                      senseOnly: e.target.checked || undefined,
+                      senseBlocked: e.target.checked ? undefined : newConns[i].senseBlocked,
+                    };
                     onChange({ ...cell, connections: newConns });
                   }}
                   style={{ margin: 0 }}
@@ -1208,8 +1290,9 @@ function CellEditor({
           <button
             onClick={() => {
               const connectedIds = new Set(cell.connections.filter((c) => !c.targetMap).map((c) => c.targetCell));
-              const target = mapData.cells.find((c) => c.id !== cell.id && !connectedIds.has(c.id))
-                ?? mapData.cells.find((c) => c.id !== cell.id);
+              const target =
+                mapData.cells.find((c) => c.id !== cell.id && !connectedIds.has(c.id)) ??
+                mapData.cells.find((c) => c.id !== cell.id);
               if (!target) return;
               onChange({
                 ...cell,
@@ -1223,8 +1306,9 @@ function CellEditor({
           <button
             onClick={() => {
               const connectedIds = new Set(cell.connections.filter((c) => !c.targetMap).map((c) => c.targetCell));
-              const target = mapData.cells.find((c) => c.id !== cell.id && !connectedIds.has(c.id))
-                ?? mapData.cells.find((c) => c.id !== cell.id);
+              const target =
+                mapData.cells.find((c) => c.id !== cell.id && !connectedIds.has(c.id)) ??
+                mapData.cells.find((c) => c.id !== cell.id);
               if (!target) return;
               const targetId = target.id;
               const updatedCurrent = {
@@ -1236,9 +1320,7 @@ function CellEditor({
                 onChange(updatedCurrent);
                 return;
               }
-              const hasReverse = targetCellData.connections.some(
-                (c) => c.targetCell === cell.id && !c.targetMap
-              );
+              const hasReverse = targetCellData.connections.some((c) => c.targetCell === cell.id && !c.targetMap);
               if (hasReverse) {
                 onChange(updatedCurrent);
               } else {
@@ -1257,14 +1339,16 @@ function CellEditor({
       </div>
 
       {/* Cell action bar */}
-      <div style={{
-        display: "flex", gap: "8px", marginTop: "6px",
-        paddingTop: "6px", borderTop: `1px solid ${T.borderDim}`,
-      }}>
-        <button
-          onClick={onDelete}
-          style={{ ...btnStyle, color: T.danger }}
-        >
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginTop: "6px",
+          paddingTop: "6px",
+          borderTop: `1px solid ${T.borderDim}`,
+        }}
+      >
+        <button onClick={onDelete} style={{ ...btnStyle, color: T.danger }}>
           [删除区格]
         </button>
         <button onClick={onClose} style={{ ...btnStyle, color: T.textSub }}>
@@ -1311,10 +1395,25 @@ function BgImagePicker({
         <img
           src={`/assets/backgrounds/${image}?t=${Date.now()}`}
           alt=""
-          style={{ height: "24px", width: "42px", objectFit: "cover", borderRadius: "2px", border: `1px solid ${T.border}` }}
+          style={{
+            height: "24px",
+            width: "42px",
+            objectFit: "cover",
+            borderRadius: "2px",
+            border: `1px solid ${T.border}`,
+          }}
         />
       )}
-      <span style={{ fontSize: "11px", color: T.textDim, maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <span
+        style={{
+          fontSize: "11px",
+          color: T.textDim,
+          maxWidth: "120px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
         {image ?? "无"}
       </span>
       <button onClick={() => fileRef.current?.click()} style={{ ...btn, padding: "2px 8px", color: T.accent }}>
@@ -1325,13 +1424,7 @@ function BgImagePicker({
           [清除]
         </button>
       )}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFile}
-        style={{ display: "none" }}
-      />
+      <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
     </div>
   );
 }

@@ -126,32 +126,52 @@ function formulaPreview(steps: VariableStep[], bidirectional?: boolean): string 
 
 function opSymbol(op: string): string {
   switch (op) {
-    case "add": return "+";
-    case "subtract": return "\u2212";
-    case "multiply": return "\u00D7";
-    case "divide": return "\u00F7";
-    case "min": return "min";
-    case "max": return "max";
-    case "floor": return "\u2265";
-    case "cap": return "\u2264";
-    default: return "?";
+    case "add":
+      return "+";
+    case "subtract":
+      return "\u2212";
+    case "multiply":
+      return "\u00D7";
+    case "divide":
+      return "\u00F7";
+    case "min":
+      return "min";
+    case "max":
+      return "max";
+    case "floor":
+      return "\u2265";
+    case "cap":
+      return "\u2264";
+    default:
+      return "?";
   }
 }
 
 function stepValueLabel(s: VariableStep, bidirectional?: boolean): string {
   const src = bidirectional ? (s.source === "target" ? "T:" : "S:") : "";
   switch (s.type) {
-    case "ability": return `${src}${s.key ?? "?"}`;
-    case "resource": return `${src}${s.key ?? "?"}${s.field === "max" ? ".max" : ""}`;
-    case "basicInfo": return `${src}${s.key ?? "?"}`;
-    case "traitCount": return `${src}count(${s.traitGroup ?? "?"})`;
-    case "hasTrait": return `${src}has(${s.traitId ?? "?"})`;
-    case "experience": return `${src}exp(${s.key ?? "?"})`;
-    case "itemCount": return `${src}item(${s.key ?? "?"})`;
-    case "favorability": return bidirectional && s.source === "target" ? "fav(T→S)" : "fav(S→T)";
-    case "constant": return String(s.value ?? 0);
-    case "variable": return `$${s.varId ?? "?"}`;
-    default: return "?";
+    case "ability":
+      return `${src}${s.key ?? "?"}`;
+    case "resource":
+      return `${src}${s.key ?? "?"}${s.field === "max" ? ".max" : ""}`;
+    case "basicInfo":
+      return `${src}${s.key ?? "?"}`;
+    case "traitCount":
+      return `${src}count(${s.traitGroup ?? "?"})`;
+    case "hasTrait":
+      return `${src}has(${s.traitId ?? "?"})`;
+    case "experience":
+      return `${src}exp(${s.key ?? "?"})`;
+    case "itemCount":
+      return `${src}item(${s.key ?? "?"})`;
+    case "favorability":
+      return bidirectional && s.source === "target" ? "fav(T→S)" : "fav(S→T)";
+    case "constant":
+      return String(s.value ?? 0);
+    case "variable":
+      return `$${s.varId ?? "?"}`;
+    default:
+      return "?";
   }
 }
 
@@ -207,9 +227,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         steps,
         source: variable.source,
       };
-      const result = isNew
-        ? await createVariableDef(data)
-        : await saveVariableDef(variable.id, data);
+      const result = isNew ? await createVariableDef(data) : await saveVariableDef(variable.id, data);
       if (result.success) {
         setMessage("已确定");
         if (isNew) setTimeout(onBack, 500);
@@ -297,9 +315,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
   };
 
   const toggleTag = (tag: string) => {
-    setTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   };
 
   return (
@@ -309,7 +325,9 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建变量" : `编辑: ${variable.name || variable.id}`} ==
         </span>
-        <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>[返回列表]</button>
+        <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
+          [返回列表]
+        </button>
       </div>
 
       {/* Basic fields */}
@@ -387,13 +405,15 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {/* Formula preview */}
-      <div style={{
-        marginBottom: "12px",
-        padding: "8px 12px",
-        backgroundColor: T.bg3,
-        border: `1px solid ${T.border}`,
-        borderRadius: "3px",
-      }}>
+      <div
+        style={{
+          marginBottom: "12px",
+          padding: "8px 12px",
+          backgroundColor: T.bg3,
+          border: `1px solid ${T.border}`,
+          borderRadius: "3px",
+        }}
+      >
         <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "4px" }}>公式预览</div>
         <div style={{ color: T.accent, fontSize: "13px", wordBreak: "break-all" }}>
           {formulaPreview(steps, isBidirectional)}
@@ -441,11 +461,13 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {/* Test panel */}
-      <div style={{
-        border: `1px solid ${T.border}`,
-        borderRadius: "3px",
-        overflow: "hidden",
-      }}>
+      <div
+        style={{
+          border: `1px solid ${T.border}`,
+          borderRadius: "3px",
+          overflow: "hidden",
+        }}
+      >
         <button
           onClick={() => {
             const next = !testOpen;
@@ -476,7 +498,9 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               >
                 {testCharacters.length === 0 && <option value="">无角色</option>}
                 {testCharacters.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.id})
+                  </option>
                 ))}
               </select>
               {isBidirectional && (
@@ -488,9 +512,13 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                     onChange={(e) => setTestTargetId(e.target.value)}
                   >
                     <option value="">（无）</option>
-                    {testCharacters.filter((c) => c.id !== testCharId).map((c) => (
-                      <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
-                    ))}
+                    {testCharacters
+                      .filter((c) => c.id !== testCharId)
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.id})
+                        </option>
+                      ))}
                   </select>
                 </>
               )}
@@ -503,19 +531,19 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               </button>
             </div>
 
-            {testError && (
-              <div style={{ color: T.danger, fontSize: "12px", marginBottom: "6px" }}>{testError}</div>
-            )}
+            {testError && <div style={{ color: T.danger, fontSize: "12px", marginBottom: "6px" }}>{testError}</div>}
 
             {testResult && (
               <div>
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "2px",
-                  marginBottom: "6px",
-                  fontSize: "12px",
-                }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                    marginBottom: "6px",
+                    fontSize: "12px",
+                  }}
+                >
                   {testResult.steps.map((s) => (
                     <div
                       key={s.index}
@@ -528,49 +556,62 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                       }}
                     >
                       <span style={{ color: T.textSub }}>
-                        {s.index === 0 ? "初始" : opSymbol(s.op)}
-                        {" "}
-                        <span style={{ color: T.textSub }}>{s.type}</span>
-                        {s.label && <span style={{ color: T.textDim }}> ({s.label})</span>}
-                        {" "}= <span style={{ color: T.text }}>{s.stepValue}</span>
+                        {s.index === 0 ? "初始" : opSymbol(s.op)} <span style={{ color: T.textSub }}>{s.type}</span>
+                        {s.label && <span style={{ color: T.textDim }}> ({s.label})</span>} ={" "}
+                        <span style={{ color: T.text }}>{s.stepValue}</span>
                       </span>
-                      <span style={{ color: T.accent }}>{"\u2192"} {s.accumulated}</span>
+                      <span style={{ color: T.accent }}>
+                        {"\u2192"} {s.accumulated}
+                      </span>
                     </div>
                   ))}
                 </div>
-                <div style={{
-                  padding: "4px 8px",
-                  backgroundColor: T.bg2,
-                  borderRadius: "3px",
-                  color: T.success,
-                  fontSize: "13px",
-                  fontWeight: "bold",
-                }}>
+                <div
+                  style={{
+                    padding: "4px 8px",
+                    backgroundColor: T.bg2,
+                    borderRadius: "3px",
+                    color: T.success,
+                    fontSize: "13px",
+                    fontWeight: "bold",
+                  }}
+                >
                   结果: {testResult.result}
                 </div>
               </div>
             )}
 
             {isNew && (
-              <div style={{ color: T.textSub, fontSize: "11px", marginTop: "4px" }}>
-                * 请先保存变量后才能测试
-              </div>
+              <div style={{ color: T.textSub, fontSize: "11px", marginTop: "4px" }}>* 请先保存变量后才能测试</div>
             )}
           </div>
         )}
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px", borderTop: `1px solid ${T.border}`, paddingTop: "12px" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          alignItems: "center",
+          marginTop: "12px",
+          borderTop: `1px solid ${T.border}`,
+          paddingTop: "12px",
+        }}
+      >
         {!isReadOnly && (
           <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
             [{saving ? "提交中..." : "确定"}]
           </button>
         )}
         {!isReadOnly && !isNew && (
-          <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>[删除]</button>
+          <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
+            [删除]
+          </button>
         )}
-        <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>[返回列表]</button>
+        <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
+          [返回列表]
+        </button>
         {message && (
           <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px", marginLeft: "8px" }}>
             {message}
@@ -598,7 +639,19 @@ interface StepRowProps {
   onMove: (from: number, to: number) => void;
 }
 
-function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables, currentVarId, definitions, onChange, onRemove, onMove }: StepRowProps) {
+function StepRow({
+  step,
+  index,
+  isFirst,
+  readOnly,
+  isBidirectional,
+  allVariables,
+  currentVarId,
+  definitions,
+  onChange,
+  onRemove,
+  onMove,
+}: StepRowProps) {
   const [dragOver, setDragOver] = useState(false);
 
   const rowStyle: React.CSSProperties = {
@@ -623,7 +676,6 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
   };
 
   // Available variables for dropdown (exclude self, single vars can't reference bidirectional)
-  const isBidir = step.type === "variable" ? false : false; // checked below
   const varOptions = allVariables.filter((v) => {
     if (v.id === currentVarId) return false;
     // Single-direction variables cannot reference bidirectional ones
@@ -656,15 +708,16 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
     >
       {/* Drag handle */}
       {!readOnly && (
-        <span style={{ cursor: "grab", color: T.textDim, fontSize: "14px", userSelect: "none", padding: "0 2px" }} title="拖拽排序">
+        <span
+          style={{ cursor: "grab", color: T.textDim, fontSize: "14px", userSelect: "none", padding: "0 2px" }}
+          title="拖拽排序"
+        >
           {"\u2807"}
         </span>
       )}
 
       {/* Step number */}
-      <span style={{ color: T.textDim, fontSize: "11px", minWidth: "18px", textAlign: "center" }}>
-        {index + 1}
-      </span>
+      <span style={{ color: T.textDim, fontSize: "11px", minWidth: "18px", textAlign: "center" }}>{index + 1}</span>
 
       {/* Operator */}
       {isFirst ? (
@@ -677,7 +730,9 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
           disabled={readOnly}
         >
           {OP_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
       )}
@@ -721,7 +776,9 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
         disabled={readOnly}
       >
         {TYPE_OPTIONS.map((t) => (
-          <option key={t.value} value={t.value}>{t.label}</option>
+          <option key={t.value} value={t.value}>
+            {t.label}
+          </option>
         ))}
       </select>
 
@@ -759,7 +816,9 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
           >
             <option value="">选择能力</option>
             {(definitions?.template.abilities ?? []).map((a) => (
-              <option key={a.key} value={a.key}>{a.label} ({a.key})</option>
+              <option key={a.key} value={a.key}>
+                {a.label} ({a.key})
+              </option>
             ))}
           </select>
         )}
@@ -775,7 +834,9 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
             {(definitions?.template.basicInfo ?? [])
               .filter((f) => f.type === "number")
               .map((f) => (
-                <option key={f.key} value={f.key}>{f.label} ({f.key})</option>
+                <option key={f.key} value={f.key}>
+                  {f.label} ({f.key})
+                </option>
               ))}
           </select>
         )}
@@ -790,7 +851,9 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
             >
               <option value="">选择资源</option>
               {(definitions?.template.resources ?? []).map((r) => (
-                <option key={r.key} value={r.key}>{r.label} ({r.key})</option>
+                <option key={r.key} value={r.key}>
+                  {r.label} ({r.key})
+                </option>
               ))}
             </select>
             <select
@@ -814,46 +877,55 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
           >
             <option value="">选择特质分类</option>
             {(definitions?.template.traits ?? []).map((t) => (
-              <option key={t.key} value={t.key}>{t.label} ({t.key})</option>
+              <option key={t.key} value={t.key}>
+                {t.label} ({t.key})
+              </option>
             ))}
           </select>
         )}
 
-        {step.type === "hasTrait" && (() => {
-          const templateTraits = definitions?.template.traits ?? [];
-          const traitDefs = definitions?.traitDefs ?? {};
-          // Filter trait defs by selected category
-          const traitsInCategory = step.traitGroup
-            ? Object.values(traitDefs).filter((d) => d.category === step.traitGroup)
-            : [];
-          return (
-            <>
-              <select
-                style={{ ...selectStyle, flex: 1 }}
-                value={step.traitGroup ?? ""}
-                onChange={(e) => onChange({ traitGroup: e.target.value, traitId: "" })}
-                disabled={readOnly}
-              >
-                <option value="">选择分类</option>
-                {templateTraits.map((t) => (
-                  <option key={t.key} value={t.key}>{t.label} ({t.key})</option>
-                ))}
-              </select>
-              <select
-                style={{ ...selectStyle, flex: 1 }}
-                value={step.traitId ?? ""}
-                onChange={(e) => onChange({ traitId: e.target.value })}
-                disabled={readOnly}
-              >
-                <option value="">选择特质</option>
-                {traitsInCategory.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name} ({d.id})</option>
-                ))}
-              </select>
-              <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }} title="拥有=1, 没有=0">1/0</span>
-            </>
-          );
-        })()}
+        {step.type === "hasTrait" &&
+          (() => {
+            const templateTraits = definitions?.template.traits ?? [];
+            const traitDefs = definitions?.traitDefs ?? {};
+            // Filter trait defs by selected category
+            const traitsInCategory = step.traitGroup
+              ? Object.values(traitDefs).filter((d) => d.category === step.traitGroup)
+              : [];
+            return (
+              <>
+                <select
+                  style={{ ...selectStyle, flex: 1 }}
+                  value={step.traitGroup ?? ""}
+                  onChange={(e) => onChange({ traitGroup: e.target.value, traitId: "" })}
+                  disabled={readOnly}
+                >
+                  <option value="">选择分类</option>
+                  {templateTraits.map((t) => (
+                    <option key={t.key} value={t.key}>
+                      {t.label} ({t.key})
+                    </option>
+                  ))}
+                </select>
+                <select
+                  style={{ ...selectStyle, flex: 1 }}
+                  value={step.traitId ?? ""}
+                  onChange={(e) => onChange({ traitId: e.target.value })}
+                  disabled={readOnly}
+                >
+                  <option value="">选择特质</option>
+                  {traitsInCategory.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name} ({d.id})
+                    </option>
+                  ))}
+                </select>
+                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }} title="拥有=1, 没有=0">
+                  1/0
+                </span>
+              </>
+            );
+          })()}
 
         {step.type === "experience" && (
           <select
@@ -864,7 +936,9 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
           >
             <option value="">选择经历</option>
             {(definitions?.template.experiences ?? []).map((ex) => (
-              <option key={ex.key} value={ex.key}>{ex.label} ({ex.key})</option>
+              <option key={ex.key} value={ex.key}>
+                {ex.label} ({ex.key})
+              </option>
             ))}
           </select>
         )}
@@ -878,7 +952,9 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
           >
             <option value="">选择物品</option>
             {Object.entries(definitions?.itemDefs ?? {}).map(([id, def]) => (
-              <option key={id} value={id}>{(def as any).name} ({id})</option>
+              <option key={id} value={id}>
+                {(def as any).name} ({id})
+              </option>
             ))}
           </select>
         )}
@@ -898,7 +974,9 @@ function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables
           >
             <option value="">选择变量</option>
             {varOptions.map((v) => (
-              <option key={v.id} value={v.id}>{v.name || v.id}</option>
+              <option key={v.id} value={v.id}>
+                {v.name || v.id}
+              </option>
             ))}
           </select>
         )}

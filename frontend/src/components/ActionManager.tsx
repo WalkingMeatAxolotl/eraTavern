@@ -10,14 +10,22 @@ const hoverStyles = `
   .am-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
 `;
 
-export default function ActionManager({ selectedAddon, onEditingChange }: { selectedAddon: string | null; onEditingChange?: (editing: boolean) => void }) {
+export default function ActionManager({
+  selectedAddon,
+  onEditingChange,
+}: {
+  selectedAddon: string | null;
+  onEditingChange?: (editing: boolean) => void;
+}) {
   const [actions, setActions] = useState<ActionDefinition[]>([]);
   const [defs, setDefs] = useState<GameDefinitions | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
 
-  useEffect(() => { onEditingChange?.(editingId !== null); }, [editingId, onEditingChange]);
+  useEffect(() => {
+    onEditingChange?.(editingId !== null);
+  }, [editingId, onEditingChange]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const loadData = useCallback(async () => {
@@ -53,7 +61,7 @@ export default function ActionManager({ selectedAddon, onEditingChange }: { sele
   };
 
   const readOnly = selectedAddon === null;
-  const filteredActions = selectedAddon ? actions.filter(a => a.source === selectedAddon) : actions;
+  const filteredActions = selectedAddon ? actions.filter((a) => a.source === selectedAddon) : actions;
 
   // Group actions by category
   const { catOrder, grouped } = useMemo(() => {
@@ -71,11 +79,7 @@ export default function ActionManager({ selectedAddon, onEditingChange }: { sele
   }, [filteredActions]);
 
   if (loading || !defs) {
-    return (
-      <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>
-        加载中...
-      </div>
-    );
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
   }
 
   // Editor view
@@ -96,12 +100,7 @@ export default function ActionManager({ selectedAddon, onEditingChange }: { sele
     };
 
     return (
-      <ActionEditor
-        action={isNew ? blank : (existing ?? blank)}
-        isNew={isNew}
-        definitions={defs}
-        onBack={handleBack}
-      />
+      <ActionEditor action={isNew ? blank : (existing ?? blank)} isNew={isNew} definitions={defs} onBack={handleBack} />
     );
   }
 
@@ -115,9 +114,7 @@ export default function ActionManager({ selectedAddon, onEditingChange }: { sele
     >
       <style>{hoverStyles}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == 行动列表 ==
-        </span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 行动列表 ==</span>
         {!readOnly && (
           <button
             className="am-action-btn"
@@ -162,7 +159,8 @@ export default function ActionManager({ selectedAddon, onEditingChange }: { sele
               >
                 <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
                   {isCollapsed ? "\u25B6" : "\u25BC"}
-                </span> {displayCat} ({catActions.length})
+                </span>{" "}
+                {displayCat} ({catActions.length})
               </button>
               {!isCollapsed && catActions.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
@@ -184,9 +182,7 @@ export default function ActionManager({ selectedAddon, onEditingChange }: { sele
                       }}
                     >
                       {action.name || action.id}
-                      {action.source && (
-                        <span style={{ color: T.textSub, fontSize: "11px" }}> [{action.source}]</span>
-                      )}
+                      {action.source && <span style={{ color: T.textSub, fontSize: "11px" }}> [{action.source}]</span>}
                     </button>
                   ))}
                 </div>
@@ -194,9 +190,7 @@ export default function ActionManager({ selectedAddon, onEditingChange }: { sele
             </div>
           );
         })}
-        {actions.length === 0 && (
-          <div style={{ color: T.textDim, padding: "8px" }}>暂无行动</div>
-        )}
+        {actions.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>暂无行动</div>}
       </div>
     </div>
   );

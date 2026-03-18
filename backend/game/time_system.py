@@ -9,10 +9,10 @@ SEASONS = ["春", "夏", "秋", "冬"]
 WEEKDAYS = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
 
 WEATHER_TABLE = {
-    "sunny":  {"name": "晴天", "icon": "☀"},
+    "sunny": {"name": "晴天", "icon": "☀"},
     "cloudy": {"name": "多云", "icon": "☁"},
-    "rainy":  {"name": "雨天", "icon": "🌧"},
-    "snowy":  {"name": "雪天", "icon": "❄"},
+    "rainy": {"name": "雨天", "icon": "🌧"},
+    "snowy": {"name": "雪天", "icon": "❄"},
 }
 
 SEASON_TEMP_BASE = {"春": 18, "夏": 30, "秋": 20, "冬": 5}
@@ -29,14 +29,18 @@ WEATHER_IDS = ["sunny", "cloudy", "rainy", "snowy"]
 
 class GameTime:
     def __init__(
-        self, year: int = 1, season: int = 0, day: int = 1,
-        hour: int = 6, minute: int = 0,
+        self,
+        year: int = 1,
+        season: int = 0,
+        day: int = 1,
+        hour: int = 6,
+        minute: int = 0,
     ) -> None:
         self.year = year
-        self.season = season   # 0-3
-        self.day = day         # 1-7
-        self.hour = hour       # 0-23
-        self.minute = minute   # 0-59
+        self.season = season  # 0-3
+        self.day = day  # 1-7
+        self.hour = hour  # 0-23
+        self.minute = minute  # 0-59
         self.weather = "sunny"
         self.temperature = SEASON_TEMP_BASE[SEASONS[season]] + random.randint(-3, 3)
 

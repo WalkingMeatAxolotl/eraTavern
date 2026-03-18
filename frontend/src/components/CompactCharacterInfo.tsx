@@ -12,7 +12,14 @@ interface Props {
   onToggleDetail: () => void;
 }
 
-export default function CompactCharacterInfo({ character, playerId, activeTab, onTabChange, detailOpen, onToggleDetail }: Props) {
+export default function CompactCharacterInfo({
+  character,
+  playerId,
+  activeTab,
+  onTabChange,
+  detailOpen,
+  onToggleDetail,
+}: Props) {
   const { basicInfo, resources, clothing, favorability } = character;
   const isPlayer = character.id === playerId;
   const favToPlayer = !isPlayer ? favorability?.find((f) => f.id === playerId)?.value : undefined;
@@ -106,19 +113,17 @@ export default function CompactCharacterInfo({ character, playerId, activeTab, o
       {activeTab === "clothing" && (
         <div>
           {clothing.map((slot) => (
-            <div key={slot.slot} style={{ fontSize: "12px", color: slot.occluded ? T.textFaint : slot.itemId ? T.text : T.textDim }}>
+            <div
+              key={slot.slot}
+              style={{ fontSize: "12px", color: slot.occluded ? T.textFaint : slot.itemId ? T.text : T.textDim }}
+            >
               {slot.slotLabel}:{" "}
               {slot.occluded ? (
                 "【？？？】"
               ) : slot.itemId ? (
                 <>
-                  [{slot.itemName}]
-                  {slot.state === "halfWorn" && (
-                    <span style={{ color: T.danger }}> (半穿)</span>
-                  )}
-                  {slot.state === "off" && (
-                    <span style={{ color: T.danger }}> (脱下)</span>
-                  )}
+                  [{slot.itemName}]{slot.state === "halfWorn" && <span style={{ color: T.danger }}> (半穿)</span>}
+                  {slot.state === "off" && <span style={{ color: T.danger }}> (脱下)</span>}
                 </>
               ) : (
                 "无"

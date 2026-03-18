@@ -130,7 +130,9 @@ class TestNoDecay:
 
     def test_non_ability_trait(self):
         chars = _make_chars(100)
-        trait_defs = {"race": {"id": "race", "category": "race", "decay": {"intervalMinutes": 10, "amount": 5, "type": "fixed"}}}
+        trait_defs = {
+            "race": {"id": "race", "category": "race", "decay": {"intervalMinutes": 10, "amount": 5, "type": "fixed"}}
+        }
         acc = {}
 
         apply_ability_decay(chars, trait_defs, 100, acc)
@@ -143,7 +145,6 @@ class TestGradeUpdate:
         trait_defs = _make_trait_defs(interval=10, amount=50, decay_type="fixed")
         acc = {}
 
-        old_grade = chars["char1"]["abilities"][0]["grade"]
         apply_ability_decay(chars, trait_defs, 10, acc)
         new_grade = chars["char1"]["abilities"][0]["grade"]
         # Grade should be recalculated (may or may not change depending on thresholds)

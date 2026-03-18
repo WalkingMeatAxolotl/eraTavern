@@ -97,10 +97,7 @@ const ERROR_MESSAGES: Record<string, string> = {
  * Translate a backend error code + params into a localized message.
  * Returns the translated string, or null if the code is unknown.
  */
-export function translateError(
-  error: string,
-  params?: Record<string, unknown>,
-): string | null {
+export function translateError(error: string, params?: Record<string, unknown>): string | null {
   const template = ERROR_MESSAGES[error];
   if (!template) return null;
 

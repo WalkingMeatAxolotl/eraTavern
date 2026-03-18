@@ -24,10 +24,12 @@ def list_providers() -> list[dict]:
         try:
             with open(f, "r", encoding="utf-8") as fh:
                 data = json.load(fh)
-            result.append({
-                "id": data.get("id", f.stem),
-                "name": data.get("name", f.stem),
-            })
+            result.append(
+                {
+                    "id": data.get("id", f.stem),
+                    "name": data.get("name", f.stem),
+                }
+            )
         except (json.JSONDecodeError, OSError):
             continue
     return result

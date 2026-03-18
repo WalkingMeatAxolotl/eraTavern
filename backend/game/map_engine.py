@@ -16,6 +16,7 @@ def load_map_collection(data_dir_or_addons: "Path | AddonDirs") -> dict:
     all_maps: dict[str, dict] = {}
 
     from .character import namespace_id
+
     for addon_id, addon_path in addon_dirs:
         collection_path = addon_path / "map_collection.json"
         if not collection_path.exists():
@@ -65,11 +66,13 @@ def compile_grid(map_data: dict) -> list[list[dict]]:
                 color = default_color
 
             cell_id = cell_positions.get((row_idx, col_idx))
-            compiled_row.append({
-                "text": text,
-                "color": color,
-                "cellId": cell_id,
-            })
+            compiled_row.append(
+                {
+                    "text": text,
+                    "color": color,
+                    "cellId": cell_id,
+                }
+            )
         compiled.append(compiled_row)
     return compiled
 
@@ -222,9 +225,9 @@ def build_sense_matrix(maps: dict[str, dict]) -> dict[tuple, dict[tuple, tuple]]
 def save_map_file(data_dir: Path, map_id: str, map_data: dict) -> None:
     """Save map JSON to file. Strips compiled_grid/cell_index/_source/_local_id before writing."""
     from .character import to_local_id
+
     local_id = map_data.get("_local_id", to_local_id(map_id))
-    clean = {k: v for k, v in map_data.items()
-             if k not in ("compiled_grid", "cell_index", "_source", "_local_id")}
+    clean = {k: v for k, v in map_data.items() if k not in ("compiled_grid", "cell_index", "_source", "_local_id")}
     clean["id"] = local_id
     map_path = data_dir / "maps" / f"{local_id.replace('-', '_')}.json"
     with open(map_path, "w", encoding="utf-8") as f:
@@ -333,9 +336,7 @@ def save_decor_presets(addon_dir: Path, presets: list[dict]) -> None:
         json.dump({"presets": clean}, f, ensure_ascii=False, indent=2)
 
 
-def get_connections(
-    maps: dict[str, dict], map_id: str, cell_id: int
-) -> list[dict[str, Any]]:
+def get_connections(maps: dict[str, dict], map_id: str, cell_id: int) -> list[dict[str, Any]]:
     """Get connection info for a cell, enriched with target names."""
     map_data = maps.get(map_id)
     if not map_data:

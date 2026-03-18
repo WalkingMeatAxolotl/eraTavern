@@ -36,7 +36,18 @@ import SettingsPage from "./components/SettingsPage";
 import FloatingActions from "./components/FloatingActions";
 import LLMPresetManager from "./components/LLMPresetManager";
 
-type NavPage = "characters" | "traits" | "clothing" | "items" | "actions" | "variables" | "events" | "maps" | "settings" | "llm" | "system";
+type NavPage =
+  | "characters"
+  | "traits"
+  | "clothing"
+  | "items"
+  | "actions"
+  | "variables"
+  | "events"
+  | "maps"
+  | "settings"
+  | "llm"
+  | "system";
 
 export default function App() {
   const [config, setConfig] = useState<AppConfig>({ maxWidth: 1200 });
@@ -66,27 +77,24 @@ export default function App() {
   const [sessionDirty, setSessionDirty] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
 
-  const [addonListKey, setAddonListKey] = useState(0);
+  const [addonListKey] = useState(0);
   const [selectedAddonTab, setSelectedAddonTab] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
 
   const esRef = useRef<EventSource | null>(null);
 
-  const player = gameState
-    ? Object.values(gameState.characters).find((c) => c.isPlayer) ?? null
-    : null;
+  const player = gameState ? (Object.values(gameState.characters).find((c) => c.isPlayer) ?? null) : null;
 
-  const charactersAtLocation = gameState && player
-    ? [
-        player,
-        ...Object.values(gameState.characters).filter(
-          (c) =>
-            !c.isPlayer &&
-            c.position.mapId === player.position.mapId &&
-            c.position.cellId === player.position.cellId
-        ),
-      ]
-    : [];
+  const charactersAtLocation =
+    gameState && player
+      ? [
+          player,
+          ...Object.values(gameState.characters).filter(
+            (c) =>
+              !c.isPlayer && c.position.mapId === player.position.mapId && c.position.cellId === player.position.cellId,
+          ),
+        ]
+      : [];
 
   // Load config on mount
   useEffect(() => {
@@ -131,7 +139,9 @@ export default function App() {
   // SSE — always connected
   useEffect(() => {
     esRef.current = connectSSE(handleStateUpdate, handleGameChanged, handleDirtyUpdate);
-    return () => { esRef.current?.close(); };
+    return () => {
+      esRef.current?.close();
+    };
   }, [handleStateUpdate, handleGameChanged, handleDirtyUpdate]);
 
   // Initial load
@@ -197,7 +207,7 @@ export default function App() {
         setLoading(false);
       }
     },
-    [player, loading, addResultMessages]
+    [player, loading, addResultMessages],
   );
 
   const handleLook = useCallback(
@@ -211,30 +221,45 @@ export default function App() {
         setLoading(false);
       }
     },
-    [player, loading, addResultMessages]
+    [player, loading, addResultMessages],
   );
 
-  const handleAction = useCallback(async (actionId: string, targetId?: string) => {
-    if (!player || loading) return;
-    setLoading(true);
-    try {
-      const result = await performAction(player.id, "configured", undefined, undefined, actionId, targetId);
-      addResultMessages(result, targetId);
-    } finally {
-      setLoading(false);
-    }
-  }, [player, loading, addResultMessages]);
+  const handleAction = useCallback(
+    async (actionId: string, targetId?: string) => {
+      if (!player || loading) return;
+      setLoading(true);
+      try {
+        const result = await performAction(player.id, "configured", undefined, undefined, actionId, targetId);
+        addResultMessages(result, targetId);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [player, loading, addResultMessages],
+  );
 
-  const handleChangeOutfit = useCallback(async (outfitId: string, selections: Record<string, string>) => {
-    if (!player || loading) return;
-    setLoading(true);
-    try {
-      const result = await performAction(player.id, "changeOutfit", undefined, undefined, undefined, undefined, outfitId, selections);
-      addResultMessages(result);
-    } finally {
-      setLoading(false);
-    }
-  }, [player, loading, addResultMessages]);
+  const handleChangeOutfit = useCallback(
+    async (outfitId: string, selections: Record<string, string>) => {
+      if (!player || loading) return;
+      setLoading(true);
+      try {
+        const result = await performAction(
+          player.id,
+          "changeOutfit",
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          outfitId,
+          selections,
+        );
+        addResultMessages(result);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [player, loading, addResultMessages],
+  );
 
   const handleCellClick = useCallback(
     (cellId: number) => {
@@ -243,7 +268,7 @@ export default function App() {
       const target = moveAction?.targets?.find((t) => t.targetCell === cellId);
       if (target) handleMove(target.targetCell, target.targetMap);
     },
-    [player, actions, handleMove]
+    [player, actions, handleMove],
   );
 
   // Called when world/addons change from sidebars
@@ -264,7 +289,7 @@ export default function App() {
 
   const hasAddonChanges = (() => {
     if (stagedAddons.length !== currentAddons.length) return true;
-    const currentMap = new Map(currentAddons.map(a => [a.id, a.version]));
+    const currentMap = new Map(currentAddons.map((a) => [a.id, a.version]));
     for (const staged of stagedAddons) {
       if (currentMap.get(staged.id) !== staged.version) return true;
     }
@@ -275,7 +300,16 @@ export default function App() {
 
   if (!gameState) {
     return (
-      <div style={{ color: T.text, fontFamily: T.fontMono, fontSize: `${T.fontBase}px`, padding: "20px", backgroundColor: T.bg0, minHeight: "100vh" }}>
+      <div
+        style={{
+          color: T.text,
+          fontFamily: T.fontMono,
+          fontSize: `${T.fontBase}px`,
+          padding: "20px",
+          backgroundColor: T.bg0,
+          minHeight: "100vh",
+        }}
+      >
         加载中...
       </div>
     );
@@ -294,49 +328,98 @@ export default function App() {
   };
 
   const renderNavPage = () => {
-    const addonTab = currentWorldId && !editorOpen ? (
-      <AddonTabBar
-        addons={stagedAddons}
-        selectedAddon={selectedAddonTab}
-        onSelect={setSelectedAddonTab}
-      />
-    ) : null;
+    const addonTab =
+      currentWorldId && !editorOpen ? (
+        <AddonTabBar addons={stagedAddons} selectedAddon={selectedAddonTab} onSelect={setSelectedAddonTab} />
+      ) : null;
 
-    if (navPage === "characters") return <>{addonTab}<CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "traits") return <>{addonTab}<TraitManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "clothing") return <>{addonTab}<ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "items") return <>{addonTab}<ItemManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "actions") return <>{addonTab}<ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "variables") return <>{addonTab}<VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "events") return <>{addonTab}<EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "lorebook") return <>{addonTab}<LorebookManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
-    if (navPage === "maps") return <>{addonTab}<MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} /></>;
+    if (navPage === "characters")
+      return (
+        <>
+          {addonTab}
+          <CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
+    if (navPage === "traits")
+      return (
+        <>
+          {addonTab}
+          <TraitManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
+    if (navPage === "clothing")
+      return (
+        <>
+          {addonTab}
+          <ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
+    if (navPage === "items")
+      return (
+        <>
+          {addonTab}
+          <ItemManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
+    if (navPage === "actions")
+      return (
+        <>
+          {addonTab}
+          <ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
+    if (navPage === "variables")
+      return (
+        <>
+          {addonTab}
+          <VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
+    if (navPage === "events")
+      return (
+        <>
+          {addonTab}
+          <EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
+    if (navPage === "lorebook")
+      return (
+        <>
+          {addonTab}
+          <LorebookManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
+    if (navPage === "maps")
+      return (
+        <>
+          {addonTab}
+          <MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+        </>
+      );
     if (navPage === "llm") return <LLMPresetManager key={sessionKey} debugEntries={debugEntries} />;
     if (navPage === "settings") {
-      return <SettingsPage
-        worldId={currentWorldId}
-        addonRefs={currentAddons}
-        onRestart={async () => {
-          if (!confirm("确认重新开始游戏？所有运行时状态将重置。")) return;
-          const result = await restartGame();
-          if (result.success) {
-            setNarrativeEntries([]);
-            setNavPage(null);
-          }
-        }}
-        onWorldChanged={handleWorldChanged}
-        settingsBtnStyle={settingsBtnStyle}
-      />;
+      return (
+        <SettingsPage
+          worldId={currentWorldId}
+          addonRefs={currentAddons}
+          onRestart={async () => {
+            if (!confirm("确认重新开始游戏？所有运行时状态将重置。")) return;
+            const result = await restartGame();
+            if (result.success) {
+              setNarrativeEntries([]);
+              setNavPage(null);
+            }
+          }}
+          onWorldChanged={handleWorldChanged}
+          settingsBtnStyle={settingsBtnStyle}
+        />
+      );
     }
     if (navPage === "system") {
       return (
         <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-            == 系统设置 ==
-          </span>
-          <div style={{ color: T.textDim, fontSize: "12px", marginTop: "8px" }}>
-            暂无系统设置项。
-          </div>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 系统设置 ==</span>
+          <div style={{ color: T.textDim, fontSize: "12px", marginTop: "8px" }}>暂无系统设置项。</div>
         </div>
       );
     }
@@ -350,7 +433,16 @@ export default function App() {
     // No player
     if (!player) {
       return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", color: T.textDim, fontSize: "14px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "60vh",
+            color: T.textDim,
+            fontSize: "14px",
+          }}
+        >
           没有活跃的玩家角色。请在 [人物] 页面中设置一个 Player。
         </div>
       );
@@ -359,47 +451,57 @@ export default function App() {
     // Game view
     return (
       <>
-        <div style={{ position: "relative", height: "50vh", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px" }}>
-          {topView === "location" ? (
-            playerMap && (
-              <LocationHeader
-                time={gameState.time}
-                map={playerMap}
-                cellId={player.position.cellId}
-                charactersAtLocation={charactersAtLocation}
-                selectedCharacterId={selectedCharacterId}
-                onSelectCharacter={setSelectedCharacterId}
-              />
-            )
-          ) : (
-            activeMap && (() => {
-              const mapViewCell = player.position.mapId === activeMapId
-                ? activeMap.cells.find((c) => c.id === player.position.cellId)
-                : undefined;
-              const mapViewBg = mapViewCell?.backgroundImage ?? activeMap.backgroundImage;
-              return (
-              <>
-                {mapViewBg && (
+        <div
+          style={{
+            position: "relative",
+            height: "50vh",
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "4px",
+          }}
+        >
+          {topView === "location"
+            ? playerMap && (
+                <LocationHeader
+                  time={gameState.time}
+                  map={playerMap}
+                  cellId={player.position.cellId}
+                  charactersAtLocation={charactersAtLocation}
+                  selectedCharacterId={selectedCharacterId}
+                  onSelectCharacter={setSelectedCharacterId}
+                />
+              )
+            : activeMap &&
+              (() => {
+                const mapViewCell =
+                  player.position.mapId === activeMapId
+                    ? activeMap.cells.find((c) => c.id === player.position.cellId)
+                    : undefined;
+                const mapViewBg = mapViewCell?.backgroundImage ?? activeMap.backgroundImage;
+                return (
                   <>
-                    <img
-                      src={`/assets/${mapViewBg}`}
-                      alt=""
-                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                    <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" }} />
+                    {mapViewBg && (
+                      <>
+                        <img
+                          src={`/assets/${mapViewBg}`}
+                          alt=""
+                          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                        <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" }} />
+                      </>
+                    )}
+                    <div style={{ position: "relative" }}>
+                      <MapView
+                        map={activeMap}
+                        playerCellId={player.position.mapId === activeMapId ? player.position.cellId : null}
+                        onCellClick={handleCellClick}
+                      />
+                    </div>
                   </>
-                )}
-                <div style={{ position: "relative" }}>
-                  <MapView
-                    map={activeMap}
-                    playerCellId={player.position.mapId === activeMapId ? player.position.cellId : null}
-                    onCellClick={handleCellClick}
-                  />
-                </div>
-              </>
-              );
-            })()
-          )}
+                );
+              })()}
         </div>
 
         <div style={{ display: "flex", gap: "8px", minHeight: "50vh" }}>
@@ -423,7 +525,10 @@ export default function App() {
               {Object.values(gameState.maps).map((m) => (
                 <button
                   key={m.id}
-                  onClick={() => { setTopView(m.id); setActiveMapId(m.id); }}
+                  onClick={() => {
+                    setTopView(m.id);
+                    setActiveMapId(m.id);
+                  }}
                   style={{
                     padding: "4px 12px",
                     backgroundColor: topView === m.id ? T.bg2 : T.bg1,
@@ -459,7 +564,16 @@ export default function App() {
             )}
           </div>
 
-          <div style={{ flex: "1 1 40%", display: "flex", flexDirection: "column", gap: "8px", minWidth: 0, overflowY: "auto" }}>
+          <div
+            style={{
+              flex: "1 1 40%",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              minWidth: 0,
+              overflowY: "auto",
+            }}
+          >
             <CompactCharacterInfo
               character={
                 selectedCharacterId && gameState.characters[selectedCharacterId]
@@ -479,11 +593,7 @@ export default function App() {
               onAction={handleAction}
               onChangeOutfit={handleChangeOutfit}
               disabled={loading}
-              selectedNpcId={
-                selectedCharacterId && selectedCharacterId !== player.id
-                  ? selectedCharacterId
-                  : null
-              }
+              selectedNpcId={selectedCharacterId && selectedCharacterId !== player.id ? selectedCharacterId : null}
             />
           </div>
         </div>
@@ -505,8 +615,11 @@ export default function App() {
     >
       <NavBar
         navPage={navPage}
-        onNavChange={(p) => { setNavPage(p); setEditorOpen(false); }}
-        worldName={currentWorldId ? (currentWorldName || currentWorldId) : ""}
+        onNavChange={(p) => {
+          setNavPage(p);
+          setEditorOpen(false);
+        }}
+        worldName={currentWorldId ? currentWorldName || currentWorldId : ""}
         maxWidth={config.maxWidth}
         leftOpen={leftOpen}
         rightOpen={rightOpen}

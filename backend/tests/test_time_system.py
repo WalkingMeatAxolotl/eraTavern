@@ -84,7 +84,6 @@ class TestAdvance:
         """When day changes, weather should be re-rolled (not necessarily sunny)."""
         random.seed(42)
         t = GameTime(hour=23, minute=0)
-        old_weather = t.weather
         t.advance(60)
         # After day change, _roll_weather was called; weather is one of the valid IDs
         assert t.weather in WEATHER_IDS
@@ -126,12 +125,15 @@ class TestTotalMinutes:
 class TestSeasonName:
     """Test season_name property for all 4 seasons."""
 
-    @pytest.mark.parametrize("season_idx, expected", [
-        (0, "春"),
-        (1, "夏"),
-        (2, "秋"),
-        (3, "冬"),
-    ])
+    @pytest.mark.parametrize(
+        "season_idx, expected",
+        [
+            (0, "春"),
+            (1, "夏"),
+            (2, "秋"),
+            (3, "冬"),
+        ],
+    )
     def test_season_name(self, season_idx, expected):
         t = GameTime(season=season_idx)
         assert t.season_name == expected
@@ -140,15 +142,18 @@ class TestSeasonName:
 class TestWeekday:
     """Test weekday property for day 1-7."""
 
-    @pytest.mark.parametrize("day, expected", [
-        (1, "星期一"),
-        (2, "星期二"),
-        (3, "星期三"),
-        (4, "星期四"),
-        (5, "星期五"),
-        (6, "星期六"),
-        (7, "星期日"),
-    ])
+    @pytest.mark.parametrize(
+        "day, expected",
+        [
+            (1, "星期一"),
+            (2, "星期二"),
+            (3, "星期三"),
+            (4, "星期四"),
+            (5, "星期五"),
+            (6, "星期六"),
+            (7, "星期日"),
+        ],
+    )
     def test_weekday(self, day, expected):
         t = GameTime(day=day)
         assert t.weekday == expected
@@ -161,9 +166,19 @@ class TestToDict:
         t = GameTime()
         d = t.to_dict()
         expected_keys = {
-            "year", "season", "seasonName", "day", "totalDays",
-            "weekday", "hour", "minute", "weatherId", "weatherName",
-            "weatherIcon", "temperature", "displayText",
+            "year",
+            "season",
+            "seasonName",
+            "day",
+            "totalDays",
+            "weekday",
+            "hour",
+            "minute",
+            "weatherId",
+            "weatherName",
+            "weatherIcon",
+            "temperature",
+            "displayText",
         }
         assert set(d.keys()) == expected_keys
 
@@ -173,9 +188,7 @@ class TestToDict:
         t.weather = "sunny"
         d = t.to_dict()
         w = WEATHER_TABLE["sunny"]
-        expected = (
-            f"春1日[1日目](星期一) 06:00 {w['icon']} ({w['name']}) {t.temperature}℃"
-        )
+        expected = f"春1日[1日目](星期一) 06:00 {w['icon']} ({w['name']}) {t.temperature}℃"
         assert d["displayText"] == expected
 
     def test_values_match_properties(self):

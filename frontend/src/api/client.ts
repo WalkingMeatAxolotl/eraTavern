@@ -1,4 +1,26 @@
-import type { GameState, GameAction, ActionResult, WorldInfo, GameDefinitions, RawCharacterData, TraitDefinition, TraitGroup, ClothingDefinition, ItemDefinition, ActionDefinition, VariableDefinition, EventDefinition, LorebookEntry, WorldVariableDefinition, DecorPreset, RawMapData, SessionInfo, OutfitType, LLMPreset, LLMProvider } from "../types/game";
+import type {
+  GameState,
+  GameAction,
+  ActionResult,
+  WorldInfo,
+  GameDefinitions,
+  RawCharacterData,
+  TraitDefinition,
+  TraitGroup,
+  ClothingDefinition,
+  ItemDefinition,
+  ActionDefinition,
+  VariableDefinition,
+  EventDefinition,
+  LorebookEntry,
+  WorldVariableDefinition,
+  DecorPreset,
+  RawMapData,
+  SessionInfo,
+  OutfitType,
+  LLMPreset,
+  LLMProvider,
+} from "../types/game";
 import { translateError } from "../i18n/messages";
 
 const API_BASE = "/api/game";
@@ -19,7 +41,9 @@ async function handleResponse<T>(res: Response): Promise<T> {
       } else if (body.message) {
         msg = body.message;
       }
-    } catch { /* body not JSON, use status */ }
+    } catch {
+      /* body not JSON, use status */
+    }
     throw new Error(msg);
   }
   const data = await res.json();
@@ -91,7 +115,11 @@ export async function updateSessionAddons(addons: { id: string; version: string 
   return handleResponse(res);
 }
 
-export async function createWorld(id: string, name: string, addons: { id: string; version: string }[]): Promise<{ success: boolean; message: string }> {
+export async function createWorld(
+  id: string,
+  name: string,
+  addons: { id: string; version: string }[],
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch("/api/worlds", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -132,7 +160,10 @@ export async function deleteWorld(worldId: string): Promise<{ success: boolean; 
   return handleResponse(res);
 }
 
-export async function updateWorldMeta(worldId: string, data: { name?: string; description?: string; cover?: string; llmPreset?: string }): Promise<{ success: boolean; message: string }> {
+export async function updateWorldMeta(
+  worldId: string,
+  data: { name?: string; description?: string; cover?: string; llmPreset?: string },
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/worlds/${encodeURIComponent(worldId)}/meta`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -141,7 +172,11 @@ export async function updateWorldMeta(worldId: string, data: { name?: string; de
   return handleResponse(res);
 }
 
-export async function updateAddonMeta(addonId: string, version: string, data: { name?: string; description?: string; author?: string; cover?: string; categories?: string[] }): Promise<{ success: boolean; message: string }> {
+export async function updateAddonMeta(
+  addonId: string,
+  version: string,
+  data: { name?: string; description?: string; author?: string; cover?: string; categories?: string[] },
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/${encodeURIComponent(version)}/meta`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -150,7 +185,13 @@ export async function updateAddonMeta(addonId: string, version: string, data: { 
   return handleResponse(res);
 }
 
-export async function createAddon(data: { id: string; name: string; version?: string; description?: string; author?: string }): Promise<{ success: boolean; message: string }> {
+export async function createAddon(data: {
+  id: string;
+  name: string;
+  version?: string;
+  description?: string;
+  author?: string;
+}): Promise<{ success: boolean; message: string }> {
   const res = await fetch("/api/addon", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -173,12 +214,12 @@ export async function deleteAddonAll(addonId: string): Promise<{ success: boolea
   return handleResponse(res);
 }
 
-
-
 /** @deprecated Use fetchWorlds */
 export const fetchGames = fetchWorlds;
 /** @deprecated Use selectWorld */
-export async function selectGame(gameId: string) { return selectWorld(gameId); }
+export async function selectGame(gameId: string) {
+  return selectWorld(gameId);
+}
 
 export async function restartGame(): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/restart`, { method: "POST" });
@@ -232,7 +273,10 @@ export async function fetchCharacterConfig(id: string): Promise<RawCharacterData
   return handleResponse(res);
 }
 
-export async function saveCharacterConfig(id: string, data: RawCharacterData): Promise<{ success: boolean; message: string }> {
+export async function saveCharacterConfig(
+  id: string,
+  data: RawCharacterData,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/characters/config/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -250,7 +294,10 @@ export async function createCharacter(data: RawCharacterData): Promise<{ success
   return handleResponse(res);
 }
 
-export async function patchCharacter(id: string, fields: Record<string, unknown>): Promise<{ success: boolean; message: string }> {
+export async function patchCharacter(
+  id: string,
+  fields: Record<string, unknown>,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/characters/config/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -274,7 +321,9 @@ export async function fetchTraitDefs(): Promise<TraitDefinition[]> {
   return data.traits;
 }
 
-export async function createTraitDef(data: Omit<TraitDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function createTraitDef(
+  data: Omit<TraitDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/traits`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -283,7 +332,10 @@ export async function createTraitDef(data: Omit<TraitDefinition, "source">): Pro
   return handleResponse(res);
 }
 
-export async function saveTraitDef(id: string, data: Omit<TraitDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveTraitDef(
+  id: string,
+  data: Omit<TraitDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/traits/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -307,7 +359,9 @@ export async function fetchClothingDefs(): Promise<ClothingDefinition[]> {
   return data.clothing;
 }
 
-export async function createClothingDef(data: Omit<ClothingDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function createClothingDef(
+  data: Omit<ClothingDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/clothing`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -316,7 +370,10 @@ export async function createClothingDef(data: Omit<ClothingDefinition, "source">
   return handleResponse(res);
 }
 
-export async function saveClothingDef(id: string, data: Omit<ClothingDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveClothingDef(
+  id: string,
+  data: Omit<ClothingDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/clothing/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -357,7 +414,9 @@ export async function fetchItemDefs(): Promise<ItemDefinition[]> {
   return data.items;
 }
 
-export async function createItemDef(data: Omit<ItemDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function createItemDef(
+  data: Omit<ItemDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/items`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -366,7 +425,10 @@ export async function createItemDef(data: Omit<ItemDefinition, "source">): Promi
   return handleResponse(res);
 }
 
-export async function saveItemDef(id: string, data: Omit<ItemDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveItemDef(
+  id: string,
+  data: Omit<ItemDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/items/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -414,7 +476,9 @@ export async function fetchActionDefs(): Promise<ActionDefinition[]> {
   return data.actions;
 }
 
-export async function createActionDef(data: Omit<ActionDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function createActionDef(
+  data: Omit<ActionDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/actions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -423,7 +487,10 @@ export async function createActionDef(data: Omit<ActionDefinition, "source">): P
   return handleResponse(res);
 }
 
-export async function saveActionDef(id: string, data: Omit<ActionDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveActionDef(
+  id: string,
+  data: Omit<ActionDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/actions/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -447,7 +514,9 @@ export async function fetchVariableDefs(): Promise<VariableDefinition[]> {
   return data.variables;
 }
 
-export async function createVariableDef(data: Omit<VariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function createVariableDef(
+  data: Omit<VariableDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/variables`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -456,7 +525,10 @@ export async function createVariableDef(data: Omit<VariableDefinition, "source">
   return handleResponse(res);
 }
 
-export async function saveVariableDef(id: string, data: Omit<VariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveVariableDef(
+  id: string,
+  data: Omit<VariableDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/variables/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -472,7 +544,16 @@ export async function deleteVariableDef(id: string): Promise<{ success: boolean;
   return handleResponse(res);
 }
 
-export async function evaluateVariable(id: string, characterId: string, targetId?: string): Promise<{ success: boolean; result?: number; steps?: Array<{ index: number; label: string; op: string; type: string; stepValue: number; accumulated: number }>; message?: string }> {
+export async function evaluateVariable(
+  id: string,
+  characterId: string,
+  targetId?: string,
+): Promise<{
+  success: boolean;
+  result?: number;
+  steps?: Array<{ index: number; label: string; op: string; type: string; stepValue: number; accumulated: number }>;
+  message?: string;
+}> {
   const body: Record<string, string> = { characterId };
   if (targetId) body.targetId = targetId;
   const res = await fetch(`${API_BASE}/variables/${id}/evaluate`, {
@@ -515,7 +596,9 @@ export async function fetchEventDefs(): Promise<EventDefinition[]> {
   return data.events;
 }
 
-export async function createEventDef(data: Omit<EventDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function createEventDef(
+  data: Omit<EventDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/events`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -524,7 +607,10 @@ export async function createEventDef(data: Omit<EventDefinition, "source">): Pro
   return handleResponse(res);
 }
 
-export async function saveEventDef(id: string, data: Omit<EventDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveEventDef(
+  id: string,
+  data: Omit<EventDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/events/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -548,7 +634,9 @@ export async function fetchLorebookEntries(): Promise<LorebookEntry[]> {
   return data.entries;
 }
 
-export async function createLorebookEntry(data: Omit<LorebookEntry, "source">): Promise<{ success: boolean; message: string }> {
+export async function createLorebookEntry(
+  data: Omit<LorebookEntry, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/lorebook`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -557,7 +645,10 @@ export async function createLorebookEntry(data: Omit<LorebookEntry, "source">): 
   return handleResponse(res);
 }
 
-export async function saveLorebookEntry(id: string, data: Omit<LorebookEntry, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveLorebookEntry(
+  id: string,
+  data: Omit<LorebookEntry, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/lorebook/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -581,7 +672,9 @@ export async function fetchWorldVariableDefs(): Promise<WorldVariableDefinition[
   return data.worldVariables;
 }
 
-export async function createWorldVariableDef(data: Omit<WorldVariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function createWorldVariableDef(
+  data: Omit<WorldVariableDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/world-variables`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -590,7 +683,10 @@ export async function createWorldVariableDef(data: Omit<WorldVariableDefinition,
   return handleResponse(res);
 }
 
-export async function saveWorldVariableDef(id: string, data: Omit<WorldVariableDefinition, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveWorldVariableDef(
+  id: string,
+  data: Omit<WorldVariableDefinition, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/world-variables/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -614,7 +710,9 @@ export async function fetchTraitGroups(): Promise<TraitGroup[]> {
   return data.traitGroups;
 }
 
-export async function createTraitGroup(data: Omit<TraitGroup, "source">): Promise<{ success: boolean; message: string }> {
+export async function createTraitGroup(
+  data: Omit<TraitGroup, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/trait-groups`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -623,7 +721,10 @@ export async function createTraitGroup(data: Omit<TraitGroup, "source">): Promis
   return handleResponse(res);
 }
 
-export async function saveTraitGroup(id: string, data: Omit<TraitGroup, "source">): Promise<{ success: boolean; message: string }> {
+export async function saveTraitGroup(
+  id: string,
+  data: Omit<TraitGroup, "source">,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/trait-groups/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -652,7 +753,12 @@ export async function fetchMapRaw(mapId: string): Promise<RawMapData> {
   return handleResponse(res);
 }
 
-export async function createMap(id: string, name: string, rows: number, cols: number): Promise<{ success: boolean; message: string }> {
+export async function createMap(
+  id: string,
+  name: string,
+  rows: number,
+  cols: number,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/maps`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -730,7 +836,10 @@ export async function fetchSaves(): Promise<SaveSlotMeta[]> {
   return data.saves ?? [];
 }
 
-export async function createSave(slotId: string, name: string): Promise<{ success: boolean; meta?: SaveSlotMeta; message?: string }> {
+export async function createSave(
+  slotId: string,
+  name: string,
+): Promise<{ success: boolean; meta?: SaveSlotMeta; message?: string }> {
   const res = await fetch("/api/saves", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -764,7 +873,11 @@ export async function renameSave(slotId: string, name: string): Promise<{ succes
 
 // --- Addon version management ---
 
-export async function forkAddon(addonId: string, baseVersion: string, worldId: string): Promise<{ success: boolean; newVersion?: string; message?: string }> {
+export async function forkAddon(
+  addonId: string,
+  baseVersion: string,
+  worldId: string,
+): Promise<{ success: boolean; newVersion?: string; message?: string }> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/fork`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -773,7 +886,12 @@ export async function forkAddon(addonId: string, baseVersion: string, worldId: s
   return handleResponse(res);
 }
 
-export async function copyAddonVersion(addonId: string, sourceVersion: string, newVersion: string, forkedFrom?: string): Promise<{ success: boolean; newVersion?: string; message?: string }> {
+export async function copyAddonVersion(
+  addonId: string,
+  sourceVersion: string,
+  newVersion: string,
+  forkedFrom?: string,
+): Promise<{ success: boolean; newVersion?: string; message?: string }> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/copy`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -787,7 +905,11 @@ export interface AddonVersionInfo {
   forkedFrom: string | null;
 }
 
-export async function overwriteAddonVersion(addonId: string, sourceVersion: string, targetVersion: string): Promise<{ success: boolean; message?: string }> {
+export async function overwriteAddonVersion(
+  addonId: string,
+  sourceVersion: string,
+  targetVersion: string,
+): Promise<{ success: boolean; message?: string }> {
   const res = await fetch(`/api/addon/${encodeURIComponent(addonId)}/overwrite`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -814,7 +936,7 @@ export async function fetchAddonVersionsDetail(addonId: string): Promise<AddonVe
 export function connectSSE(
   onStateUpdate: (state: GameState) => void,
   onGameChanged?: (state: GameState) => void,
-  onDirtyUpdate?: (dirty: boolean) => void
+  onDirtyUpdate?: (dirty: boolean) => void,
 ): EventSource {
   const es = new EventSource("/api/events");
 
@@ -881,7 +1003,11 @@ export async function fetchLLMModels(baseUrl: string, apiKey: string): Promise<s
   return data.models;
 }
 
-export async function testLLMConnection(api: { baseUrl: string; apiKey: string; model: string }): Promise<{ success: boolean; message: string }> {
+export async function testLLMConnection(api: {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+}): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${LLM_BASE}/test`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -904,7 +1030,10 @@ export async function fetchLLMProvider(id: string): Promise<LLMProvider> {
   return data.provider;
 }
 
-export async function saveLLMProvider(id: string, provider: LLMProvider): Promise<{ success: boolean; message: string }> {
+export async function saveLLMProvider(
+  id: string,
+  provider: LLMProvider,
+): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${LLM_BASE}/providers/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

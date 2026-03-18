@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../theme";
 import type { LorebookEntry } from "../types/game";
-import {
-  fetchLorebookEntries,
-  createLorebookEntry,
-  saveLorebookEntry,
-  deleteLorebookEntry,
-} from "../api/client";
+import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLorebookEntry } from "../api/client";
 
 const inputStyle: React.CSSProperties = {
   padding: "4px 8px",
@@ -76,11 +71,11 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
     }
   }, []);
 
-  useEffect(() => { loadEntries(); }, [loadEntries]);
+  useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
 
-  const filteredEntries = selectedAddon === "__all__"
-    ? entries
-    : entries.filter((e) => e.source === selectedAddon);
+  const filteredEntries = selectedAddon === "__all__" ? entries : entries.filter((e) => e.source === selectedAddon);
 
   const handleSelect = (e: LorebookEntry) => {
     const { source: _, ...rest } = e;
@@ -109,14 +104,18 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
   };
 
   const handleSave = async () => {
-    if (!entry.id.trim()) { setMessage("ID 不能为空"); return; }
-    if (!entry.name.trim()) { setMessage("名称不能为空"); return; }
+    if (!entry.id.trim()) {
+      setMessage("ID 不能为空");
+      return;
+    }
+    if (!entry.name.trim()) {
+      setMessage("名称不能为空");
+      return;
+    }
     setSaving(true);
     setMessage("");
     try {
-      const result = isNew
-        ? await createLorebookEntry(entry)
-        : await saveLorebookEntry(entry.id, entry);
+      const result = isNew ? await createLorebookEntry(entry) : await saveLorebookEntry(entry.id, entry);
       if (result.success) {
         setMessage("已保存");
         if (isNew) {
@@ -167,10 +166,10 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
     return (
       <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-            == 世界书 ==
-          </span>
-          <button onClick={handleNew} style={btnStyle(T.successDim)}>[+ 新建条目]</button>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 世界书 ==</span>
+          <button onClick={handleNew} style={btnStyle(T.successDim)}>
+            [+ 新建条目]
+          </button>
         </div>
 
         {filteredEntries.length === 0 && (
@@ -216,9 +215,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
           ))}
         </div>
 
-        {message && (
-          <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>
-        )}
+        {message && <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>}
       </div>
     );
   }
@@ -230,7 +227,9 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建条目" : "编辑条目"} ==
         </span>
-        <button onClick={handleBack} style={btnStyle(T.textSub)}>[返回列表]</button>
+        <button onClick={handleBack} style={btnStyle(T.textSub)}>
+          [返回列表]
+        </button>
       </div>
 
       {/* Basic info */}
@@ -314,7 +313,14 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
                 {kw}
                 <button
                   onClick={() => removeKeyword(kw)}
-                  style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "11px", padding: 0 }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: T.danger,
+                    cursor: "pointer",
+                    fontSize: "11px",
+                    padding: 0,
+                  }}
                 >
                   x
                 </button>
@@ -326,10 +332,17 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
               style={{ ...inputStyle, width: "200px" }}
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addKeyword(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addKeyword();
+                }
+              }}
               placeholder="输入关键词后回车"
             />
-            <button onClick={addKeyword} style={btnStyle(T.textSub)}>[添加]</button>
+            <button onClick={addKeyword} style={btnStyle(T.textSub)}>
+              [添加]
+            </button>
           </div>
           <div style={{ color: T.textDim, fontSize: "11px", marginTop: "4px" }}>
             当行动结果、角色名、地点名中包含任一关键词时，自动注入此条目内容
@@ -358,11 +371,11 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
             [删除]
           </button>
         )}
-        <button onClick={handleBack} style={btnStyle(T.textSub)}>[返回列表]</button>
+        <button onClick={handleBack} style={btnStyle(T.textSub)}>
+          [返回列表]
+        </button>
         {message && (
-          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>
-            {message}
-          </span>
+          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>
