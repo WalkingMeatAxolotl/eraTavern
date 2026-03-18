@@ -1566,7 +1566,7 @@ def _apply_effects(
 
             _apply_single_effect(
                 eff, etype, op, char, target_char, char_id, resolved_tid,
-                game_state, summaries
+                target_id, game_state, summaries
             )
 
     return summaries
@@ -1576,6 +1576,7 @@ def _apply_single_effect(
     eff: dict, etype: str, op: str,
     char: dict, target_char: dict,
     char_id: str, target_id: str,
+    action_target_id: str | None,
     game_state: Any, summaries: list[str],
 ) -> None:
     """Apply a single effect to a single target character."""
@@ -1660,7 +1661,7 @@ def _apply_single_effect(
             if val == "self":
                 return char_id
             if val == "{{targetId}}":
-                return target_id or ""
+                return action_target_id or ""
             if val == "{{player}}":
                 for cid, c in game_state.characters.items():
                     if c.get("isPlayer"):
@@ -1729,8 +1730,8 @@ def _apply_single_effect(
         trait_id = eff.get("traitId", "")
         # Resolve target for trait effects
         trait_target = eff.get("target", "self")
-        if trait_target == "{{targetId}}" and target_id:
-            t_char_data = game_state.character_data.get(target_id, {})
+        if trait_target == "{{targetId}}" and action_target_id:
+            t_char_data = game_state.character_data.get(action_target_id, {})
         elif trait_target == "self" or not trait_target:
             t_char_data = game_state.character_data.get(char_id, {})
         else:
@@ -1782,8 +1783,8 @@ def _apply_single_effect(
         import random
         # Resolve target (same pattern as clothing)
         out_target = eff.get("target", "self")
-        if out_target == "{{targetId}}" and target_id:
-            tgt_cd = game_state.character_data.get(target_id, {})
+        if out_target == "{{targetId}}" and action_target_id:
+            tgt_cd = game_state.character_data.get(action_target_id, {})
         elif out_target == "self" or not out_target:
             tgt_cd = game_state.character_data.get(char_id, {})
         else:
@@ -1873,8 +1874,8 @@ def _apply_single_effect(
             return
         # Resolve target character for position change
         pos_target = eff.get("target", "self")
-        if pos_target == "{{targetId}}" and target_id:
-            pos_char_id = target_id
+        if pos_target == "{{targetId}}" and action_target_id:
+            pos_char_id = action_target_id
         elif pos_target == "self" or not pos_target:
             pos_char_id = char_id
         else:
@@ -1931,7 +1932,7 @@ def _apply_single_effect(
                 eff_target = eff.get("target", "self")
                 if eff_target == "self" or (not eff_target):
                     # target_char is the actor → partner is the action target
-                    partner_id = target_id
+                    partner_id = action_target_id
                 elif eff_target == "{{targetId}}":
                     # target_char is the action target → partner is the actor
                     partner_id = char_id

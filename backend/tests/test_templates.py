@@ -187,7 +187,7 @@ class TestResolveTemplate:
     def test_weather_var(self, game_state):
         char = game_state.characters["player"]
         result = _resolve_template("{{weather}}", char, None, game_state, None, [])
-        assert result == "晴"
+        assert result == "sunny"
 
     def test_outcome_grade(self, game_state):
         char = game_state.characters["player"]

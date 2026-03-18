@@ -15,6 +15,7 @@ class MockTime:
         self.day = day
         self.hour = hour
         self.minute = minute
+        self._weather = "sunny"
 
     @property
     def season_name(self):
@@ -44,7 +45,11 @@ class MockTime:
 
     @property
     def weather(self):
-        return "晴"
+        return self._weather
+
+    @weather.setter
+    def weather(self, val):
+        self._weather = val
 
     def to_dict(self):
         return {
