@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..constants import EF, ClothingState, CostType, EffectOp, EffectType
 from .conditions import _compare
 from .modifiers import _calc_modifier_bonus
 
@@ -14,19 +15,19 @@ def _check_costs(costs: list[dict], char: dict) -> tuple[bool, str]:
         ctype = cost.get("type")
         amount = cost.get("amount", 0)
 
-        if ctype == "resource":
+        if ctype == CostType.RESOURCE:
             res = char.get("resources", {}).get(cost.get("key", ""))
             if not res or res["value"] < amount:
                 label = res["label"] if res else cost.get("key", "")
                 return False, f"{label}不足"
 
-        elif ctype == "basicInfo":
+        elif ctype == CostType.BASIC_INFO:
             info = char.get("basicInfo", {}).get(cost.get("key", ""))
             if not info or info["value"] < amount:
                 label = info["label"] if info else cost.get("key", "")
                 return False, f"{label}不足"
 
-        elif ctype == "item":
+        elif ctype == CostType.ITEM:
             item_id = cost.get("itemId", "")
             found = 0
             for inv in char.get("inventory", []):
@@ -45,17 +46,17 @@ def _apply_costs(costs: list[dict], char: dict) -> None:
         ctype = cost.get("type")
         amount = cost.get("amount", 0)
 
-        if ctype == "resource":
+        if ctype == CostType.RESOURCE:
             res = char.get("resources", {}).get(cost.get("key", ""))
             if res:
                 res["value"] = max(0, res["value"] - amount)
 
-        elif ctype == "basicInfo":
+        elif ctype == CostType.BASIC_INFO:
             info = char.get("basicInfo", {}).get(cost.get("key", ""))
             if info and info.get("type") == "number":
                 info["value"] -= amount
 
-        elif ctype == "item":
+        elif ctype == CostType.ITEM:
             item_id = cost.get("itemId", "")
             inventory = char.get("inventory", [])
             for inv in inventory:
@@ -210,35 +211,35 @@ def _apply_single_effect(
         eff.get("valueModifiers", []), char, game_state, char_id, target_id
     )
 
-    if etype == "resource":
+    if etype == EF.RESOURCE:
         key = eff.get("key", "")
         value = int((_resolve_effect_value(eff, char, game_state) + value_mod_add) * value_mod_mul)
         is_pct = eff.get("valuePercent", False)
         res = target_char.get("resources", {}).get(key)
         if res:
-            if op == "add":
+            if op == EffectOp.ADD:
                 delta = int(res["value"] * value / 100) if is_pct else value
                 res["value"] = min(res["max"], max(0, res["value"] + delta))
                 suffix = f"{'+' if value >= 0 else ''}{value}{'%' if is_pct else ''}"
                 summaries.append(f"{target_prefix}{res['label']} {suffix}")
-            elif op == "set":
+            elif op == EffectOp.SET:
                 new_val = int(res["max"] * value / 100) if is_pct else value
                 res["value"] = min(res["max"], max(0, new_val))
                 suffix = f"{value}{'%' if is_pct else ''}"
                 summaries.append(f"{target_prefix}{res['label']} → {suffix}")
 
-    elif etype == "ability":
+    elif etype == EF.ABILITY:
         key = eff.get("key", "")
         value = int((_resolve_effect_value(eff, char, game_state) + value_mod_add) * value_mod_mul)
         is_pct = eff.get("valuePercent", False)
         for ab in target_char.get("abilities", []):
             if ab["key"] == key:
-                if op == "add":
+                if op == EffectOp.ADD:
                     delta = int(ab["exp"] * value / 100) if is_pct else value
                     ab["exp"] = max(0, ab["exp"] + delta)
                     suffix = f"{'+' if value >= 0 else ''}{value}{'%' if is_pct else ''}"
                     summaries.append(f"{target_prefix}{ab['label']} {suffix}")
-                elif op == "set":
+                elif op == EffectOp.SET:
                     new_val = int(ab["exp"] * value / 100) if is_pct else value
                     ab["exp"] = max(0, new_val)
                     suffix = f"{value}{'%' if is_pct else ''}"
@@ -248,24 +249,24 @@ def _apply_single_effect(
                 ab["grade"] = exp_to_grade(ab["exp"])
                 break
 
-    elif etype == "basicInfo":
+    elif etype == EF.BASIC_INFO:
         key = eff.get("key", "")
         value = int((_resolve_effect_value(eff, char, game_state) + value_mod_add) * value_mod_mul)
         is_pct = eff.get("valuePercent", False)
         info = target_char.get("basicInfo", {}).get(key)
         if info and info.get("type") == "number":
-            if op == "add":
+            if op == EffectOp.ADD:
                 delta = int(info["value"] * value / 100) if is_pct else value
                 info["value"] += delta
                 suffix = f"{'+' if value >= 0 else ''}{value}{'%' if is_pct else ''}"
                 summaries.append(f"{target_prefix}{info['label']} {suffix}")
-            elif op == "set":
+            elif op == EffectOp.SET:
                 new_val = int(info["value"] * value / 100) if is_pct else value
                 info["value"] = new_val
                 suffix = f"{value}{'%' if is_pct else ''}"
                 summaries.append(f"{target_prefix}{info['label']} → {suffix}")
 
-    elif etype == "favorability":
+    elif etype == EF.FAVORABILITY:
         # Resolve favFrom (whose fav data) and favTo (towards whom)
         raw_from = eff.get("favFrom", "{{targetId}}")
         raw_to = eff.get("favTo", "self")
@@ -300,24 +301,24 @@ def _apply_single_effect(
         from_name_data = game_state.character_data.get(fav_from_id, {}).get("basicInfo", {}).get("name", "")
         to_name_data = game_state.character_data.get(fav_to_id, {}).get("basicInfo", {}).get("name", "")
         fav_label = f"[{from_name_data}→{to_name_data}] 好感度" if from_name_data and to_name_data else "好感度"
-        if op == "add":
+        if op == EffectOp.ADD:
             old = fav.get(fav_to_id, 0)
             delta = int(old * value / 100) if is_pct else value
             fav[fav_to_id] = old + delta
             suffix = f"{'+' if value >= 0 else ''}{value}{'%' if is_pct else ''}"
             summaries.append(f"{fav_label} {suffix}")
-        elif op == "set":
+        elif op == EffectOp.SET:
             old = fav.get(fav_to_id, 0)
             new_val = int(old * value / 100) if is_pct else value
             fav[fav_to_id] = new_val
             suffix = f"{value}{'%' if is_pct else ''}"
             summaries.append(f"{fav_label} → {suffix}")
 
-    elif etype == "item":
+    elif etype == EF.ITEM:
         item_id = eff.get("itemId", "")
         amount = eff.get("amount", 1)
         inventory = target_char.setdefault("inventory", [])
-        if op in ("add", "addItem"):
+        if op == EffectOp.ADD:
             found = False
             for inv in inventory:
                 if inv["itemId"] == item_id:
@@ -335,7 +336,7 @@ def _apply_single_effect(
                     }
                 )
             summaries.append(f"{target_prefix}获得 {item_id} x{amount}")
-        elif op in ("remove", "removeItem"):
+        elif op == EffectOp.REMOVE:
             for inv in inventory:
                 if inv["itemId"] == item_id:
                     inv["amount"] -= amount
@@ -344,7 +345,7 @@ def _apply_single_effect(
                     break
             summaries.append(f"{target_prefix}失去 {item_id} x{amount}")
 
-    elif etype == "trait":
+    elif etype == EF.TRAIT:
         key = eff.get("key", "")
         trait_id = eff.get("traitId", "")
         # Resolve target for trait effects
@@ -356,7 +357,7 @@ def _apply_single_effect(
         else:
             t_char_data = game_state.character_data.get(trait_target, {})
         traits = t_char_data.get("traits", {})
-        if op in ("add", "addTrait"):
+        if op == EffectOp.ADD:
             vals = traits.get(key, [])
             if trait_id not in vals:
                 # Check exclusive trait groups: remove other members
@@ -369,16 +370,16 @@ def _apply_single_effect(
                 vals.append(trait_id)
                 traits[key] = vals
             summaries.append(f"{target_prefix}获得特质 [{trait_id}]")
-        elif op in ("remove", "removeTrait"):
+        elif op == EffectOp.REMOVE:
             vals = traits.get(key, [])
             if trait_id in vals:
                 vals.remove(trait_id)
                 traits[key] = vals
             summaries.append(f"{target_prefix}失去特质 [{trait_id}]")
 
-    elif etype == "clothing":
+    elif etype == EF.CLOTHING:
         slot = eff.get("slot", "")
-        new_state = eff.get("state", "worn")
+        new_state = eff.get("state", ClothingState.WORN)
         # Resolve target for clothing effects
         cl_target = eff.get("target", "self")
         if cl_target == "{{targetId}}" and target_id:
@@ -389,16 +390,16 @@ def _apply_single_effect(
             cl_char_data = game_state.character_data.get(cl_target, {})
         cl = cl_char_data.get("clothing", {})
         if slot in cl:
-            if op == "remove" or new_state == "empty":
+            if op == EffectOp.REMOVE or new_state == ClothingState.EMPTY:
                 item_name = cl[slot].get("itemId", slot)
-                cl[slot] = {"itemId": None, "state": "off"}
+                cl[slot] = {"itemId": None, "state": ClothingState.OFF}
                 summaries.append(f"{target_prefix}移除 [{item_name}]")
             else:
                 cl[slot]["state"] = new_state
                 item_name = cl[slot].get("itemId", slot)
                 summaries.append(f"{target_prefix}[{item_name}] → {new_state}")
 
-    elif etype == "outfit":
+    elif etype == EF.OUTFIT:
         import random
 
         # Resolve target (same pattern as clothing)
@@ -412,7 +413,7 @@ def _apply_single_effect(
         if not tgt_cd:
             return
 
-        if op == "switch":
+        if op == EffectOp.SWITCH:
             outfit_key = eff.get("outfitKey", "")
             outfit = tgt_cd.get("outfits", {}).get(outfit_key)
             # Fallback: resolve from outfit type definition
@@ -432,20 +433,20 @@ def _apply_single_effect(
                 if slot in occupied:
                     continue
                 if not candidates:
-                    cl[slot] = {"itemId": None, "state": "off"}
+                    cl[slot] = {"itemId": None, "state": ClothingState.OFF}
                 else:
                     chosen = random.choice(candidates)
-                    cl[slot] = {"itemId": chosen, "state": "worn"}
+                    cl[slot] = {"itemId": chosen, "state": ClothingState.WORN}
                     # Multi-slot: occupy all slots this clothing uses
                     cdef = game_state.clothing_defs.get(chosen, {})
                     for extra_slot in cdef.get("slots", []):
                         if extra_slot != slot:
-                            cl[extra_slot] = {"itemId": chosen, "state": "worn"}
+                            cl[extra_slot] = {"itemId": chosen, "state": ClothingState.WORN}
                             occupied.add(extra_slot)
             tgt_cd["currentOutfit"] = outfit_key
             summaries.append(f"{target_prefix}换装 → {outfit_key}")
 
-        elif op == "add":
+        elif op == EffectOp.ADD:
             outfit_key = eff.get("outfitKey", "")
             slot = eff.get("slot", "")
             item_id = eff.get("itemId", "")
@@ -458,7 +459,7 @@ def _apply_single_effect(
                 slot_list.append(item_id)
             summaries.append(f"{target_prefix}预设[{outfit_key}] +{item_id}")
 
-        elif op == "remove":
+        elif op == EffectOp.REMOVE:
             outfit_key = eff.get("outfitKey")
             slot_filter = eff.get("slot")
             outfits = tgt_cd.get("outfits", {})
@@ -484,7 +485,7 @@ def _apply_single_effect(
             if removed:
                 summaries.append(f"{target_prefix}移除{len(removed)}件预设服装")
 
-    elif etype == "position":
+    elif etype == EffectType.POSITION:
         map_id = eff.get("mapId", "")
         cell_id = eff.get("cellId")
         if not map_id or cell_id is None:
@@ -515,19 +516,19 @@ def _apply_single_effect(
                     cell_name = cell_info.get("name", f"#{cell_id}")
             summaries.append(f"{target_prefix}移动到 {cell_name or map_id}")
 
-    elif etype == "worldVar":
+    elif etype == EF.WORLD_VAR:
         key = eff.get("key", "")
         value = eff.get("value", 0)
         wv = getattr(game_state, "world_variables", {})
-        if op == "set":
+        if op == EffectOp.SET:
             wv[key] = value
             summaries.append(f"世界变量 {key} → {value}")
-        elif op == "add":
+        elif op == EffectOp.ADD:
             wv[key] = wv.get(key, 0) + value
             summaries.append(f"世界变量 {key} {'+' if value >= 0 else ''}{value}")
         return
 
-    elif etype == "experience":
+    elif etype == EF.EXPERIENCE:
         key = eff.get("key", "")
         amount = eff.get("value", 1)
         for exp_entry in target_char.get("experiences", []):

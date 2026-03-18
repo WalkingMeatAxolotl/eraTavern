@@ -187,39 +187,31 @@ class TestItemEffects:
     def test_add_item_new(self, game_state):
         game_state.item_defs["potion"] = {"name": "药水", "tags": ["consumable"]}
         char = game_state.characters["player"]
-        effects = [{"type": "item", "op": "addItem", "itemId": "potion", "amount": 3, "target": "self"}]
+        effects = [{"type": "item", "op": "add", "itemId": "potion", "amount": 3, "target": "self"}]
         _apply_effects(effects, char, game_state, "player", None)
         assert len(char["inventory"]) == 1
         assert char["inventory"][0]["itemId"] == "potion"
         assert char["inventory"][0]["amount"] == 3
 
-    def test_add_item_new_op(self, game_state):
-        """New op name 'add' should work same as legacy 'addItem'."""
-        game_state.item_defs["gem"] = {"name": "宝石", "tags": []}
-        char = game_state.characters["player"]
-        effects = [{"type": "item", "op": "add", "itemId": "gem", "amount": 2, "target": "self"}]
-        _apply_effects(effects, char, game_state, "player", None)
-        assert any(i["itemId"] == "gem" and i["amount"] == 2 for i in char["inventory"])
-
     def test_add_item_stacks(self, game_state):
         char = game_state.characters["player"]
         char["inventory"] = [{"itemId": "potion", "name": "药水", "tags": [], "amount": 2}]
         game_state.item_defs["potion"] = {"name": "药水", "tags": []}
-        effects = [{"type": "item", "op": "addItem", "itemId": "potion", "amount": 5, "target": "self"}]
+        effects = [{"type": "item", "op": "add", "itemId": "potion", "amount": 5, "target": "self"}]
         _apply_effects(effects, char, game_state, "player", None)
         assert char["inventory"][0]["amount"] == 7
 
     def test_remove_item(self, game_state):
         char = game_state.characters["player"]
         char["inventory"] = [{"itemId": "potion", "name": "药水", "tags": [], "amount": 5}]
-        effects = [{"type": "item", "op": "removeItem", "itemId": "potion", "amount": 3, "target": "self"}]
+        effects = [{"type": "item", "op": "remove", "itemId": "potion", "amount": 3, "target": "self"}]
         _apply_effects(effects, char, game_state, "player", None)
         assert char["inventory"][0]["amount"] == 2
 
     def test_remove_item_deletes_at_zero(self, game_state):
         char = game_state.characters["player"]
         char["inventory"] = [{"itemId": "potion", "name": "药水", "tags": [], "amount": 1}]
-        effects = [{"type": "item", "op": "removeItem", "itemId": "potion", "amount": 1, "target": "self"}]
+        effects = [{"type": "item", "op": "remove", "itemId": "potion", "amount": 1, "target": "self"}]
         _apply_effects(effects, char, game_state, "player", None)
         assert len(char["inventory"]) == 0
 
@@ -231,22 +223,15 @@ class TestItemEffects:
 
 class TestTraitEffects:
     def test_add_trait(self, game_state):
-        effects = [{"type": "trait", "key": "bodyTrait", "traitId": "strong", "op": "addTrait", "target": "self"}]
+        effects = [{"type": "trait", "key": "bodyTrait", "traitId": "strong", "op": "add", "target": "self"}]
         char = game_state.characters["player"]
         _apply_effects(effects, char, game_state, "player", None)
         traits = game_state.character_data["player"]["traits"]
         assert "strong" in traits.get("bodyTrait", [])
 
-    def test_add_trait_new_op(self, game_state):
-        """New op name 'add' should work same as legacy 'addTrait'."""
-        effects = [{"type": "trait", "key": "bodyTrait", "traitId": "agile", "op": "add", "target": "self"}]
-        char = game_state.characters["player"]
-        _apply_effects(effects, char, game_state, "player", None)
-        assert "agile" in game_state.character_data["player"]["traits"].get("bodyTrait", [])
-
     def test_remove_trait(self, game_state):
         game_state.character_data["player"]["traits"]["bodyTrait"] = ["strong", "fast"]
-        effects = [{"type": "trait", "key": "bodyTrait", "traitId": "strong", "op": "removeTrait", "target": "self"}]
+        effects = [{"type": "trait", "key": "bodyTrait", "traitId": "strong", "op": "remove", "target": "self"}]
         char = game_state.characters["player"]
         _apply_effects(effects, char, game_state, "player", None)
         assert "strong" not in game_state.character_data["player"]["traits"]["bodyTrait"]

@@ -8,6 +8,8 @@ from typing import Any, Optional
 
 import httpx
 
+from .constants import ClothingState, EffectDirection, LorebookMode, MagnitudeType
+
 # ---------------------------------------------------------------------------
 # Variable helpers
 # ---------------------------------------------------------------------------
@@ -122,7 +124,7 @@ def _format_experiences(char: dict) -> str:
 def _format_clothing(char: dict) -> str:
     """Simple clothing list."""
     slots = char.get("clothing", [])
-    worn = [s for s in slots if s.get("itemName") and s.get("state") in ("worn", "halfWorn")]
+    worn = [s for s in slots if s.get("itemName") and s.get("state") in (ClothingState.WORN, ClothingState.HALF_WORN)]
     if not worn:
         return "无"
     parts = []
@@ -134,12 +136,12 @@ def _format_clothing(char: dict) -> str:
 def _format_clothing_detail(char: dict, clothing_defs: dict) -> str:
     """Clothing with state, description, effects, occlusion."""
     slots = char.get("clothing", [])
-    worn = [s for s in slots if s.get("itemName") and s.get("state") in ("worn", "halfWorn")]
+    worn = [s for s in slots if s.get("itemName") and s.get("state") in (ClothingState.WORN, ClothingState.HALF_WORN)]
     if not worn:
         return "无"
     lines = []
     for s in worn:
-        state_str = "(穿着)" if s["state"] == "worn" else "(半脱)"
+        state_str = "(穿着)" if s["state"] == ClothingState.WORN else "(半脱)"
         occ_str = "(遮挡)" if s.get("occluded") else ""
         line = f"{s['slotLabel']}: {s['itemName']}{state_str}{occ_str}"
         # Add description and effects from clothing_defs
@@ -160,11 +162,11 @@ def _format_effects(effects: list) -> str:
     parts = []
     for e in effects:
         target = e.get("target", "")
-        effect = e.get("effect", "increase")
-        mag_type = e.get("magnitudeType", "fixed")
+        effect = e.get("effect", EffectDirection.INCREASE)
+        mag_type = e.get("magnitudeType", MagnitudeType.FIXED)
         value = e.get("value", 0)
-        sign = "+" if effect == "increase" else "-"
-        suffix = "%" if mag_type == "percentage" else ""
+        sign = "+" if effect == EffectDirection.INCREASE else "-"
+        suffix = "%" if mag_type == MagnitudeType.PERCENTAGE else ""
         parts.append(f"{target}{sign}{value}{suffix}")
     return ", ".join(parts) if parts else ""
 
@@ -482,10 +484,10 @@ def _format_lorebook(game_state: Any, variables: dict[str, str]) -> str:
     for entry in lorebook_defs.values():
         if not entry.get("enabled", True):
             continue
-        mode = entry.get("insertMode", "keyword")
-        if mode == "always":
+        mode = entry.get("insertMode", LorebookMode.KEYWORD)
+        if mode == LorebookMode.ALWAYS:
             matched.append(entry)
-        elif mode == "keyword":
+        elif mode == LorebookMode.KEYWORD:
             keywords = entry.get("keywords", [])
             if any(kw.lower() in scan_text for kw in keywords if kw):
                 matched.append(entry)

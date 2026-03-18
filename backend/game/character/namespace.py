@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from ..constants import EffectType
+
 # Symbolic references in action conditions/effects — must NOT be namespaced
 SYMBOLIC_REFS = {"self", "{{targetId}}", "{{player}}", ""}
 
@@ -154,7 +156,7 @@ def _ns_eff(
         eff["traitId"] = resolve_ref(eff["traitId"], trait_defs, default_addon)
     if eff.get("itemId") and eff["itemId"] not in SYMBOLIC_REFS:
         # outfit effects reference clothing defs, not item defs
-        defs = clothing_defs if eff.get("type") == "outfit" else item_defs
+        defs = clothing_defs if eff.get("type") == EffectType.OUTFIT else item_defs
         eff["itemId"] = resolve_ref(eff["itemId"], defs, default_addon)
     target = eff.get("target", "")
     if target and target not in SYMBOLIC_REFS:

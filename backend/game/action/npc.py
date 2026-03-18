@@ -5,6 +5,7 @@ from __future__ import annotations
 import random
 from typing import Any
 
+from ..constants import ConditionType, CondTarget, TargetType
 from .conditions import _evaluate_conditions
 from .effects import _apply_costs, _apply_effects, _check_costs
 from .events import evaluate_events
@@ -19,9 +20,13 @@ def _split_conditions(conditions: list) -> tuple[dict | None, dict | None, list]
     npc_present_cond = None
     hard_conds: list[dict] = []
     for item in conditions:
-        if isinstance(item, dict) and item.get("type") == "location" and item.get("condTarget", "self") == "self":
+        if (
+            isinstance(item, dict)
+            and item.get("type") == ConditionType.LOCATION
+            and item.get("condTarget", CondTarget.SELF) == CondTarget.SELF
+        ):
             location_cond = item
-        elif isinstance(item, dict) and item.get("type") == "npcPresent":
+        elif isinstance(item, dict) and item.get("type") == ConditionType.NPC_PRESENT:
             npc_present_cond = item
         else:
             hard_conds.append(item)
@@ -263,7 +268,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
 
         for action_def in cell_actions:
             npc_weight = action_def.get("npcWeight", 0)
-            target_type = action_def.get("targetType", "none")
+            target_type = action_def.get("targetType", TargetType.NONE)
             _, npc_present_cond, hard_conds = _split_conditions(action_def.get("conditions", []))
 
             # Hard conditions (self-only check) — early exit
@@ -272,7 +277,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
             ):
                 continue
 
-            if target_type == "npc" or npc_present_cond:
+            if target_type == TargetType.NPC or npc_present_cond:
                 # === Per-Target evaluation ===
                 required_npc = npc_present_cond.get("npcId") if npc_present_cond else None
                 for tid, tchar in npcs_here:
@@ -319,7 +324,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
 
     for action_def in no_location_actions:
         npc_weight = action_def.get("npcWeight", 0)
-        target_type = action_def.get("targetType", "none")
+        target_type = action_def.get("targetType", TargetType.NONE)
         conditions = action_def.get("conditions", [])
         _, npc_present_cond, hard_conds = _split_conditions(conditions)
 
@@ -327,7 +332,7 @@ def _npc_choose_action(game_state: Any, npc_id: str) -> str | None:
         if hard_conds and not _evaluate_conditions(hard_conds, npc, game_state, char_id=npc_id, skip_target_conds=True):
             continue
 
-        if target_type == "npc" or npc_present_cond:
+        if target_type == TargetType.NPC or npc_present_cond:
             # Per-target: iterate all cells with NPCs
             required_npc = npc_present_cond.get("npcId") if npc_present_cond else None
             for cell_key, npcs_in_cell in cell_npcs.items():

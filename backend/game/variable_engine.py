@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from .constants import ArithOp, CondTarget, VarStepType
+
 
 def evaluate_variable(
     var_def: dict,
@@ -129,20 +131,20 @@ def _resolve_step_value(step: dict, ctx: _EvalContext) -> float:
     step_type = step.get("type", "")
 
     # Resolve which character to read from (source: "self" or "target")
-    source = step.get("source", "self")
-    char = ctx.target if source == "target" and ctx.target else ctx.char
+    source = step.get("source", CondTarget.SELF)
+    char = ctx.target if source == CondTarget.TARGET and ctx.target else ctx.char
 
-    if step_type == "constant":
+    if step_type == VarStepType.CONSTANT:
         return float(step.get("value", 0))
 
-    if step_type == "ability":
+    if step_type == VarStepType.ABILITY:
         key = step.get("key", "")
         for ab in char.get("abilities", []):
             if ab["key"] == key:
                 return float(ab.get("exp", 0))
         return 0.0
 
-    if step_type == "resource":
+    if step_type == VarStepType.RESOURCE:
         key = step.get("key", "")
         field = step.get("field", "value")
         res = char.get("resources", {}).get(key)
@@ -150,21 +152,21 @@ def _resolve_step_value(step: dict, ctx: _EvalContext) -> float:
             return float(res.get(field, 0))
         return 0.0
 
-    if step_type == "basicInfo":
+    if step_type == VarStepType.BASIC_INFO:
         key = step.get("key", "")
         info = char.get("basicInfo", {}).get(key)
         if info and info.get("type") == "number":
             return float(info.get("value", 0))
         return 0.0
 
-    if step_type == "traitCount":
+    if step_type == VarStepType.TRAIT_COUNT:
         trait_group = step.get("traitGroup", "")
         for t in char.get("traits", []):
             if t["key"] == trait_group:
                 return float(len(t.get("values", [])))
         return 0.0
 
-    if step_type == "hasTrait":
+    if step_type == VarStepType.HAS_TRAIT:
         trait_group = step.get("traitGroup", "")
         trait_id = step.get("traitId", "")
         for t in char.get("traits", []):
@@ -172,26 +174,26 @@ def _resolve_step_value(step: dict, ctx: _EvalContext) -> float:
                 return 1.0 if trait_id in t.get("values", []) else 0.0
         return 0.0
 
-    if step_type == "experience":
+    if step_type == VarStepType.EXPERIENCE:
         key = step.get("key", "")
         for exp in char.get("experiences", []):
             if exp["key"] == key:
                 return float(exp.get("count", 0))
         return 0.0
 
-    if step_type == "itemCount":
+    if step_type == VarStepType.ITEM_COUNT:
         key = step.get("key", "")
         for inv in char.get("inventory", []):
             if inv["itemId"] == key:
                 return float(inv.get("amount", 0))
         return 0.0
 
-    if step_type == "favorability":
+    if step_type == VarStepType.FAVORABILITY:
         # source character's favorability toward the other character
         # Use game_state.character_data for raw favorability dict
         if not ctx.game_state or not ctx.char_id:
             return 0.0
-        if source == "self":
+        if source == CondTarget.SELF:
             from_id = ctx.char_id
             to_id = ctx.target_id or ""
         else:  # source == "target"
@@ -202,7 +204,7 @@ def _resolve_step_value(step: dict, ctx: _EvalContext) -> float:
         char_data = ctx.game_state.character_data.get(from_id, {})
         return float(char_data.get("favorability", {}).get(to_id, 0))
 
-    if step_type == "variable":
+    if step_type == VarStepType.VARIABLE:
         var_id = step.get("varId", "")
         ref_def = ctx.var_defs.get(var_id)
         if not ref_def:
@@ -223,20 +225,20 @@ def _resolve_step_value(step: dict, ctx: _EvalContext) -> float:
 
 def _apply_op(op: str, result: float, value: float) -> float:
     """Apply an arithmetic operation."""
-    if op == "add":
+    if op == ArithOp.ADD:
         return result + value
-    if op == "subtract":
+    if op == ArithOp.SUBTRACT:
         return result - value
-    if op == "multiply":
+    if op == ArithOp.MULTIPLY:
         return result * value
-    if op == "divide":
+    if op == ArithOp.DIVIDE:
         return result / value if value != 0 else 0.0
-    if op == "min":
+    if op == ArithOp.MIN:
         return min(result, value)
-    if op == "max":
+    if op == ArithOp.MAX:
         return max(result, value)
-    if op in ("floor", "clamp_min"):
+    if op == ArithOp.FLOOR:
         return max(result, value)
-    if op in ("cap", "clamp_max"):
+    if op == ArithOp.CAP:
         return min(result, value)
     return result  # unknown op — no-op

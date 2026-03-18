@@ -30,22 +30,14 @@ class TestApplyOp:
         assert _apply_op("max", 10, 3) == 10
 
     def test_floor(self):
-        """floor = clamp_min: ensure result >= value."""
+        """floor: ensure result >= value."""
         assert _apply_op("floor", 5, 10) == 10
         assert _apply_op("floor", 15, 10) == 15
 
     def test_cap(self):
-        """cap = clamp_max: ensure result <= value."""
+        """cap: ensure result <= value."""
         assert _apply_op("cap", 15, 10) == 10
         assert _apply_op("cap", 5, 10) == 5
-
-    def test_legacy_clamp_min(self):
-        """Backward compat: clamp_min should still work."""
-        assert _apply_op("clamp_min", 5, 10) == 10
-
-    def test_legacy_clamp_max(self):
-        """Backward compat: clamp_max should still work."""
-        assert _apply_op("clamp_max", 15, 10) == 10
 
     def test_unknown_op(self):
         assert _apply_op("unknown", 10, 5) == 10

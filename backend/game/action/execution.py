@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..constants import ActionType, ClothingState, TargetType
 from .conditions import _check_costs, _evaluate_conditions
 from .effects import _apply_costs, _apply_effects
 from .helpers import _snap_to_tick
@@ -28,17 +29,17 @@ def get_available_actions(game_state: Any, character_id: str, target_id: str | N
     if connections:
         actions.append(
             {
-                "id": "move",
+                "id": ActionType.MOVE,
                 "name": "移动",
-                "type": "move",
+                "type": ActionType.MOVE,
                 "targets": connections,
             }
         )
         actions.append(
             {
-                "id": "look",
+                "id": ActionType.LOOK,
                 "name": "查看",
-                "type": "look",
+                "type": ActionType.LOOK,
                 "targets": connections,
             }
         )
@@ -90,9 +91,9 @@ def get_available_actions(game_state: Any, character_id: str, target_id: str | N
             )
         actions.append(
             {
-                "id": "changeOutfit",
+                "id": ActionType.CHANGE_OUTFIT,
                 "name": "换装",
-                "type": "changeOutfit",
+                "type": ActionType.CHANGE_OUTFIT,
                 "outfitTargets": outfit_targets,
             }
         )
@@ -117,9 +118,9 @@ def get_available_actions(game_state: Any, character_id: str, target_id: str | N
         entry: dict[str, Any] = {
             "id": action_def["id"],
             "name": action_def["name"],
-            "type": "configured",
+            "type": ActionType.CONFIGURED,
             "category": action_def.get("category", ""),
-            "targetType": action_def.get("targetType", "none"),
+            "targetType": action_def.get("targetType", TargetType.NONE),
             "enabled": enabled,
         }
         if not enabled:
@@ -133,13 +134,13 @@ def execute_action(game_state: Any, character_id: str, action: dict) -> dict:
     """Execute an action and return the result."""
     action_type = action.get("type")
 
-    if action_type == "move":
+    if action_type == ActionType.MOVE:
         return _execute_move(game_state, character_id, action)
 
-    if action_type == "look":
+    if action_type == ActionType.LOOK:
         return _execute_look(game_state, character_id, action)
 
-    if action_type == "changeOutfit":
+    if action_type == ActionType.CHANGE_OUTFIT:
         return _execute_change_outfit(game_state, character_id, action)
 
     # Configured action
@@ -347,15 +348,15 @@ def _execute_change_outfit(game_state: Any, character_id: str, action: dict) -> 
         if slot in occupied:
             continue
         if item_id:
-            cl[slot] = {"itemId": item_id, "state": "worn"}
+            cl[slot] = {"itemId": item_id, "state": ClothingState.WORN}
             # Multi-slot: occupy all slots this clothing uses
             cdef = game_state.clothing_defs.get(item_id, {})
             for extra_slot in cdef.get("slots", []):
                 if extra_slot != slot:
-                    cl[extra_slot] = {"itemId": item_id, "state": "worn"}
+                    cl[extra_slot] = {"itemId": item_id, "state": ClothingState.WORN}
                     occupied.add(extra_slot)
         else:
-            cl[slot] = {"itemId": None, "state": "off"}
+            cl[slot] = {"itemId": None, "state": ClothingState.OFF}
 
     char_data["currentOutfit"] = outfit_id
 

@@ -71,115 +71,85 @@ def _to_addon_dirs(data_dir_or_addons: Path | AddonDirs) -> AddonDirs:
     return data_dir_or_addons
 
 
-def load_trait_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
-    """Load trait definitions from addon directories (or legacy data_dir), merged by id.
+def _load_entity_defs(
+    data_dir_or_addons: Path | AddonDirs,
+    filename: str,
+    json_key: str,
+) -> dict[str, dict]:
+    """Generic entity loader: iterate addon dirs → read JSON → namespace → merge.
 
-    Keys and 'id' fields are namespaced as 'addon_id.local_id'.
+    Works for any entity type stored as a list under a JSON key.
     """
     result: dict[str, dict] = {}
     addon_dirs = _to_addon_dirs(data_dir_or_addons)
     for addon_id, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "traits.json")
-        for t in data.get("traits", []):
-            ns_id = namespace_id(addon_id, t["id"])
-            result[ns_id] = {**t, "id": ns_id, "_local_id": t["id"], "source": addon_id}
+        data = _load_json_safe(addon_path / filename)
+        entries = data.get(json_key, []) if isinstance(data, dict) else data
+        for entry in entries:
+            ns_id = namespace_id(addon_id, entry["id"])
+            result[ns_id] = {**entry, "id": ns_id, "_local_id": entry["id"], "source": addon_id}
     return result
+
+
+def _load_tag_pool(
+    data_dir_or_addons: Path | AddonDirs,
+    filename: str,
+    json_key: str = "tags",
+) -> list[str]:
+    """Generic tag pool loader: union of tags from all addon directories."""
+    tags: list[str] = []
+    addon_dirs = _to_addon_dirs(data_dir_or_addons)
+    for _, addon_path in addon_dirs:
+        data = _load_json_safe(addon_path / filename)
+        for tag in data.get(json_key, []):
+            if tag not in tags:
+                tags.append(tag)
+    return tags
+
+
+def load_trait_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
+    """Load trait definitions from addon directories, merged by id."""
+    return _load_entity_defs(data_dir_or_addons, "traits.json", "traits")
 
 
 def load_item_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     """Load item definitions from addon directories, merged by id."""
-    result: dict[str, dict] = {}
-    addon_dirs = _to_addon_dirs(data_dir_or_addons)
-    for addon_id, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "items.json")
-        for item in data.get("items", []):
-            ns_id = namespace_id(addon_id, item["id"])
-            result[ns_id] = {**item, "id": ns_id, "_local_id": item["id"], "source": addon_id}
-    return result
+    return _load_entity_defs(data_dir_or_addons, "items.json", "items")
 
 
 def load_item_tags(data_dir_or_addons: Path | AddonDirs) -> list[str]:
     """Load item tag pool from all addon directories (union)."""
-    tags: list[str] = []
-    addon_dirs = _to_addon_dirs(data_dir_or_addons)
-    for _, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "items.json")
-        for tag in data.get("tags", []):
-            if tag not in tags:
-                tags.append(tag)
-    return tags
+    return _load_tag_pool(data_dir_or_addons, "items.json")
 
 
 def load_action_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     """Load action definitions from addon directories, merged by id."""
-    result: dict[str, dict] = {}
-    addon_dirs = _to_addon_dirs(data_dir_or_addons)
-    for addon_id, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "actions.json")
-        for a in data.get("actions", []):
-            ns_id = namespace_id(addon_id, a["id"])
-            result[ns_id] = {**a, "id": ns_id, "_local_id": a["id"], "source": addon_id}
-    return result
+    return _load_entity_defs(data_dir_or_addons, "actions.json", "actions")
 
 
 def load_variable_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     """Load derived variable definitions from addon directories, merged by id."""
-    result: dict[str, dict] = {}
-    addon_dirs = _to_addon_dirs(data_dir_or_addons)
-    for addon_id, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "variables.json")
-        for v in data.get("variables", []):
-            ns_id = namespace_id(addon_id, v["id"])
-            result[ns_id] = {**v, "id": ns_id, "_local_id": v["id"], "source": addon_id}
-    return result
+    return _load_entity_defs(data_dir_or_addons, "variables.json", "variables")
 
 
 def load_variable_tags(data_dir_or_addons: Path | AddonDirs) -> list[str]:
     """Load variable tag pool from all addon directories (union)."""
-    tags: list[str] = []
-    addon_dirs = _to_addon_dirs(data_dir_or_addons)
-    for _, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "variables.json")
-        for tag in data.get("tags", []):
-            if tag not in tags:
-                tags.append(tag)
-    return tags
+    return _load_tag_pool(data_dir_or_addons, "variables.json")
 
 
 def load_event_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     """Load global event definitions from addon directories, merged by id."""
-    result: dict[str, dict] = {}
-    addon_dirs = _to_addon_dirs(data_dir_or_addons)
-    for addon_id, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "events.json")
-        for e in data.get("events", []):
-            ns_id = namespace_id(addon_id, e["id"])
-            result[ns_id] = {**e, "id": ns_id, "_local_id": e["id"], "source": addon_id}
-    return result
+    return _load_entity_defs(data_dir_or_addons, "events.json", "events")
 
 
 def load_world_variable_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     """Load world variable definitions from addon directories, merged by id."""
-    result: dict[str, dict] = {}
-    addon_dirs = _to_addon_dirs(data_dir_or_addons)
-    for addon_id, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "events.json")
-        for v in data.get("worldVariables", []):
-            ns_id = namespace_id(addon_id, v["id"])
-            result[ns_id] = {**v, "id": ns_id, "_local_id": v["id"], "source": addon_id}
-    return result
+    return _load_entity_defs(data_dir_or_addons, "events.json", "worldVariables")
 
 
 def load_lorebook_entries(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
     """Load lorebook entries from addon directories, merged by id."""
-    result: dict[str, dict] = {}
-    addon_dirs = _to_addon_dirs(data_dir_or_addons)
-    for addon_id, addon_path in addon_dirs:
-        data = _load_json_safe(addon_path / "lorebook.json")
-        for entry in data if isinstance(data, list) else data.get("entries", []):
-            ns_id = namespace_id(addon_id, entry["id"])
-            result[ns_id] = {**entry, "id": ns_id, "_local_id": entry["id"], "source": addon_id}
-    return result
+    return _load_entity_defs(data_dir_or_addons, "lorebook.json", "entries")
 
 
 def load_clothing_defs(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
@@ -270,68 +240,70 @@ def load_trait_groups(data_dir_or_addons: Path | AddonDirs) -> dict[str, dict]:
 # ---------------------------------------------------------------------------
 
 
-def save_item_defs_file(data_dir: Path, items_list: list[dict]) -> None:
-    """Write game-specific items.json (strips internal fields), preserving tags."""
+def _save_entity_defs_file(
+    data_dir: Path,
+    filename: str,
+    json_key: str,
+    entries_list: list[dict],
+    preserve_existing: bool = True,
+) -> None:
+    """Generic entity saver: strip internal fields, de-namespace IDs, write JSON.
+
+    If preserve_existing=True, merges into existing file (preserving sibling keys).
+    If False, writes only the entity list (or wraps in {json_key: [...]}).
+    """
     clean = []
-    for item in items_list:
+    for item in entries_list:
         entry = _strip_internal_fields(item)
         entry["id"] = to_local_id(entry["id"])
         clean.append(entry)
-    path = data_dir / "items.json"
-    existing = _load_json_safe(path)
-    existing["items"] = clean
+    path = data_dir / filename
+    if preserve_existing:
+        existing = _load_json_safe(path)
+        existing[json_key] = clean
+        out = existing
+    else:
+        out = {json_key: clean}
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+        json.dump(out, f, ensure_ascii=False, indent=2)
 
 
-def save_item_tags_file(data_dir: Path, tags: list[str]) -> None:
-    """Write item tag pool to game-specific items.json, preserving items."""
-    path = data_dir / "items.json"
+def _save_tag_pool_file(data_dir: Path, filename: str, tags: list[str]) -> None:
+    """Write a tag pool into an existing JSON file, preserving other keys."""
+    path = data_dir / filename
     existing = _load_json_safe(path)
     existing["tags"] = tags
     with open(path, "w", encoding="utf-8") as f:
         json.dump(existing, f, ensure_ascii=False, indent=2)
 
 
+def save_item_defs_file(data_dir: Path, items_list: list[dict]) -> None:
+    """Write game-specific items.json, preserving tags."""
+    _save_entity_defs_file(data_dir, "items.json", "items", items_list)
+
+
+def save_item_tags_file(data_dir: Path, tags: list[str]) -> None:
+    """Write item tag pool to items.json, preserving items."""
+    _save_tag_pool_file(data_dir, "items.json", tags)
+
+
 def save_variable_defs_file(data_dir: Path, variables_list: list[dict]) -> None:
-    """Write variables.json (strips internal fields), preserving tags."""
-    clean = []
-    for v in variables_list:
-        entry = _strip_internal_fields(v)
-        entry["id"] = to_local_id(entry["id"])
-        clean.append(entry)
-    path = data_dir / "variables.json"
-    existing = _load_json_safe(path)
-    existing["variables"] = clean
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+    """Write variables.json, preserving tags."""
+    _save_entity_defs_file(data_dir, "variables.json", "variables", variables_list)
 
 
 def save_variable_tags_file(data_dir: Path, tags: list[str]) -> None:
     """Write variable tag pool to variables.json, preserving variables."""
-    path = data_dir / "variables.json"
-    existing = _load_json_safe(path)
-    existing["tags"] = tags
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+    _save_tag_pool_file(data_dir, "variables.json", tags)
 
 
 def save_event_defs_file(data_dir: Path, events_list: list[dict]) -> None:
-    """Write events to events.json (strips internal fields), preserving worldVariables."""
-    clean = []
-    for e in events_list:
-        entry = _strip_internal_fields(e)
-        entry["id"] = to_local_id(entry["id"])
-        clean.append(entry)
-    path = data_dir / "events.json"
-    existing = _load_json_safe(path)
-    existing["events"] = clean
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+    """Write events to events.json, preserving worldVariables."""
+    _save_entity_defs_file(data_dir, "events.json", "events", events_list)
 
 
 def save_lorebook_file(data_dir: Path, entries_list: list[dict]) -> None:
-    """Write lorebook entries to lorebook.json (strips internal fields)."""
+    """Write lorebook entries to lorebook.json."""
     clean = []
     for e in entries_list:
         entry = _strip_internal_fields(e)
@@ -343,17 +315,8 @@ def save_lorebook_file(data_dir: Path, entries_list: list[dict]) -> None:
 
 
 def save_world_variable_defs_file(data_dir: Path, variables_list: list[dict]) -> None:
-    """Write world variables to events.json (strips internal fields), preserving events."""
-    clean = []
-    for v in variables_list:
-        entry = _strip_internal_fields(v)
-        entry["id"] = to_local_id(entry["id"])
-        clean.append(entry)
-    path = data_dir / "events.json"
-    existing = _load_json_safe(path)
-    existing["worldVariables"] = clean
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+    """Write world variables to events.json, preserving events."""
+    _save_entity_defs_file(data_dir, "events.json", "worldVariables", variables_list)
 
 
 def save_action_defs_file(data_dir: Path, actions_list: list[dict], addon_id: str = "") -> None:
@@ -415,17 +378,8 @@ def delete_character(data_dir: Path, char_id: str) -> bool:
 
 
 def save_trait_defs_file(data_dir: Path, traits_list: list[dict]) -> None:
-    """Write game-specific traits.json (strips internal fields), preserving traitGroups."""
-    clean = []
-    for t in traits_list:
-        entry = _strip_internal_fields(t)
-        entry["id"] = to_local_id(entry["id"])
-        clean.append(entry)
-    path = data_dir / "traits.json"
-    existing = _load_json_safe(path)
-    existing["traits"] = clean
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+    """Write game-specific traits.json, preserving traitGroups."""
+    _save_entity_defs_file(data_dir, "traits.json", "traits", traits_list)
 
 
 def save_trait_groups_file(data_dir: Path, groups_list: list[dict], addon_id: str = "") -> None:

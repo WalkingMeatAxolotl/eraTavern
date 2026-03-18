@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from ..constants import ClothingState, EffectDirection, MagnitudeType
 from .entity_loader import SLOT_LABELS
 from .namespace import to_local_id
 
@@ -31,13 +32,13 @@ def _collect_effects(
         mag_type = effect["magnitudeType"]  # "fixed" or "percentage"
         value = effect["value"]
 
-        if mag_type == "fixed":
-            delta = value if direction == "increase" else -value
+        if mag_type == MagnitudeType.FIXED:
+            delta = value if direction == EffectDirection.INCREASE else -value
             fixed_deltas[target] = fixed_deltas.get(target, 0) + delta
         else:
             # percentage: 90 -> x0.9, 120 -> x1.2
             multiplier = value / 100
-            if direction == "decrease":
+            if direction == EffectDirection.DECREASE:
                 multiplier = 2.0 - multiplier  # 120 decrease -> x0.8
             pct_multipliers.setdefault(target, []).append(multiplier)
 
@@ -125,7 +126,7 @@ def apply_clothing_effects(
             continue
         seen_items.add(item_id)
         wear_state = slot_data.get("state") if isinstance(slot_data, dict) else None
-        if wear_state not in ("worn", "halfWorn"):
+        if wear_state not in (ClothingState.WORN, ClothingState.HALF_WORN):
             continue  # "off" or missing state = no effect
         clothing_def = clothing_defs.get(item_id)
         if not clothing_def:
@@ -209,11 +210,11 @@ def apply_ability_decay(
             acc[ability_key] = acc[ability_key] % interval
 
             amount = decay.get("amount", 0)
-            decay_type = decay.get("type", "fixed")
+            decay_type = decay.get("type", MagnitudeType.FIXED)
             for ab in char_state.get("abilities", []):
                 if ab["key"] != ability_key:
                     continue
-                if decay_type == "percentage":
+                if decay_type == MagnitudeType.PERCENTAGE:
                     factor = (1.0 - amount / 100.0) ** intervals
                     ab["exp"] = max(0, int(ab["exp"] * factor))
                 else:
@@ -375,7 +376,7 @@ def build_clothing_state(char_clothing: dict, slots: list[str], clothing_defs: d
                 "occlusion": clothing_def.get("occlusion", []),
             }
             # Only worn (not halfWorn) items cause occlusion
-            if wear_state == "worn":
+            if wear_state == ClothingState.WORN:
                 for occ_slot in clothing_def.get("occlusion", []):
                     occluded_slots.add(occ_slot)
         else:

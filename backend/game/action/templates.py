@@ -6,6 +6,7 @@ import random
 import re
 from typing import Any
 
+from ..constants import ClothingState
 from .conditions import _evaluate_conditions
 
 
@@ -116,9 +117,9 @@ def _resolve_template(
                 if cl["slot"] == key:
                     if cl.get("itemId"):
                         name = cl.get("itemName", cl["itemId"])
-                        if cl.get("state") == "halfWorn":
+                        if cl.get("state") == ClothingState.HALF_WORN:
                             return f"{name}(半穿)"
-                        if cl.get("state") == "off":
+                        if cl.get("state") == ClothingState.OFF:
                             return f"{name}(脱下)"
                         return name
                     return "无"

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..constants import ClothingState, CompareOp, ConditionType, CondTarget, CostType
+
 
 def _contains_target_dep(item: dict) -> bool:
     """Check if a condition tree contains any condTarget='target' leaf."""
@@ -13,7 +15,7 @@ def _contains_target_dep(item: dict) -> bool:
         return any(_contains_target_dep(c) for c in item["or"])
     if "not" in item:
         return _contains_target_dep(item["not"])
-    return item.get("condTarget") == "target"
+    return item.get("condTarget") == CondTarget.TARGET
 
 
 def _evaluate_conditions(
@@ -65,8 +67,8 @@ def _evaluate_leaf(
     ctype = cond.get("type")
 
     # Resolve which character to check
-    cond_target = cond.get("condTarget", "self")
-    if cond_target == "target":
+    cond_target = cond.get("condTarget", CondTarget.SELF)
+    if cond_target == CondTarget.TARGET:
         if target_id:
             check_char = game_state.characters.get(target_id)
             if not check_char:
@@ -77,7 +79,7 @@ def _evaluate_leaf(
         check_char = char
 
     # Location/npcPresent always use actor's position
-    if ctype == "location":
+    if ctype == ConditionType.LOCATION:
         pos = char["position"]
         if cond.get("mapId") and pos["mapId"] != cond["mapId"]:
             return False
@@ -96,14 +98,14 @@ def _evaluate_leaf(
             return False
         return True
 
-    if ctype == "npcPresent":
+    if ctype == ConditionType.NPC_PRESENT:
         return _check_npc_present(char, game_state, cond.get("npcId"))
 
-    if ctype == "npcAbsent":
+    if ctype == ConditionType.NPC_ABSENT:
         return not _check_npc_present(char, game_state, cond.get("npcId"))
 
     # Time is global, not character-specific
-    if ctype == "time":
+    if ctype == ConditionType.TIME:
         time = game_state.time
         hour_min = cond.get("hourMin")
         hour_max = cond.get("hourMax")
@@ -123,29 +125,29 @@ def _evaluate_leaf(
         return True
 
     # All other conditions use check_char (actor or target based on condTarget)
-    if ctype == "resource":
+    if ctype == ConditionType.RESOURCE:
         res = check_char.get("resources", {}).get(cond.get("key", ""))
         if not res:
             return False
         return _compare(res["value"], cond.get("op", ">="), cond.get("value", 0))
 
-    if ctype == "ability":
+    if ctype == ConditionType.ABILITY:
         for ab in check_char.get("abilities", []):
             if ab["key"] == cond.get("key"):
                 return _compare(ab["exp"], cond.get("op", ">="), cond.get("value", 0))
         return False
 
-    if ctype == "basicInfo":
+    if ctype == ConditionType.BASIC_INFO:
         info = check_char.get("basicInfo", {}).get(cond.get("key", ""))
         if not info or info.get("type") != "number":
             return False
         return _compare(info["value"], cond.get("op", ">="), cond.get("value", 0))
 
-    if ctype == "trait":
+    if ctype == ConditionType.TRAIT:
         key = cond.get("key", "")
         trait_id = cond.get("traitId", "")
         # Use character_data for raw trait IDs (display state has resolved names)
-        check_char_id = char_id if cond.get("condTarget", "self") == "self" else (target_id or "")
+        check_char_id = char_id if cond.get("condTarget", CondTarget.SELF) == CondTarget.SELF else (target_id or "")
         raw_traits = game_state.character_data.get(check_char_id, {}).get("traits", {})
         if isinstance(raw_traits, dict):
             return trait_id in raw_traits.get(key, [])
@@ -155,10 +157,10 @@ def _evaluate_leaf(
                 return trait_id in trait.get("values", [])
         return False
 
-    if ctype == "noTrait":
+    if ctype == ConditionType.NO_TRAIT:
         key = cond.get("key", "")
         trait_id = cond.get("traitId", "")
-        check_char_id = char_id if cond.get("condTarget", "self") == "self" else (target_id or "")
+        check_char_id = char_id if cond.get("condTarget", CondTarget.SELF) == CondTarget.SELF else (target_id or "")
         raw_traits = game_state.character_data.get(check_char_id, {}).get("traits", {})
         if isinstance(raw_traits, dict):
             return trait_id not in raw_traits.get(key, [])
@@ -167,15 +169,15 @@ def _evaluate_leaf(
                 return trait_id not in trait.get("values", [])
         return True
 
-    if ctype == "experience":
+    if ctype == ConditionType.EXPERIENCE:
         key = cond.get("key", "")
-        check_char_id = char_id if cond.get("condTarget", "self") == "self" else (target_id or "")
+        check_char_id = char_id if cond.get("condTarget", CondTarget.SELF) == CondTarget.SELF else (target_id or "")
         char_data = game_state.character_data.get(check_char_id, {})
         exp_data = char_data.get("experiences", {}).get(key, {})
         count = exp_data.get("count", 0) if isinstance(exp_data, dict) else 0
         return _compare(count, cond.get("op", ">="), cond.get("value", 0))
 
-    if ctype == "favorability":
+    if ctype == ConditionType.FAVORABILITY:
         raw_tid = cond.get("targetId", "")
         # Resolve symbolic target
         if raw_tid == "self":
@@ -203,13 +205,13 @@ def _evaluate_leaf(
             fav_value = fav_data.get(fav_tid, 0)
         return _compare(fav_value, cond.get("op", ">="), cond.get("value", 0))
 
-    if ctype == "outfit":
+    if ctype == ConditionType.OUTFIT:
         outfit_id = cond.get("outfitId", "")
-        check_char_id = char_id if cond.get("condTarget", "self") == "self" else (target_id or "")
+        check_char_id = char_id if cond.get("condTarget", CondTarget.SELF) == CondTarget.SELF else (target_id or "")
         char_data = game_state.character_data.get(check_char_id, {})
         return char_data.get("currentOutfit", "default") == outfit_id
 
-    if ctype == "hasItem":
+    if ctype == ConditionType.HAS_ITEM:
         item_id = cond.get("itemId")
         tag = cond.get("tag")
         has_op = cond.get("op")
@@ -232,7 +234,7 @@ def _evaluate_leaf(
             return _compare(total, has_op, has_value)
         return False
 
-    if ctype == "clothing":
+    if ctype == ConditionType.CLOTHING:
         slot = cond.get("slot", "")
         expected_state = cond.get("state")
         expected_item = cond.get("itemId")
@@ -242,14 +244,14 @@ def _evaluate_leaf(
                     if cl.get("itemId") != expected_item:
                         return False
                 if expected_state:
-                    if expected_state == "empty":
+                    if expected_state == ClothingState.EMPTY:
                         return cl.get("itemId") is None
                     return cl.get("state") == expected_state
                 # No state specified, just check item match (already passed above)
                 return True
         return False
 
-    if ctype == "variable":
+    if ctype == ConditionType.VARIABLE:
         var_id = cond.get("varId", "")
         if not var_id or not hasattr(game_state, "variable_defs"):
             return False
@@ -259,8 +261,8 @@ def _evaluate_leaf(
         from ..variable_engine import evaluate_variable
 
         # For bidirectional variables: self=check_char, target=the other character
-        cond_target = cond.get("condTarget", "self")
-        if cond_target == "target":
+        cond_target = cond.get("condTarget", CondTarget.SELF)
+        if cond_target == CondTarget.TARGET:
             var_self_id, var_target_id = target_id or "", char_id
             var_target_state = char
         else:
@@ -277,7 +279,7 @@ def _evaluate_leaf(
         )
         return _compare(var_value, cond.get("op", ">="), cond.get("value", 0))
 
-    if ctype == "worldVar":
+    if ctype == ConditionType.WORLD_VAR:
         key = cond.get("key", "")
         wv = getattr(game_state, "world_variables", {})
         val = wv.get(key, 0)
@@ -301,17 +303,17 @@ def _check_npc_present(char: dict, game_state: Any, npc_id: str | None) -> bool:
 
 def _compare(left: float, op: str, right: float) -> bool:
     """Compare two values with given operator."""
-    if op == ">=":
+    if op == CompareOp.GTE:
         return left >= right
-    if op == "<=":
+    if op == CompareOp.LTE:
         return left <= right
-    if op == ">":
+    if op == CompareOp.GT:
         return left > right
-    if op == "<":
+    if op == CompareOp.LT:
         return left < right
-    if op == "==":
+    if op == CompareOp.EQ:
         return left == right
-    if op == "!=":
+    if op == CompareOp.NE:
         return left != right
     return False
 
@@ -322,19 +324,19 @@ def _check_costs(costs: list[dict], char: dict) -> tuple[bool, str]:
         ctype = cost.get("type")
         amount = cost.get("amount", 0)
 
-        if ctype == "resource":
+        if ctype == CostType.RESOURCE:
             res = char.get("resources", {}).get(cost.get("key", ""))
             if not res or res["value"] < amount:
                 label = res["label"] if res else cost.get("key", "")
                 return False, f"{label}不足"
 
-        elif ctype == "basicInfo":
+        elif ctype == CostType.BASIC_INFO:
             info = char.get("basicInfo", {}).get(cost.get("key", ""))
             if not info or info["value"] < amount:
                 label = info["label"] if info else cost.get("key", "")
                 return False, f"{label}不足"
 
-        elif ctype == "item":
+        elif ctype == CostType.ITEM:
             item_id = cost.get("itemId", "")
             found = 0
             for inv in char.get("inventory", []):

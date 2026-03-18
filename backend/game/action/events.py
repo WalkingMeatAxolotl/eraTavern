@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..constants import EventScope, TriggerMode
 from .conditions import _evaluate_conditions
 from .effects import _apply_effects
 from .helpers import _snap_to_tick
@@ -19,7 +20,7 @@ def _should_fire_event(
     event_def: dict,
 ) -> bool:
     """Determine whether an event should fire based on triggerMode."""
-    if mode == "once":
+    if mode == TriggerMode.ONCE:
         if key == "__global__":
             if state.get("fired", False):
                 return False
@@ -28,11 +29,11 @@ def _should_fire_event(
                 return False
         return matched
 
-    if mode == "on_change":
+    if mode == TriggerMode.ON_CHANGE:
         last = state.get("last_match", {}).get(key, False)
         return matched and not last
 
-    if mode == "while":
+    if mode == TriggerMode.WHILE:
         if not matched:
             return False
         cooldown = _snap_to_tick(event_def.get("cooldown", 10))
@@ -51,13 +52,13 @@ def _update_event_state(
     fired: bool,
 ) -> None:
     """Update event runtime state after evaluation."""
-    if mode == "on_change":
+    if mode == TriggerMode.ON_CHANGE:
         state.setdefault("last_match", {})[key] = matched
 
-    if mode == "while" and fired:
+    if mode == TriggerMode.WHILE and fired:
         state.setdefault("last_trigger", {})[key] = current_time
 
-    if mode == "once" and fired:
+    if mode == TriggerMode.ONCE and fired:
         if key == "__global__":
             state["fired"] = True
         else:
@@ -85,14 +86,14 @@ def evaluate_events(
         if not event_def.get("enabled", True):
             continue
         mode = event_def["triggerMode"]
-        scope = event_def.get("targetScope", "none")
+        scope = event_def.get("targetScope", EventScope.NONE)
         if scope_filter and scope != scope_filter:
             continue
 
         event_id = event_def["id"]
         state = game_state.event_state.setdefault(event_id, {})
 
-        if scope == "each_character":
+        if scope == EventScope.EACH_CHARACTER:
             chars = (
                 {char_filter: game_state.characters[char_filter]}
                 if char_filter and char_filter in game_state.characters
@@ -128,7 +129,7 @@ def evaluate_events(
                 else:
                     _update_event_state(mode, state, char_id, matched, current_time, False)
 
-        elif scope == "none":
+        elif scope == EventScope.NONE:
             # No character context — only global conditions (time, weather, worldVar)
             matched = _evaluate_global_conditions(event_def.get("conditions", []), game_state)
             if _should_fire_event(mode, state, "__global__", matched, current_time, event_def):
