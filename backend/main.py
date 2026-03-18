@@ -1337,7 +1337,15 @@ async def evaluate_variable_endpoint(var_id: str, body: dict = Body(...)):
     if not char_state:
         return _resp(False, "ENTITY_NOT_FOUND", {"entity": "character", "id": char_id})
 
-    result = evaluate_variable_debug(vd, char_state, game_state.variable_defs)
+    target_id = body.get("targetId", "")
+    if target_id:
+        target_id = _ensure_ns(target_id)
+    target_state = game_state.characters.get(target_id) if target_id else None
+    result = evaluate_variable_debug(
+        vd, char_state, game_state.variable_defs,
+        target_state=target_state, game_state=game_state,
+        char_id=char_id, target_id=target_id or None,
+    )
     return {"success": True, **result}
 
 

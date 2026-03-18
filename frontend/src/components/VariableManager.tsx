@@ -91,7 +91,10 @@ export default function VariableManager({ selectedAddon, onEditingChange }: { se
   };
 
   const readOnly = selectedAddon === null;
-  const filteredVars = selectedAddon ? variables.filter((v) => v.source === selectedAddon) : variables;
+  const addonFiltered = selectedAddon ? variables.filter((v) => v.source === selectedAddon) : variables;
+  const singleVars = addonFiltered.filter((v) => !v.isBidirectional);
+  const biVars = addonFiltered.filter((v) => v.isBidirectional);
+  const filteredVars = addonFiltered;
 
   // Auto-collect tags from variables
   const visibleTags = useMemo(() => {
@@ -156,6 +159,7 @@ export default function VariableManager({ selectedAddon, onEditingChange }: { se
     const existing = variables.find((v) => v.id === editingId);
     const blank: VariableDefinition = {
       id: "", name: "", description: "", tags: [], steps: [],
+      isBidirectional: undefined,
       source: selectedAddon ?? "",
     };
     return (
@@ -214,13 +218,7 @@ export default function VariableManager({ selectedAddon, onEditingChange }: { se
           )}
           {!readOnly && (
             <button className="vm-action-btn" onClick={handleNew}
-              style={{
-                padding: "4px 12px", backgroundColor: T.bg2,
-                color: T.successDim, border: `1px solid ${T.border}`,
-                borderRadius: "3px", cursor: "pointer", fontSize: "13px",
-                transition: "background-color 0.1s, border-color 0.1s",
-              }}
-            >
+              style={{ padding: "4px 12px", backgroundColor: T.bg2, color: T.successDim, border: `1px solid ${T.border}`, borderRadius: "3px", cursor: "pointer", fontSize: "13px" }}>
               [+ 新建变量]
             </button>
           )}
@@ -272,28 +270,34 @@ export default function VariableManager({ selectedAddon, onEditingChange }: { se
         </div>
       )}
 
-      {/* View content */}
-      {viewMode === "byTag" ? (
-        <ByTagView
-          visibleTags={visibleTags}
-          tagGrouped={tagGrouped}
-          untagged={untagged}
-          varTagsMap={varTagsMap}
-          collapsed={collapsed}
-          onToggleCollapse={toggleCollapse}
-          onEditVar={handleEdit}
-        />
+      {/* Single-direction variables */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "8px 0 4px", fontSize: "12px", color: T.textDim }}>
+        <span style={{ color: T.accent, fontWeight: "bold" }}>单向变量</span>
+        <div style={{ flex: 1, borderBottom: `1px solid ${T.border}` }} />
+      </div>
+      {singleVars.length === 0 ? (
+        <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>暂无单向变量</div>
+      ) : viewMode === "byTag" ? (
+        <ByTagView visibleTags={visibleTags} tagGrouped={tagGrouped} untagged={untagged}
+          varTagsMap={varTagsMap} collapsed={collapsed} onToggleCollapse={toggleCollapse} onEditVar={handleEdit}
+          filterFn={(v) => !v.isBidirectional} />
       ) : (
-        <ByVarView
-          filteredVars={filteredVars}
-          varTagsMap={varTagsMap}
-          tagVarNames={tagVarNames}
-          onEditVar={handleEdit}
-        />
+        <ByVarView filteredVars={singleVars} varTagsMap={varTagsMap} tagVarNames={tagVarNames} onEditVar={handleEdit} />
       )}
 
-      {filteredVars.length === 0 && (
-        <div style={{ color: T.textDim, padding: "8px" }}>暂无派生变量</div>
+      {/* Bidirectional variables */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "12px 0 4px", fontSize: "12px", color: T.textDim }}>
+        <span style={{ color: T.accent, fontWeight: "bold" }}>双向变量</span>
+        <div style={{ flex: 1, borderBottom: `1px solid ${T.border}` }} />
+      </div>
+      {biVars.length === 0 ? (
+        <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>暂无双向变量</div>
+      ) : viewMode === "byTag" ? (
+        <ByTagView visibleTags={visibleTags} tagGrouped={tagGrouped} untagged={untagged}
+          varTagsMap={varTagsMap} collapsed={collapsed} onToggleCollapse={toggleCollapse} onEditVar={handleEdit}
+          filterFn={(v) => !!v.isBidirectional} />
+      ) : (
+        <ByVarView filteredVars={biVars} varTagsMap={varTagsMap} tagVarNames={tagVarNames} onEditVar={handleEdit} />
       )}
     </div>
   );
@@ -302,7 +306,7 @@ export default function VariableManager({ selectedAddon, onEditingChange }: { se
 // ── By Tag View ───────────────────────────────────────
 // Tag groups → variable chips. Hover variable → tooltip shows all its tags.
 
-function ByTagView({ visibleTags, tagGrouped, untagged, varTagsMap, collapsed, onToggleCollapse, onEditVar }: {
+function ByTagView({ visibleTags, tagGrouped, untagged, varTagsMap, collapsed, onToggleCollapse, onEditVar, filterFn }: {
   visibleTags: string[];
   tagGrouped: Record<string, VariableDefinition[]>;
   untagged: VariableDefinition[];
@@ -310,6 +314,7 @@ function ByTagView({ visibleTags, tagGrouped, untagged, varTagsMap, collapsed, o
   collapsed: Record<string, boolean>;
   onToggleCollapse: (key: string) => void;
   onEditVar: (id: string) => void;
+  filterFn?: (v: VariableDefinition) => boolean;
 }) {
   const [tooltipInfo, setTooltipInfo] = useState<{ text: string; el: HTMLElement } | null>(null);
 
@@ -324,7 +329,7 @@ function ByTagView({ visibleTags, tagGrouped, untagged, varTagsMap, collapsed, o
     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
       {tooltipInfo && <Tooltip text={tooltipInfo.text} anchorRef={tooltipInfo.el} />}
       {visibleTags.map((tag) => {
-        const tagVars = tagGrouped[tag] ?? [];
+        const tagVars = (tagGrouped[tag] ?? []).filter((v) => !filterFn || filterFn(v));
         if (tagVars.length === 0) return null;
         const isCollapsed = collapsed[`tag:${tag}`] ?? false;
         return (
@@ -369,7 +374,7 @@ function ByTagView({ visibleTags, tagGrouped, untagged, varTagsMap, collapsed, o
       })}
 
       {/* Untagged */}
-      {untagged.length > 0 && (
+      {untagged.filter((v) => !filterFn || filterFn(v)).length > 0 && (
         <div>
           <button className="vm-cat-btn" onClick={() => onToggleCollapse("tag:__untagged__")}
             style={{
@@ -383,11 +388,11 @@ function ByTagView({ visibleTags, tagGrouped, untagged, varTagsMap, collapsed, o
               {(collapsed["tag:__untagged__"] ?? false) ? "\u25B6" : "\u25BC"}
             </span>
             {" "}未分类
-            <span style={{ color: T.textDim, marginLeft: "4px", fontSize: "11px" }}>({untagged.length})</span>
+            <span style={{ color: T.textDim, marginLeft: "4px", fontSize: "11px" }}>({untagged.filter((v) => !filterFn || filterFn(v)).length})</span>
           </button>
           {!(collapsed["tag:__untagged__"] ?? false) && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "6px 8px" }}>
-              {untagged.map((v) => (
+              {untagged.filter((v) => !filterFn || filterFn(v)).map((v) => (
                 <button className="vm-item" key={v.id} onClick={() => onEditVar(v.id)}
                   style={{
                     padding: "4px 10px", backgroundColor: T.bg1, color: T.text,

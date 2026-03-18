@@ -392,7 +392,19 @@ def _evaluate_leaf(
         if not var_def:
             return False
         from .variable_engine import evaluate_variable
-        var_value = evaluate_variable(var_def, check_char, game_state)
+        # For bidirectional variables: self=check_char, target=the other character
+        cond_target = cond.get("condTarget", "self")
+        if cond_target == "target":
+            var_self_id, var_target_id = target_id or "", char_id
+            var_target_state = char
+        else:
+            var_self_id, var_target_id = char_id, target_id
+            var_target_state = game_state.characters.get(target_id) if target_id else None
+        var_value = evaluate_variable(
+            var_def, check_char, game_state.variable_defs,
+            target_state=var_target_state, game_state=game_state,
+            char_id=var_self_id, target_id=var_target_id,
+        )
         return _compare(var_value, cond.get("op", ">="), cond.get("value", 0))
 
     if ctype == "worldVar":
@@ -1366,7 +1378,20 @@ def _calc_modifier_bonus(
                 var_def = game_state.variable_defs.get(var_id)
                 if var_def:
                     from .variable_engine import evaluate_variable
-                    var_value = evaluate_variable(var_def, check_char, game_state)
+                    # For bidirectional: modTarget determines direction
+                    if mod_target == "target" and target_id:
+                        var_self = game_state.characters.get(target_id, check_char)
+                        var_target = char
+                        var_self_id, var_target_id = target_id, char_id
+                    else:
+                        var_self = check_char
+                        var_target = game_state.characters.get(target_id) if target_id else None
+                        var_self_id, var_target_id = char_id, target_id
+                    var_value = evaluate_variable(
+                        var_def, var_self, game_state.variable_defs,
+                        target_state=var_target, game_state=game_state,
+                        char_id=var_self_id, target_id=var_target_id,
+                    )
                     per = mod.get("per", 1)
                     if per > 0:
                         raw_bonus = (int(var_value) // per) * bonus
@@ -1451,7 +1476,7 @@ def _resolve_effect_value(eff: dict, char: dict, game_state: Any) -> float:
             var_def = game_state.variable_defs.get(var_id)
             if var_def:
                 from .variable_engine import evaluate_variable
-                result = evaluate_variable(var_def, char, game_state)
+                result = evaluate_variable(var_def, char, game_state.variable_defs)
                 return result * raw.get("multiply", 1)
         return 0
     return raw

@@ -37,6 +37,7 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "hasTrait", label: "拥有特质" },
   { value: "experience", label: "经历次数" },
   { value: "itemCount", label: "物品数量" },
+  { value: "favorability", label: "好感度" },
   { value: "constant", label: "常量" },
   { value: "variable", label: "其他变量" },
 ];
@@ -82,18 +83,15 @@ function isMultiplicative(op: string): boolean {
   return op === "multiply" || op === "divide";
 }
 
-function formulaPreview(steps: VariableStep[]): string {
+function formulaPreview(steps: VariableStep[], bidirectional?: boolean): string {
   if (steps.length === 0) return "(空)";
 
-  // Group consecutive additive terms that are followed by multiplicative ops
-  // to add parentheses: (a + b) × c
-  // Strategy: scan for transitions from additive to multiplicative
   const parts: string[] = [];
   let i = 0;
 
   while (i < steps.length) {
     const s = steps[i];
-    const val = stepValueLabel(s);
+    const val = stepValueLabel(s, bidirectional);
     const op = s.op ?? "";
 
     if (i === 0) {
@@ -105,7 +103,7 @@ function formulaPreview(steps: VariableStep[]): string {
         // Group i..j-1 in parens
         const group = [val];
         for (let k = i + 1; k < j; k++) {
-          group.push(`${opSymbol(steps[k].op ?? "add")} ${stepValueLabel(steps[k])}`);
+          group.push(`${opSymbol(steps[k].op ?? "add")} ${stepValueLabel(steps[k], bidirectional)}`);
         }
         parts.push(`(${group.join(" ")})`);
         i = j;
@@ -140,13 +138,17 @@ function opSymbol(op: string): string {
   }
 }
 
-function stepValueLabel(s: VariableStep): string {
+function stepValueLabel(s: VariableStep, bidirectional?: boolean): string {
+  const src = bidirectional ? (s.source === "target" ? "T:" : "S:") : "";
   switch (s.type) {
-    case "ability": return s.key ?? "?";
-    case "resource": return `${s.key ?? "?"}.${s.field ?? "value"}`;
-    case "basicInfo": return s.key ?? "?";
-    case "traitCount": return `count(${s.traitGroup ?? "?"})`;
-    case "hasTrait": return `has(${s.traitGroup ?? "?"}.${s.traitId ?? "?"})`;
+    case "ability": return `${src}${s.key ?? "?"}`;
+    case "resource": return `${src}${s.key ?? "?"}${s.field === "max" ? ".max" : ""}`;
+    case "basicInfo": return `${src}${s.key ?? "?"}`;
+    case "traitCount": return `${src}count(${s.traitGroup ?? "?"})`;
+    case "hasTrait": return `${src}has(${s.traitId ?? "?"})`;
+    case "experience": return `${src}exp(${s.key ?? "?"})`;
+    case "itemCount": return `${src}item(${s.key ?? "?"})`;
+    case "favorability": return bidirectional && s.source === "target" ? "fav(T→S)" : "fav(S→T)";
     case "constant": return String(s.value ?? 0);
     case "variable": return `$${s.varId ?? "?"}`;
     default: return "?";
@@ -157,6 +159,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
   const [id, setId] = useState(variable.id);
   const [name, setName] = useState(variable.name);
   const [description, setDescription] = useState(variable.description ?? "");
+  const [isBidirectional, setIsBidirectional] = useState(variable.isBidirectional ?? false);
   const [tags, setTags] = useState<string[]>(variable.tags ?? []);
   const [steps, setSteps] = useState<VariableStep[]>(variable.steps ?? []);
   const [saving, setSaving] = useState(false);
@@ -166,6 +169,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
   const [testOpen, setTestOpen] = useState(false);
   const [testCharacters, setTestCharacters] = useState<{ id: string; name: string }[]>([]);
   const [testCharId, setTestCharId] = useState("");
+  const [testTargetId, setTestTargetId] = useState("");
   const [testResult, setTestResult] = useState<{
     result: number;
     steps: { index: number; label: string; op: string; type: string; stepValue: number; accumulated: number }[];
@@ -198,6 +202,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         id: id.trim(),
         name: name.trim(),
         description: description.trim(),
+        isBidirectional: isBidirectional || undefined,
         tags,
         steps,
         source: variable.source,
@@ -238,7 +243,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
     }
 
     try {
-      const res = await evaluateVariable(varId, testCharId);
+      const res = await evaluateVariable(varId, testCharId, isBidirectional ? testTargetId : undefined);
       if (res.success && res.result !== undefined && res.steps) {
         setTestResult({ result: res.result, steps: res.steps });
       } else {
@@ -304,24 +309,8 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? "新建变量" : `编辑: ${variable.name || variable.id}`} ==
         </span>
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>[返回]</button>
-          {!isReadOnly && !isNew && (
-            <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>[删除]</button>
-          )}
-          {!isReadOnly && (
-            <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim, opacity: saving ? 0.6 : 1 }}>
-              {saving ? "提交中..." : "[确定]"}
-            </button>
-          )}
-        </div>
+        <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>[返回列表]</button>
       </div>
-
-      {message && (
-        <div style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px", marginBottom: "8px" }}>
-          {message}
-        </div>
-      )}
 
       {/* Basic fields */}
       <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
@@ -356,6 +345,20 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           disabled={isReadOnly}
           placeholder="可选描述"
         />
+      </div>
+
+      {/* Bidirectional */}
+      <div style={{ marginBottom: "12px" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: T.textSub }}>
+          <input
+            type="checkbox"
+            checked={isBidirectional}
+            onChange={(e) => setIsBidirectional(e.target.checked)}
+            disabled={isReadOnly}
+            style={{ accentColor: T.accent }}
+          />
+          双向变量 — 步骤可引用目标角色的数据（用于角色间关系计算）
+        </label>
       </div>
 
       {/* Tags */}
@@ -393,7 +396,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       }}>
         <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "4px" }}>公式预览</div>
         <div style={{ color: T.accent, fontSize: "13px", wordBreak: "break-all" }}>
-          {formulaPreview(steps)}
+          {formulaPreview(steps, isBidirectional)}
         </div>
       </div>
 
@@ -410,6 +413,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                 isFirst={i === 0}
                 isLast={i === steps.length - 1}
                 readOnly={isReadOnly}
+                isBidirectional={isBidirectional}
                 allVariables={allVariables}
                 currentVarId={variable.id}
                 definitions={definitions}
@@ -463,10 +467,10 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         </button>
         {testOpen && (
           <div style={{ padding: "8px 12px", backgroundColor: T.bg3 }}>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px" }}>
-              <span style={{ color: T.textSub, fontSize: "12px" }}>目标角色:</span>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px", flexWrap: "wrap" }}>
+              <span style={{ color: T.textSub, fontSize: "12px" }}>执行者:</span>
               <select
-                style={{ ...selectStyle, flex: 1 }}
+                style={{ ...selectStyle, flex: 1, minWidth: "120px" }}
                 value={testCharId}
                 onChange={(e) => setTestCharId(e.target.value)}
               >
@@ -475,6 +479,21 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                   <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
                 ))}
               </select>
+              {isBidirectional && (
+                <>
+                  <span style={{ color: T.textSub, fontSize: "12px" }}>目标角色:</span>
+                  <select
+                    style={{ ...selectStyle, flex: 1, minWidth: "120px" }}
+                    value={testTargetId}
+                    onChange={(e) => setTestTargetId(e.target.value)}
+                  >
+                    <option value="">（无）</option>
+                    {testCharacters.filter((c) => c.id !== testCharId).map((c) => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                    ))}
+                  </select>
+                </>
+              )}
               <button
                 onClick={handleTest}
                 style={{ ...btnBase, color: T.accent, padding: "4px 12px" }}
@@ -540,6 +559,24 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           </div>
         )}
       </div>
+
+      {/* Action bar */}
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px", borderTop: `1px solid ${T.border}`, paddingTop: "12px" }}>
+        {!isReadOnly && (
+          <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
+            [{saving ? "提交中..." : "确定"}]
+          </button>
+        )}
+        {!isReadOnly && !isNew && (
+          <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>[删除]</button>
+        )}
+        <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>[返回列表]</button>
+        {message && (
+          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px", marginLeft: "8px" }}>
+            {message}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -552,6 +589,7 @@ interface StepRowProps {
   isFirst: boolean;
   isLast: boolean;
   readOnly: boolean;
+  isBidirectional: boolean;
   allVariables: VariableDefinition[];
   currentVarId: string;
   definitions: GameDefinitions | null;
@@ -560,7 +598,7 @@ interface StepRowProps {
   onMove: (from: number, to: number) => void;
 }
 
-function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, definitions, onChange, onRemove, onMove }: StepRowProps) {
+function StepRow({ step, index, isFirst, readOnly, isBidirectional, allVariables, currentVarId, definitions, onChange, onRemove, onMove }: StepRowProps) {
   const [dragOver, setDragOver] = useState(false);
 
   const rowStyle: React.CSSProperties = {
@@ -584,8 +622,14 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
     lineHeight: 1,
   };
 
-  // Available variables for dropdown (exclude self to prevent circular)
-  const varOptions = allVariables.filter((v) => v.id !== currentVarId);
+  // Available variables for dropdown (exclude self, single vars can't reference bidirectional)
+  const isBidir = step.type === "variable" ? false : false; // checked below
+  const varOptions = allVariables.filter((v) => {
+    if (v.id === currentVarId) return false;
+    // Single-direction variables cannot reference bidirectional ones
+    if (!isBidirectional && v.isBidirectional) return false;
+    return true;
+  });
 
   return (
     <div
@@ -680,6 +724,19 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
           <option key={t.value} value={t.value}>{t.label}</option>
         ))}
       </select>
+
+      {/* Source (self/target) — only for bidirectional variables, not for constant/variable */}
+      {isBidirectional && !["constant", "variable"].includes(step.type) && (
+        <select
+          style={{ ...selectStyle, minWidth: "60px" }}
+          value={step.source ?? "self"}
+          onChange={(e) => onChange({ source: e.target.value as "self" | "target" })}
+          disabled={readOnly}
+        >
+          <option value="self">执行者</option>
+          <option value="target">目标角色</option>
+        </select>
+      )}
 
       {/* Type-specific fields */}
       <div style={{ flex: 1, display: "flex", gap: "4px", alignItems: "center" }}>
@@ -824,6 +881,12 @@ function StepRow({ step, index, isFirst, readOnly, allVariables, currentVarId, d
               <option key={id} value={id}>{(def as any).name} ({id})</option>
             ))}
           </select>
+        )}
+
+        {step.type === "favorability" && (
+          <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>
+            {step.source === "target" ? "目标角色→执行者" : "执行者→目标角色"}
+          </span>
         )}
 
         {step.type === "variable" && (

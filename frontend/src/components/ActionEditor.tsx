@@ -239,7 +239,9 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   const clothingList = Object.values(clothingDefs);
   const outfitTypes = [{id: "default", name: "默认服装"}, ...(definitions.outfitTypes ?? []).map((t) => ({id: t.id, name: t.name}))];
   const npcList = Object.values(characters ?? {}).filter((c) => !c.isPlayer);
-  const variableList = Object.values(definitions.variableDefs ?? {}).map((v) => ({ id: v.id, name: v.name || v.id }));
+  const allVarDefs = Object.values(definitions.variableDefs ?? {});
+  const variableList = allVarDefs.filter((v) => !v.isBidirectional).map((v) => ({ id: v.id, name: v.name || v.id }));
+  const biVarList = allVarDefs.filter((v) => v.isBidirectional).map((v) => ({ id: v.id, name: v.name || v.id }));
   const worldVarList = Object.values(definitions.worldVariableDefs ?? {}).map((v) => ({ id: v.id, name: v.name || v.id }));
   const actionList = Object.values(definitions.actionDefs).map((a) => ({ id: a.id, name: a.name || a.id }));
   const categoryList = [...new Set(Object.values(definitions.actionDefs).map((a) => a.category).filter(Boolean))];
@@ -440,6 +442,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 outfitTypes={outfitTypes}
                 clothingSlots={clothingSlots}
                 variableList={variableList}
+                biVarList={biVarList}
                 worldVarList={worldVarList}
                 label="↳ 权重修正"
               />
@@ -472,7 +475,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 depth={0}
                 ctx={{
                   definitions, targetType, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys,
-                  traitCategories, clothingSlots, mapList, traitList, itemList, npcList, outfitTypes, variableList, worldVarList,
+                  traitCategories, clothingSlots, mapList, traitList, itemList, npcList, outfitTypes, variableList, biVarList, worldVarList,
                 }}
               />
             </div>
@@ -492,7 +495,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             <OutcomeEditor key={idx} outcome={outcome} onChange={(o) => updateOutcome(idx, o)}
               onRemove={() => removeOutcome(idx)} disabled={isReadOnly} targetType={targetType} definitions={definitions}
               resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
-              traitCategories={traitCategories} clothingSlots={clothingSlots} clothingList={clothingList} outfitTypes={outfitTypes} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} variableList={variableList} worldVarList={worldVarList} actionList={actionList} categoryList={categoryList} />
+              traitCategories={traitCategories} clothingSlots={clothingSlots} clothingList={clothingList} outfitTypes={outfitTypes} mapList={mapList} traitList={traitList} itemList={itemList} npcList={npcList} variableList={variableList} biVarList={biVarList} worldVarList={worldVarList} actionList={actionList} categoryList={categoryList} />
           ))}
         </div>
       </div>
@@ -514,8 +517,8 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             onChange={setOutputTemplates}
             disabled={isReadOnly}
             ctx={{
-              definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
-              traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, worldVarList,
+              definitions, targetType, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys,
+              traitCategories, clothingSlots, mapList, traitList, itemList, npcList, outfitTypes, variableList, biVarList, worldVarList,
             }}
           />
           {showVarHelp && (
@@ -576,6 +579,7 @@ interface ConditionCtx {
   npcList: { id: string; name: string }[];
   outfitTypes: { id: string; name: string }[];
   variableList: { id: string; name: string }[];
+  biVarList: { id: string; name: string }[];
   worldVarList: { id: string; name: string }[];
 }
 
@@ -744,7 +748,7 @@ function ConditionLeafEditor({
   disabled: boolean;
   ctx: ConditionCtx;
 }) {
-  const { targetType: actionTargetType, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, npcList, outfitTypes, variableList, worldVarList } = ctx;
+  const { targetType: actionTargetType, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, npcList, outfitTypes, variableList, biVarList, worldVarList } = ctx;
   // Normalize legacy types
   const effectiveType = condition.type === "npcAbsent" ? "npcPresent"
     : condition.type === "noTrait" ? "trait"
@@ -757,7 +761,8 @@ function ConditionLeafEditor({
     onChange(merged);
   };
 
-  const noCondTarget = ["location", "npcPresent", "time", "worldVar", "favorability"].includes(effectiveType);
+  const isBiVarSelected = effectiveType === "variable" && (biVarList ?? []).some((v) => v.id === condition.varId);
+  const noCondTarget = ["location", "npcPresent", "time", "worldVar", "favorability"].includes(effectiveType) || isBiVarSelected;
   const showCondTarget = !noCondTarget;
 
   return (
@@ -947,12 +952,24 @@ function ConditionLeafEditor({
         </>
       )}
 
-      {effectiveType === "variable" && (
+      {effectiveType === "variable" && (() => {
+        const isBiVar = (biVarList ?? []).some((v) => v.id === condition.varId);
+        return (
         <>
+          {isBiVar && actionTargetType === "npc" && (
+            <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }} value={condition.condTarget ?? "self"}
+              onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })} disabled={disabled}>
+              <option value="self">执行者→目标角色</option>
+              <option value="target">目标角色→执行者</option>
+            </select>
+          )}
           <select style={inputStyle} value={condition.varId ?? ""}
             onChange={(e) => update({ varId: e.target.value })} disabled={disabled}>
             <option value="">选择变量</option>
+            {variableList.length > 0 && <option disabled>── 单向 ──</option>}
             {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+            {actionTargetType === "npc" && (biVarList ?? []).length > 0 && <option disabled>── 双向 ──</option>}
+            {actionTargetType === "npc" && (biVarList ?? []).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
           <select style={inputStyle} value={condition.op ?? ">="} onChange={(e) => update({ op: e.target.value })} disabled={disabled}>
             {OPS.map((op) => <option key={op} value={op}>{op}</option>)}
@@ -960,7 +977,8 @@ function ConditionLeafEditor({
           <input type="number" style={{ ...inputStyle, width: "70px" }} value={condition.value ?? 0}
             onChange={(e) => update({ value: Number(e.target.value) })} disabled={disabled} />
         </>
-      )}
+        );
+      })()}
 
       {effectiveType === "worldVar" && (
         <>
@@ -1106,7 +1124,7 @@ function CostEditor({ cost, onChange, disabled, resourceKeys, basicInfoNumKeys, 
 
 // ─── Reusable modifier list (for weight modifiers and value modifiers) ───
 
-function ModifierListEditor({ modifiers, onChange, disabled, targetType, resourceKeys, basicInfoNumKeys, abilityKeys, experienceKeys, traitCategories, traitList, itemList, outfitTypes, clothingSlots, variableList, worldVarList, label }: {
+function ModifierListEditor({ modifiers, onChange, disabled, targetType, resourceKeys, basicInfoNumKeys, abilityKeys, experienceKeys, traitCategories, traitList, itemList, outfitTypes, clothingSlots, variableList, biVarList, worldVarList, label }: {
   modifiers: ValueModifier[];
   onChange: (mods: ValueModifier[]) => void;
   disabled: boolean;
@@ -1121,6 +1139,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, targetType, resourc
   outfitTypes: { id: string; name: string }[];
   clothingSlots: string[];
   variableList: { id: string; name: string }[];
+  biVarList: { id: string; name: string }[];
   worldVarList: { id: string; name: string }[];
   label: string;
 }) {
@@ -1172,7 +1191,7 @@ function ModifierListEditor({ modifiers, onChange, disabled, targetType, resourc
             <option value="worldVar">世界变量</option>
           </select>
 
-          {!["favorability", "worldVar"].includes(mod.type) && (
+          {!["favorability", "worldVar"].includes(mod.type) && !(mod.type === "variable" && (biVarList ?? []).some((v) => v.id === mod.varId)) && (
             <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }} value={mod.modTarget ?? "self"}
               onChange={(e) => update(idx, { ...mod, modTarget: e.target.value })}
               disabled={disabled || targetType !== "npc"}>
@@ -1281,18 +1300,31 @@ function ModifierListEditor({ modifiers, onChange, disabled, targetType, resourc
             </>
           )}
 
-          {mod.type === "variable" && (
+          {mod.type === "variable" && (() => {
+            const isBiVar = (biVarList ?? []).some((v) => v.id === mod.varId);
+            return (
             <>
+              {isBiVar && targetType === "npc" && (
+                <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }} value={mod.modTarget ?? "self"}
+                  onChange={(e) => update(idx, { ...mod, modTarget: e.target.value })} disabled={disabled}>
+                  <option value="self">执行者→目标角色</option>
+                  <option value="target">目标角色→执行者</option>
+                </select>
+              )}
               <select style={inputStyle} value={mod.varId ?? ""}
                 onChange={(e) => update(idx, { ...mod, varId: e.target.value })} disabled={disabled}>
                 <option value="">选择变量</option>
+                {variableList.length > 0 && <option disabled>── 单向 ──</option>}
                 {variableList.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                {targetType === "npc" && (biVarList ?? []).length > 0 && <option disabled>── 双向 ──</option>}
+                {targetType === "npc" && (biVarList ?? []).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
               </select>
               <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input type="number" style={{ ...inputStyle, width: "55px" }} value={mod.per ?? 1}
                 onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })} min={1} disabled={disabled} />
             </>
-          )}
+            );
+          })()}
 
           {mod.type === "worldVar" && (
             <>
@@ -1345,12 +1377,13 @@ interface OutcomeEditorProps {
   outfitTypes: { id: string; name: string }[];
   npcList: { id: string; name: string }[];
   variableList: { id: string; name: string }[];
+  biVarList: { id: string; name: string }[];
   worldVarList: { id: string; name: string }[];
   actionList: { id: string; name: string }[];
   categoryList: string[];
 }
 
-function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, definitions, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, clothingList, outfitTypes, npcList, variableList, worldVarList, actionList, categoryList }: OutcomeEditorProps) {
+function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, definitions, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, mapList, traitList, itemList, clothingList, outfitTypes, npcList, variableList, biVarList, worldVarList, actionList, categoryList }: OutcomeEditorProps) {
   const [showChain, setShowChain] = useState((outcome.suggestNext ?? []).length > 0);
   const [showOutTpl, setShowOutTpl] = useState(
     (outcome.outputTemplates ?? []).length > 0 || !!outcome.outputTemplate
@@ -1479,6 +1512,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, defi
           outfitTypes={outfitTypes}
           clothingSlots={clothingSlots}
           variableList={variableList}
+          biVarList={biVarList}
           worldVarList={worldVarList}
           label="↳ 权重修正"
         />
@@ -1523,7 +1557,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, defi
                   <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
                     <EffectEditor effect={eff} onChange={(e) => updateEffect(effIdx, { ...e, target: group.target })} disabled={disabled}
                       resourceKeys={resourceKeys} abilityKeys={abilityKeys} experienceKeys={experienceKeys} basicInfoNumKeys={basicInfoNumKeys}
-                      traitCategories={traitCategories} clothingSlots={clothingSlots} clothingList={clothingList} outfitTypes={outfitTypes} mapList={mapList} traitList={traitList} itemList={itemList} variableList={variableList} worldVarList={worldVarList} />
+                      traitCategories={traitCategories} clothingSlots={clothingSlots} clothingList={clothingList} outfitTypes={outfitTypes} mapList={mapList} traitList={traitList} itemList={itemList} variableList={variableList} biVarList={biVarList} worldVarList={worldVarList} />
                     {!disabled && <button className="ae-del-btn" onClick={() => removeEffect(effIdx)} style={delBtnStyle}>x</button>}
                   </div>
                   {hasModifiers && (
@@ -1550,6 +1584,7 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, defi
                         outfitTypes={outfitTypes}
                         clothingSlots={clothingSlots}
                         variableList={variableList}
+                        biVarList={biVarList}
                         worldVarList={worldVarList}
                         label="↳ 数值修正"
                       />
@@ -1683,8 +1718,8 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, defi
               onChange={(tpls) => update({ outputTemplates: tpls.length > 0 ? tpls : undefined, outputTemplate: undefined })}
               disabled={disabled}
               ctx={{
-                definitions, resourceKeys, abilityKeys, basicInfoNumKeys,
-                traitCategories, clothingSlots, mapList, traitList, itemList, npcList, variableList, worldVarList,
+                definitions, targetType, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys,
+                traitCategories, clothingSlots, mapList, traitList, itemList, npcList, outfitTypes, variableList, biVarList, worldVarList,
               }}
             />
           </div>
@@ -1710,10 +1745,11 @@ interface EffectEditorProps {
   traitList: TraitInfo[];
   itemList: ItemInfo[];
   variableList: { id: string; name: string }[];
+  biVarList: { id: string; name: string }[];
   worldVarList: { id: string; name: string }[];
 }
 
-function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, clothingList, outfitTypes, mapList, traitList, itemList, variableList, worldVarList }: EffectEditorProps) {
+function EffectEditor({ effect, onChange, disabled, resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, clothingSlots, clothingList, outfitTypes, mapList, traitList, itemList, variableList, biVarList, worldVarList }: EffectEditorProps) {
   const update = (patch: Partial<ActionEffect>) => onChange({ ...effect, ...patch });
 
   return (

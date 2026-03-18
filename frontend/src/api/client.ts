@@ -472,11 +472,13 @@ export async function deleteVariableDef(id: string): Promise<{ success: boolean;
   return handleResponse(res);
 }
 
-export async function evaluateVariable(id: string, characterId: string): Promise<{ success: boolean; result?: number; steps?: Array<{ index: number; label: string; op: string; type: string; stepValue: number; accumulated: number }>; message?: string }> {
+export async function evaluateVariable(id: string, characterId: string, targetId?: string): Promise<{ success: boolean; result?: number; steps?: Array<{ index: number; label: string; op: string; type: string; stepValue: number; accumulated: number }>; message?: string }> {
+  const body: Record<string, string> = { characterId };
+  if (targetId) body.targetId = targetId;
   const res = await fetch(`${API_BASE}/variables/${id}/evaluate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ characterId }),
+    body: JSON.stringify(body),
   });
   return handleResponse(res);
 }

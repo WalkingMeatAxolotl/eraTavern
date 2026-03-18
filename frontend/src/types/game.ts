@@ -249,8 +249,9 @@ export interface ItemDefinition {
 // --- Derived variable types ---
 
 export interface VariableStep {
-  type: "ability" | "resource" | "basicInfo" | "traitCount" | "hasTrait" | "experience" | "itemCount" | "constant" | "variable";
+  type: "ability" | "resource" | "basicInfo" | "traitCount" | "hasTrait" | "experience" | "itemCount" | "favorability" | "constant" | "variable";
   op?: "add" | "subtract" | "multiply" | "divide" | "min" | "max" | "floor" | "cap";
+  source?: "self" | "target";
   key?: string;
   field?: "value" | "max";
   traitGroup?: string;
@@ -264,6 +265,7 @@ export interface VariableDefinition {
   id: string;
   name: string;
   description?: string;
+  isBidirectional?: boolean;
   tags?: string[];
   steps: VariableStep[];
   source: string;

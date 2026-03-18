@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 
 def evaluate_variable(
@@ -10,6 +10,10 @@ def evaluate_variable(
     character_state: dict[str, Any],
     all_var_defs: dict[str, dict],
     visited: set[str] | None = None,
+    target_state: Optional[dict[str, Any]] = None,
+    game_state: Any = None,
+    char_id: Optional[str] = None,
+    target_id: Optional[str] = None,
 ) -> float:
     """Evaluate a derived variable against a character's runtime state.
 
@@ -18,6 +22,10 @@ def evaluate_variable(
         character_state: The character's built runtime state (from build_character_state).
         all_var_defs: All loaded variable definitions (for cross-references).
         visited: Set of variable IDs already being evaluated (cycle detection).
+        target_state: Optional target character state (for bidirectional variables).
+        game_state: Optional GameState (for favorability lookup via character_data).
+        char_id: Optional character ID (for favorability lookup).
+        target_id: Optional target character ID (for favorability lookup).
 
     Returns:
         The computed numeric result.
@@ -34,9 +42,10 @@ def evaluate_variable(
     if not steps:
         return 0.0
 
+    ctx = _EvalContext(character_state, target_state, all_var_defs, visited, game_state, char_id, target_id)
     result = 0.0
     for i, step in enumerate(steps):
-        step_value = _resolve_step_value(step, character_state, all_var_defs, visited)
+        step_value = _resolve_step_value(step, ctx)
         if i == 0:
             result = step_value
         else:
@@ -44,17 +53,32 @@ def evaluate_variable(
     return result
 
 
+class _EvalContext:
+    """Bundles all context needed for step evaluation."""
+    __slots__ = ("char", "target", "var_defs", "visited", "game_state", "char_id", "target_id")
+
+    def __init__(self, char: dict, target: Optional[dict], var_defs: dict,
+                 visited: set, game_state: Any, char_id: Optional[str], target_id: Optional[str]):
+        self.char = char
+        self.target = target
+        self.var_defs = var_defs
+        self.visited = visited
+        self.game_state = game_state
+        self.char_id = char_id
+        self.target_id = target_id
+
+
 def evaluate_variable_debug(
     var_def: dict,
     character_state: dict[str, Any],
     all_var_defs: dict[str, dict],
     visited: set[str] | None = None,
+    target_state: Optional[dict[str, Any]] = None,
+    game_state: Any = None,
+    char_id: Optional[str] = None,
+    target_id: Optional[str] = None,
 ) -> dict:
-    """Evaluate with step-by-step debug trace.
-
-    Returns:
-        {"result": float, "steps": [{"label": str, "stepValue": float, "accumulated": float}, ...]}
-    """
+    """Evaluate with step-by-step debug trace."""
     if visited is None:
         visited = set()
 
@@ -67,10 +91,11 @@ def evaluate_variable_debug(
     if not steps:
         return {"result": 0.0, "steps": []}
 
+    ctx = _EvalContext(character_state, target_state, all_var_defs, visited, game_state, char_id, target_id)
     result = 0.0
     trace = []
     for i, step in enumerate(steps):
-        step_value = _resolve_step_value(step, character_state, all_var_defs, visited)
+        step_value = _resolve_step_value(step, ctx)
         if i == 0:
             result = step_value
         else:
@@ -80,6 +105,7 @@ def evaluate_variable_debug(
             "label": step.get("label", ""),
             "op": step.get("op", "") if i > 0 else "(init)",
             "type": step.get("type", ""),
+            "source": step.get("source", "self"),
             "stepValue": step_value,
             "accumulated": result,
         })
@@ -87,21 +113,20 @@ def evaluate_variable_debug(
     return {"result": result, "steps": trace}
 
 
-def _resolve_step_value(
-    step: dict,
-    character_state: dict[str, Any],
-    all_var_defs: dict[str, dict],
-    visited: set[str],
-) -> float:
+def _resolve_step_value(step: dict, ctx: _EvalContext) -> float:
     """Resolve the numeric value of a single formula step."""
     step_type = step.get("type", "")
+
+    # Resolve which character to read from (source: "self" or "target")
+    source = step.get("source", "self")
+    char = ctx.target if source == "target" and ctx.target else ctx.char
 
     if step_type == "constant":
         return float(step.get("value", 0))
 
     if step_type == "ability":
         key = step.get("key", "")
-        for ab in character_state.get("abilities", []):
+        for ab in char.get("abilities", []):
             if ab["key"] == key:
                 return float(ab.get("exp", 0))
         return 0.0
@@ -109,21 +134,21 @@ def _resolve_step_value(
     if step_type == "resource":
         key = step.get("key", "")
         field = step.get("field", "value")
-        res = character_state.get("resources", {}).get(key)
+        res = char.get("resources", {}).get(key)
         if res:
             return float(res.get(field, 0))
         return 0.0
 
     if step_type == "basicInfo":
         key = step.get("key", "")
-        info = character_state.get("basicInfo", {}).get(key)
+        info = char.get("basicInfo", {}).get(key)
         if info and info.get("type") == "number":
             return float(info.get("value", 0))
         return 0.0
 
     if step_type == "traitCount":
         trait_group = step.get("traitGroup", "")
-        for t in character_state.get("traits", []):
+        for t in char.get("traits", []):
             if t["key"] == trait_group:
                 return float(len(t.get("values", [])))
         return 0.0
@@ -131,31 +156,51 @@ def _resolve_step_value(
     if step_type == "hasTrait":
         trait_group = step.get("traitGroup", "")
         trait_id = step.get("traitId", "")
-        for t in character_state.get("traits", []):
+        for t in char.get("traits", []):
             if t["key"] == trait_group:
                 return 1.0 if trait_id in t.get("values", []) else 0.0
         return 0.0
 
     if step_type == "experience":
         key = step.get("key", "")
-        for exp in character_state.get("experiences", []):
+        for exp in char.get("experiences", []):
             if exp["key"] == key:
                 return float(exp.get("count", 0))
         return 0.0
 
     if step_type == "itemCount":
         key = step.get("key", "")
-        for inv in character_state.get("inventory", []):
+        for inv in char.get("inventory", []):
             if inv["itemId"] == key:
                 return float(inv.get("amount", 0))
         return 0.0
 
+    if step_type == "favorability":
+        # source character's favorability toward the other character
+        # Use game_state.character_data for raw favorability dict
+        if not ctx.game_state or not ctx.char_id:
+            return 0.0
+        if source == "self":
+            from_id = ctx.char_id
+            to_id = ctx.target_id or ""
+        else:  # source == "target"
+            from_id = ctx.target_id or ""
+            to_id = ctx.char_id
+        if not from_id:
+            return 0.0
+        char_data = ctx.game_state.character_data.get(from_id, {})
+        return float(char_data.get("favorability", {}).get(to_id, 0))
+
     if step_type == "variable":
         var_id = step.get("varId", "")
-        ref_def = all_var_defs.get(var_id)
+        ref_def = ctx.var_defs.get(var_id)
         if not ref_def:
             return 0.0
-        return evaluate_variable(ref_def, character_state, all_var_defs, visited)
+        return evaluate_variable(
+            ref_def, ctx.char, ctx.var_defs, ctx.visited,
+            target_state=ctx.target, game_state=ctx.game_state,
+            char_id=ctx.char_id, target_id=ctx.target_id,
+        )
 
     return 0.0
 
