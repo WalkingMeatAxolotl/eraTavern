@@ -6,7 +6,8 @@
 import type { OutputTemplateEntry, ConditionItem } from "../../types/game";
 import T from "../../theme";
 import { useEditorContext } from "../shared/EditorContext";
-import { ConditionItemEditor, inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/ConditionEditor";
+import { ConditionItemEditor } from "../shared/ConditionEditor";
+import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/styles";
 
 export function TemplateListEditor({
   templates,

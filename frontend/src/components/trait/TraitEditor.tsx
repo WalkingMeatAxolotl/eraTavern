@@ -2,12 +2,10 @@ import { useState } from "react";
 import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from "../../types/game";
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../../api/client";
 import T from "../../theme";
+import { EF, EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
-
-function toLocalId(nsId: string): string {
-  const dot = nsId.indexOf(".");
-  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
-}
+import { toLocalId } from "../shared/idUtils";
+import { inputStyle, labelStyle } from "../shared/styles";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -64,21 +62,6 @@ function buildTargetOptions(defs: GameDefinitions) {
   return groups;
 }
 
-const inputStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  color: T.text,
-  border: `1px solid ${T.borderLight}`,
-  borderRadius: "3px",
-  fontSize: "12px",
-};
-
-const labelStyle: React.CSSProperties = {
-  color: T.textSub,
-  fontSize: "11px",
-  marginBottom: "2px",
-};
-
 export default function TraitEditor({ trait, definitions, isNew, onBack, addonCrud }: TraitEditorProps) {
   const addonPrefix = trait.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(trait.id));
@@ -106,7 +89,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
   const addEffect = () => {
     const firstTarget = allTargets[0]?.value ?? "";
-    setEffects((prev) => [...prev, { target: firstTarget, effect: "increase", magnitudeType: "fixed", value: 0 }]);
+    setEffects((prev) => [...prev, { target: firstTarget, effect: EffectDirection.INCREASE, magnitudeType: MagnitudeType.FIXED, value: 0 }]);
   };
 
   const handleSave = async () => {
@@ -118,7 +101,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     setMessage("");
     try {
       const data: Record<string, unknown> = { id, name, category, description, effects, source: trait.source };
-      if (category === "ability") {
+      if (category === EF.ABILITY) {
         data.defaultValue = defaultValue;
         data.decay = decayEnabled ? decay : null;
       }
@@ -168,7 +151,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
   /** Format percentage hint: value=120 increase → "+20%", value=80 decrease → "-20%"
    *  Multiple percentage effects on same target stack additively: two +20% = +40% total. */
   const pctHint = (value: number, direction: string) => {
-    const delta = direction === "increase" ? value - 100 : 100 - value;
+    const delta = direction === EffectDirection.INCREASE ? value - 100 : 100 - value;
     return `${delta >= 0 ? "+" : ""}${delta}%`;
   };
 
@@ -228,7 +211,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       </div>
 
       {/* Experience-specific hint */}
-      {category === "experience" && (
+      {category === EF.EXPERIENCE && (
         <div style={{ marginBottom: "16px" }}>
           <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>经验设定</div>
           <div
@@ -248,7 +231,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       )}
 
       {/* Ability-specific fields */}
-      {category === "ability" && (
+      {category === EF.ABILITY && (
         <div style={{ marginBottom: "16px" }}>
           <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>能力设定</div>
           <div
@@ -317,12 +300,12 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                       onChange={(e) => setDecay({ ...decay, type: e.target.value as "fixed" | "percentage" })}
                       disabled={isReadOnly}
                     >
-                      <option value="fixed">固定值</option>
-                      <option value="percentage">百分比</option>
+                      <option value={MagnitudeType.FIXED}>固定值</option>
+                      <option value={MagnitudeType.PERCENTAGE}>百分比</option>
                     </select>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>下降量{decay.type === "percentage" ? "(%)" : ""}</div>
+                    <div style={labelStyle}>下降量{decay.type === MagnitudeType.PERCENTAGE ? "(%)" : ""}</div>
                     <input
                       type="number"
                       min={1}
@@ -331,7 +314,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                       value={decay.amount}
                       onChange={(e) => {
                         let v = Math.max(1, Number(e.target.value));
-                        if (decay.type === "percentage") v = Math.min(100, v);
+                        if (decay.type === MagnitudeType.PERCENTAGE) v = Math.min(100, v);
                         setDecay({ ...decay, amount: v });
                       }}
                       disabled={isReadOnly}
@@ -393,8 +376,8 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
                 disabled={isReadOnly}
               >
-                <option value="increase">增加</option>
-                <option value="decrease">减少</option>
+                <option value={EffectDirection.INCREASE}>增加</option>
+                <option value={EffectDirection.DECREASE}>减少</option>
               </select>
 
               {/* Magnitude type */}
@@ -404,8 +387,8 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
                 disabled={isReadOnly}
               >
-                <option value="fixed">固定值</option>
-                <option value="percentage">百分比</option>
+                <option value={MagnitudeType.FIXED}>固定值</option>
+                <option value={MagnitudeType.PERCENTAGE}>百分比</option>
               </select>
 
               {/* Value */}
@@ -418,7 +401,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               />
 
               {/* Multiplier hint for percentage */}
-              {eff.magnitudeType === "percentage" && (
+              {eff.magnitudeType === MagnitudeType.PERCENTAGE && (
                 <span style={{ color: T.textDim, fontSize: "11px", width: "50px", flexShrink: 0 }}>
                   {pctHint(eff.value, eff.effect)}
                 </span>

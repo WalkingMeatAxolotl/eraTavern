@@ -4,6 +4,7 @@ import type { GameDefinitions, ClothingDefinition } from "../../types/game";
 import { fetchDefinitions, fetchClothingDefs } from "../../api/client";
 import ClothingEditor from "./ClothingEditor";
 import OutfitEditor from "./OutfitEditor";
+import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 
 const SLOT_LABELS: Record<string, string> = {
   hat: "帽子",
@@ -40,7 +41,7 @@ export default function ClothingManager({
   const [clothing, setClothing] = useState<ClothingDefinition[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { isCollapsed, toggle: toggleCollapse } = useCollapsibleGroups();
   const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null);
   const [isNewOutfit, setIsNewOutfit] = useState(false);
 
@@ -72,10 +73,6 @@ export default function ClothingManager({
     setEditingId(null);
     setIsNew(false);
     loadData();
-  };
-
-  const toggleCollapse = (key: string) => {
-    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   if (!definitions) {
@@ -239,7 +236,7 @@ export default function ClothingManager({
         <SectionDivider label="服装" />
         {slots.map((slotKey) => {
           const items = grouped[slotKey] || [];
-          const isCollapsed = collapsed[slotKey] ?? false;
+          const slotCollapsed = isCollapsed(slotKey);
           return (
             <div key={slotKey}>
               <button
@@ -259,11 +256,11 @@ export default function ClothingManager({
                 }}
               >
                 <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
-                  {isCollapsed ? "\u25B6" : "\u25BC"}
+                  {slotCollapsed ? "\u25B6" : "\u25BC"}
                 </span>{" "}
                 {SLOT_LABELS[slotKey] ?? slotKey} ({items.length})
               </button>
-              {!isCollapsed && items.length > 0 && (
+              {!slotCollapsed && items.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
                   {items.map((c) => (
                     <button
@@ -311,11 +308,11 @@ export default function ClothingManager({
               }}
             >
               <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
-                {collapsed["__other__"] ? "\u25B6" : "\u25BC"}
+                {isCollapsed("__other__") ? "\u25B6" : "\u25BC"}
               </span>{" "}
               未分类 ({grouped["__other__"].length})
             </button>
-            {!collapsed["__other__"] && (
+            {!isCollapsed("__other__") && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
                 {grouped["__other__"].map((c) => (
                   <button

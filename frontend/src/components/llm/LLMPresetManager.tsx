@@ -18,23 +18,14 @@ import {
   updateConfig,
 } from "../../api/client";
 
+import { inputStyle as _inputStyle, labelStyle } from "../shared/styles";
+
 // --- Styles ---
 
 const inputStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  color: T.text,
-  border: `1px solid ${T.borderLight}`,
-  borderRadius: "3px",
-  fontSize: "12px",
+  ..._inputStyle,
   width: "100%",
   boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = {
-  color: T.textSub,
-  fontSize: "11px",
-  marginBottom: "2px",
 };
 
 const sectionStyle: React.CSSProperties = {

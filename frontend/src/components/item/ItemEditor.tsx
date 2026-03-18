@@ -3,11 +3,8 @@ import type { ItemDefinition } from "../../types/game";
 import { createItemDef, saveItemDef, deleteItemDef } from "../../api/client";
 import T from "../../theme";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
-
-function toLocalId(nsId: string): string {
-  const dot = nsId.indexOf(".");
-  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
-}
+import { toLocalId } from "../shared/idUtils";
+import { inputStyle, labelStyle } from "../shared/styles";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -22,21 +19,6 @@ interface Props {
   onBack: () => void;
   addonCrud?: AddonCrud;
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  color: T.text,
-  border: `1px solid ${T.borderLight}`,
-  borderRadius: "3px",
-  fontSize: "12px",
-};
-
-const labelStyle: React.CSSProperties = {
-  color: T.textSub,
-  fontSize: "11px",
-  marginBottom: "2px",
-};
 
 export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: Props) {
   const addonPrefix = item.source || "";

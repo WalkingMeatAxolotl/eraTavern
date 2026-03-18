@@ -9,25 +9,16 @@ import type {
 } from "../../types/game";
 import { createActionDef, saveActionDef, deleteActionDef, fetchLLMPresets } from "../../api/client";
 import T from "../../theme";
+import { TargetType } from "../../constants";
 import { EditorProvider } from "../shared/EditorContext";
 import type { EditorContextValue } from "../shared/EditorContext";
-import {
-  ConditionItemEditor,
-  inputStyle,
-  addBtnStyle,
-  delBtnStyle,
-  smallBtnStyle,
-  listRowStyle,
-} from "../shared/ConditionEditor";
+import { ConditionItemEditor } from "../shared/ConditionEditor";
+import { inputStyle, addBtnStyle, delBtnStyle, smallBtnStyle, listRowStyle, labelStyle } from "../shared/styles";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
+import { toLocalId } from "../shared/idUtils";
 import { ModifierListEditor } from "./ModifierEditor";
 import { OutcomeEditor } from "./OutcomeEditor";
 import { TemplateListEditor, TemplateVarHelp } from "./TemplateEditor";
-
-function toLocalId(nsId: string): string {
-  const dot = nsId.indexOf(".");
-  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
-}
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -42,12 +33,6 @@ interface Props {
   onBack: () => void;
   addonCrud?: AddonCrud;
 }
-
-const labelStyle: React.CSSProperties = {
-  color: T.textSub,
-  fontSize: "11px",
-  marginBottom: "2px",
-};
 
 // Color-coded sections for visual distinction
 const SEC = {
@@ -359,8 +344,8 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 onChange={(e) => setTargetType(e.target.value as ActionDefinition["targetType"])}
                 disabled={isReadOnly}
               >
-                <option value="none">无目标</option>
-                <option value="npc">角色</option>
+                <option value={TargetType.NONE}>无目标</option>
+                <option value={TargetType.NPC}>角色</option>
               </select>
             </div>
             <div>

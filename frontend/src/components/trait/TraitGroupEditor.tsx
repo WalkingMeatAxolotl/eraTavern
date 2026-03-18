@@ -3,11 +3,7 @@ import type { GameDefinitions, TraitGroup } from "../../types/game";
 import { createTraitGroup, saveTraitGroup, deleteTraitGroup } from "../../api/client";
 import T from "../../theme";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
-
-function toLocalId(nsId: string): string {
-  const dot = nsId.indexOf(".");
-  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
-}
+import { toLocalId } from "../shared/idUtils";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../../theme";
+import { EF, EffType, EffectOp, ClothingState, TriggerMode, EventScope, TargetType } from "../../constants";
 import { HelpButton, HelpPanel, helpSub, helpP, helpEm, helpDim } from "../shared/HelpToggle";
 import type {
   EventDefinition,
@@ -23,12 +24,9 @@ import {
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { EditorProvider, useEditorContext } from "../shared/EditorContext";
 import type { EditorContextValue, KeyLabel } from "../shared/EditorContext";
-import { ConditionItemEditor, inputStyle, addBtnStyle, delBtnStyle, SLOT_LABELS } from "../shared/ConditionEditor";
-
-function toLocalId(nsId: string): string {
-  const dot = nsId.indexOf(".");
-  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
-}
+import { ConditionItemEditor, SLOT_LABELS } from "../shared/ConditionEditor";
+import { inputStyle, addBtnStyle, delBtnStyle, rowBg } from "../shared/styles";
+import { toLocalId } from "../shared/idUtils";
 
 // ── Styles ──────────────────────────────────────────────
 
@@ -66,19 +64,17 @@ const sectionTitleStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
   alignItems: "center",
 });
 
-const rowBg = (idx: number) => (idx % 2 === 0 ? T.bg1 : T.bg2);
-
 const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
-  { value: "resource", label: "资源" },
-  { value: "ability", label: "能力(经验值)" },
-  { value: "experience", label: "经历记录" },
-  { value: "basicInfo", label: "基本属性" },
-  { value: "favorability", label: "好感度" },
-  { value: "trait", label: "特质" },
-  { value: "item", label: "物品" },
-  { value: "clothing", label: "服装" },
-  { value: "position", label: "位置" },
-  { value: "worldVar", label: "世界变量" },
+  { value: EffType.RESOURCE, label: "资源" },
+  { value: EffType.ABILITY, label: "能力(经验值)" },
+  { value: EffType.EXPERIENCE, label: "经历记录" },
+  { value: EffType.BASIC_INFO, label: "基本属性" },
+  { value: EffType.FAVORABILITY, label: "好感度" },
+  { value: EffType.TRAIT, label: "特质" },
+  { value: EffType.ITEM, label: "物品" },
+  { value: EffType.CLOTHING, label: "服装" },
+  { value: EffType.POSITION, label: "位置" },
+  { value: EffType.WORLD_VAR, label: "世界变量" },
 ];
 
 const hoverStyles = `
@@ -173,8 +169,8 @@ export default function EventManager({
       id: "",
       name: "",
       description: "",
-      triggerMode: "on_change",
-      targetScope: "each_character",
+      triggerMode: TriggerMode.ON_CHANGE,
+      targetScope: EventScope.EACH_CHARACTER,
       conditions: [],
       effects: [],
       outputTemplate: "",
@@ -271,8 +267,8 @@ export default function EventManager({
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         {filteredEvents.map((evt) => {
           const modeLabel =
-            evt.triggerMode === "on_change" ? "变化触发" : evt.triggerMode === "while" ? "持续触发" : "一次性";
-          const scopeLabel = evt.targetScope === "each_character" ? "每个角色" : "无目标";
+            evt.triggerMode === TriggerMode.ON_CHANGE ? "变化触发" : evt.triggerMode === TriggerMode.WHILE ? "持续触发" : "一次性";
+          const scopeLabel = evt.targetScope === EventScope.EACH_CHARACTER ? "每个角色" : "无目标";
           return (
             <button
               key={evt.id}
@@ -502,7 +498,7 @@ function EventEditor({
         outputTemplate: outputTemplate || undefined,
         enabled,
       };
-      if (triggerMode === "while") data.cooldown = cooldown;
+      if (triggerMode === TriggerMode.WHILE) data.cooldown = cooldown;
       if (isNew) {
         data.source = event.source;
         const res = await createEventDef(data);
@@ -544,7 +540,7 @@ function EventEditor({
   const removeCondition = (idx: number) => setConditions(conditions.filter((_, i) => i !== idx));
 
   // Effect CRUD
-  const addEffect = () => setEffects([...effects, { type: "resource", op: "add" } as ActionEffect]);
+  const addEffect = () => setEffects([...effects, { type: EF.RESOURCE, op: EffectOp.ADD } as ActionEffect]);
   const updateEffect = (idx: number, eff: ActionEffect) => {
     const next = [...effects];
     next[idx] = eff;
@@ -575,7 +571,7 @@ function EventEditor({
 
   const editorCtx: EditorContextValue = {
     definitions: definitions ?? emptyDefs,
-    targetType: targetScope === "each_character" ? "npc" : "none",
+    targetType: targetScope === EventScope.EACH_CHARACTER ? TargetType.NPC : TargetType.NONE,
     resourceKeys,
     abilityKeys,
     experienceKeys,
@@ -644,11 +640,11 @@ function EventEditor({
             value={triggerMode}
             onChange={(e) => setTriggerMode(e.target.value as EventDefinition["triggerMode"])}
           >
-            <option value="on_change">on_change (变化触发)</option>
-            <option value="while">while (持续触发)</option>
-            <option value="once">once (一次性)</option>
+            <option value={TriggerMode.ON_CHANGE}>on_change (变化触发)</option>
+            <option value={TriggerMode.WHILE}>while (持续触发)</option>
+            <option value={TriggerMode.ONCE}>once (一次性)</option>
           </select>
-          {triggerMode === "while" && (
+          {triggerMode === TriggerMode.WHILE && (
             <>
               <label style={{ color: T.textSub, fontSize: "11px" }}>冷却(分钟)</label>
               <input
@@ -693,8 +689,8 @@ function EventEditor({
             value={targetScope}
             onChange={(e) => setTargetScope(e.target.value as EventDefinition["targetScope"])}
           >
-            <option value="each_character">each_character (每个角色)</option>
-            <option value="none">none (无目标)</option>
+            <option value={EventScope.EACH_CHARACTER}>each_character (每个角色)</option>
+            <option value={EventScope.NONE}>none (无目标)</option>
           </select>
           <HelpButton show={showScopeHelp} onToggle={() => setShowScopeHelp((v) => !v)} />
         </div>
@@ -841,7 +837,7 @@ function EffectFieldEditor({
       <select
         style={{ ...inputStyle, fontSize: "11px" }}
         value={effect.type}
-        onChange={(e) => onChange({ type: e.target.value as ActionEffect["type"], op: "add" })}
+        onChange={(e) => onChange({ type: e.target.value as ActionEffect["type"], op: EffectOp.ADD })}
       >
         {EFFECT_TYPES.map((t) => (
           <option key={t.value} value={t.value}>
@@ -851,7 +847,7 @@ function EffectFieldEditor({
       </select>
 
       {/* Resource / Ability / BasicInfo */}
-      {(effect.type === "resource" || effect.type === "ability" || effect.type === "basicInfo") && (
+      {(effect.type === EF.RESOURCE || effect.type === EF.ABILITY || effect.type === EF.BASIC_INFO) && (
         <>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
@@ -859,9 +855,9 @@ function EffectFieldEditor({
             onChange={(e) => update({ key: e.target.value })}
           >
             <option value="">选择</option>
-            {(effect.type === "resource"
+            {(effect.type === EF.RESOURCE
               ? ctx.resourceKeys
-              : effect.type === "ability"
+              : effect.type === EF.ABILITY
                 ? ctx.abilityKeys
                 : ctx.basicInfoNumKeys
             ).map((k) => (
@@ -875,8 +871,8 @@ function EffectFieldEditor({
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value="add">增加</option>
-            <option value="set">设为</option>
+            <option value={EffectOp.ADD}>增加</option>
+            <option value={EffectOp.SET}>设为</option>
           </select>
           <input
             style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
@@ -888,15 +884,15 @@ function EffectFieldEditor({
       )}
 
       {/* Favorability */}
-      {effect.type === "favorability" && (
+      {effect.type === EF.FAVORABILITY && (
         <>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value="add">增加</option>
-            <option value="set">设为</option>
+            <option value={EffectOp.ADD}>增加</option>
+            <option value={EffectOp.SET}>设为</option>
           </select>
           <input
             style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
@@ -908,15 +904,15 @@ function EffectFieldEditor({
       )}
 
       {/* Trait */}
-      {effect.type === "trait" && (
+      {effect.type === EF.TRAIT && (
         <>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value="add">添加</option>
-            <option value="remove">移除</option>
+            <option value={EffectOp.ADD}>添加</option>
+            <option value={EffectOp.REMOVE}>移除</option>
           </select>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
@@ -948,15 +944,15 @@ function EffectFieldEditor({
       )}
 
       {/* Item */}
-      {effect.type === "item" && (
+      {effect.type === EF.ITEM && (
         <>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value="add">给予</option>
-            <option value="remove">移除</option>
+            <option value={EffectOp.ADD}>给予</option>
+            <option value={EffectOp.REMOVE}>移除</option>
           </select>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
@@ -980,7 +976,7 @@ function EffectFieldEditor({
       )}
 
       {/* Clothing */}
-      {effect.type === "clothing" && (
+      {effect.type === EF.CLOTHING && (
         <>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
@@ -996,19 +992,19 @@ function EffectFieldEditor({
           </select>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
-            value={effect.state ?? "worn"}
+            value={effect.state ?? ClothingState.WORN}
             onChange={(e) => update({ state: e.target.value })}
           >
-            <option value="worn">穿着</option>
-            <option value="halfWorn">半穿</option>
-            <option value="off">脱下</option>
-            <option value="empty">无衣物</option>
+            <option value={ClothingState.WORN}>穿着</option>
+            <option value={ClothingState.HALF_WORN}>半穿</option>
+            <option value={ClothingState.OFF}>脱下</option>
+            <option value={ClothingState.EMPTY}>无衣物</option>
           </select>
         </>
       )}
 
       {/* Position */}
-      {effect.type === "position" && (
+      {effect.type === EffType.POSITION && (
         <>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
@@ -1040,7 +1036,7 @@ function EffectFieldEditor({
       )}
 
       {/* Experience */}
-      {effect.type === "experience" && (
+      {effect.type === EF.EXPERIENCE && (
         <>
           <input
             style={{ ...inputStyle, width: "80px", fontSize: "11px" }}
@@ -1058,7 +1054,7 @@ function EffectFieldEditor({
       )}
 
       {/* WorldVar */}
-      {effect.type === "worldVar" && (
+      {effect.type === EF.WORLD_VAR && (
         <>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
@@ -1077,8 +1073,8 @@ function EffectFieldEditor({
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value="set">设为</option>
-            <option value="add">增加</option>
+            <option value={EffectOp.SET}>设为</option>
+            <option value={EffectOp.ADD}>增加</option>
           </select>
           <input
             style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
@@ -1127,7 +1123,7 @@ function EventTemplateVarHelp({
     </div>
   );
 
-  const isNone = targetScope === "none";
+  const isNone = targetScope === EventScope.NONE;
 
   return (
     <div

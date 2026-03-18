@@ -4,6 +4,7 @@ import type { GameDefinitions, TraitDefinition, TraitGroup } from "../../types/g
 import { fetchDefinitions, fetchTraitDefs, fetchTraitGroups } from "../../api/client";
 import TraitEditor from "./TraitEditor";
 import TraitGroupEditor from "./TraitGroupEditor";
+import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 
 const hoverStyles = `
   .tm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
@@ -25,7 +26,7 @@ export default function TraitManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { collapsed, toggle: toggleCollapse } = useCollapsibleGroups();
 
   useEffect(() => {
     onEditingChange?.(editingId !== null || editingGroupId !== null);
@@ -67,10 +68,6 @@ export default function TraitManager({
   const handleNewGroup = () => {
     setIsNew(true);
     setEditingGroupId("__new__");
-  };
-
-  const toggleCollapse = (key: string) => {
-    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   if (!definitions) {

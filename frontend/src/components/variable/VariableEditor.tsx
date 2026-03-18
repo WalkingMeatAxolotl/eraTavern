@@ -8,6 +8,8 @@ import {
   fetchCharacterConfigs,
 } from "../../api/client";
 import T from "../../theme";
+import { VarStepType, EF, ArithOp } from "../../constants";
+import { inputStyle, labelStyle } from "../shared/styles";
 
 interface Props {
   variable: VariableDefinition;
@@ -19,47 +21,32 @@ interface Props {
 }
 
 const OP_OPTIONS: { value: string; label: string }[] = [
-  { value: "add", label: "+" },
-  { value: "subtract", label: "-" },
-  { value: "multiply", label: "x" },
-  { value: "divide", label: "/" },
-  { value: "min", label: "min" },
-  { value: "max", label: "max" },
-  { value: "floor", label: "下限(不低于)" },
-  { value: "cap", label: "上限(不超过)" },
+  { value: ArithOp.ADD, label: "+" },
+  { value: ArithOp.SUBTRACT, label: "-" },
+  { value: ArithOp.MULTIPLY, label: "x" },
+  { value: ArithOp.DIVIDE, label: "/" },
+  { value: ArithOp.MIN, label: "min" },
+  { value: ArithOp.MAX, label: "max" },
+  { value: ArithOp.FLOOR, label: "下限(不低于)" },
+  { value: ArithOp.CAP, label: "上限(不超过)" },
 ];
 
 const TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: "ability", label: "能力值" },
-  { value: "resource", label: "资源" },
-  { value: "basicInfo", label: "基础信息" },
-  { value: "traitCount", label: "特质计数" },
-  { value: "hasTrait", label: "拥有特质" },
-  { value: "experience", label: "经历次数" },
-  { value: "itemCount", label: "物品数量" },
-  { value: "favorability", label: "好感度" },
-  { value: "constant", label: "常量" },
-  { value: "variable", label: "其他变量" },
+  { value: VarStepType.ABILITY, label: "能力值" },
+  { value: VarStepType.RESOURCE, label: "资源" },
+  { value: VarStepType.BASIC_INFO, label: "基础信息" },
+  { value: VarStepType.TRAIT_COUNT, label: "特质计数" },
+  { value: VarStepType.HAS_TRAIT, label: "拥有特质" },
+  { value: VarStepType.EXPERIENCE, label: "经历次数" },
+  { value: VarStepType.ITEM_COUNT, label: "物品数量" },
+  { value: VarStepType.FAVORABILITY, label: "好感度" },
+  { value: VarStepType.CONSTANT, label: "常量" },
+  { value: VarStepType.VARIABLE, label: "其他变量" },
 ];
-
-const inputStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  color: T.text,
-  border: `1px solid ${T.borderLight}`,
-  borderRadius: "3px",
-  fontSize: "12px",
-};
 
 const selectStyle: React.CSSProperties = {
   ...inputStyle,
   cursor: "pointer",
-};
-
-const labelStyle: React.CSSProperties = {
-  color: T.textSub,
-  fontSize: "11px",
-  marginBottom: "2px",
 };
 
 const btnBase: React.CSSProperties = {
@@ -72,15 +59,15 @@ const btnBase: React.CSSProperties = {
 };
 
 function makeBlankStep(): VariableStep {
-  return { type: "constant", value: 0, op: "add" };
+  return { type: VarStepType.CONSTANT, value: 0, op: ArithOp.ADD };
 }
 
 function isAdditive(op: string): boolean {
-  return op === "add" || op === "subtract";
+  return op === ArithOp.ADD || op === ArithOp.SUBTRACT;
 }
 
 function isMultiplicative(op: string): boolean {
-  return op === "multiply" || op === "divide";
+  return op === ArithOp.MULTIPLY || op === ArithOp.DIVIDE;
 }
 
 function formulaPreview(steps: VariableStep[], bidirectional?: boolean): string {
@@ -113,7 +100,7 @@ function formulaPreview(steps: VariableStep[], bidirectional?: boolean): string 
       parts.push(val);
     } else {
       const sym = opSymbol(op);
-      if (["min", "max", "floor", "cap"].includes(op)) {
+      if ([ArithOp.MIN, ArithOp.MAX, ArithOp.FLOOR, ArithOp.CAP].includes(op)) {
         parts.push(`${sym}(${val})`);
       } else {
         parts.push(`${sym} ${val}`);
@@ -126,21 +113,21 @@ function formulaPreview(steps: VariableStep[], bidirectional?: boolean): string 
 
 function opSymbol(op: string): string {
   switch (op) {
-    case "add":
+    case ArithOp.ADD:
       return "+";
-    case "subtract":
+    case ArithOp.SUBTRACT:
       return "\u2212";
-    case "multiply":
+    case ArithOp.MULTIPLY:
       return "\u00D7";
-    case "divide":
+    case ArithOp.DIVIDE:
       return "\u00F7";
-    case "min":
+    case ArithOp.MIN:
       return "min";
-    case "max":
+    case ArithOp.MAX:
       return "max";
-    case "floor":
+    case ArithOp.FLOOR:
       return "\u2265";
-    case "cap":
+    case ArithOp.CAP:
       return "\u2264";
     default:
       return "?";
@@ -150,25 +137,25 @@ function opSymbol(op: string): string {
 function stepValueLabel(s: VariableStep, bidirectional?: boolean): string {
   const src = bidirectional ? (s.source === "target" ? "T:" : "S:") : "";
   switch (s.type) {
-    case "ability":
+    case VarStepType.ABILITY:
       return `${src}${s.key ?? "?"}`;
-    case "resource":
+    case VarStepType.RESOURCE:
       return `${src}${s.key ?? "?"}${s.field === "max" ? ".max" : ""}`;
-    case "basicInfo":
+    case VarStepType.BASIC_INFO:
       return `${src}${s.key ?? "?"}`;
-    case "traitCount":
+    case VarStepType.TRAIT_COUNT:
       return `${src}count(${s.traitGroup ?? "?"})`;
-    case "hasTrait":
+    case VarStepType.HAS_TRAIT:
       return `${src}has(${s.traitId ?? "?"})`;
-    case "experience":
+    case VarStepType.EXPERIENCE:
       return `${src}exp(${s.key ?? "?"})`;
-    case "itemCount":
+    case VarStepType.ITEM_COUNT:
       return `${src}item(${s.key ?? "?"})`;
-    case "favorability":
+    case VarStepType.FAVORABILITY:
       return bidirectional && s.source === "target" ? "fav(T→S)" : "fav(S→T)";
-    case "constant":
+    case VarStepType.CONSTANT:
       return String(s.value ?? 0);
-    case "variable":
+    case VarStepType.VARIABLE:
       return `$${s.varId ?? "?"}`;
     default:
       return "?";
@@ -291,7 +278,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
 
   const addStep = () => {
     if (steps.length === 0) {
-      setSteps([{ type: "constant", value: 0 }]);
+      setSteps([{ type: VarStepType.CONSTANT, value: 0 }]);
     } else {
       setSteps((prev) => [...prev, makeBlankStep()]);
     }
@@ -309,7 +296,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           const { op: _, ...rest } = s;
           return rest;
         }
-        return s.op ? s : { ...s, op: "add" as const };
+        return s.op ? s : { ...s, op: ArithOp.ADD as const };
       });
     });
   };
@@ -725,7 +712,7 @@ function StepRow({
       ) : (
         <select
           style={{ ...selectStyle, minWidth: "60px" }}
-          value={step.op ?? "add"}
+          value={step.op ?? ArithOp.ADD}
           onChange={(e) => onChange({ op: e.target.value as VariableStep["op"] })}
           disabled={readOnly}
         >
@@ -745,22 +732,22 @@ function StepRow({
           const newType = e.target.value as VariableStep["type"];
           // Reset type-specific fields
           const patch: Partial<VariableStep> = { type: newType };
-          if (newType === "constant") {
+          if (newType === VarStepType.CONSTANT) {
             patch.value = 0;
             patch.key = undefined;
             patch.varId = undefined;
             patch.traitGroup = undefined;
             patch.traitId = undefined;
-          } else if (newType === "variable") {
+          } else if (newType === VarStepType.VARIABLE) {
             patch.varId = "";
             patch.key = undefined;
             patch.value = undefined;
-          } else if (newType === "hasTrait") {
+          } else if (newType === VarStepType.HAS_TRAIT) {
             patch.traitGroup = "";
             patch.traitId = "";
             patch.key = undefined;
             patch.value = undefined;
-          } else if (newType === "traitCount") {
+          } else if (newType === VarStepType.TRAIT_COUNT) {
             patch.traitGroup = "";
             patch.key = undefined;
             patch.value = undefined;
@@ -783,7 +770,7 @@ function StepRow({
       </select>
 
       {/* Source (self/target) — only for bidirectional variables, not for constant/variable */}
-      {isBidirectional && !["constant", "variable"].includes(step.type) && (
+      {isBidirectional && ![VarStepType.CONSTANT, VarStepType.VARIABLE].includes(step.type) && (
         <select
           style={{ ...selectStyle, minWidth: "60px" }}
           value={step.source ?? "self"}
@@ -797,7 +784,7 @@ function StepRow({
 
       {/* Type-specific fields */}
       <div style={{ flex: 1, display: "flex", gap: "4px", alignItems: "center" }}>
-        {step.type === "constant" && (
+        {step.type === VarStepType.CONSTANT && (
           <input
             type="number"
             style={{ ...inputStyle, flex: 1 }}
@@ -807,7 +794,7 @@ function StepRow({
           />
         )}
 
-        {step.type === "ability" && (
+        {step.type === VarStepType.ABILITY && (
           <select
             style={{ ...selectStyle, flex: 1 }}
             value={step.key ?? ""}
@@ -823,7 +810,7 @@ function StepRow({
           </select>
         )}
 
-        {step.type === "basicInfo" && (
+        {step.type === VarStepType.BASIC_INFO && (
           <select
             style={{ ...selectStyle, flex: 1 }}
             value={step.key ?? ""}
@@ -841,7 +828,7 @@ function StepRow({
           </select>
         )}
 
-        {step.type === "resource" && (
+        {step.type === VarStepType.RESOURCE && (
           <>
             <select
               style={{ ...selectStyle, flex: 1 }}
@@ -868,7 +855,7 @@ function StepRow({
           </>
         )}
 
-        {step.type === "traitCount" && (
+        {step.type === VarStepType.TRAIT_COUNT && (
           <select
             style={{ ...selectStyle, flex: 1 }}
             value={step.traitGroup ?? ""}
@@ -884,7 +871,7 @@ function StepRow({
           </select>
         )}
 
-        {step.type === "hasTrait" &&
+        {step.type === VarStepType.HAS_TRAIT &&
           (() => {
             const templateTraits = definitions?.template.traits ?? [];
             const traitDefs = definitions?.traitDefs ?? {};
@@ -927,7 +914,7 @@ function StepRow({
             );
           })()}
 
-        {step.type === "experience" && (
+        {step.type === VarStepType.EXPERIENCE && (
           <select
             style={{ ...selectStyle, flex: 1 }}
             value={step.key ?? ""}
@@ -943,7 +930,7 @@ function StepRow({
           </select>
         )}
 
-        {step.type === "itemCount" && (
+        {step.type === VarStepType.ITEM_COUNT && (
           <select
             style={{ ...selectStyle, flex: 1 }}
             value={step.key ?? ""}
@@ -959,13 +946,13 @@ function StepRow({
           </select>
         )}
 
-        {step.type === "favorability" && (
+        {step.type === VarStepType.FAVORABILITY && (
           <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>
             {step.source === "target" ? "目标角色→执行者" : "执行者→目标角色"}
           </span>
         )}
 
-        {step.type === "variable" && (
+        {step.type === VarStepType.VARIABLE && (
           <select
             style={{ ...selectStyle, flex: 1 }}
             value={step.varId ?? ""}

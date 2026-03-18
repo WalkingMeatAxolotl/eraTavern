@@ -2,8 +2,11 @@ import { useState } from "react";
 import type { GameDefinitions, ClothingDefinition, TraitEffect } from "../../types/game";
 import { createClothingDef, saveClothingDef, deleteClothingDef } from "../../api/client";
 import T from "../../theme";
+import { EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { HelpButton, HelpPanel, helpSub, helpP, helpEm } from "../shared/HelpToggle";
+import { toLocalId } from "../shared/idUtils";
+import { inputStyle, labelStyle } from "../shared/styles";
 
 function buildTargetOptions(defs: GameDefinitions) {
   const groups: { label: string; options: { value: string; label: string }[] }[] = [];
@@ -61,25 +64,6 @@ const SLOT_LABELS: Record<string, string> = {
   accessory3: "装饰品3",
 };
 
-const inputStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  color: T.text,
-  border: `1px solid ${T.borderLight}`,
-  borderRadius: "3px",
-  fontSize: "12px",
-};
-
-const labelStyle: React.CSSProperties = {
-  color: T.textSub,
-  fontSize: "11px",
-  marginBottom: "2px",
-};
-
-function toLocalId(nsId: string): string {
-  const dot = nsId.indexOf(".");
-  return dot >= 0 ? nsId.slice(dot + 1) : nsId;
-}
 
 export default function ClothingEditor({ clothing, definitions, isNew, onBack, addonCrud }: Props) {
   const addonPrefix = clothing.source || "";
@@ -112,12 +96,12 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
 
   const addEffect = () => {
     const firstTarget = allTargets[0]?.value ?? "";
-    setEffects((prev) => [...prev, { target: firstTarget, effect: "increase", magnitudeType: "fixed", value: 0 }]);
+    setEffects((prev) => [...prev, { target: firstTarget, effect: EffectDirection.INCREASE, magnitudeType: MagnitudeType.FIXED, value: 0 }]);
   };
 
   const pctHint = (value: number, direction: string) => {
     let m = value / 100;
-    if (direction === "decrease") m = 2.0 - m;
+    if (direction === EffectDirection.DECREASE) m = 2.0 - m;
     return `\u00D7${m.toFixed(2)}`;
   };
 
@@ -424,8 +408,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
                 disabled={isReadOnly}
               >
-                <option value="increase">增加</option>
-                <option value="decrease">减少</option>
+                <option value={EffectDirection.INCREASE}>增加</option>
+                <option value={EffectDirection.DECREASE}>减少</option>
               </select>
               <select
                 style={{ ...inputStyle, width: "70px" }}
@@ -433,8 +417,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
                 disabled={isReadOnly}
               >
-                <option value="fixed">固定值</option>
-                <option value="percentage">百分比</option>
+                <option value={MagnitudeType.FIXED}>固定值</option>
+                <option value={MagnitudeType.PERCENTAGE}>百分比</option>
               </select>
               <input
                 type="number"
@@ -443,7 +427,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 onChange={(e) => updateEffect(idx, { value: Number(e.target.value) })}
                 disabled={isReadOnly}
               />
-              {eff.magnitudeType === "percentage" && (
+              {eff.magnitudeType === MagnitudeType.PERCENTAGE && (
                 <span style={{ color: T.textDim, fontSize: "11px", width: "50px", flexShrink: 0 }}>
                   {pctHint(eff.value, eff.effect)}
                 </span>

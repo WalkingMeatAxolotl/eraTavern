@@ -5,6 +5,7 @@
  */
 import type { ValueModifier } from "../../types/game";
 import T from "../../theme";
+import { EF, BonusMode, CondTarget, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
 import {
   inputStyle,
@@ -41,7 +42,7 @@ export function ModifierListEditor({
     worldVarList,
   } = useEditorContext();
 
-  const add = () => onChange([...modifiers, { type: "ability", key: abilityKeys[0]?.key ?? "", per: 1000, bonus: 5 }]);
+  const add = () => onChange([...modifiers, { type: EF.ABILITY, key: abilityKeys[0]?.key ?? "", per: 1000, bonus: 5 }]);
   const remove = (idx: number) => onChange(modifiers.filter((_, i) => i !== idx));
   const update = (idx: number, mod: ValueModifier) => {
     const next = [...modifiers];
@@ -77,57 +78,57 @@ export function ModifierListEditor({
             onChange={(e) => {
               const t = e.target.value as ValueModifier["type"];
               const base = { bonus: mod.bonus, bonusMode: mod.bonusMode, modTarget: mod.modTarget };
-              if (t === "resource") update(idx, { type: t, key: resourceKeys[0]?.key ?? "", per: 100, ...base });
-              else if (t === "basicInfo")
+              if (t === EF.RESOURCE) update(idx, { type: t, key: resourceKeys[0]?.key ?? "", per: 100, ...base });
+              else if (t === EF.BASIC_INFO)
                 update(idx, { type: t, key: basicInfoNumKeys[0]?.key ?? "", per: 100, ...base });
-              else if (t === "ability") update(idx, { type: t, key: abilityKeys[0]?.key ?? "", per: 1000, ...base });
-              else if (t === "experience") update(idx, { type: t, key: experienceKeys[0]?.key ?? "", per: 1, ...base });
-              else if (t === "trait") update(idx, { type: t, key: traitCategories[0]?.key ?? "", value: "", ...base });
-              else if (t === "hasItem") update(idx, { type: t, itemId: itemList[0]?.id ?? "", ...base });
-              else if (t === "outfit") update(idx, { type: t, outfitId: outfitTypes[0]?.id ?? "default", ...base });
-              else if (t === "clothing") update(idx, { type: t, slot: clothingSlots[0] ?? "", ...base });
-              else if (t === "variable") update(idx, { type: t, varId: variableList[0]?.id ?? "", per: 1, ...base });
-              else if (t === "worldVar") update(idx, { type: t, key: worldVarList[0]?.id ?? "", per: 1, ...base });
-              else update(idx, { type: t, source: "target", per: 100, ...base });
+              else if (t === EF.ABILITY) update(idx, { type: t, key: abilityKeys[0]?.key ?? "", per: 1000, ...base });
+              else if (t === EF.EXPERIENCE) update(idx, { type: t, key: experienceKeys[0]?.key ?? "", per: 1, ...base });
+              else if (t === EF.TRAIT) update(idx, { type: t, key: traitCategories[0]?.key ?? "", value: "", ...base });
+              else if (t === EF.HAS_ITEM) update(idx, { type: t, itemId: itemList[0]?.id ?? "", ...base });
+              else if (t === EF.OUTFIT) update(idx, { type: t, outfitId: outfitTypes[0]?.id ?? "default", ...base });
+              else if (t === EF.CLOTHING) update(idx, { type: t, slot: clothingSlots[0] ?? "", ...base });
+              else if (t === EF.VARIABLE) update(idx, { type: t, varId: variableList[0]?.id ?? "", per: 1, ...base });
+              else if (t === EF.WORLD_VAR) update(idx, { type: t, key: worldVarList[0]?.id ?? "", per: 1, ...base });
+              else update(idx, { type: t, source: CondTarget.TARGET, per: 100, ...base });
             }}
             disabled={disabled}
           >
             <option disabled style={{ fontWeight: "bold" }}>
               ── 数值 ──
             </option>
-            <option value="resource">资源</option>
-            <option value="basicInfo">基本属性</option>
-            <option value="ability">能力</option>
-            <option value="experience">经验</option>
-            {targetType === "npc" && <option value="favorability">好感度</option>}
-            <option value="variable">派生变量</option>
+            <option value={EF.RESOURCE}>资源</option>
+            <option value={EF.BASIC_INFO}>基本属性</option>
+            <option value={EF.ABILITY}>能力</option>
+            <option value={EF.EXPERIENCE}>经验</option>
+            {targetType === TargetType.NPC && <option value={EF.FAVORABILITY}>好感度</option>}
+            <option value={EF.VARIABLE}>派生变量</option>
             <option disabled style={{ fontWeight: "bold" }}>
               ── 状态 ──
             </option>
-            <option value="trait">特质</option>
-            <option value="hasItem">持有物品</option>
-            <option value="outfit">服装预设</option>
-            <option value="clothing">服装状态</option>
+            <option value={EF.TRAIT}>特质</option>
+            <option value={EF.HAS_ITEM}>持有物品</option>
+            <option value={EF.OUTFIT}>服装预设</option>
+            <option value={EF.CLOTHING}>服装状态</option>
             <option disabled style={{ fontWeight: "bold" }}>
               ── 全局 ──
             </option>
-            <option value="worldVar">世界变量</option>
+            <option value={EF.WORLD_VAR}>世界变量</option>
           </select>
 
-          {!["favorability", "worldVar"].includes(mod.type) &&
-            !(mod.type === "variable" && (biVarList ?? []).some((v) => v.id === mod.varId)) && (
+          {![EF.FAVORABILITY, EF.WORLD_VAR].includes(mod.type) &&
+            !(mod.type === EF.VARIABLE && (biVarList ?? []).some((v) => v.id === mod.varId)) && (
               <select
                 style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
-                value={mod.modTarget ?? "self"}
+                value={mod.modTarget ?? CondTarget.SELF}
                 onChange={(e) => update(idx, { ...mod, modTarget: e.target.value })}
-                disabled={disabled || targetType !== "npc"}
+                disabled={disabled || targetType !== TargetType.NPC}
               >
-                <option value="self">执行者</option>
-                {targetType === "npc" && <option value="target">目标角色</option>}
+                <option value={CondTarget.SELF}>执行者</option>
+                {targetType === TargetType.NPC && <option value={CondTarget.TARGET}>目标角色</option>}
               </select>
             )}
 
-          {mod.type === "resource" && (
+          {mod.type === EF.RESOURCE && (
             <>
               <select
                 style={inputStyle}
@@ -153,7 +154,7 @@ export function ModifierListEditor({
             </>
           )}
 
-          {mod.type === "basicInfo" && (
+          {mod.type === EF.BASIC_INFO && (
             <>
               <select
                 style={inputStyle}
@@ -179,7 +180,7 @@ export function ModifierListEditor({
             </>
           )}
 
-          {mod.type === "ability" && (
+          {mod.type === EF.ABILITY && (
             <>
               <select
                 style={inputStyle}
@@ -205,7 +206,7 @@ export function ModifierListEditor({
             </>
           )}
 
-          {mod.type === "experience" && (
+          {mod.type === EF.EXPERIENCE && (
             <>
               <select
                 style={inputStyle}
@@ -231,7 +232,7 @@ export function ModifierListEditor({
             </>
           )}
 
-          {mod.type === "trait" && (
+          {mod.type === EF.TRAIT && (
             <>
               <select
                 style={inputStyle}
@@ -240,7 +241,7 @@ export function ModifierListEditor({
                 disabled={disabled}
               >
                 {traitCategories
-                  .filter((c) => c.key !== "ability" && c.key !== "experience")
+                  .filter((c) => c.key !== EF.ABILITY && c.key !== EF.EXPERIENCE)
                   .map((c) => (
                     <option key={c.key} value={c.key}>
                       {c.label}
@@ -265,7 +266,7 @@ export function ModifierListEditor({
             </>
           )}
 
-          {mod.type === "hasItem" && (
+          {mod.type === EF.HAS_ITEM && (
             <select
               style={inputStyle}
               value={mod.itemId ?? ""}
@@ -281,7 +282,7 @@ export function ModifierListEditor({
             </select>
           )}
 
-          {mod.type === "outfit" && (
+          {mod.type === EF.OUTFIT && (
             <select
               style={inputStyle}
               value={mod.outfitId ?? ""}
@@ -296,7 +297,7 @@ export function ModifierListEditor({
             </select>
           )}
 
-          {mod.type === "clothing" && (
+          {mod.type === EF.CLOTHING && (
             <select
               style={inputStyle}
               value={mod.slot ?? ""}
@@ -312,16 +313,16 @@ export function ModifierListEditor({
             </select>
           )}
 
-          {mod.type === "favorability" && (
+          {mod.type === EF.FAVORABILITY && (
             <>
               <select
                 style={inputStyle}
-                value={mod.source ?? "target"}
+                value={mod.source ?? CondTarget.TARGET}
                 onChange={(e) => update(idx, { ...mod, source: e.target.value })}
                 disabled={disabled}
               >
-                <option value="target">目标角色→执行者</option>
-                <option value="self">执行者→目标角色</option>
+                <option value={CondTarget.TARGET}>目标角色→执行者</option>
+                <option value={CondTarget.SELF}>执行者→目标角色</option>
               </select>
               <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
               <input
@@ -335,20 +336,20 @@ export function ModifierListEditor({
             </>
           )}
 
-          {mod.type === "variable" &&
+          {mod.type === EF.VARIABLE &&
             (() => {
               const isBiVar = (biVarList ?? []).some((v) => v.id === mod.varId);
               return (
                 <>
-                  {isBiVar && targetType === "npc" && (
+                  {isBiVar && targetType === TargetType.NPC && (
                     <select
                       style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
-                      value={mod.modTarget ?? "self"}
+                      value={mod.modTarget ?? CondTarget.SELF}
                       onChange={(e) => update(idx, { ...mod, modTarget: e.target.value })}
                       disabled={disabled}
                     >
-                      <option value="self">执行者→目标角色</option>
-                      <option value="target">目标角色→执行者</option>
+                      <option value={CondTarget.SELF}>执行者→目标角色</option>
+                      <option value={CondTarget.TARGET}>目标角色→执行者</option>
                     </select>
                   )}
                   <select
@@ -364,8 +365,8 @@ export function ModifierListEditor({
                         {v.name}
                       </option>
                     ))}
-                    {targetType === "npc" && (biVarList ?? []).length > 0 && <option disabled>── 双向 ──</option>}
-                    {targetType === "npc" &&
+                    {targetType === TargetType.NPC && (biVarList ?? []).length > 0 && <option disabled>── 双向 ──</option>}
+                    {targetType === TargetType.NPC &&
                       (biVarList ?? []).map((v) => (
                         <option key={v.id} value={v.id}>
                           {v.name}
@@ -385,7 +386,7 @@ export function ModifierListEditor({
               );
             })()}
 
-          {mod.type === "worldVar" && (
+          {mod.type === EF.WORLD_VAR && (
             <>
               <select
                 style={inputStyle}
@@ -414,12 +415,12 @@ export function ModifierListEditor({
 
           <select
             style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
-            value={mod.bonusMode ?? "add"}
+            value={mod.bonusMode ?? BonusMode.ADD}
             onChange={(e) => update(idx, { ...mod, bonusMode: e.target.value as "add" | "multiply" })}
             disabled={disabled}
           >
-            <option value="add">+</option>
-            <option value="multiply">x%</option>
+            <option value={BonusMode.ADD}>+</option>
+            <option value={BonusMode.MULTIPLY}>x%</option>
           </select>
           <input
             type="number"

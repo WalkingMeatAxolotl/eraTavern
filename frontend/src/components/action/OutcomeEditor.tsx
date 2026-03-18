@@ -6,8 +6,9 @@
 import { useState } from "react";
 import type { ActionOutcome, ActionEffect, SuggestNext, EffectFilterDef } from "../../types/game";
 import T from "../../theme";
+import { EF, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/ConditionEditor";
+import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/styles";
 import { ModifierListEditor } from "./ModifierEditor";
 import { EffectEditor } from "./EffectEditor";
 import { TemplateListEditor } from "./TemplateEditor";
@@ -67,7 +68,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
     update({
       effects: [
         ...outcome.effects,
-        { type: "resource", key: resourceKeys[0]?.key, op: "add", value: 0, target: targetVal },
+        { type: EF.RESOURCE, key: resourceKeys[0]?.key, op: "add", value: 0, target: targetVal },
       ],
     });
   };
@@ -222,7 +223,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
               <button className="ae-add-btn" onClick={() => addTargetGroup("self")} style={addBtnStyle}>
                 [+ 执行者]
               </button>
-              {targetType === "npc" && (
+              {targetType === TargetType.NPC && (
                 <button className="ae-add-btn" onClick={() => addTargetGroup("target")} style={addBtnStyle}>
                   [+ 目标角色]
                 </button>
@@ -350,10 +351,10 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
             {group.indices.map((effIdx, gi) => {
               const eff = outcome.effects[effIdx];
               const hasModifiers =
-                eff.type === "resource" ||
-                eff.type === "ability" ||
-                eff.type === "basicInfo" ||
-                eff.type === "favorability";
+                eff.type === EF.RESOURCE ||
+                eff.type === EF.ABILITY ||
+                eff.type === EF.BASIC_INFO ||
+                eff.type === EF.FAVORABILITY;
               return (
                 <div key={effIdx} style={{ ...listRowStyle(gi, gi === group.indices.length - 1), marginTop: "2px" }}>
                   <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>

@@ -1,23 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../../theme";
+import { LorebookMode } from "../../constants";
 import type { LorebookEntry } from "../../types/game";
 import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLorebookEntry } from "../../api/client";
+import { inputStyle as _inputStyle, labelStyle } from "../shared/styles";
 
 const inputStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  color: T.text,
-  border: `1px solid ${T.borderLight}`,
-  borderRadius: "3px",
-  fontSize: "12px",
+  ..._inputStyle,
   width: "100%",
   boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = {
-  color: T.textSub,
-  fontSize: "11px",
-  marginBottom: "2px",
 };
 
 const sectionStyle: React.CSSProperties = {
@@ -44,7 +35,7 @@ function makeBlankEntry(addonId: string): Omit<LorebookEntry, "source"> {
     content: "",
     enabled: true,
     priority: 10,
-    insertMode: "keyword",
+    insertMode: LorebookMode.KEYWORD,
   };
 }
 
@@ -204,7 +195,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
               <span>
                 <span style={{ fontWeight: "bold" }}>{e.name || e.id}</span>
                 <span style={{ color: T.textDim, marginLeft: "8px", fontSize: "11px" }}>
-                  {e.insertMode === "always" ? "[常驻]" : e.keywords.slice(0, 3).join(", ")}
+                  {e.insertMode === LorebookMode.ALWAYS ? "[常驻]" : e.keywords.slice(0, 3).join(", ")}
                   {e.keywords.length > 3 ? "..." : ""}
                 </span>
               </span>
@@ -271,8 +262,8 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
               value={entry.insertMode}
               onChange={(e) => setEntry((prev) => ({ ...prev, insertMode: e.target.value as "keyword" | "always" }))}
             >
-              <option value="keyword">关键词触发</option>
-              <option value="always">始终注入</option>
+              <option value={LorebookMode.KEYWORD}>关键词触发</option>
+              <option value={LorebookMode.ALWAYS}>始终注入</option>
             </select>
           </div>
           <div>
@@ -291,7 +282,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
       </div>
 
       {/* Keywords */}
-      {entry.insertMode === "keyword" && (
+      {entry.insertMode === LorebookMode.KEYWORD && (
         <div style={sectionStyle}>
           <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>关键词</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>

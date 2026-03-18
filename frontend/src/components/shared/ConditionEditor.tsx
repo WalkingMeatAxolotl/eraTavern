@@ -6,59 +6,11 @@
  */
 import type { ActionCondition, ConditionItem } from "../../types/game";
 import T from "../../theme";
+import { CondType, EF, CondTarget, TargetType, ClothingState } from "../../constants";
 import { useEditorContext } from "./EditorContext";
 import type { MapInfo } from "./EditorContext";
-
-// ---------------------------------------------------------------------------
-// Shared styles (also used by ActionEditor sub-editors)
-// ---------------------------------------------------------------------------
-
-export const inputStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  color: T.text,
-  border: `1px solid ${T.borderLight}`,
-  borderRadius: "3px",
-  fontSize: "12px",
-};
-
-export const addBtnStyle: React.CSSProperties = {
-  padding: "2px 8px",
-  backgroundColor: "#0a1a0a",
-  color: T.successDim,
-  border: "1px solid #2a4a2a",
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "11px",
-};
-
-export const delBtnStyle: React.CSSProperties = {
-  padding: "2px 8px",
-  backgroundColor: "#1a0a0a",
-  color: T.danger,
-  border: "1px solid #4a2a2a",
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "11px",
-};
-
-export const smallBtnStyle = (color: string): React.CSSProperties => ({
-  padding: "2px 8px",
-  backgroundColor: T.bg2,
-  color,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "11px",
-});
-
-export const rowBg = (idx: number) => (idx % 2 === 0 ? T.bg1 : T.bg2);
-export const listRowStyle = (idx: number, last: boolean): React.CSSProperties => ({
-  backgroundColor: rowBg(idx),
-  borderBottom: last ? "none" : `1px solid ${T.borderDim}`,
-  padding: "3px 4px",
-  borderRadius: "2px",
-});
+import { inputStyle, addBtnStyle, delBtnStyle, smallBtnStyle, listRowStyle } from "./styles";
+export { inputStyle, addBtnStyle, delBtnStyle, smallBtnStyle, rowBg, listRowStyle } from "./styles";
 
 export const SLOT_LABELS: Record<string, string> = {
   hat: "帽子",
@@ -82,20 +34,20 @@ export const SLOT_LABELS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 const CONDITION_TYPES: { value: ActionCondition["type"]; label: string; group?: string }[] = [
-  { value: "resource", label: "资源", group: "角色" },
-  { value: "ability", label: "能力", group: "角色" },
-  { value: "basicInfo", label: "基本属性", group: "角色" },
-  { value: "favorability", label: "好感度", group: "角色" },
-  { value: "experience", label: "经验", group: "角色" },
-  { value: "variable", label: "派生变量", group: "角色" },
-  { value: "trait", label: "特质", group: "角色" },
-  { value: "hasItem", label: "持有物品", group: "角色" },
-  { value: "outfit", label: "服装预设", group: "角色" },
-  { value: "clothing", label: "服装状态", group: "角色" },
-  { value: "location", label: "地点", group: "场景" },
-  { value: "npcPresent", label: "NPC在场", group: "场景" },
-  { value: "time", label: "时间", group: "全局" },
-  { value: "worldVar", label: "世界变量", group: "全局" },
+  { value: CondType.RESOURCE, label: "资源", group: "角色" },
+  { value: CondType.ABILITY, label: "能力", group: "角色" },
+  { value: CondType.BASIC_INFO, label: "基本属性", group: "角色" },
+  { value: CondType.FAVORABILITY, label: "好感度", group: "角色" },
+  { value: CondType.EXPERIENCE, label: "经验", group: "角色" },
+  { value: CondType.VARIABLE, label: "派生变量", group: "角色" },
+  { value: CondType.TRAIT, label: "特质", group: "角色" },
+  { value: CondType.HAS_ITEM, label: "持有物品", group: "角色" },
+  { value: CondType.OUTFIT, label: "服装预设", group: "角色" },
+  { value: CondType.CLOTHING, label: "服装状态", group: "角色" },
+  { value: CondType.LOCATION, label: "地点", group: "场景" },
+  { value: CondType.NPC_PRESENT, label: "NPC在场", group: "场景" },
+  { value: CondType.TIME, label: "时间", group: "全局" },
+  { value: CondType.WORLD_VAR, label: "世界变量", group: "全局" },
 ];
 
 const OPS = [">=", "<=", ">", "<", "==", "!="];
@@ -186,12 +138,12 @@ export function ConditionItemEditor({
   }
   // Leaf (possibly NOT-wrapped)
   const rawLeaf = isNotGroup(item) ? null : (item as ActionCondition);
-  const isLegacyNot = rawLeaf && (rawLeaf.type === "npcAbsent" || rawLeaf.type === "noTrait");
+  const isLegacyNot = rawLeaf && (rawLeaf.type === CondType.NPC_ABSENT || rawLeaf.type === CondType.NO_TRAIT);
   const isNot = isNotGroup(item) || !!isLegacyNot;
   const leaf = isNotGroup(item)
     ? ((item as { not: ConditionItem }).not as ActionCondition)
     : isLegacyNot
-      ? { ...rawLeaf, type: (rawLeaf.type === "npcAbsent" ? "npcPresent" : "trait") as ActionCondition["type"] }
+      ? { ...rawLeaf, type: (rawLeaf.type === CondType.NPC_ABSENT ? CondType.NPC_PRESENT : CondType.TRAIT) as ActionCondition["type"] }
       : rawLeaf!;
   const toggleNot = () => {
     if (isNot) onChange(leaf);
@@ -363,17 +315,17 @@ function ConditionLeafEditor({
   } = ctx;
 
   const effectiveType =
-    condition.type === "npcAbsent" ? "npcPresent" : condition.type === "noTrait" ? "trait" : condition.type;
-  const isLegacyNot = condition.type === "npcAbsent" || condition.type === "noTrait";
+    condition.type === CondType.NPC_ABSENT ? CondType.NPC_PRESENT : condition.type === CondType.NO_TRAIT ? CondType.TRAIT : condition.type;
+  const isLegacyNot = condition.type === CondType.NPC_ABSENT || condition.type === CondType.NO_TRAIT;
   const update = (patch: Partial<ActionCondition>) => {
     const merged = { ...condition, ...patch };
     if (isLegacyNot && !patch.type) merged.type = effectiveType as ActionCondition["type"];
     onChange(merged);
   };
 
-  const isBiVarSelected = effectiveType === "variable" && (biVarList ?? []).some((v) => v.id === condition.varId);
+  const isBiVarSelected = effectiveType === EF.VARIABLE && (biVarList ?? []).some((v) => v.id === condition.varId);
   const noCondTarget =
-    ["location", "npcPresent", "time", "worldVar", "favorability"].includes(effectiveType) || isBiVarSelected;
+    [CondType.LOCATION, CondType.NPC_PRESENT, CondType.TIME, EF.WORLD_VAR, EF.FAVORABILITY].includes(effectiveType) || isBiVarSelected;
   const showCondTarget = !noCondTarget;
 
   return (
@@ -387,7 +339,7 @@ function ConditionLeafEditor({
         {(() => {
           let lastGroup = "";
           const filtered = CONDITION_TYPES.filter((t) => {
-            if (t.value === "favorability" && actionTargetType !== "npc") return false;
+            if (t.value === EF.FAVORABILITY && actionTargetType !== TargetType.NPC) return false;
             return true;
           });
           return filtered
@@ -415,20 +367,20 @@ function ConditionLeafEditor({
       {showCondTarget && (
         <select
           style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
-          value={condition.condTarget ?? "self"}
+          value={condition.condTarget ?? CondTarget.SELF}
           onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })}
-          disabled={disabled || actionTargetType !== "npc"}
+          disabled={disabled || actionTargetType !== TargetType.NPC}
         >
-          <option value="self">执行者</option>
-          {actionTargetType === "npc" && <option value="target">目标角色</option>}
+          <option value={CondTarget.SELF}>执行者</option>
+          {actionTargetType === TargetType.NPC && <option value={CondTarget.TARGET}>目标角色</option>}
         </select>
       )}
 
-      {effectiveType === "location" && (
+      {effectiveType === CondType.LOCATION && (
         <LocationCondEditor condition={condition} onChange={update} disabled={disabled} mapList={mapList} />
       )}
 
-      {effectiveType === "npcPresent" && (
+      {effectiveType === CondType.NPC_PRESENT && (
         <select
           style={inputStyle}
           value={condition.npcId ?? ""}
@@ -444,7 +396,7 @@ function ConditionLeafEditor({
         </select>
       )}
 
-      {["resource", "ability", "experience", "basicInfo"].includes(effectiveType) && (
+      {[EF.RESOURCE, EF.ABILITY, EF.EXPERIENCE, EF.BASIC_INFO].includes(effectiveType) && (
         <>
           <select
             style={inputStyle}
@@ -453,11 +405,11 @@ function ConditionLeafEditor({
             disabled={disabled}
           >
             <option value="">选择</option>
-            {(effectiveType === "resource"
+            {(effectiveType === EF.RESOURCE
               ? resourceKeys
-              : effectiveType === "ability"
+              : effectiveType === EF.ABILITY
                 ? abilityKeys
-                : effectiveType === "experience"
+                : effectiveType === EF.EXPERIENCE
                   ? experienceKeys
                   : basicInfoNumKeys
             ).map((k) => (
@@ -488,7 +440,7 @@ function ConditionLeafEditor({
         </>
       )}
 
-      {effectiveType === "trait" && (
+      {effectiveType === EF.TRAIT && (
         <>
           <select
             style={inputStyle}
@@ -521,12 +473,12 @@ function ConditionLeafEditor({
         </>
       )}
 
-      {effectiveType === "favorability" && (
+      {effectiveType === EF.FAVORABILITY && (
         <>
           <select
             style={inputStyle}
             value={
-              condition.condTarget === "target"
+              condition.condTarget === CondTarget.TARGET
                 ? "target_to_self"
                 : condition.targetId === "{{targetId}}"
                   ? "self_to_target"
@@ -534,9 +486,9 @@ function ConditionLeafEditor({
             }
             onChange={(e) => {
               if (e.target.value === "target_to_self") {
-                update({ condTarget: "target", targetId: "self" });
+                update({ condTarget: CondTarget.TARGET, targetId: CondTarget.SELF });
               } else {
-                update({ condTarget: "self", targetId: "{{targetId}}" });
+                update({ condTarget: CondTarget.SELF, targetId: "{{targetId}}" });
               }
             }}
             disabled={disabled}
@@ -566,7 +518,7 @@ function ConditionLeafEditor({
         </>
       )}
 
-      {effectiveType === "hasItem" && (
+      {effectiveType === EF.HAS_ITEM && (
         <>
           <select
             style={inputStyle}
@@ -615,7 +567,7 @@ function ConditionLeafEditor({
         </>
       )}
 
-      {effectiveType === "outfit" && (
+      {effectiveType === EF.OUTFIT && (
         <select
           style={inputStyle}
           value={condition.outfitId ?? ""}
@@ -631,7 +583,7 @@ function ConditionLeafEditor({
         </select>
       )}
 
-      {effectiveType === "clothing" &&
+      {effectiveType === EF.CLOTHING &&
         (() => {
           const slotClothing = condition.slot
             ? Object.values(ctx.definitions.clothingDefs).filter((c) => (c.slots ?? [c.slot]).includes(condition.slot))
@@ -671,16 +623,16 @@ function ConditionLeafEditor({
                 disabled={disabled}
               >
                 <option value="">任意状态</option>
-                <option value="worn">穿着</option>
-                <option value="halfWorn">半穿</option>
-                <option value="off">脱下</option>
-                <option value="empty">无衣物</option>
+                <option value={ClothingState.WORN}>穿着</option>
+                <option value={ClothingState.HALF_WORN}>半穿</option>
+                <option value={ClothingState.OFF}>脱下</option>
+                <option value={ClothingState.EMPTY}>无衣物</option>
               </select>
             </>
           );
         })()}
 
-      {effectiveType === "time" && (
+      {effectiveType === CondType.TIME && (
         <>
           <input
             type="number"
@@ -748,20 +700,20 @@ function ConditionLeafEditor({
         </>
       )}
 
-      {effectiveType === "variable" &&
+      {effectiveType === EF.VARIABLE &&
         (() => {
           const isBiVar = (biVarList ?? []).some((v) => v.id === condition.varId);
           return (
             <>
-              {isBiVar && actionTargetType === "npc" && (
+              {isBiVar && actionTargetType === TargetType.NPC && (
                 <select
                   style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
-                  value={condition.condTarget ?? "self"}
+                  value={condition.condTarget ?? CondTarget.SELF}
                   onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })}
                   disabled={disabled}
                 >
-                  <option value="self">执行者→目标角色</option>
-                  <option value="target">目标角色→执行者</option>
+                  <option value={CondTarget.SELF}>执行者→目标角色</option>
+                  <option value={CondTarget.TARGET}>目标角色→执行者</option>
                 </select>
               )}
               <select
@@ -777,8 +729,8 @@ function ConditionLeafEditor({
                     {v.name}
                   </option>
                 ))}
-                {actionTargetType === "npc" && (biVarList ?? []).length > 0 && <option disabled>── 双向 ──</option>}
-                {actionTargetType === "npc" &&
+                {actionTargetType === TargetType.NPC && (biVarList ?? []).length > 0 && <option disabled>── 双向 ──</option>}
+                {actionTargetType === TargetType.NPC &&
                   (biVarList ?? []).map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.name}
@@ -808,7 +760,7 @@ function ConditionLeafEditor({
           );
         })()}
 
-      {effectiveType === "worldVar" && (
+      {effectiveType === EF.WORLD_VAR && (
         <>
           <select
             style={inputStyle}

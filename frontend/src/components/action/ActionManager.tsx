@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ActionDefinition, GameDefinitions } from "../../types/game";
 import { fetchActionDefs, fetchDefinitions } from "../../api/client";
 import ActionEditor from "./ActionEditor";
+import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 
 const hoverStyles = `
   .am-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
@@ -26,7 +27,7 @@ export default function ActionManager({
   useEffect(() => {
     onEditingChange?.(editingId !== null);
   }, [editingId, onEditingChange]);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { isCollapsed, toggle } = useCollapsibleGroups();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -54,10 +55,6 @@ export default function ActionManager({
     setEditingId(null);
     setIsNew(false);
     loadData();
-  };
-
-  const toggleCollapse = (key: string) => {
-    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const readOnly = selectedAddon === null;
@@ -137,13 +134,13 @@ export default function ActionManager({
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
         {catOrder.map((cat) => {
           const catActions = grouped[cat] || [];
-          const isCollapsed = collapsed[cat] ?? false;
+          const catCollapsed = isCollapsed(cat);
           const displayCat = cat === "__uncategorized__" ? "未分类" : cat;
           return (
             <div key={cat}>
               <button
                 className="am-cat-btn"
-                onClick={() => toggleCollapse(cat)}
+                onClick={() => toggle(cat)}
                 style={{
                   width: "100%",
                   textAlign: "left",
@@ -158,11 +155,11 @@ export default function ActionManager({
                 }}
               >
                 <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
-                  {isCollapsed ? "\u25B6" : "\u25BC"}
+                  {catCollapsed ? "\u25B6" : "\u25BC"}
                 </span>{" "}
                 {displayCat} ({catActions.length})
               </button>
-              {!isCollapsed && catActions.length > 0 && (
+              {!catCollapsed && catActions.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
                   {catActions.map((action) => (
                     <button

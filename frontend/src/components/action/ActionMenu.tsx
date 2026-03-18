@@ -1,6 +1,7 @@
 import T from "../../theme";
 import { useMemo, useState } from "react";
 import type { GameAction, OutfitTarget } from "../../types/game";
+import { ActionType, TargetType } from "../../constants";
 
 interface ActionMenuProps {
   actions: GameAction[];
@@ -48,11 +49,11 @@ export default function ActionMenu({
   const [selectedOutfit, setSelectedOutfit] = useState<OutfitTarget | null>(null);
   const [slotSelections, setSlotSelections] = useState<Record<string, string>>({});
 
-  const moveAction = actions.find((a) => a.type === "move");
-  const lookAction = actions.find((a) => a.type === "look");
-  const outfitAction = actions.find((a) => a.type === "changeOutfit");
+  const moveAction = actions.find((a) => a.type === ActionType.MOVE);
+  const lookAction = actions.find((a) => a.type === ActionType.LOOK);
+  const outfitAction = actions.find((a) => a.type === ActionType.CHANGE_OUTFIT);
   const hasBasic = moveAction || lookAction || outfitAction;
-  const configuredActions = actions.filter((a) => a.type === "configured" && (a.targetType !== "npc" || selectedNpcId));
+  const configuredActions = actions.filter((a) => a.type === ActionType.CONFIGURED && (a.targetType !== TargetType.NPC || selectedNpcId));
 
   const { tabs, grouped } = useMemo(() => {
     const builtinTabs: string[] = [];
@@ -393,7 +394,7 @@ export default function ActionMenu({
           <div key={cat} style={{ marginBottom: "8px" }}>
             {activeTab === ALL_TAB && <div style={{ color: T.textSub, marginBottom: "4px" }}>{cat}:</div>}
             {catActions.map((action) => {
-              const needsNpc = action.targetType === "npc";
+              const needsNpc = action.targetType === TargetType.NPC;
               const isDisabled = disabled || action.enabled === false || (needsNpc && !selectedNpcId);
               let tooltip = "";
               if (action.enabled === false && action.disabledReason) {

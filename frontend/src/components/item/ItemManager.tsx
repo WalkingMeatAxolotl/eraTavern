@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ItemDefinition } from "../../types/game";
 import { fetchItemDefs, fetchItemTags, createItemTag, deleteItemTag } from "../../api/client";
 import ItemEditor from "./ItemEditor";
+import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
+import { Tooltip } from "../shared/Tooltip";
 
 const hoverStyles = `
   .im-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
@@ -13,37 +15,6 @@ const hoverStyles = `
 `;
 
 type ViewMode = "byTag" | "byItem";
-
-// ── Tooltip ───────────────────────────────────────────
-
-function Tooltip({ text, anchorRef }: { text: string; anchorRef: HTMLElement | null }) {
-  if (!anchorRef || !text) return null;
-  const rect = anchorRef.getBoundingClientRect();
-  return (
-    <div
-      style={{
-        position: "fixed",
-        left: rect.left + rect.width / 2,
-        top: rect.top - 4,
-        transform: "translate(-50%, -100%)",
-        padding: "4px 10px",
-        backgroundColor: T.bg3,
-        color: T.text,
-        border: `1px solid ${T.borderLight}`,
-        borderRadius: "3px",
-        fontSize: "11px",
-        whiteSpace: "nowrap",
-        maxWidth: "320px",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        pointerEvents: "none",
-        zIndex: 1000,
-      }}
-    >
-      {text}
-    </div>
-  );
-}
 
 // ── Main ──────────────────────────────────────────────
 
@@ -66,7 +37,7 @@ export default function ItemManager({
   const [viewMode, setViewMode] = useState<ViewMode>("byTag");
   const [newTagInput, setNewTagInput] = useState("");
   const [showTagManager, setShowTagManager] = useState(false);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { collapsed, toggle: toggleCollapse } = useCollapsibleGroups();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -92,10 +63,6 @@ export default function ItemManager({
     setEditingId(null);
     setIsNew(false);
     loadData();
-  };
-
-  const toggleCollapse = (key: string) => {
-    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleAddTag = async () => {
@@ -376,11 +343,8 @@ export default function ItemManager({
       ) : (
         <ByItemView
           filteredItems={filteredItems}
-          visibleTags={visibleTags}
           itemTagsMap={itemTagsMap}
           tagItemNames={tagItemNames}
-          collapsed={collapsed}
-          onToggleCollapse={toggleCollapse}
           onEditItem={handleEdit}
         />
       )}

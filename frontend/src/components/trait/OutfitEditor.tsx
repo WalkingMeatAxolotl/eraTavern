@@ -3,6 +3,7 @@ import type { GameDefinitions, OutfitType } from "../../types/game";
 import { saveOutfitTypes } from "../../api/client";
 import T from "../../theme";
 import { HelpButton, HelpPanel, helpSub, helpP } from "../shared/HelpToggle";
+import { inputStyle, labelStyle } from "../shared/styles";
 
 interface Props {
   outfit: OutfitType;
@@ -27,21 +28,6 @@ const SLOT_LABELS: Record<string, string> = {
   accessory1: "装饰品1",
   accessory2: "装饰品2",
   accessory3: "装饰品3",
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  color: T.text,
-  border: `1px solid ${T.borderLight}`,
-  borderRadius: "3px",
-  fontSize: "12px",
-};
-
-const labelStyle: React.CSSProperties = {
-  color: T.textSub,
-  fontSize: "11px",
-  marginBottom: "2px",
 };
 
 export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, onBack }: Props) {
