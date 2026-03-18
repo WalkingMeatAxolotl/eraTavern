@@ -307,6 +307,13 @@ export interface ActionCost {
   amount: number;
 }
 
+export interface EffectFilterDef {
+  cell?: "current" | { mapId: string; cellId: number };
+  trait?: { key: string; traitId: string };
+  variable?: { varId: string; op: string; value: number };
+  excludeSelf?: boolean;
+}
+
 export interface ActionEffect {
   type: "resource" | "ability" | "basicInfo" | "favorability" | "trait" | "item" | "clothing" | "position" | "experience" | "worldVar" | "outfit";
   key?: string;
@@ -315,7 +322,7 @@ export interface ActionEffect {
   valuePercent?: boolean;
   valueModifiers?: ValueModifier[];
   amount?: number;
-  target?: string;
+  target?: string | { filter: EffectFilterDef };
   targetId?: string;
   favFrom?: string;   // favorability: whose fav changes (self/{{targetId}}/npcId)
   favTo?: string;     // favorability: towards whom (self/{{targetId}}/npcId)

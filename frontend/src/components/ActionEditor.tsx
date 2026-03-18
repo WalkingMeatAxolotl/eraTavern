@@ -1400,42 +1400,48 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, defi
     update({ effects: next });
   };
 
-  // Group effects by target
-  const targetGroups: { target: string; label: string; indices: number[] }[] = [];
+  // Group effects by target — serialize target for grouping key
+  const targetKey = (t: ActionEffect["target"]): string => {
+    if (!t || t === "self") return "self";
+    if (typeof t === "string") return t;
+    return JSON.stringify(t);
+  };
+  const targetLabel = (t: ActionEffect["target"]): string => {
+    if (!t || t === "self") return "执行者";
+    if (t === "{{targetId}}") return "目标角色";
+    if (typeof t === "object") return "过滤目标";
+    return npcList.find((n) => n.id === t)?.name ?? t;
+  };
+
+  const targetGroups: { target: ActionEffect["target"]; key: string; label: string; indices: number[] }[] = [];
   const seenTargets: Record<string, number> = {};
   for (let i = 0; i < outcome.effects.length; i++) {
     const eff = outcome.effects[i];
     const t = eff.target ?? "self";
-    if (t in seenTargets) {
-      targetGroups[seenTargets[t]].indices.push(i);
+    const k = targetKey(t);
+    if (k in seenTargets) {
+      targetGroups[seenTargets[k]].indices.push(i);
     } else {
-      seenTargets[t] = targetGroups.length;
-      const label = t === "self" ? "执行者" : t === "{{targetId}}" ? "目标角色" : (npcList.find((n) => n.id === t)?.name ?? t);
-      targetGroups.push({ target: t, label, indices: [i] });
+      seenTargets[k] = targetGroups.length;
+      targetGroups.push({ target: t, key: k, label: targetLabel(t), indices: [i] });
     }
   }
 
-  const addEffectForTarget = (targetVal: string) => {
+  const addEffectForTarget = (targetVal: ActionEffect["target"]) => {
     update({ effects: [...outcome.effects, { type: "resource", key: resourceKeys[0]?.key, op: "add", value: 0, target: targetVal }] });
   };
 
-  const addTargetGroup = () => {
-    const newTarget = "self" in seenTargets ? "{{targetId}}" : "self";
-    addEffectForTarget(newTarget);
+  const addTargetGroup = (type: "self" | "target" | "filter") => {
+    if (type === "self") addEffectForTarget("self");
+    else if (type === "target") addEffectForTarget("{{targetId}}");
+    else addEffectForTarget({ filter: { cell: "current", excludeSelf: true } });
   };
 
-  const changeGroupTarget = (oldTarget: string, newTarget: string) => {
-    const next = [...outcome.effects];
-    for (let i = 0; i < next.length; i++) {
-      const t = next[i].target ?? "self";
-      if (t === oldTarget) {
-        next[i] = { ...next[i], target: newTarget };
-      }
-    }
-    update({ effects: next });
+  const targetColor = (t: ActionEffect["target"]) => {
+    if (!t || t === "self") return "#6ec6ff";
+    if (typeof t === "object") return "#cc66cc";
+    return "#e9a045";
   };
-
-  const targetColor = (t: string) => t === "self" ? "#6ec6ff" : "#e9a045";
 
   // Sub-section header helper
   const subHeader = (label: string, color: string, count: number | null, rightContent?: React.ReactNode) => (
@@ -1521,11 +1527,17 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, defi
       {/* Effects grouped by target */}
       <div style={{ marginBottom: "8px" }}>
         {subHeader("效果", "#6ec6ff", outcome.effects.length,
-          !disabled && <button className="ae-add-btn" onClick={addTargetGroup} style={addBtnStyle}>[+ 目标组]</button>
+          !disabled && (
+            <div style={{ display: "flex", gap: "4px" }}>
+              <button className="ae-add-btn" onClick={() => addTargetGroup("self")} style={addBtnStyle}>[+ 执行者]</button>
+              {targetType === "npc" && <button className="ae-add-btn" onClick={() => addTargetGroup("target")} style={addBtnStyle}>[+ 目标角色]</button>}
+              <button className="ae-add-btn" onClick={() => addTargetGroup("filter")} style={addBtnStyle}>[+ 过滤]</button>
+            </div>
+          )
         )}
         {targetGroups.length === 0 && <div style={{ color: T.textDim, fontSize: "11px", paddingLeft: "12px" }}>无效果</div>}
         {targetGroups.map((group) => (
-          <div key={group.target} style={{
+          <div key={group.key} style={{
             border: `1px solid ${targetColor(group.target)}33`,
             borderLeft: `3px solid ${targetColor(group.target)}`,
             borderRadius: "3px",
@@ -1533,16 +1545,60 @@ function OutcomeEditor({ outcome, onChange, onRemove, disabled, targetType, defi
             marginBottom: "4px",
             backgroundColor: T.bg3,
           }}>
-            <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
-              <span style={{ color: targetColor(group.target), fontSize: "11px", fontWeight: "bold" }}>目标:</span>
-              <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
-                value={group.target}
-                onChange={(e) => changeGroupTarget(group.target, e.target.value)}
-                disabled={disabled}>
-                <option value="self">执行者</option>
-                <option value="{{targetId}}">目标角色</option>
-                {npcList.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
-              </select>
+            <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "4px", flexWrap: "wrap" }}>
+              <span style={{ color: targetColor(group.target), fontSize: "11px", fontWeight: "bold" }}>
+                {group.label}
+              </span>
+              {typeof group.target === "object" && group.target?.filter && (() => {
+                const f = group.target.filter;
+                const updateFilter = (patch: Partial<import("../types/game").EffectFilterDef>) => {
+                  const newFilter = { ...f, ...patch };
+                  const newTarget = { filter: newFilter };
+                  const next = [...outcome.effects];
+                  for (const i of group.indices) {
+                    next[i] = { ...next[i], target: newTarget };
+                  }
+                  update({ effects: next });
+                };
+                return (
+                  <>
+                    <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                      value={f.cell === "current" ? "current" : typeof f.cell === "object" ? "specific" : "all"}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "current") updateFilter({ cell: "current" });
+                        else if (v === "specific") updateFilter({ cell: { mapId: mapList[0]?.id ?? "", cellId: 0 } });
+                        else updateFilter({ cell: undefined });
+                      }} disabled={disabled}>
+                      <option value="all">全部角色</option>
+                      <option value="current">当前地点</option>
+                      <option value="specific">指定地点</option>
+                    </select>
+                    {typeof f.cell === "object" && f.cell !== null && f.cell !== "current" && (
+                      <>
+                        <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                          value={(f.cell as { mapId: string }).mapId ?? ""}
+                          onChange={(e) => updateFilter({ cell: { mapId: e.target.value, cellId: 0 } })} disabled={disabled}>
+                          {mapList.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select>
+                        <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                          value={(f.cell as { cellId: number }).cellId ?? 0}
+                          onChange={(e) => updateFilter({ cell: { mapId: (f.cell as { mapId: string }).mapId, cellId: Number(e.target.value) } })} disabled={disabled}>
+                          {(mapList.find((m) => m.id === (f.cell as { mapId: string }).mapId)?.cells ?? []).map((c) => (
+                            <option key={c.id} value={c.id}>{c.name ? `${c.name} (${c.id})` : `${c.id}`}</option>
+                          ))}
+                        </select>
+                      </>
+                    )}
+                    <label style={{ fontSize: "11px", color: T.textSub, display: "flex", alignItems: "center", gap: "2px" }}>
+                      <input type="checkbox" checked={f.excludeSelf ?? false}
+                        onChange={(e) => updateFilter({ excludeSelf: e.target.checked || undefined })}
+                        disabled={disabled} style={{ accentColor: T.accent }} />
+                      排除执行者
+                    </label>
+                  </>
+                );
+              })()}
               {!disabled && (
                 <button className="ae-add-btn" onClick={() => addEffectForTarget(group.target)} style={{ ...addBtnStyle, marginLeft: "auto" }}>
                   [+ 效果]
