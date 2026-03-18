@@ -252,6 +252,9 @@ def _evaluate_leaf(
         day_of_week = cond.get("dayOfWeek")
         if day_of_week is not None and time.weekday != day_of_week:
             return False
+        weather = cond.get("weather")
+        if weather is not None and time.weather != weather:
+            return False
         return True
 
     # All other conditions use check_char (actor or target based on condTarget)
@@ -299,6 +302,14 @@ def _evaluate_leaf(
                 return trait_id not in trait.get("values", [])
         return True
 
+    if ctype == "experience":
+        key = cond.get("key", "")
+        check_char_id = char_id if cond.get("condTarget", "self") == "self" else (target_id or "")
+        char_data = game_state.character_data.get(check_char_id, {})
+        exp_data = char_data.get("experiences", {}).get(key, {})
+        count = exp_data.get("count", 0) if isinstance(exp_data, dict) else 0
+        return _compare(count, cond.get("op", ">="), cond.get("value", 0))
+
     if ctype == "favorability":
         raw_tid = cond.get("targetId", "")
         # Resolve symbolic target
@@ -327,16 +338,33 @@ def _evaluate_leaf(
             fav_value = fav_data.get(fav_tid, 0)
         return _compare(fav_value, cond.get("op", ">="), cond.get("value", 0))
 
+    if ctype == "outfit":
+        outfit_id = cond.get("outfitId", "")
+        check_char_id = char_id if cond.get("condTarget", "self") == "self" else (target_id or "")
+        char_data = game_state.character_data.get(check_char_id, {})
+        return char_data.get("currentOutfit", "default") == outfit_id
+
     if ctype == "hasItem":
         item_id = cond.get("itemId")
         tag = cond.get("tag")
+        has_op = cond.get("op")
+        has_value = cond.get("value")
+        total = 0
         for inv in check_char.get("inventory", []):
+            match = False
             if item_id and inv["itemId"] == item_id:
-                return True
-            if tag and tag in inv.get("tags", []):
-                return True
-            if not item_id and not tag:
-                return True
+                match = True
+            elif tag and tag in inv.get("tags", []):
+                match = True
+            elif not item_id and not tag:
+                match = True
+            if match:
+                if has_op is not None and has_value is not None:
+                    total += inv.get("amount", 1)
+                else:
+                    return True
+        if has_op is not None and has_value is not None:
+            return _compare(total, has_op, has_value)
         return False
 
     if ctype == "clothing":
@@ -1257,15 +1285,36 @@ def _calc_modifier_bonus(
         mode = mod.get("bonusMode", "add")
         raw_bonus = 0
 
-        if mtype == "ability":
-            for ab in char.get("abilities", []):
+        # Resolve which character to check (modTarget: "self" or "target")
+        mod_target = mod.get("modTarget", "self")
+        if mod_target == "target" and target_id:
+            check_char = game_state.characters.get(target_id, char)
+            check_char_id = target_id
+        else:
+            check_char = char
+            check_char_id = char_id
+
+        if mtype == "resource":
+            res = check_char.get("resources", {}).get(mod.get("key", ""))
+            if res:
+                per = mod.get("per", 1)
+                if per > 0:
+                    raw_bonus = (int(res["value"]) // per) * bonus
+        elif mtype == "basicInfo":
+            info = check_char.get("basicInfo", {}).get(mod.get("key", ""))
+            if info and info.get("type") == "number":
+                per = mod.get("per", 1)
+                if per > 0:
+                    raw_bonus = (int(info["value"]) // per) * bonus
+        elif mtype == "ability":
+            for ab in check_char.get("abilities", []):
                 if ab["key"] == mod["key"]:
                     per = mod.get("per", 1)
                     if per > 0:
                         raw_bonus = (ab["exp"] // per) * bonus
                     break
         elif mtype == "experience":
-            for exp_entry in char.get("experiences", []):
+            for exp_entry in check_char.get("experiences", []):
                 if exp_entry["key"] == mod.get("key"):
                     per = mod.get("per", 1)
                     if per > 0:
@@ -1274,9 +1323,31 @@ def _calc_modifier_bonus(
         elif mtype == "trait":
             trait_key = mod.get("key", "")
             trait_value = mod.get("value", "")
-            for t in char.get("traits", []):
+            for t in check_char.get("traits", []):
                 if t["key"] == trait_key and trait_value in t.get("values", []):
                     raw_bonus = bonus
+                    break
+        elif mtype == "hasItem":
+            item_id = mod.get("itemId", "")
+            for inv in check_char.get("inventory", []):
+                if inv["itemId"] == item_id:
+                    raw_bonus = bonus
+                    break
+        elif mtype == "outfit":
+            outfit_id = mod.get("outfitId", "")
+            check_data = game_state.character_data.get(check_char_id, {})
+            if check_data.get("currentOutfit", "default") == outfit_id:
+                raw_bonus = bonus
+        elif mtype == "clothing":
+            slot = mod.get("slot", "")
+            expected_item = mod.get("itemId")
+            for cl in check_char.get("clothing", []):
+                if cl["slot"] == slot:
+                    if expected_item:
+                        if cl.get("itemId") == expected_item:
+                            raw_bonus = bonus
+                    elif cl.get("itemId"):
+                        raw_bonus = bonus
                     break
         elif mtype == "favorability":
             fav_source = mod.get("source", "target")
@@ -1295,7 +1366,7 @@ def _calc_modifier_bonus(
                 var_def = game_state.variable_defs.get(var_id)
                 if var_def:
                     from .variable_engine import evaluate_variable
-                    var_value = evaluate_variable(var_def, char, game_state)
+                    var_value = evaluate_variable(var_def, check_char, game_state)
                     per = mod.get("per", 1)
                     if per > 0:
                         raw_bonus = (int(var_value) // per) * bonus

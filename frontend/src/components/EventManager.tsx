@@ -60,21 +60,29 @@ const sectionTitleStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
 
 const rowBg = (idx: number) => idx % 2 === 0 ? T.bg1 : T.bg2;
 
-const CONDITION_TYPES: { value: ActionCondition["type"]; label: string }[] = [
-  { value: "location", label: "地点" },
-  { value: "npcPresent", label: "NPC在场" },
-  { value: "npcAbsent", label: "NPC不在场" },
-  { value: "resource", label: "资源" },
-  { value: "ability", label: "能力" },
-  { value: "trait", label: "持有特质" },
-  { value: "noTrait", label: "无特质" },
-  { value: "favorability", label: "好感度" },
-  { value: "hasItem", label: "持有物品" },
-  { value: "clothing", label: "服装状态" },
-  { value: "time", label: "时间" },
-  { value: "basicInfo", label: "基本属性" },
-  { value: "variable", label: "派生变量" },
-  { value: "worldVar", label: "世界变量" },
+const SLOT_LABELS: Record<string, string> = {
+  hat: "帽子", upperBody: "上半身", upperUnderwear: "上半身内衣",
+  lowerBody: "下半身", lowerUnderwear: "下半身内衣",
+  hands: "手", feet: "脚", shoes: "鞋子",
+  mainHand: "主手", offHand: "副手", back: "背部",
+  accessory1: "装饰品1", accessory2: "装饰品2", accessory3: "装饰品3",
+};
+
+const CONDITION_TYPES: { value: ActionCondition["type"]; label: string; group?: string }[] = [
+  { value: "resource", label: "资源", group: "角色" },
+  { value: "ability", label: "能力", group: "角色" },
+  { value: "basicInfo", label: "基本属性", group: "角色" },
+  { value: "favorability", label: "好感度", group: "角色" },
+  { value: "experience", label: "经验", group: "角色" },
+  { value: "variable", label: "派生变量", group: "角色" },
+  { value: "trait", label: "特质", group: "角色" },
+  { value: "hasItem", label: "持有物品", group: "角色" },
+  { value: "outfit", label: "服装预设", group: "角色" },
+  { value: "clothing", label: "服装状态", group: "角色" },
+  { value: "location", label: "地点", group: "场景" },
+  { value: "npcPresent", label: "NPC在场", group: "场景" },
+  { value: "time", label: "时间", group: "全局" },
+  { value: "worldVar", label: "世界变量", group: "全局" },
 ];
 
 const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
@@ -362,6 +370,7 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
   // Derived lists from definitions
   const resourceKeys = definitions?.template.resources.map(r => ({ key: r.key, label: r.label })) ?? [];
   const abilityKeys = definitions?.template.abilities?.map(a => ({ key: a.key, label: a.label })) ?? [];
+  const experienceKeys = (definitions?.template.experiences ?? []).map((e: { key: string; label: string }) => ({ key: e.key, label: e.label }));
   const basicInfoNumKeys = definitions?.template.basicInfo
     .filter(f => f.type === "number").map(f => ({ key: f.key, label: f.label })) ?? [];
   const traitCategories = definitions?.template.traits?.map(t => ({ key: t.key, label: t.label })) ?? [];
@@ -420,7 +429,8 @@ function EventEditor({ event, isNew, definitions, worldVars, onBack }: {
   };
   const removeEffect = (idx: number) => setEffects(effects.filter((_, i) => i !== idx));
 
-  const condCtx = { resourceKeys, abilityKeys, basicInfoNumKeys, traitCategories, mapList, traitList, itemList, npcList, variableList, wvList, clothingSlots, definitions };
+  const outfitTypes = [{id: "default", name: "默认服装"}, ...(definitions?.outfitTypes ?? []).map((t) => ({id: t.id, name: t.name}))];
+  const condCtx = { resourceKeys, abilityKeys, experienceKeys, basicInfoNumKeys, traitCategories, mapList, traitList, itemList, npcList, outfitTypes, variableList, wvList, clothingSlots, definitions };
 
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
@@ -686,17 +696,36 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
   onRemove: () => void;
   ctx: CondCtx;
 }) {
-  const update = (patch: Partial<ActionCondition>) => onChange({ ...condition, ...patch });
+  const effectiveType = condition.type === "npcAbsent" ? "npcPresent"
+    : condition.type === "noTrait" ? "trait"
+    : condition.type;
+  const update = (patch: Partial<ActionCondition>) => {
+    const merged = { ...condition, ...patch };
+    if ((condition.type === "npcAbsent" || condition.type === "noTrait") && !patch.type)
+      merged.type = effectiveType as ActionCondition["type"];
+    onChange(merged);
+  };
 
   return (
     <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
-      <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.type}
+      <select style={{ ...inputStyle, fontSize: "11px" }} value={effectiveType}
         onChange={e => onChange({ type: e.target.value as ActionCondition["type"] })}>
-        {CONDITION_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        {(() => {
+          let lastGroup = "";
+          return CONDITION_TYPES.map((t) => {
+            const els: React.ReactNode[] = [];
+            if (t.group && t.group !== lastGroup) {
+              lastGroup = t.group;
+              els.push(<option key={`g-${t.group}`} disabled style={{ fontWeight: "bold" }}>── {t.group} ──</option>);
+            }
+            els.push(<option key={t.value} value={t.value}>{t.label}</option>);
+            return els;
+          }).flat();
+        })()}
       </select>
 
       {/* Location */}
-      {condition.type === "location" && (
+      {effectiveType === "location" && (
         <>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.mapId ?? ""}
             onChange={e => update({ mapId: e.target.value || undefined })}>
@@ -710,23 +739,24 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
         </>
       )}
 
-      {/* NPC present / absent */}
-      {(condition.type === "npcPresent" || condition.type === "npcAbsent") && (
+      {/* NPC present */}
+      {effectiveType === "npcPresent" && (
         <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.npcId ?? ""}
           onChange={e => update({ npcId: e.target.value || undefined })}>
-          <option value="">{condition.type === "npcPresent" ? "任意NPC" : "任意NPC都不在"}</option>
+          <option value="">任意NPC</option>
           {ctx.npcList.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
         </select>
       )}
 
-      {/* Resource / Ability / BasicInfo */}
-      {(condition.type === "resource" || condition.type === "ability" || condition.type === "basicInfo") && (
+      {/* Resource / Ability / Experience / BasicInfo */}
+      {(["resource", "ability", "experience", "basicInfo"].includes(effectiveType)) && (
         <>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.key ?? ""}
             onChange={e => update({ key: e.target.value })}>
             <option value="">选择</option>
-            {(condition.type === "resource" ? ctx.resourceKeys
-              : condition.type === "ability" ? ctx.abilityKeys
+            {(effectiveType === "resource" ? ctx.resourceKeys
+              : effectiveType === "ability" ? ctx.abilityKeys
+              : effectiveType === "experience" ? ctx.experienceKeys
               : ctx.basicInfoNumKeys
             ).map(k => <option key={k.key} value={k.key}>{k.label}</option>)}
           </select>
@@ -740,8 +770,8 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
         </>
       )}
 
-      {/* Trait / NoTrait */}
-      {(condition.type === "trait" || condition.type === "noTrait") && (
+      {/* Trait */}
+      {effectiveType === "trait" && (
         <>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.key ?? ""}
             onChange={e => update({ key: e.target.value })}>
@@ -758,11 +788,11 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       )}
 
       {/* Favorability */}
-      {condition.type === "favorability" && (
+      {effectiveType === "favorability" && (
         <>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.targetId ?? ""}
             onChange={e => update({ targetId: e.target.value })}>
-            <option value="">目标</option>
+            <option value="">选择对象</option>
             <option value="{{player}}">玩家</option>
             {ctx.npcList.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
           </select>
@@ -777,16 +807,36 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       )}
 
       {/* Has item */}
-      {condition.type === "hasItem" && (
-        <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.itemId ?? ""}
-          onChange={e => update({ itemId: e.target.value })}>
-          <option value="">选择物品</option>
-          {ctx.itemList.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+      {effectiveType === "hasItem" && (
+        <>
+          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.itemId ?? ""}
+            onChange={e => update({ itemId: e.target.value || undefined })}>
+            <option value="">任意物品</option>
+            {ctx.itemList.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+          </select>
+          <select style={{ ...inputStyle, width: "auto", fontSize: "11px" }} value={condition.op ?? ""}
+            onChange={e => update({ op: e.target.value || undefined, value: e.target.value ? (condition.value ?? 1) : undefined })}>
+            <option value="">不限数量</option>
+            {OPS.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+          {condition.op && (
+            <input type="number" style={{ ...inputStyle, width: "50px", fontSize: "11px" }} value={condition.value ?? 1}
+              onChange={e => update({ value: Number(e.target.value) })} />
+          )}
+        </>
+      )}
+
+      {/* Outfit */}
+      {effectiveType === "outfit" && (
+        <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.outfitId ?? ""}
+          onChange={e => update({ outfitId: e.target.value })}>
+          <option value="">选择预设</option>
+          {ctx.outfitTypes.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
       )}
 
       {/* Clothing */}
-      {condition.type === "clothing" && (() => {
+      {effectiveType === "clothing" && (() => {
         const slotClothing = condition.slot && ctx.definitions
           ? Object.values(ctx.definitions.clothingDefs).filter(c => (c.slots ?? [c.slot]).includes(condition.slot))
           : [];
@@ -795,7 +845,7 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
             <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.slot ?? ""}
               onChange={e => update({ slot: e.target.value, itemId: undefined })}>
               <option value="">槽位</option>
-              {ctx.clothingSlots.map(s => <option key={s} value={s}>{s}</option>)}
+              {ctx.clothingSlots.map(s => <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>)}
             </select>
             <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.itemId ?? ""}
               onChange={e => update({ itemId: e.target.value || undefined })}>
@@ -814,7 +864,7 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       })()}
 
       {/* Time */}
-      {condition.type === "time" && (
+      {effectiveType === "time" && (
         <>
           <input style={{ ...inputStyle, width: "40px", fontSize: "11px" }} type="number" min={0} max={23}
             value={condition.hourMin ?? ""} placeholder="起"
@@ -826,21 +876,26 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.season ?? ""}
             onChange={e => update({ season: e.target.value || undefined })}>
             <option value="">任意季节</option>
-            <option value="春">春</option>
-            <option value="夏">夏</option>
-            <option value="秋">秋</option>
-            <option value="冬">冬</option>
+            {["春", "夏", "秋", "冬"].map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.dayOfWeek ?? ""}
             onChange={e => update({ dayOfWeek: e.target.value || undefined })}>
             <option value="">任意星期</option>
             {["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map(d => <option key={d} value={d}>{d}</option>)}
           </select>
+          <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.weather ?? ""}
+            onChange={e => update({ weather: e.target.value || undefined })}>
+            <option value="">任意天气</option>
+            <option value="sunny">☀ 晴天</option>
+            <option value="cloudy">☁ 多云</option>
+            <option value="rainy">🌧 雨天</option>
+            <option value="snowy">❄ 雪天</option>
+          </select>
         </>
       )}
 
       {/* Variable */}
-      {condition.type === "variable" && (
+      {effectiveType === "variable" && (
         <>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.varId ?? ""}
             onChange={e => update({ varId: e.target.value })}>
@@ -858,7 +913,7 @@ function ConditionLeafEditor({ condition, onChange, onRemove, ctx }: {
       )}
 
       {/* WorldVar */}
-      {condition.type === "worldVar" && (
+      {effectiveType === "worldVar" && (
         <>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={condition.key ?? ""}
             onChange={e => update({ key: e.target.value })}>
@@ -979,7 +1034,7 @@ function EffectFieldEditor({ effect, onChange, ctx }: {
           <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.slot ?? ""}
             onChange={e => update({ slot: e.target.value })}>
             <option value="">槽位</option>
-            {ctx.clothingSlots.map(s => <option key={s} value={s}>{s}</option>)}
+            {ctx.clothingSlots.map(s => <option key={s} value={s}>{SLOT_LABELS[s] ?? s}</option>)}
           </select>
           <select style={{ ...inputStyle, fontSize: "11px" }} value={effect.state ?? "worn"}
             onChange={e => update({ state: e.target.value })}>

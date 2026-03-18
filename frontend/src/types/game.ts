@@ -272,7 +272,7 @@ export interface VariableDefinition {
 // --- Action definition types ---
 
 export interface ActionCondition {
-  type: "location" | "npcPresent" | "npcAbsent" | "resource" | "ability" | "trait" | "noTrait" | "favorability" | "hasItem" | "clothing" | "time" | "basicInfo" | "variable" | "worldVar";
+  type: "location" | "npcPresent" | "npcAbsent" | "resource" | "ability" | "experience" | "trait" | "noTrait" | "favorability" | "hasItem" | "outfit" | "clothing" | "time" | "basicInfo" | "variable" | "worldVar";
   condTarget?: "self" | "target";  // who to check: actor (default) or action target
   mapId?: string;
   cellIds?: number[];
@@ -290,6 +290,8 @@ export interface ActionCondition {
   hourMax?: number;
   dayOfWeek?: string;
   season?: string;
+  weather?: string;
+  outfitId?: string;
   targetId?: string;
   varId?: string;
 }
