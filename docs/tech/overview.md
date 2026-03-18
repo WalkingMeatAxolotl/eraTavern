@@ -48,15 +48,31 @@ tavernGame/
 │       └── preset.json
 │
 ├── backend/
-│   ├── main.py                      FastAPI app, all REST/SSE endpoints
+│   ├── main.py                      FastAPI 入口 (~75行)
+│   ├── routes/                      API 路由 (12 个模块)
+│   │   ├── _helpers.py                共享状态 (game_state, SSEManager) + 工具函数
+│   │   ├── entities.py                实体 CRUD (工厂模式, 9 种实体)
+│   │   ├── game.py, worlds.py, addons.py, saves.py, assets.py,
+│   │   │   maps.py, llm.py, sse.py, config.py
 │   ├── game/
+│   │   ├── constants.py               集中枚举常量 (EF, ConditionType, EffectType, ...)
 │   │   ├── state.py                   GameState singleton, load/rebuild/save/persist
 │   │   ├── addon_loader.py            目录常量, addon/world CRUD, fork/copy
-│   │   ├── character.py               角色加载, namespace, trait/ability/clothing logic
-│   │   ├── action.py                  行动执行, 条件求值, NPC 决策
-│   │   ├── llm_preset.py              LLM 预设文件 CRUD
-│   │   ├── llm_provider.py            LLM API 服务文件 CRUD
+│   │   ├── character/                 角色系统 package
+│   │   │   ├── namespace.py             ID 命名空间工具
+│   │   │   ├── entity_loader.py         通用实体加载/保存 (_load_entity_defs 等)
+│   │   │   └── state.py                 角色状态构建, 效果应用, 能力衰减
+│   │   ├── action/                    行动系统 package
+│   │   │   ├── conditions.py            条件评估 (15+ 条件类型)
+│   │   │   ├── effects.py               效果应用 + 目标过滤
+│   │   │   ├── modifiers.py             权重/数值修改器
+│   │   │   ├── execution.py             行动执行入口
+│   │   │   ├── npc.py                   NPC 自主行为 + 感知过滤
+│   │   │   ├── events.py                全局事件系统
+│   │   │   ├── templates.py             输出模板系统
+│   │   │   └── helpers.py               共享常量
 │   │   ├── llm_engine.py              LLM 变量收集, 提示词组装, API 调用
+│   │   ├── llm_preset.py / llm_provider.py  LLM 预设/服务 CRUD
 │   │   ├── map_engine.py              地图加载, grid 编译, distance/sense matrix
 │   │   ├── time_system.py             游戏时间 (GameTime), 天气, 季节
 │   │   ├── variable_engine.py         衍生变量求值, 循环检测, 调试追踪
@@ -67,20 +83,30 @@ tavernGame/
 ├── frontend/src/
 │   ├── App.tsx                      主布局, 全局状态管理
 │   ├── api/client.ts                REST API 客户端 (所有 fetch 函数)
+│   ├── i18n/messages.ts             错误码 → 中文翻译表
 │   ├── types/game.ts                TypeScript 类型定义
 │   ├── theme.ts                     主题色彩常量 (T.bg0, T.accent, etc.)
-│   └── components/                  30 个组件
-│       ├── 布局: NavBar, WorldSidebar, AddonSidebar, FloatingActions, AddonTabBar
-│       ├── 编辑器: CharacterEditor, MapEditor, ActionEditor, TraitEditor,
-│       │          TraitGroupEditor, ItemEditor, ClothingEditor, VariableEditor
-│       ├── 管理器: ActionManager, CharacterManager, ClothingManager, EventManager,
-│       │          ItemManager, LorebookManager (世界书), MapManager, TraitManager, VariableManager
-│       ├── 游戏UI: CharacterPanel, CompactCharacterInfo, ActionMenu,
-│       │          MapView, LocationHeader, NarrativePanel
-│       ├── LLM: LLMPresetManager, LLMDebugPanel
-│       ├── 通用: ColorPicker, HelpToggle
-│       ├── 世界设置: SettingsPage
-│       └── 导航: 左侧世界级tabs ‖ 右侧全局级tabs（LLM设置, 系统设置）
+│   └── components/                  39 个组件, 按功能域分 10 个子目录
+│       ├── shared/                    共享基础组件 + Context
+│       │   EditorContext, ConditionEditor, PrefixedIdInput, HelpToggle, ColorPicker, ErrorBoundary
+│       ├── action/                    行动系统
+│       │   ActionEditor, ActionManager, ActionMenu
+│       ├── character/                 角色系统
+│       │   CharacterEditor, CharacterManager, CharacterPanel, CompactCharacterInfo
+│       ├── trait/                     特质 + 服装系统
+│       │   TraitEditor, TraitManager, TraitGroupEditor, ClothingEditor, ClothingManager, OutfitEditor
+│       ├── item/                      物品系统
+│       │   ItemEditor, ItemManager
+│       ├── map/                       地图系统
+│       │   MapEditor, MapManager, MapView, MapTabs, LocationHeader
+│       ├── variable/                  变量 + 事件系统
+│       │   VariableEditor, VariableManager, EventManager, LorebookManager
+│       ├── llm/                       LLM 系统
+│       │   LLMPresetManager, LLMDebugPanel, NarrativePanel
+│       ├── layout/                    布局 + 导航
+│       │   NavBar, FloatingActions, WorldSidebar, AddonSidebar, AddonTabBar
+│       └── settings/                  设置
+│           SettingsPage
 │
 ├── docs/                           文档
 │   ├── user/                         用户文档

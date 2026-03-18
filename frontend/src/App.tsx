@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import T from "./theme";
 import type { GameState, GameAction, ActionResult, NarrativeEntry } from "./types/game";
-import type { DetailTab } from "./components/CharacterPanel";
+import type { DetailTab } from "./components/character/CharacterPanel";
 import {
   fetchConfig,
   fetchGameState,
@@ -12,29 +12,29 @@ import {
   connectSSE,
 } from "./api/client";
 import type { AppConfig } from "./api/client";
-import LocationHeader from "./components/LocationHeader";
-import MapView from "./components/MapView";
-import CompactCharacterInfo from "./components/CompactCharacterInfo";
-import CharacterPanel from "./components/CharacterPanel";
-import ActionMenu from "./components/ActionMenu";
-import NarrativePanel from "./components/NarrativePanel";
-import type { LLMDebugEntry } from "./components/LLMDebugPanel";
-import NavBar from "./components/NavBar";
-import WorldSidebar from "./components/WorldSidebar";
-import AddonSidebar from "./components/AddonSidebar";
-import AddonTabBar from "./components/AddonTabBar";
-import CharacterManager from "./components/CharacterManager";
-import TraitManager from "./components/TraitManager";
-import ClothingManager from "./components/ClothingManager";
-import ItemManager from "./components/ItemManager";
-import ActionManager from "./components/ActionManager";
-import VariableManager from "./components/VariableManager";
-import EventManager from "./components/EventManager";
-import LorebookManager from "./components/LorebookManager";
-import MapManager from "./components/MapManager";
-import SettingsPage from "./components/SettingsPage";
-import FloatingActions from "./components/FloatingActions";
-import LLMPresetManager from "./components/LLMPresetManager";
+import LocationHeader from "./components/map/LocationHeader";
+import MapView from "./components/map/MapView";
+import CompactCharacterInfo from "./components/character/CompactCharacterInfo";
+import CharacterPanel from "./components/character/CharacterPanel";
+import ActionMenu from "./components/action/ActionMenu";
+import NarrativePanel from "./components/llm/NarrativePanel";
+import type { LLMDebugEntry } from "./components/llm/LLMDebugPanel";
+import NavBar from "./components/layout/NavBar";
+import WorldSidebar from "./components/layout/WorldSidebar";
+import AddonSidebar from "./components/layout/AddonSidebar";
+import AddonTabBar from "./components/layout/AddonTabBar";
+import CharacterManager from "./components/character/CharacterManager";
+import TraitManager from "./components/trait/TraitManager";
+import ClothingManager from "./components/trait/ClothingManager";
+import ItemManager from "./components/item/ItemManager";
+import ActionManager from "./components/action/ActionManager";
+import VariableManager from "./components/variable/VariableManager";
+import EventManager from "./components/variable/EventManager";
+import LorebookManager from "./components/variable/LorebookManager";
+import MapManager from "./components/map/MapManager";
+import SettingsPage from "./components/settings/SettingsPage";
+import FloatingActions from "./components/layout/FloatingActions";
+import LLMPresetManager from "./components/llm/LLMPresetManager";
 
 type NavPage =
   | "characters"
