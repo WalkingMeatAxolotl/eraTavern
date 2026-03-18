@@ -14,9 +14,10 @@ ignore = [
 "backend/tests/*.py" = ["E402"]
 "backend/main.py" = ["E402"]
 "backend/game/*.py" = ["E402"]   # __future__ annotations triggers false E402
+"backend/routes/*.py" = ["E402"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["game"]
+known-first-party = ["game", "routes"]
 
 [tool.ruff.format]
 quote-style = "double"

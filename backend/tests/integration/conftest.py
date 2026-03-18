@@ -293,12 +293,14 @@ def api_client(tmp_path, monkeypatch):
 
     import main
 
-    monkeypatch.setattr(main, "game_state", gs)
+    import routes._helpers as _helpers
+
+    monkeypatch.setattr(_helpers, "game_state", gs)
 
     config_path = tmp_path / "config.json"
     with open(config_path, "w", encoding="utf-8") as f:
         _json.dump({"backendPort": 18000, "frontendPort": 15173, "lastWorldId": "test-world"}, f)
-    monkeypatch.setattr(main, "CONFIG_PATH", config_path)
+    monkeypatch.setattr(_helpers, "CONFIG_PATH", config_path)
 
     from fastapi.testclient import TestClient
 
