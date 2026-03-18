@@ -91,6 +91,15 @@ const ERROR_MESSAGES: Record<string, string> = {
 
   // --- Character-specific ---
   CHARACTER_CANNOT_FREEZE_PLAYER: "请先切换玩家角色后再冻结该角色",
+
+  // --- Action execution ---
+  ACTION_UNKNOWN: "未知行动: {id}",
+  ACTION_CHARACTER_NOT_FOUND: "角色不存在",
+  ACTION_CONDITIONS_NOT_MET: "条件不满足",
+  ACTION_COST_NOT_MET: "{reason}",
+  ACTION_NO_TARGET_CELL: "未指定目标方格",
+  ACTION_MOVE_BLOCKED: "无法移动到目标方格",
+  ACTION_NO_OUTFIT: "未指定预设",
 };
 
 /**

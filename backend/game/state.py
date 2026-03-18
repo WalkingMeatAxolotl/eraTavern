@@ -172,6 +172,92 @@ class GameState:
         self.no_location_actions = []
         self.time = GameTime()
 
+    def _load_all_defs(self) -> None:
+        """Load all entity definitions from addon directories."""
+        self.template = _load_global_template()
+        self.clothing_defs = load_clothing_defs(self.addon_dirs)
+        self.outfit_types = load_outfit_types(self.addon_dirs)
+        self.item_defs = load_item_defs(self.addon_dirs)
+        self.item_tags = load_item_tags(self.addon_dirs)
+        self.trait_defs = load_trait_defs(self.addon_dirs)
+        self.action_defs = load_action_defs(self.addon_dirs)
+        self.trait_groups = load_trait_groups(self.addon_dirs)
+        self.variable_defs = load_variable_defs(self.addon_dirs)
+        self.variable_tags = load_variable_tags(self.addon_dirs)
+        self.event_defs = load_event_defs(self.addon_dirs)
+        self.lorebook_defs = load_lorebook_entries(self.addon_dirs)
+        self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
+        self.character_data = load_characters(self.addon_dirs)
+
+    def _load_maps_and_matrices(self) -> None:
+        """Load maps and pre-compute distance/sense matrices."""
+        from .map_engine import build_distance_matrix, build_sense_matrix
+
+        collection = load_map_collection(self.addon_dirs)
+        self.maps = collection["maps"]
+        self.distance_matrix = build_distance_matrix(self.maps)
+        self.sense_matrix = build_sense_matrix(self.maps)
+        self.decor_presets = load_decor_presets(self.addon_dirs)
+
+    def _build_all_chars(self) -> None:
+        """Build runtime character states from character_data (active only)."""
+        self.characters = {}
+        for char_id, char_data in self.character_data.items():
+            if char_data.get("active", True) is False:
+                continue
+            self.characters[char_id] = build_character_state(
+                char_data,
+                self.template,
+                self.clothing_defs,
+                self.trait_defs,
+                self.item_defs,
+            )
+
+    def _build_cell_action_index(self) -> None:
+        """Build cell->action inverted index for NPC decision-making."""
+        from .action import build_cell_action_index
+
+        self.cell_action_index, self.no_location_actions = build_cell_action_index(
+            self.action_defs, self.maps
+        )
+
+    def _reset_npc_state(self) -> None:
+        """Reset NPC runtime state."""
+        self.npc_goals = {}
+        self.npc_activities = {}
+        self.npc_full_log = []
+        self.npc_action_history = {}
+        self.decay_accumulators = {}
+        self.action_log = []
+
+    def _sync_runtime_to_data(self) -> None:
+        """Sync runtime character state (position, resources, etc.) back to character_data."""
+        for char_id, char_state in self.characters.items():
+            if char_id not in self.character_data:
+                continue
+            cd = self.character_data[char_id]
+            cd["position"] = char_state.get("position", {})
+            # resources
+            for key, res in char_state.get("resources", {}).items():
+                if "resources" not in cd:
+                    cd["resources"] = {}
+                cd["resources"][key] = {"value": res["value"], "max": res["max"]}
+            # abilities
+            for ab in char_state.get("abilities", []):
+                if "abilities" not in cd:
+                    cd["abilities"] = {}
+                cd["abilities"][ab["key"]] = ab["exp"]
+            # experiences
+            for exp_entry in char_state.get("experiences", []):
+                if "experiences" not in cd:
+                    cd["experiences"] = {}
+                cd["experiences"][exp_entry["key"]] = {
+                    "count": exp_entry["count"],
+                    "first": exp_entry["first"],
+                }
+            # inventory
+            cd["inventory"] = char_state.get("inventory", [])
+
     def _init_world_variables(self) -> None:
         """Initialize world_variables from definitions' defaults."""
         self.world_variables = {}
@@ -210,56 +296,14 @@ class GameState:
         self.player_character = ""
         self.dirty = False
 
-        # Load from addons
-        from .map_engine import build_distance_matrix, build_sense_matrix
-
-        collection = load_map_collection(self.addon_dirs)
-        self.maps = collection["maps"]
-        self.distance_matrix = build_distance_matrix(self.maps)
-        self.sense_matrix = build_sense_matrix(self.maps)
-        self.decor_presets = load_decor_presets(self.addon_dirs)
-        self.template = _load_global_template()
-        self.clothing_defs = load_clothing_defs(self.addon_dirs)
-        self.outfit_types = load_outfit_types(self.addon_dirs)
-        self.item_defs = load_item_defs(self.addon_dirs)
-        self.item_tags = load_item_tags(self.addon_dirs)
-        self.trait_defs = load_trait_defs(self.addon_dirs)
-        self.action_defs = load_action_defs(self.addon_dirs)
-        self.trait_groups = load_trait_groups(self.addon_dirs)
-        self.variable_defs = load_variable_defs(self.addon_dirs)
-        self.variable_tags = load_variable_tags(self.addon_dirs)
-        self.event_defs = load_event_defs(self.addon_dirs)
-        self.lorebook_defs = load_lorebook_entries(self.addon_dirs)
-        self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
-        self.character_data = load_characters(self.addon_dirs)
-
-        # Resolve bare ID cross-references
+        self._load_maps_and_matrices()
+        self._load_all_defs()
         self._resolve_namespaces()
-
-        self.characters = {}
-        for char_id, char_data in self.character_data.items():
-            if char_data.get("active", True) is False:
-                continue
-            self.characters[char_id] = build_character_state(
-                char_data,
-                self.template,
-                self.clothing_defs,
-                self.trait_defs,
-                self.item_defs,
-            )
-
-        # Build cell->action inverted index for NPC decision-making
-        from .action import build_cell_action_index
-
-        self.cell_action_index, self.no_location_actions = build_cell_action_index(self.action_defs, self.maps)
+        self._build_all_chars()
+        self._build_cell_action_index()
 
         self.time = GameTime()
-        self.npc_goals = {}
-        self.npc_activities = {}
-        self.npc_full_log = []
-        self.npc_action_history = {}
-        self.decay_accumulators = {}
-        self.action_log = []
+        self._reset_npc_state()
         self._init_world_variables()
         self.event_state = {}
 
@@ -281,36 +325,8 @@ class GameState:
 
         self.addon_dirs = build_addon_dirs(self.addon_refs)
 
-        # Load maps from all addons
-        collection = load_map_collection(self.addon_dirs)
-        self.maps = collection["maps"]
-
-        # Pre-compute distance matrix and sense matrix for NPC pathfinding
-        from .map_engine import build_distance_matrix, build_sense_matrix
-
-        self.distance_matrix = build_distance_matrix(self.maps)
-        self.sense_matrix = build_sense_matrix(self.maps)
-
-        # Load decor presets from all addons
-        self.decor_presets = load_decor_presets(self.addon_dirs)
-
-        # Load character system
-        self.template = _load_global_template()
-        self.clothing_defs = load_clothing_defs(self.addon_dirs)
-        self.outfit_types = load_outfit_types(self.addon_dirs)
-        self.item_defs = load_item_defs(self.addon_dirs)
-        self.item_tags = load_item_tags(self.addon_dirs)
-        self.trait_defs = load_trait_defs(self.addon_dirs)
-        self.action_defs = load_action_defs(self.addon_dirs)
-        self.trait_groups = load_trait_groups(self.addon_dirs)
-        self.variable_defs = load_variable_defs(self.addon_dirs)
-        self.variable_tags = load_variable_tags(self.addon_dirs)
-        self.event_defs = load_event_defs(self.addon_dirs)
-        self.lorebook_defs = load_lorebook_entries(self.addon_dirs)
-        self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
-        self.character_data = load_characters(self.addon_dirs)
-
-        # Resolve bare ID cross-references
+        self._load_maps_and_matrices()
+        self._load_all_defs()
         self._resolve_namespaces()
 
         # Namespace player_character reference
@@ -319,31 +335,12 @@ class GameState:
         if self.player_character and NS_SEP not in self.player_character:
             self.player_character = resolve_ref(self.player_character, self.character_data, "")
 
-        # Build character states (active only)
-        self.characters = {}
-        for char_id, char_data in self.character_data.items():
-            if char_data.get("active", True) is False:
-                continue
-            self.characters[char_id] = build_character_state(
-                char_data,
-                self.template,
-                self.clothing_defs,
-                self.trait_defs,
-                self.item_defs,
-            )
-
-        # Build cell->action inverted index for NPC decision-making
-        from .action import build_cell_action_index
-
-        self.cell_action_index, self.no_location_actions = build_cell_action_index(self.action_defs, self.maps)
+        self._build_all_chars()
+        self._build_cell_action_index()
 
         # Reset time and NPC state
         self.time = GameTime()
-        self.npc_goals = {}
-        self.npc_activities = {}
-        self.npc_full_log = []
-        self.npc_action_history = {}
-        self.action_log = []
+        self._reset_npc_state()
         self._init_world_variables()
         self.event_state = {}
         self.dirty = False
@@ -372,28 +369,40 @@ class GameState:
 
         # Collect all source addon IDs that have entities
         sources: set[str] = set()
-        for d in self.trait_defs.values():
-            sources.add(d.get("source", ""))
-        for d in self.clothing_defs.values():
-            sources.add(d.get("source", ""))
-        for d in self.item_defs.values():
-            sources.add(d.get("source", ""))
-        for d in self.action_defs.values():
-            sources.add(d.get("source", ""))
-        for d in self.trait_groups.values():
-            sources.add(d.get("source", ""))
-        for d in self.variable_defs.values():
-            sources.add(d.get("source", ""))
-        for d in self.event_defs.values():
-            sources.add(d.get("source", ""))
-        for d in self.lorebook_defs.values():
-            sources.add(d.get("source", ""))
-        for d in self.world_variable_defs.values():
-            sources.add(d.get("source", ""))
+        # Standard entity defs use "source" key
+        for defs in (
+            self.trait_defs, self.clothing_defs, self.item_defs, self.action_defs,
+            self.trait_groups, self.variable_defs, self.event_defs,
+            self.lorebook_defs, self.world_variable_defs,
+        ):
+            for d in defs.values():
+                sources.add(d.get("source", ""))
+        # Characters and maps use "_source" key
         for d in self.character_data.values():
             sources.add(d.get("_source", ""))
         for d in self.maps.values():
             sources.add(d.get("_source", ""))
+
+        def _filter_by_source(defs: dict, src: str) -> list[dict]:
+            """Filter entities by source addon, stripping the source field."""
+            return [
+                {k: v for k, v in d.items() if k != "source"}
+                for d in defs.values()
+                if d.get("source") == src
+            ]
+
+        # Entity save config: (defs_attr, save_func, extra_args_factory)
+        _entity_save_table = [
+            ("trait_defs", save_trait_defs_file, None),
+            ("clothing_defs", save_clothing_defs_file, lambda src: (self.outfit_types,)),
+            ("item_defs", save_item_defs_file, None),
+            ("action_defs", save_action_defs_file, lambda src: (src,)),
+            ("trait_groups", save_trait_groups_file, lambda src: (src,)),
+            ("variable_defs", save_variable_defs_file, None),
+            ("event_defs", save_event_defs_file, None),
+            ("lorebook_defs", save_lorebook_file, None),
+            ("world_variable_defs", save_world_variable_defs_file, None),
+        ]
 
         for source in sources:
             target_dir = addon_dir_map.get(source)
@@ -401,100 +410,25 @@ class GameState:
                 continue
             target_dir.mkdir(parents=True, exist_ok=True)
 
-            # Traits
-            src_traits = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.trait_defs.values()
-                if d.get("source") == source
-            ]
-            if src_traits:
-                save_trait_defs_file(target_dir, src_traits)
+            # Save standard entity defs (table-driven)
+            for defs_attr, save_func, extra_args_fn in _entity_save_table:
+                src_list = _filter_by_source(getattr(self, defs_attr), source)
+                if src_list:
+                    extra = extra_args_fn(source) if extra_args_fn else ()
+                    save_func(target_dir, src_list, *extra)
 
-            # Clothing
-            src_clothing = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.clothing_defs.values()
-                if d.get("source") == source
-            ]
-            if src_clothing:
-                save_clothing_defs_file(target_dir, src_clothing, self.outfit_types)
-
-            # Items
-            src_items = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.item_defs.values()
-                if d.get("source") == source
-            ]
-            if src_items:
-                save_item_defs_file(target_dir, src_items)
-
-            # Actions
-            src_actions = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.action_defs.values()
-                if d.get("source") == source
-            ]
-            if src_actions:
-                save_action_defs_file(target_dir, src_actions, source)
-
-            # Trait groups
-            src_groups = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.trait_groups.values()
-                if d.get("source") == source
-            ]
-            if src_groups:
-                save_trait_groups_file(target_dir, src_groups, source)
-
-            # Variables
-            src_variables = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.variable_defs.values()
-                if d.get("source") == source
-            ]
-            if src_variables:
-                save_variable_defs_file(target_dir, src_variables)
-
-            # Events
-            src_events = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.event_defs.values()
-                if d.get("source") == source
-            ]
-            if src_events:
-                save_event_defs_file(target_dir, src_events)
-
-            # Lorebook
-            src_lorebook = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.lorebook_defs.values()
-                if d.get("source") == source
-            ]
-            if src_lorebook:
-                save_lorebook_file(target_dir, src_lorebook)
-
-            # World variables
-            src_world_vars = [
-                {k: v for k, v in d.items() if k != "source"}
-                for d in self.world_variable_defs.values()
-                if d.get("source") == source
-            ]
-            if src_world_vars:
-                save_world_variable_defs_file(target_dir, src_world_vars)
-
-            # Characters
+            # Characters (special: _source key, individual files)
             for cid, cdata in self.character_data.items():
                 if cdata.get("_source") == source:
                     save_character(target_dir, cdata, source)
 
-            # Maps
+            # Maps (special: _source key, individual files + collection index)
             src_maps = {mid: mdata for mid, mdata in self.maps.items() if mdata.get("_source") == source}
             if src_maps:
                 maps_dir = target_dir / "maps"
                 maps_dir.mkdir(parents=True, exist_ok=True)
                 for mid, mdata in src_maps.items():
                     save_map_file(target_dir, mid, mdata)
-                # Update map_collection.json
                 collection_path = target_dir / "map_collection.json"
                 map_entries = [
                     f"maps/{mdata.get('_local_id', to_local_id(mid)).replace('-', '_')}.json"
@@ -732,15 +666,7 @@ class GameState:
             if char_id in snapshot["inventories"]:
                 char_data["inventory"] = snapshot["inventories"][char_id]
 
-            if char_data.get("active", True) is False:
-                continue
-            self.characters[char_id] = build_character_state(
-                char_data,
-                self.template,
-                self.clothing_defs,
-                self.trait_defs,
-                self.item_defs,
-            )
+        self._build_all_chars()
         self.time = snapshot["time"]
 
     def rebuild(self, new_addon_refs: Optional[list[dict[str, str]]] = None) -> None:
@@ -766,33 +692,12 @@ class GameState:
 
             # Reload all definitions from disk with new addon composition
             self.addon_dirs = build_addon_dirs(self.addon_refs)
-
-            collection = load_map_collection(self.addon_dirs)
-            self.maps = collection["maps"]
-            from .map_engine import build_distance_matrix, build_sense_matrix
-
-            self.distance_matrix = build_distance_matrix(self.maps)
-            self.sense_matrix = build_sense_matrix(self.maps)
-            self.decor_presets = load_decor_presets(self.addon_dirs)
-            self.template = _load_global_template()
-            self.clothing_defs = load_clothing_defs(self.addon_dirs)
-            self.outfit_types = load_outfit_types(self.addon_dirs)
-            self.item_defs = load_item_defs(self.addon_dirs)
-            self.item_tags = load_item_tags(self.addon_dirs)
-            self.trait_defs = load_trait_defs(self.addon_dirs)
-            self.action_defs = load_action_defs(self.addon_dirs)
-            self.trait_groups = load_trait_groups(self.addon_dirs)
-            self.variable_defs = load_variable_defs(self.addon_dirs)
-            self.variable_tags = load_variable_tags(self.addon_dirs)
-            self.event_defs = load_event_defs(self.addon_dirs)
-            self.world_variable_defs = load_world_variable_defs(self.addon_dirs)
-            self.character_data = load_characters(self.addon_dirs)
+            self._load_maps_and_matrices()
+            self._load_all_defs()
             self._resolve_namespaces()
 
         # Always rebuild cell->action index (action defs may have been edited)
-        from .action import build_cell_action_index
-
-        self.cell_action_index, self.no_location_actions = build_cell_action_index(self.action_defs, self.maps)
+        self._build_cell_action_index()
 
         # Reset NPC goals — outcome snapshots may reference stale definitions
         self.npc_goals = {}
@@ -826,12 +731,7 @@ class GameState:
 
     def reload_maps(self) -> None:
         """Reload map collection from disk."""
-        collection = load_map_collection(self.addon_dirs)
-        self.maps = collection["maps"]
-        from .map_engine import build_distance_matrix, build_sense_matrix
-
-        self.distance_matrix = build_distance_matrix(self.maps)
-        self.sense_matrix = build_sense_matrix(self.maps)
+        self._load_maps_and_matrices()
 
     def get_addon_dir_for_source(self, source: str) -> Path:
         """Get the addon directory path for a given source/addon ID."""
@@ -845,53 +745,14 @@ class GameState:
 
     def get_full_state(self) -> dict[str, Any]:
         """Get the complete game state for frontend rendering."""
-        # Rebuild character states to reflect any changes
-        for char_id, char_data in self.character_data.items():
-            # Sync position from runtime characters back
-            if char_id in self.characters:
-                char_data["position"] = self.characters[char_id]["position"]
-                # Sync resources
-                for key, res in self.characters[char_id]["resources"].items():
-                    if "resources" not in char_data:
-                        char_data["resources"] = {}
-                    char_data["resources"][key] = {
-                        "value": res["value"],
-                        "max": res["max"],
-                    }
-                # Sync abilities (decay may have changed exp values)
-                for ab in self.characters[char_id].get("abilities", []):
-                    if "abilities" not in char_data:
-                        char_data["abilities"] = {}
-                    char_data["abilities"][ab["key"]] = ab["exp"]
-                # Sync experiences
-                for exp_entry in self.characters[char_id].get("experiences", []):
-                    if "experiences" not in char_data:
-                        char_data["experiences"] = {}
-                    char_data["experiences"][exp_entry["key"]] = {
-                        "count": exp_entry["count"],
-                        "first": exp_entry["first"],
-                    }
-                # Sync inventory
-                char_data["inventory"] = self.characters[char_id].get("inventory", [])
+        # Sync runtime state back to character_data, then rebuild display states
+        self._sync_runtime_to_data()
+        self._build_all_chars()
+        display_characters = self.characters
 
-        # Rebuild character display states (active only)
-        display_characters = {}
-        for char_id, char_data in self.character_data.items():
-            if char_data.get("active", True) is False:
-                continue
-            display_characters[char_id] = build_character_state(
-                char_data,
-                self.template,
-                self.clothing_defs,
-                self.trait_defs,
-                self.item_defs,
-            )
-            # Copy runtime resource values
-            if char_id in self.characters:
-                for key in display_characters[char_id]["resources"]:
-                    display_characters[char_id]["resources"][key]["value"] = self.characters[char_id]["resources"][key][
-                        "value"
-                    ]
+        # Post-process: add portrait paths and resolve favorability display
+        for char_id in list(display_characters.keys()):
+            char_data = self.character_data.get(char_id, {})
             # Include portrait from raw data
             portrait = char_data.get("portrait")
             if portrait:
@@ -939,9 +800,6 @@ class GameState:
                 "grid": map_data["compiled_grid"],
                 "cells": cells,
             }
-
-        # Update cached characters so condition checks use fresh data
-        self.characters = display_characters
 
         # Inject abilities/experiences derived from trait categories into template
         template_ext = {**self.template}
@@ -1028,32 +886,7 @@ class GameState:
         """
         import copy
 
-        # Sync display state back to character_data first
-        for char_id, char_state in self.characters.items():
-            if char_id not in self.character_data:
-                continue
-            cd = self.character_data[char_id]
-            cd["position"] = char_state.get("position", {})
-            # resources
-            for key, res in char_state.get("resources", {}).items():
-                if "resources" not in cd:
-                    cd["resources"] = {}
-                cd["resources"][key] = {"value": res["value"], "max": res["max"]}
-            # abilities
-            for ab in char_state.get("abilities", []):
-                if "abilities" not in cd:
-                    cd["abilities"] = {}
-                cd["abilities"][ab["key"]] = ab["exp"]
-            # experiences
-            for exp in char_state.get("experiences", []):
-                if "experiences" not in cd:
-                    cd["experiences"] = {}
-                cd["experiences"][exp["key"]] = {
-                    "count": exp["count"],
-                    "first": exp["first"],
-                }
-            # inventory
-            cd["inventory"] = char_state.get("inventory", [])
+        self._sync_runtime_to_data()
 
         characters: dict[str, Any] = {}
         for char_id, cd in self.character_data.items():
@@ -1134,17 +967,7 @@ class GameState:
                 cd["basicInfo"] = saved["basicInfo"]
 
         # Rebuild display state from updated character_data (active only)
-        self.characters = {}
-        for char_id, char_data in self.character_data.items():
-            if char_data.get("active", True) is False:
-                continue
-            self.characters[char_id] = build_character_state(
-                char_data,
-                self.template,
-                self.clothing_defs,
-                self.trait_defs,
-                self.item_defs,
-            )
+        self._build_all_chars()
 
         # Restore NPC state (goals reset — NPC re-decides from current position)
         self.npc_goals = {}

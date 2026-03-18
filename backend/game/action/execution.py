@@ -6,6 +6,14 @@ from typing import Any
 
 from ..constants import ActionType, ClothingState, TargetType
 from .conditions import _check_costs, _evaluate_conditions
+
+
+def _err(error: str, params: dict | None = None) -> dict:
+    """Build an action error response (same structure as routes._helpers._resp)."""
+    r: dict = {"success": False, "error": error}
+    if params:
+        r["params"] = params
+    return r
 from .effects import _apply_costs, _apply_effects
 from .helpers import _snap_to_tick
 from .modifiers import _roll_outcome
@@ -147,7 +155,7 @@ def execute_action(game_state: Any, character_id: str, action: dict) -> dict:
     action_id = action.get("actionId") or action.get("type")
     action_def = game_state.action_defs.get(action_id)
     if not action_def:
-        return {"success": False, "message": f"未知行动: {action_id}"}
+        return _err("ACTION_UNKNOWN", {"id": action_id})
 
     return _execute_configured(game_state, character_id, action_def, action)
 
@@ -157,7 +165,7 @@ def _execute_configured(game_state: Any, character_id: str, action_def: dict, ac
 
     char = game_state.characters.get(character_id)
     if not char:
-        return {"success": False, "message": "角色不存在"}
+        return _err("ACTION_CHARACTER_NOT_FOUND")
 
     # Re-check conditions (including target-dependent ones)
     target_id = action.get("targetId")
@@ -168,13 +176,13 @@ def _execute_configured(game_state: Any, character_id: str, action_def: dict, ac
         target_id=target_id,
         char_id=character_id,
     ):
-        return {"success": False, "message": "条件不满足"}
+        return _err("ACTION_CONDITIONS_NOT_MET")
 
     # Re-check costs
     costs = action_def.get("costs", [])
     enabled, reason = _check_costs(costs, char)
     if not enabled:
-        return {"success": False, "message": reason}
+        return _err("ACTION_COST_NOT_MET", {"reason": reason})
 
     # Apply costs
     _apply_costs(costs, char)
@@ -244,18 +252,18 @@ def _execute_move(game_state: Any, character_id: str, action: dict) -> dict:
 
     char = game_state.characters.get(character_id)
     if not char:
-        return {"success": False, "message": "角色不存在"}
+        return _err("ACTION_CHARACTER_NOT_FOUND")
 
     pos = char["position"]
     target_map = action.get("targetMap")
     target_cell = action.get("targetCell")
 
     if target_cell is None:
-        return {"success": False, "message": "未指定目标方格"}
+        return _err("ACTION_NO_TARGET_CELL")
 
     travel_time = validate_move(game_state.maps, pos["mapId"], pos["cellId"], target_map, target_cell)
     if travel_time is None:
-        return {"success": False, "message": "无法移动到目标方格"}
+        return _err("ACTION_MOVE_BLOCKED")
 
     # Update position
     new_map_id = target_map or pos["mapId"]
@@ -291,12 +299,12 @@ def _execute_look(game_state: Any, character_id: str, action: dict) -> dict:
     """Look at a nearby cell and report what NPCs are doing there."""
     char = game_state.characters.get(character_id)
     if not char:
-        return {"success": False, "message": "角色不存在"}
+        return _err("ACTION_CHARACTER_NOT_FOUND")
 
     target_map_id = action.get("targetMap") or char["position"]["mapId"]
     target_cell = action.get("targetCell")
     if target_cell is None:
-        return {"success": False, "message": "未指定目标方格"}
+        return _err("ACTION_NO_TARGET_CELL")
 
     # Get cell name
     map_data = game_state.maps.get(target_map_id, {})
@@ -331,13 +339,13 @@ def _execute_change_outfit(game_state: Any, character_id: str, action: dict) -> 
     """Execute a player outfit change. Fixed 5-minute time cost."""
     char = game_state.characters.get(character_id)
     if not char:
-        return {"success": False, "message": "角色不存在"}
+        return _err("ACTION_CHARACTER_NOT_FOUND")
 
     outfit_id = action.get("outfitId", "")
     selections = action.get("selections", {})  # {slot: clothingId}
 
     if not outfit_id:
-        return {"success": False, "message": "未指定预设"}
+        return _err("ACTION_NO_OUTFIT")
 
     char_data = game_state.character_data.get(character_id, {})
     cl = char_data.setdefault("clothing", {})
