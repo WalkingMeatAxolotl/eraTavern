@@ -1,52 +1,82 @@
-# AI Tavern Game
+# AaaliceTavern
 
-> **[中文版](README_CN.md)**
+<p align="center">
+  <img src="assets/logo.png" alt="AaaliceTavern Logo" width="120">
+</p>
 
-A JSON-data-driven text adventure game engine.
+<p align="center">
+  <strong>Addon-extensible text adventure engine with LLM-powered narration</strong>
+</p>
 
-Define characters, actions, maps, traits, and items through visual editors — no code required. The engine handles all game logic. Connect an LLM to automatically transform game events into narrative text.
+<p align="center">
+  <a href="#-features">Features</a> &middot;
+  <a href="#-installation">Installation</a> &middot;
+  <a href="#-usage">Usage</a> &middot;
+  <a href="#-tech-stack">Tech Stack</a> &middot;
+  <a href="#-project-structure">Project Structure</a> &middot;
+  <a href="#-development">Development</a>
+</p>
 
-[Features](#features) · [Installation](#installation) · [Usage](#usage) · [Tech Stack](#tech-stack) · [Project Structure](#project-structure) · [Development](#development)
+<p align="center">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License">
+  <img src="https://img.shields.io/badge/python-3.9+-blue?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/React-18+-61DAFB?logo=react&logoColor=white" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-5+-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
+</p>
+
+<p align="center">
+  <a href="README_CN.md">中文版</a>
+</p>
 
 ---
 
-## What This Engine Does
+Build complete text adventure games through visual editors and shareable addon packs — no code required. The engine handles action resolution, NPC behavior, and game logic. An integrated LLM layer transforms game events into rich narrative text.
+
+---
+
+## &#x1F3AE; What This Engine Does
 
 Create game content (addons) with visual editors. The engine takes care of:
 
-- **Action Resolution** — Condition trees (AND/OR/NOT, 15+ condition types), multiple outcome branches, costs/effects/weight modifiers, all evaluated automatically
-- **Autonomous NPC Behavior** — NPCs make decisions within their perception range: pathfinding, choosing actions, interacting with other characters — no scripting needed
-- **LLM Narration** — Action results + character state + lorebook entries are assembled into prompts; the LLM generates narrative text
+- **Action Resolution** — Condition trees (AND/OR/NOT, 15+ types), multiple outcome branches, costs/effects/weight modifiers
+- **Autonomous NPC Behavior** — NPCs make decisions within their perception range: pathfinding, choosing actions, interacting with others — no scripting needed
+- **LLM Narration** — Action results + character state + lorebook entries assembled into prompts for narrative generation
 - **Character Templates** — One template defines the attribute structure (resources, abilities, traits, clothing slots) for all characters
-- **Derived Variables** — Visual formula editor for computed values based on attributes, favorability, traits, etc. — used in conditions and weight modifiers
-- **Addon System** — All content is packaged into addons with version management, dependency tracking, and per-world branching
+- **Derived Variables** — Visual formula editor for computed values based on attributes, favorability, traits — used in conditions and weight modifiers
+- **Addon System** — All content packaged into addons with version management, dependency tracking, and per-world branching
 
-## Features
+---
 
-**For Creators:**
+## &#x2728; Features
 
-- Visual editors for all entity types — characters, actions, maps, traits, items, clothing, variables, events, lorebook
-- Condition system — 15 condition types, nested AND/OR/NOT, actor/target dual perspective
-- Effect system — 11 effect types (resource, ability, trait, item, clothing, favorability, position, world variable), percentage & variable references
-- Multiple outcome branches — success/failure/critical with weight modifiers based on ability, trait, favorability, etc.
-- NPC weight control — tune NPC action preferences; suggestNext chains guide follow-up behavior
-- Clothing system — 14 slots, multiple outfit presets, occlusion calculation, clothing stat effects
-- Derived variables — 9 step types + 8 operations, bidirectional character relationships (e.g. "bond = mutual favorability sum")
-- Lorebook — keyword-triggered context injection into LLM prompts, similar to SillyTavern World Info
-- LLM template variables — 40+ variables (character stats, equipment, history, location, weather, world variables), parameterized
-- Ability decay — experience values decay over time with configurable rate and interval
-- Event system — global condition-triggered effects, once / on_change / while modes
-- Trait groups — exclusive/non-exclusive grouping; gaining a new trait auto-replaces others in the same group
-- Prompt labels — LLM prompt text adapts to addon language, enabling non-Chinese content packs
+### For Creators
 
-**For Players:**
+| Category | Details |
+|----------|---------|
+| **Visual Editors** | Characters, actions, maps, traits, items, clothing, variables, events, lorebook |
+| **Condition System** | 15 condition types, nested AND/OR/NOT, actor/target dual perspective |
+| **Effect System** | 11 effect types (resource, ability, trait, item, clothing, favorability, position, world variable), percentage & variable references |
+| **Outcome Branches** | Success/failure/critical with weight modifiers based on ability, trait, favorability, etc. |
+| **NPC AI** | Weight-based action preferences, suggestNext behavior chaining, sense-range filtering |
+| **Clothing** | 14 slots, multiple outfit presets, occlusion calculation, stat effects |
+| **Derived Variables** | 9 step types + 8 operations, bidirectional character relationships |
+| **Lorebook** | Keyword-triggered context injection into LLM prompts (similar to SillyTavern World Info) |
+| **LLM Variables** | 40+ template variables (stats, equipment, history, location, weather), parameterized |
+| **Events** | Global condition-triggered effects, once / on_change / while modes |
+| **Trait Groups** | Exclusive/non-exclusive grouping with auto-replacement |
+| **Ability Decay** | Experience values decay over time with configurable rate and interval |
+| **Prompt Labels** | LLM prompt text adapts to addon language, enabling non-Chinese content packs |
 
-- Multiple worlds — different addon combinations per world, fully isolated
-- Multiple save slots — independent save slots per world
-- Outfit switching — choose from preset clothing loadouts
-- LLM narration — auto or manual trigger for AI-generated story text
+### For Players
 
-## Installation
+- **Multiple Worlds** — Different addon combinations per world, fully isolated
+- **Multiple Save Slots** — Independent save slots per world
+- **Outfit Switching** — Choose from preset clothing loadouts
+- **LLM Narration** — Auto or manual trigger for AI-generated story text
+
+---
+
+## &#x1F4E6; Installation
 
 **Requirements:** Python 3.9+, Node.js 18+
 
@@ -62,7 +92,9 @@ cd ../frontend
 npm install
 ```
 
-## Usage
+---
+
+## &#x1F680; Usage
 
 ```bash
 # Start (backend + frontend)
@@ -74,13 +106,18 @@ stop.bat
 
 Open `http://localhost:15173` in your browser. A default world is created on first launch.
 
-**UI Layout:**
-- **Left sidebar** — World management (create / switch / delete)
-- **Right sidebar** — Addon management (enable / disable / version switch)
-- **Top nav** — Characters / Traits / Clothing / Items / Actions / Maps / Variables / Lorebook / LLM / Settings
-- **Bottom float** — [Save Changes] button
+### UI Layout
 
-## Tech Stack
+| Area | Function |
+|------|----------|
+| **Left Sidebar** | World management (create / switch / delete) |
+| **Right Sidebar** | Addon management (enable / disable / version switch) |
+| **Top Nav** | Characters / Traits / Clothing / Items / Actions / Maps / Variables / Lorebook / LLM / Settings |
+| **Bottom Float** | [Save Changes] button |
+
+---
+
+## &#x1F6E0;&#xFE0F; Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -89,7 +126,9 @@ Open `http://localhost:15173` in your browser. A default world is created on fir
 | Communication | REST API + SSE |
 | Data | JSON files, no database |
 
-## Project Structure
+---
+
+## &#x1F4C1; Project Structure
 
 ```
 addons/{addonId}/              Addons (source of all game entities)
@@ -113,7 +152,9 @@ frontend/src/
   i18n/                          Internationalization
 ```
 
-## Development
+---
+
+## &#x1F4BB; Development
 
 ```bash
 # Backend with hot reload
@@ -132,12 +173,14 @@ cd frontend && npx tsc --noEmit
 cd frontend && npx eslint src/
 ```
 
-## Documentation
+### Documentation
 
 - **Technical docs** — [`docs/tech/`](docs/tech/) — Architecture, data structures, algorithms, API
 - **User guides** — [`docs/user/`](docs/user/) — Editor usage guides
 
-## License
+---
+
+## &#x1F4C4; License
 
 [GNU Affero General Public License v3.0](LICENSE)
 
