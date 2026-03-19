@@ -78,6 +78,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   TAG_DELETED: "标签已删除",
 
   // --- Validation ---
+  ID_EMPTY: "ID 不能为空",
+  ID_CONTAINS_SEPARATOR: "ID 不能包含 '.'",
   VALIDATION_ID_EMPTY: "ID 不能为空",
   VALIDATION_ID_INVALID: "ID 不能包含 '{separator}'",
   FIELD_REQUIRED: "缺少必填项",

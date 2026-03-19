@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 from typing import Any
 
-from game.constants import Season, DayOfWeek
+from game.constants import DayOfWeek, Season
 
 SEASONS = Season.ALL  # ["spring", "summer", "autumn", "winter"]
 WEEKDAYS = DayOfWeek.ALL  # ["mon", "tue", ..., "sun"]

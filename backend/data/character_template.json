@@ -30,5 +30,25 @@
     { "key": "mentalTrait", "label": "精神的特征", "multiple": true },
     { "key": "techTrait", "label": "技术的特征", "multiple": true },
     { "key": "other", "label": "其他", "multiple": true }
-  ]
+  ],
+
+  "promptLabels": {
+    "money": "金钱",
+    "traits": "特质",
+    "abilities": "能力",
+    "experiences": "经验",
+    "clothing": "穿着",
+    "inventory": "物品",
+    "favorability": "好感度",
+    "variables": "变量",
+    "worn": "穿着",
+    "halfWorn": "半脱",
+    "off": "脱下",
+    "occluded": "遮挡",
+    "none": "无",
+    "idle": "待机中",
+    "traveling": "正在前往...",
+    "expUnit": "次",
+    "defaultOutfit": "默认服装"
+  }
 }

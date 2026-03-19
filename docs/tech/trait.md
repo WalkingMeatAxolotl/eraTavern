@@ -4,13 +4,13 @@
 
 | 文件 | 职责 |
 |------|------|
-| `backend/game/character.py` | 特质效果计算、能力等级、能力衰减、角色状态编译 |
+| `backend/game/character/state.py` | 特质效果计算、能力等级、能力衰减、角色状态编译 |
+| `backend/game/character/entity_loader.py` | 特质/特质组加载与保存 |
 | `backend/game/variable_engine.py` | 变量求值引擎、循环检测、调试追踪 |
-| `frontend/src/components/TraitEditor.tsx` | 特质定义编辑器 UI |
-| `frontend/src/components/TraitGroupEditor.tsx` | 特质组编辑器 UI |
-| `frontend/src/components/VariableEditor.tsx` | 衍生变量编辑器 UI |
+| `backend/routes/entities.py` | 特质/特质组/变量 CRUD API (工厂模式) |
+| `frontend/src/components/trait/` | TraitEditor, TraitGroupEditor, TraitManager |
+| `frontend/src/components/variable/` | VariableEditor, VariableManager, EventManager |
 | `frontend/src/types/game.ts` | TypeScript 类型定义 |
-| `backend/main.py` | REST API 端点定义 |
 
 ## 数据结构
 

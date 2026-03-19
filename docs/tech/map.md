@@ -5,9 +5,9 @@
 | 文件 | 职责 |
 |------|------|
 | `backend/game/map_engine.py` | 地图加载、grid 编译、distance/sense matrix 构建、移动验证 |
-| `frontend/src/components/MapEditor.tsx` | 地图编辑器 UI |
+| `backend/routes/maps.py` | REST API 端点 |
+| `frontend/src/components/map/MapEditor.tsx` | 地图编辑器 UI |
 | `frontend/src/types/game.ts` | TypeScript 类型定义 |
-| `backend/main.py` | REST API 端点 |
 
 ## 数据结构
 

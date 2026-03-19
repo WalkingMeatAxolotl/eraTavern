@@ -13,11 +13,11 @@ NS_SEP = "."  # namespace separator: addonId.localId
 
 
 def validate_local_id(local_id: str) -> str | None:
-    """Validate a local ID. Returns error message if invalid, None if OK."""
+    """Validate a local ID. Returns error code if invalid, None if OK."""
     if not local_id:
-        return "ID 不能为空"
+        return "ID_EMPTY"
     if NS_SEP in local_id:
-        return f"ID 不能包含 '{NS_SEP}'"
+        return "ID_CONTAINS_SEPARATOR"
     return None
 
 

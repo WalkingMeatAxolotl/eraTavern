@@ -8,12 +8,13 @@
 
 | 文件 | 职责 |
 |------|------|
-| `backend/game/character.py` | 物品/服装命名空间、服装状态构建、服装效果应用 |
-| `backend/game/action.py` | 行动中的物品消耗/获取、服装穿脱/状态变更 |
-| `backend/main.py` | 物品/服装/标签的 REST API 端点 |
-| `frontend/src/components/ItemEditor.tsx` | 物品定义编辑器 |
-| `frontend/src/components/ClothingEditor.tsx` | 服装定义编辑器 |
-| `frontend/src/components/ItemManager.tsx` | 角色库存管理面板（双视图） |
+| `backend/game/character/namespace.py` | 物品/服装命名空间 |
+| `backend/game/character/state.py` | 服装状态构建、服装效果应用 |
+| `backend/game/character/entity_loader.py` | 物品/服装加载与保存 |
+| `backend/game/action/effects.py` | 行动中的物品消耗/获取、服装穿脱/状态变更 |
+| `backend/routes/entities.py` | 物品/服装/标签 CRUD API (工厂模式) |
+| `frontend/src/components/item/` | ItemEditor, ItemManager |
+| `frontend/src/components/trait/` | ClothingEditor, ClothingManager, OutfitEditor |
 | `frontend/src/types/game.ts` | TypeScript 类型定义 |
 
 ---
@@ -212,7 +213,7 @@ interface ClothingSlot {
 
 ### build_clothing_state()
 
-`character.py` 中的两遍算法，将角色 `clothing` 原始数据转为前端展示用的 `ClothingSlot[]` 列表。
+`character/state.py` 中的两遍算法，将角色 `clothing` 原始数据转为前端展示用的 `ClothingSlot[]` 列表。
 
 **第一遍 — 收集穿着信息 + 标记遮挡：**
 
@@ -236,7 +237,7 @@ interface ClothingSlot {
 
 ### apply_clothing_effects()
 
-`character.py` 中，与 trait effects 使用相同的效果机制。
+`character/state.py` 中，与 trait effects 使用相同的效果机制。
 
 **流程：**
 

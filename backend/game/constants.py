@@ -210,3 +210,28 @@ class MagnitudeType:
 class LorebookMode:
     ALWAYS = "always"
     KEYWORD = "keyword"
+
+
+# ---------------------------------------------------------------------------
+# Prompt label keys (for LLM prompt text from template.promptLabels)
+# ---------------------------------------------------------------------------
+class PL:
+    """PromptLabel keys — used with _pl(game_state, PL.xxx)."""
+
+    MONEY = "money"
+    TRAITS = "traits"
+    ABILITIES = "abilities"
+    EXPERIENCES = "experiences"
+    CLOTHING = "clothing"
+    INVENTORY = "inventory"
+    FAVORABILITY = "favorability"
+    VARIABLES = "variables"
+    WORN = "worn"
+    HALF_WORN = "halfWorn"
+    OFF = "off"
+    OCCLUDED = "occluded"
+    NONE = "none"
+    IDLE = "idle"
+    TRAVELING = "traveling"
+    EXP_UNIT = "expUnit"
+    DEFAULT_OUTFIT = "defaultOutfit"

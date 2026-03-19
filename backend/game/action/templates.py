@@ -6,7 +6,8 @@ import random
 import re
 from typing import Any
 
-from ..constants import ClothingState
+from ..constants import PL, ClothingState
+from ..llm_engine import _pl
 from .conditions import _evaluate_conditions
 
 
@@ -118,18 +119,18 @@ def _resolve_template(
                     if cl.get("itemId"):
                         name = cl.get("itemName", cl["itemId"])
                         if cl.get("state") == ClothingState.HALF_WORN:
-                            return f"{name}(半穿)"
+                            return f"{name}({_pl(game_state, PL.HALF_WORN)})"
                         if cl.get("state") == ClothingState.OFF:
-                            return f"{name}(脱下)"
+                            return f"{name}({_pl(game_state, PL.OFF)})"
                         return name
-                    return "无"
+                    return _pl(game_state, PL.NONE)
             return ""
 
         if category == "trait":
             for t in c.get("traits", []):
                 if t["key"] == key:
                     vals = t.get("values", [])
-                    return ", ".join(vals) if vals else "无"
+                    return ", ".join(vals) if vals else _pl(game_state, PL.NONE)
             return ""
 
         if category == "favorability":

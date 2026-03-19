@@ -125,7 +125,7 @@ interface CharacterState {
 
 ### 1. load_characters()
 
-`character.py` — 遍历所有 addon_dirs，读取 `characters/*.json`，对每个角色:
+`character/entity_loader.py` — 遍历所有 addon_dirs，读取 `characters/*.json`，对每个角色:
 - 读取 JSON 文件
 - 对 ID 加命名空间: `namespace_id(addon_id, local_id)` -> `"base.tes"`
 - 附加 `_local_id` 和 `_source` 内部字段
@@ -150,7 +150,7 @@ interface CharacterState {
 
 ### 3. build_character_state()
 
-`character.py` — 将 raw data + template 合并为运行时 state:
+`character/state.py` — 将 raw data + template 合并为运行时 state:
 1. **basicInfo**: 遍历 template.basicInfo，从 char_data 取值或用 defaultValue
 2. **resources**: 遍历 template.resources，从 char_data 取值或用 defaults
 3. **clothing**: 调用 `build_clothing_state()` 计算 occlusion
@@ -217,7 +217,7 @@ def exp_to_grade(exp: int) -> str:
 
 ## API Endpoints
 
-所有角色相关的 REST API 定义在 `backend/main.py`:
+所有角色相关的 REST API 定义在 `backend/routes/entities.py`:
 
 | Method | Path | 说明 |
 |--------|------|------|
@@ -246,7 +246,7 @@ def exp_to_grade(exp: int) -> str:
 
 ## 前端: CharacterEditor
 
-文件: `frontend/src/components/CharacterEditor.tsx`
+文件: `frontend/src/components/character/CharacterEditor.tsx`
 
 ### Props
 

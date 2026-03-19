@@ -177,10 +177,10 @@ tavernGame/
 {addonId}.{localId}
 ```
 
-- 分隔符: `NS_SEP = "."` (`character.py`)
+- 分隔符: `NS_SEP = "."` (`character/namespace.py`)
 - 例: addon `base` 中定义的特质 `human` → 运行时 ID 为 `base.human`
 
-### 转换函数 (`character.py`)
+### 转换函数 (`character/namespace.py`)
 
 | 函数 | 用途 |
 |------|------|

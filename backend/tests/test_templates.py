@@ -250,7 +250,7 @@ class TestResolveTemplate:
         char = game_state.characters["player"]
         char["clothing"] = [{"slot": "上衣", "itemId": "shirt1", "itemName": "白衬衫", "state": "halfWorn"}]
         result = _resolve_template("{{self.clothing.上衣}}", char, None, game_state, None, [])
-        assert result == "白衬衫(半穿)"
+        assert result == "白衬衫(半脱)"
 
     def test_clothing_empty_slot(self, game_state):
         char = game_state.characters["player"]

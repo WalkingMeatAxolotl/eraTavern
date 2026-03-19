@@ -8,7 +8,35 @@ from typing import Any, Optional
 
 import httpx
 
-from .constants import ClothingState, EffectDirection, LorebookMode, MagnitudeType
+from .constants import PL, ClothingState, EffectDirection, LorebookMode, MagnitudeType
+
+# Default prompt labels — overridden by template.promptLabels at runtime
+_DEFAULT_PROMPT_LABELS: dict[str, str] = {
+    "money": "金钱",
+    "traits": "特质",
+    "abilities": "能力",
+    "experiences": "经验",
+    "clothing": "穿着",
+    "inventory": "物品",
+    "favorability": "好感度",
+    "variables": "变量",
+    "worn": "穿着",
+    "halfWorn": "半脱",
+    "off": "脱下",
+    "occluded": "遮挡",
+    "none": "无",
+    "idle": "待机中",
+    "traveling": "正在前往...",
+    "expUnit": "次",
+    "defaultOutfit": "默认服装",
+}
+
+
+def _pl(game_state: Any, key: str) -> str:
+    """Get a prompt label from template, falling back to defaults."""
+    tpl = getattr(game_state, "template", {})
+    labels = tpl.get("promptLabels", {})
+    return labels.get(key, _DEFAULT_PROMPT_LABELS.get(key, key))
 
 # ---------------------------------------------------------------------------
 # Variable helpers
@@ -109,40 +137,44 @@ def _format_abilities(char: dict) -> str:
     return ", ".join(parts) if parts else ""
 
 
-def _format_experiences(char: dict) -> str:
+def _format_experiences(char: dict, game_state: Any = None) -> str:
     exps = char.get("experiences", [])
     if not exps:
         return ""
+    unit = _pl(game_state, PL.EXP_UNIT) if game_state else "次"
     parts = []
     for e in exps:
         count = e.get("count", 0)
         if count > 0:
-            parts.append(f"{e['label']}: {count}次")
+            parts.append(f"{e['label']}: {count}{unit}")
     return ", ".join(parts) if parts else ""
 
 
-def _format_clothing(char: dict) -> str:
+def _format_clothing(char: dict, game_state: Any = None) -> str:
     """Simple clothing list."""
     slots = char.get("clothing", [])
     worn = [s for s in slots if s.get("itemName") and s.get("state") in (ClothingState.WORN, ClothingState.HALF_WORN)]
     if not worn:
-        return "无"
+        return _pl(game_state, PL.NONE) if game_state else "无"
     parts = []
     for s in worn:
         parts.append(f"{s['slotLabel']}: {s['itemName']}")
     return ", ".join(parts)
 
 
-def _format_clothing_detail(char: dict, clothing_defs: dict) -> str:
+def _format_clothing_detail(char: dict, clothing_defs: dict, game_state: Any = None) -> str:
     """Clothing with state, description, effects, occlusion."""
     slots = char.get("clothing", [])
     worn = [s for s in slots if s.get("itemName") and s.get("state") in (ClothingState.WORN, ClothingState.HALF_WORN)]
     if not worn:
-        return "无"
+        return _pl(game_state, PL.NONE) if game_state else "无"
     lines = []
     for s in worn:
-        state_str = "(穿着)" if s["state"] == ClothingState.WORN else "(半脱)"
-        occ_str = "(遮挡)" if s.get("occluded") else ""
+        worn_label = _pl(game_state, PL.WORN) if game_state else "穿着"
+        half_label = _pl(game_state, PL.HALF_WORN) if game_state else "半脱"
+        occ_label = _pl(game_state, PL.OCCLUDED) if game_state else "遮挡"
+        state_str = f"({worn_label})" if s["state"] == ClothingState.WORN else f"({half_label})"
+        occ_str = f"({occ_label})" if s.get("occluded") else ""
         line = f"{s['slotLabel']}: {s['itemName']}{state_str}{occ_str}"
         # Add description and effects from clothing_defs
         item_id = s.get("itemId", "")
@@ -178,7 +210,7 @@ def _format_outfit(char: dict, game_state: Any) -> str:
         return ""
     current = char_data.get("currentOutfit", "default")
     if current == "default":
-        return "默认服装"
+        return _pl(game_state, PL.DEFAULT_OUTFIT)
     for ot in getattr(game_state, "outfit_types", []):
         if ot.get("id") == current:
             return ot.get("name", current)
@@ -255,7 +287,7 @@ def _format_char_full(char: dict, game_state: Any) -> str:
 
     money = _format_money(char)
     if money and money != "0":
-        sections.append(f"金钱: {money}")
+        sections.append(f"{_pl(game_state, PL.MONEY)}: {money}")
 
     res = _format_resources(char)
     if res:
@@ -263,31 +295,32 @@ def _format_char_full(char: dict, game_state: Any) -> str:
 
     traits = _format_traits_names(char)
     if traits:
-        sections.append(f"特质: {traits}")
+        sections.append(f"{_pl(game_state, PL.TRAITS)}: {traits}")
 
     abilities = _format_abilities(char)
     if abilities:
-        sections.append(f"能力: {abilities}")
+        sections.append(f"{_pl(game_state, PL.ABILITIES)}: {abilities}")
 
-    experiences = _format_experiences(char)
+    experiences = _format_experiences(char, game_state)
     if experiences:
-        sections.append(f"经验: {experiences}")
+        sections.append(f"{_pl(game_state, PL.EXPERIENCES)}: {experiences}")
 
-    clothing = _format_clothing(char)
-    if clothing and clothing != "无":
-        sections.append(f"穿着: {clothing}")
+    clothing = _format_clothing(char, game_state)
+    none_label = _pl(game_state, PL.NONE)
+    if clothing and clothing != none_label:
+        sections.append(f"{_pl(game_state, PL.CLOTHING)}: {clothing}")
 
     inv = _format_inventory(char)
     if inv:
-        sections.append(f"物品: {inv}")
+        sections.append(f"{_pl(game_state, PL.INVENTORY)}: {inv}")
 
     fav = _format_favorability(char)
     if fav:
-        sections.append(f"好感度: {fav}")
+        sections.append(f"{_pl(game_state, PL.FAVORABILITY)}: {fav}")
 
     char_vars = _format_char_variables(char, game_state)
     if char_vars:
-        sections.append(f"变量: {char_vars}")
+        sections.append(f"{_pl(game_state, PL.VARIABLES)}: {char_vars}")
 
     return "\n".join(sections)
 
@@ -355,7 +388,7 @@ def _format_npcs_here(game_state: Any, map_id: str, cell_id: int, player_id: str
         pos = c.get("position", {})
         if pos.get("mapId") == map_id and pos.get("cellId") == cell_id:
             name = _format_name(c)
-            activity = game_state.npc_activities.get(cid, "待机中")
+            activity = game_state.npc_activities.get(cid, _pl(game_state, PL.IDLE))
             parts.append(f"{name}: {activity}")
     return "\n".join(parts) if parts else ""
 
@@ -378,7 +411,7 @@ def _format_npcs_nearby(game_state: Any, player_id: str) -> str:
             continue
         name = _format_name(c)
         cell_name = _get_cell_name(game_state, pos.get("mapId", ""), pos.get("cellId", 0))
-        activity = game_state.npc_activities.get(cid, "待机中")
+        activity = game_state.npc_activities.get(cid, _pl(game_state, PL.IDLE))
         parts.append(f"[{cell_name}] {name}: {activity}")
     return "\n".join(parts) if parts else ""
 
@@ -543,9 +576,9 @@ def _collect_char_variables(
         f"{prefix}.traits": _format_traits_detail(char, trait_defs),
         f"{prefix}.traits.names": _format_traits_names(char),
         f"{prefix}.abilities": _format_abilities(char),
-        f"{prefix}.experiences": _format_experiences(char),
-        f"{prefix}.clothing": _format_clothing(char),
-        f"{prefix}.clothing.detail": _format_clothing_detail(char, clothing_defs),
+        f"{prefix}.experiences": _format_experiences(char, game_state),
+        f"{prefix}.clothing": _format_clothing(char, game_state),
+        f"{prefix}.clothing.detail": _format_clothing_detail(char, clothing_defs, game_state),
         f"{prefix}.outfit": _format_outfit(char, game_state),
         f"{prefix}.inventory": _format_inventory(char),
         f"{prefix}.inventory.detail": _format_inventory_detail(char, item_defs),

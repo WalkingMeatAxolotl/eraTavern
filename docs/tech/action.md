@@ -4,10 +4,13 @@
 
 | 文件 | 职责 |
 |------|------|
-| `backend/game/action.py` | 行动执行、条件求值、NPC 决策、效果应用 |
-| `frontend/src/components/ActionEditor.tsx` | 行动编辑器 UI |
+| `backend/game/action/` | 行动系统 package (execution, conditions, effects, modifiers, npc, events, templates) |
+| `backend/game/constants.py` | 条件/效果/修改器类型等枚举常量 |
+| `backend/routes/entities.py` | 行动 CRUD API (工厂模式) |
+| `backend/routes/game.py` | 行动执行 API |
+| `frontend/src/components/action/` | ActionEditor + 子编辑器 (ModifierEditor, OutcomeEditor, EffectEditor, TemplateEditor) |
+| `frontend/src/components/shared/ConditionEditor.tsx` | 共享条件编辑器 |
 | `frontend/src/types/game.ts` | TypeScript 类型定义 |
-| `backend/main.py` | REST API 端点 |
 
 ## 数据结构
 

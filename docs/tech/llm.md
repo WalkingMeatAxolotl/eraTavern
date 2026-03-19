@@ -7,12 +7,12 @@
 | `backend/game/llm_preset.py` | 预设文件 CRUD（list/load/save/delete） |
 | `backend/game/llm_provider.py` | API 服务文件 CRUD（list/load/save/delete） |
 | `backend/game/llm_engine.py` | 变量收集、提示词组装、LLM API 调用 |
-| `backend/main.py` | REST API 端点（`/api/llm/*`） |
-| `frontend/src/components/LLMPresetManager.tsx` | LLM 设置页（预设管理 + 接口管理 + 全局设置 + 调试日志） |
-| `frontend/src/components/LLMDebugPanel.tsx` | LLM 调试控制台（请求/响应/变量/token） |
-| `frontend/src/components/NarrativePanel.tsx` | 游戏输出区（原始输出 + LLM 叙事） |
-| `frontend/src/components/SettingsPage.tsx` | 世界设置（存档 + 世界级 LLM 预设） |
-| `frontend/src/components/ActionEditor.tsx` | 行动级 LLM 预设选择 |
+| `backend/routes/llm.py` | REST API 端点（`/api/llm/*`） |
+| `frontend/src/components/llm/LLMPresetManager.tsx` | LLM 设置页（预设管理 + 接口管理 + 全局设置 + 调试日志） |
+| `frontend/src/components/llm/LLMDebugPanel.tsx` | LLM 调试控制台（请求/响应/变量/token） |
+| `frontend/src/components/llm/NarrativePanel.tsx` | 游戏输出区（原始输出 + LLM 叙事） |
+| `frontend/src/components/settings/SettingsPage.tsx` | 世界设置（存档 + 世界级 LLM 预设） |
+| `frontend/src/components/action/ActionEditor.tsx` | 行动级 LLM 预设选择 |
 
 ## 概述
 
