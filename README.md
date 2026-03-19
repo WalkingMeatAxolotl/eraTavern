@@ -78,19 +78,14 @@ Create game content (addons) with visual editors. The engine takes care of:
 
 ## &#x1F4E6; Installation
 
-**Requirements:** Python 3.9+, Node.js 18+
+**Requirements:** Python 3.9+, Node.js 20.19+
 
 ```bash
-# 1. Backend
-cd backend
-python -m venv venv
-venv\Scripts\activate   # Windows
-pip install -r requirements.txt
-
-# 2. Frontend
-cd ../frontend
-npm install
+# Just double-click start.bat (or run from terminal)
+start.bat
 ```
+
+Dependencies are installed automatically on first launch.
 
 ---
 

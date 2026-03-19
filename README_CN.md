@@ -78,19 +78,14 @@
 
 ## &#x1F4E6; 安装说明
 
-**环境要求：** Python 3.9+, Node.js 18+
+**环境要求：** Python 3.9+, Node.js 20.19+
 
 ```bash
-# 1. 安装后端依赖
-cd backend
-python -m venv venv
-venv\Scripts\activate   # Windows
-pip install -r requirements.txt
-
-# 2. 安装前端依赖
-cd ../frontend
-npm install
+# 双击 start.bat 即可（或在终端运行）
+start.bat
 ```
+
+首次启动时自动安装所有依赖。
 
 ---
 
