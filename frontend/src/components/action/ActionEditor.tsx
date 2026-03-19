@@ -235,11 +235,11 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
     setSaving(true);
     try {
       if (addonCrud) {
-        await addonCrud.delete(id);
+        await addonCrud.delete(action.id);
         onBack();
         return;
       }
-      const result = await deleteActionDef(id);
+      const result = await deleteActionDef(action.id);
       if (result.success) onBack();
       else setMessage(result.message);
     } catch (e) {

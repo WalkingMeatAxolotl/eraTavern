@@ -81,11 +81,11 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
     setSaving(true);
     try {
       if (addonCrud) {
-        await addonCrud.delete(id);
+        await addonCrud.delete(item.id);
         onBack();
         return;
       }
-      const result = await deleteItemDef(id);
+      const result = await deleteItemDef(item.id);
       if (result.success) {
         onBack();
       } else {

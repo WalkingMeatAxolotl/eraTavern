@@ -282,11 +282,11 @@ function DependencyModal({
       <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>
         {isEnable ? (
           <>
-            {t("addon.depNeededPre")} <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> {t("addon.depNeededPost")}
+            {t("addon.depNeeded", { name: <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> })}
           </>
         ) : (
           <>
-            {t("addon.depByPre")} <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>{t("addon.depByPost")}
+            {t("addon.depBy", { name: <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> })}
           </>
         )}
       </div>
@@ -750,6 +750,7 @@ function AddonMetaEditor({
   const [description, setDescription] = useState(addon.description ?? "");
   const [categories, setCategories] = useState((addon.categories ?? []).join(", "));
   const [cover, setCover] = useState(addon.cover ?? "");
+  const [coverBust, setCoverBust] = useState(Date.now());
   const [saving, setSaving] = useState(false);
   const coverFileRef = useRef<HTMLInputElement>(null);
 
@@ -775,7 +776,7 @@ function AddonMetaEditor({
         name,
         author: author || undefined,
         description: description || undefined,
-        cover: cover || undefined,
+        cover: cover,
         categories: cats.length > 0 ? cats : undefined,
       });
       onUpdated();
@@ -791,7 +792,10 @@ function AddonMetaEditor({
     const file = e.target.files?.[0];
     if (!file) return;
     const result = await uploadAsset(file, "covers", `addon-${addon.id}`, { addonId: addon.id });
-    if (result.success && result.filename) setCover(result.filename);
+    if (result.success && result.filename) {
+      setCover(result.filename);
+      setCoverBust(Date.now());
+    }
     e.target.value = "";
   };
 
@@ -814,7 +818,7 @@ function AddonMetaEditor({
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
           {cover && (
             <img
-              src={`/assets/${addon.id}/covers/${cover}?t=${cover}`}
+              src={`/assets/${addon.id}/covers/${cover}?t=${coverBust}`}
               alt=""
               style={{
                 width: "28px",
@@ -1047,6 +1051,7 @@ function NewVersionModal({
 
 export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChange, worldId }: AddonSidebarProps) {
   const [allAddons, setAllAddons] = useState<AddonInfo[]>([]);
+  const [coverRefresh, setCoverRefresh] = useState(Date.now());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [forkPrompt, setForkPrompt] = useState<{ addon: AddonInfo; versions: AddonVersionInfo[] } | null>(null);
   const [disablePrompt, setDisablePrompt] = useState<{ addon: AddonInfo } | null>(null);
@@ -1495,7 +1500,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                   >
                     {addon.cover ? (
                       <img
-                        src={`/assets/${addon.id}/covers/${addon.cover}?t=${addon.cover}`}
+                        src={`/assets/${addon.id}/covers/${addon.cover}?t=${coverRefresh}`}
                         alt=""
                         style={{
                           width: "64px",
@@ -1623,7 +1628,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                           <AddonMetaEditor
                             addon={addon}
                             displayVersion={displayVersion}
-                            onUpdated={refresh}
+                            onUpdated={() => { refresh(); setCoverRefresh(Date.now()); }}
                             onClose={() => setEditingMetaId(null)}
                           />
                         </div>

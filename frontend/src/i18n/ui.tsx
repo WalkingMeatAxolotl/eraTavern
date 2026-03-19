@@ -1,3 +1,5 @@
+import React from "react";
+
 /**
  * UI text → localized string mapping.
  *
@@ -11,7 +13,7 @@
  *   - val.*       — validation messages
  */
 
-const UI: Record<string, string> = {
+export const UI: Record<string, string> = {
   // === Buttons (without brackets — wrap with [] in JSX) ===
   "btn.save": "保存",
   "btn.delete": "删除",
@@ -741,10 +743,8 @@ const UI: Record<string, string> = {
   "addon.initialVersion": "初始版本",
   "addon.depCheck": "依赖检查",
   "addon.depWarning": "依赖警告",
-  "addon.depNeededPre": "启用",
-  "addon.depNeededPost": "需要以下依赖：",
-  "addon.depByPre": "以下 Add-on 依赖",
-  "addon.depByPost": "：",
+  "addon.depNeeded": "启用{name}需要以下依赖：",
+  "addon.depBy": "以下 Add-on 依赖{name}：",
   "addon.enableAll": "全部启用 ({count} 个)",
   "addon.disableAll": "全部禁用 ({count} 个)",
   "addon.enableOnly": "仅启用 {name}",
@@ -975,6 +975,7 @@ const UI: Record<string, string> = {
   "trait.decayAmountPctLabel": "下降量(%)",
   "trait.increase": "增加",
   "trait.decrease": "减少",
+  "trait.groupCountLabel": "{count}组",
 
   // === Clothing editor ===
   "clothing.equipSlot": "装备槽位",
@@ -982,6 +983,8 @@ const UI: Record<string, string> = {
   "clothing.slotHelp": "服装占据的角色槽位。大多数服装只有一个槽位。",
   "clothing.multiSlotHelp": "如连体衣同时占据上半身+下半身，穿上后这些槽位都被占据。",
   "clothing.occlusionSlot": "遮挡槽位",
+  "clothing.occlusionHelp1": "穿着此服装时，遮挡的其他槽位将被隐藏（显示为 {highlight}）。",
+  "clothing.occlusionHelp2": "仅 {highlight} 状态生效，halfWorn 不遮挡。不影响效果计算。",
 
   // === Outfit editor ===
   "outfit.copyDefault": "初始继承默认服装",
@@ -1019,14 +1022,27 @@ const UI: Record<string, string> = {
 /**
  * Look up a UI text key, optionally interpolating {param} placeholders.
  *
+ * When all param values are string | number, returns string.
+ * When any param value is ReactNode (e.g. styled <span>), returns ReactNode.
+ *
  * @example
- *   t("btn.save")                        // "保存"
- *   t("msg.greeting", { name: "Alice" }) // template with params
+ *   t("btn.save")                                    // → string
+ *   t("trait.groupCountLabel", { count: 3 })          // → string
+ *   t("clothing.help", { hl: <span>worn</span> })    // → ReactNode
  */
-export function t(key: string, params?: Record<string, string | number>): string {
+export function t(key: string, params?: Record<string, string | number>): string;
+export function t(key: string, params: Record<string, React.ReactNode>): React.ReactNode;
+export function t(key: string, params?: Record<string, React.ReactNode>): string | React.ReactNode {
   const tpl = UI[key] ?? key;
   if (!params) return tpl;
-  return tpl.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? `{${k}}`));
+  const hasRichValue = Object.values(params).some(
+    (v) => typeof v !== "string" && typeof v !== "number",
+  );
+  if (!hasRichValue) {
+    return tpl.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? `{${k}}`));
+  }
+  const parts = tpl.split(/\{(\w+)\}/g);
+  return <>{parts.map((part, i) => (i % 2 === 0 ? part : (params[part] ?? `{${part}}`)))}</>;
 }
 
 // === Exported constant mappings (consolidated from multiple files) ===

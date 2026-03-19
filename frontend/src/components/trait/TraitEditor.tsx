@@ -132,11 +132,11 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     setSaving(true);
     try {
       if (addonCrud) {
-        await addonCrud.delete(id);
+        await addonCrud.delete(trait.id);
         onBack();
         return;
       }
-      const result = await deleteTraitDef(id);
+      const result = await deleteTraitDef(trait.id);
       if (result.success) {
         onBack();
       } else {

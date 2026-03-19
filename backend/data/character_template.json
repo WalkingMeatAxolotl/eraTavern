@@ -24,7 +24,7 @@
   "traits": [
     { "key": "ability", "label": "能力", "multiple": true },
     { "key": "experience", "label": "经验", "multiple": true },
-    { "key": "race", "label": "族群", "multiple": true },
+    { "key": "race", "label": "种族", "multiple": true },
     { "key": "sexTrait", "label": "性的特征", "multiple": true },
     { "key": "bodyTrait", "label": "身体的特征", "multiple": true },
     { "key": "mentalTrait", "label": "精神的特征", "multiple": true },

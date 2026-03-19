@@ -22,7 +22,7 @@ def make_template(**overrides):
         ],
         "clothingSlots": ["hat", "upperBody", "lowerBody", "feet"],
         "traits": [
-            {"key": "race", "label": "族群", "multiple": True},
+            {"key": "race", "label": "种族", "multiple": True},
             {"key": "ability", "label": "能力", "multiple": True},
             {"key": "experience", "label": "经验", "multiple": True},
         ],

@@ -142,7 +142,7 @@ def make_character(
         ],
         "traits": traits
         or [
-            {"key": "race", "label": "族群", "values": ["human"]},
+            {"key": "race", "label": "种族", "values": ["human"]},
         ],
         "clothing": clothing or [],
         "inventory": inventory or [],

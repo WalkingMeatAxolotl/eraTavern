@@ -123,11 +123,11 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
     setSaving(true);
     try {
       if (addonCrud) {
-        await addonCrud.delete(id);
+        await addonCrud.delete(clothing.id);
         onBack();
         return;
       }
-      const result = await deleteClothingDef(id);
+      const result = await deleteClothingDef(clothing.id);
       if (result.success) {
         onBack();
       } else {
@@ -275,10 +275,10 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         {showOcclusionHelp && (
           <HelpPanel>
             <div style={helpP}>
-              {t("clothing.occlusionHelp1")}<span style={helpEm}>???</span>
+              {t("clothing.occlusionHelp1", { highlight: <span style={helpEm}>???</span> })}
             </div>
             <div style={helpP}>
-              {t("clothing.occlusionHelp2")}<span style={helpEm}>worn</span>{t("clothing.occlusionHelp2b")}
+              {t("clothing.occlusionHelp2", { highlight: <span style={helpEm}>worn</span> })}
             </div>
           </HelpPanel>
         )}
