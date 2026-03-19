@@ -10,6 +10,7 @@ import {
   uploadAsset,
 } from "../../api/client";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import ColorPicker from "../shared/ColorPicker";
 import { HelpButton, HelpPanel, helpP } from "../shared/HelpToggle";
 
@@ -154,7 +155,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
           id: newId,
           row,
           col,
-          name: `区格${newId}`,
+          name: t("map.defaultCellName", { id: newId }),
           connections: [],
         };
         setMapData((prev) => {
@@ -191,7 +192,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确认删除地图 "${mapData?.name}" ?`)) return;
+    if (!confirm(t("confirm.deleteMap", { name: mapData?.name ?? "" }))) return;
     const result = await deleteMap(mapId);
     if (result.success) {
       onBack();
@@ -287,7 +288,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
   };
 
   if (!mapData) {
-    return <div style={{ color: T.textSub }}>加载中...</div>;
+    return <div style={{ color: T.textSub }}>{t("status.loading")}</div>;
   }
 
   const selectedCell = mapData.cells.find((c) => c.id === selectedCellId);
@@ -328,30 +329,30 @@ export default function MapEditor({ mapId, onBack }: Props) {
     >
       {/* ── Header ── */}
       <div style={{ marginBottom: "2px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 编辑: {mapData.name} ==</span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("editor.editMap", { name: mapData.name })} ==</span>
       </div>
 
       {/* ── Section: 地图属性 ── */}
-      <Section title="地图属性">
-        <Row label="名称">
+      <Section title={t("map.mapProps")}>
+        <Row label={t("field.name")}>
           <input
             value={mapData.name}
             onChange={(e) => setMapData({ ...mapData, name: e.target.value })}
             style={{ ...inputStyle, width: "140px" }}
           />
         </Row>
-        <Row label="简介">
+        <Row label={t("field.intro")}>
           <input
             value={mapData.description ?? ""}
             onChange={(e) => setMapData({ ...mapData, description: e.target.value || undefined })}
             style={{ ...inputStyle, width: "200px" }}
-            placeholder="地图简介（可选）"
+            placeholder={t("map.mapIntro")}
           />
         </Row>
-        <Row label="背景色">
+        <Row label={t("field.bgColor")}>
           <ColorPicker value={mapData.defaultColor} onChange={(c) => setMapData({ ...mapData, defaultColor: c })} />
         </Row>
-        <Row label="地图背景图">
+        <Row label={t("field.bgImage")}>
           <BgImagePicker
             image={mapData.backgroundImage}
             cellId={0}
@@ -363,11 +364,11 @@ export default function MapEditor({ mapId, onBack }: Props) {
         </Row>
         {showBgHelp && (
           <HelpPanel>
-            <div style={helpP}>地图背景图片，同时作为游戏页面中区格未设置自己背景时的默认场景背景</div>
+            <div style={helpP}>{t("map.bgHelp")}</div>
           </HelpPanel>
         )}
         {mapData.backgroundImage && (
-          <Row label="总览底色不透明度">
+          <Row label={t("field.gridOpacity")}>
             <input
               type="number"
               min={0}
@@ -388,11 +389,11 @@ export default function MapEditor({ mapId, onBack }: Props) {
       </Section>
 
       {/* ── Section: 网格编辑 ── */}
-      <Section title="网格编辑">
+      <Section title={t("map.gridEdit")}>
         {/* Grid size + view controls */}
         <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap", marginBottom: "6px" }}>
-          <span style={{ color: T.textSub, minWidth: "46px" }}>尺寸:</span>
-          <span style={{ color: T.textDim }}>行:</span>
+          <span style={{ color: T.textSub, minWidth: "46px" }}>{t("map.size")}</span>
+          <span style={{ color: T.textDim }}>{t("map.rows")}</span>
           <button onClick={addRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>
             [↑+]
           </button>
@@ -405,7 +406,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
           <button onClick={removeRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>
             [↓-]
           </button>
-          <span style={{ color: T.textDim }}>列:</span>
+          <span style={{ color: T.textDim }}>{t("map.cols")}</span>
           <button onClick={addColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>
             [←+]
           </button>
@@ -431,23 +432,23 @@ export default function MapEditor({ mapId, onBack }: Props) {
               borderColor: showConnections ? T.accentDim : T.border,
             }}
           >
-            {showConnections ? "[隐藏连接]" : "[显示连接]"}
+            {showConnections ? `[${t("btn.hideConn")}]` : `[${t("btn.showConn")}]`}
           </button>
           {showConnections && (
             <span style={{ display: "inline-flex", gap: "8px", fontSize: "11px" }}>
-              <span style={{ color: "#4CAF50" }}>■ 全通</span>
-              <span style={{ color: "#e9a045" }}>■ 阻断感知</span>
-              <span style={{ color: "#5b9bd5" }}>■ 仅感知</span>
+              <span style={{ color: "#4CAF50" }}>{t("map.legendAll")}</span>
+              <span style={{ color: "#e9a045" }}>{t("map.legendSenseBlock")}</span>
+              <span style={{ color: "#5b9bd5" }}>{t("map.legendSenseOnly")}</span>
             </span>
           )}
         </div>
 
         {/* Toolbar */}
         <div style={{ display: "flex", gap: "3px", flexWrap: "wrap", alignItems: "center", marginBottom: "6px" }}>
-          <span style={{ color: T.textSub, marginRight: "4px" }}>工具:</span>
-          <ToolButton label="选择" active={tool === "none"} onClick={() => setTool("none")} color={T.textSub} />
-          <ToolButton label="空白" active={tool === "blank"} onClick={() => setTool("blank")} color={T.textDim} />
-          <ToolButton label="区格" active={tool === "cell"} onClick={() => setTool("cell")} color="#4CAF50" />
+          <span style={{ color: T.textSub, marginRight: "4px" }}>{t("map.tool")}</span>
+          <ToolButton label={t("map.toolSelect")} active={tool === "none"} onClick={() => setTool("none")} color={T.textSub} />
+          <ToolButton label={t("map.toolEmpty")} active={tool === "blank"} onClick={() => setTool("blank")} color={T.textDim} />
+          <ToolButton label={t("map.toolCell")} active={tool === "cell"} onClick={() => setTool("cell")} color="#4CAF50" />
           {presets.length > 0 && (
             <>
               <span style={{ width: "1px", height: "18px", background: T.border, margin: "0 4px" }} />
@@ -477,7 +478,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
               borderColor: showPresetEditor ? T.accentDim : T.border,
             }}
           >
-            {showPresetEditor ? "[收起预设]" : "[编辑预设]"}
+            {showPresetEditor ? `[${t("btn.hidePresets")}]` : `[${t("btn.showPresets")}]`}
           </button>
         </div>
 
@@ -549,7 +550,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
                         cursor: "pointer",
                         boxSizing: "border-box",
                       }}
-                      title={isCell ? `区格 #${cellId} (${ri},${ci})` : `(${ri},${ci})`}
+                      title={isCell ? t("map.cellTitle", { id: cellId!, row: ri, col: ci }) : `(${ri},${ci})`}
                     >
                       {text || "\u00A0"}
                     </div>
@@ -622,13 +623,13 @@ export default function MapEditor({ mapId, onBack }: Props) {
         }}
       >
         <button onClick={handleSave} disabled={saving} style={{ ...btnStyle, color: T.successDim }}>
-          {saving ? "[提交中...]" : "[确定]"}
+          {saving ? `[${t("status.submitting")}]` : `[${t("btn.confirm")}]`}
         </button>
         <button onClick={handleDelete} style={{ ...btnStyle, color: T.danger }}>
-          [删除]
+          [{t("btn.delete")}]
         </button>
         <button onClick={onBack} style={{ ...btnStyle, color: T.textSub }}>
-          [返回列表]
+          [{t("btn.back")}]
         </button>
       </div>
     </div>
@@ -910,7 +911,7 @@ function PresetEditor({
         gap: "6px",
       }}
     >
-      <div style={{ color: T.textSub, fontWeight: "bold", fontSize: "12px" }}>装饰性区隔预设</div>
+      <div style={{ color: T.textSub, fontWeight: "bold", fontSize: "12px" }}>{t("section.decorPreset")}</div>
       {editing.map((p, i) => (
         <div
           key={i}
@@ -978,7 +979,7 @@ function PresetEditor({
         <input
           value={newText}
           onChange={(e) => setNewText(e.target.value)}
-          placeholder="符号"
+          placeholder={t("map.symbol")}
           style={{ ...inputStyle, width: "50px" }}
           maxLength={2}
         />
@@ -994,7 +995,7 @@ function PresetEditor({
           onClick={handleSave}
           style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
         >
-          [保存预设]
+          [{t("btn.savePreset")}]
         </button>
       </div>
     </div>
@@ -1038,34 +1039,34 @@ function CellEditor({
   }
 
   return (
-    <Section title={`区格编辑 #${cell.id} — ${cell.name ?? ""}`}>
+    <Section title={t("map.cellEditTitle", { id: cell.id, name: cell.name ?? "" })}>
       {/* Basic properties */}
-      <Row label="名称">
+      <Row label={t("field.name")}>
         <input
           value={cell.name ?? ""}
           onChange={(e) => onChange({ ...cell, name: e.target.value })}
           style={{ ...inputStyle, width: "140px" }}
         />
       </Row>
-      <Row label="简介">
+      <Row label={t("field.intro")}>
         <input
           value={cell.description ?? ""}
           onChange={(e) => onChange({ ...cell, description: e.target.value || undefined })}
           style={{ ...inputStyle, width: "200px" }}
-          placeholder="区格简介（可选）"
+          placeholder={t("map.cellIntro")}
         />
       </Row>
-      <Row label="显示文字">
+      <Row label={t("map.displayText")}>
         <input
           value={displayText}
           onChange={(e) => onUpdateGridText(e.target.value, displayColor)}
           style={{ ...inputStyle, width: "60px" }}
         />
       </Row>
-      <Row label="颜色">
+      <Row label={t("map.color")}>
         <ColorPicker value={displayColor} onChange={(c) => onUpdateGridText(displayText, c)} />
       </Row>
-      <Row label="场景背景">
+      <Row label={t("map.sceneBg")}>
         <BgImagePicker
           image={cell.backgroundImage}
           cellId={cell.id}
@@ -1073,11 +1074,11 @@ function CellEditor({
           btnStyle={btnStyle}
           onChange={(filename) => onChange({ ...cell, backgroundImage: filename })}
         />
-        <HelpTip text="玩家在此区格时显示的场景背景图，未设置则使用地图默认背景" />
+        <HelpTip text={t("map.sceneBgHelp")} />
       </Row>
 
       {/* Tags */}
-      <Row label="标签">
+      <Row label={t("field.tags")}>
         <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
           {(cell.tags ?? []).map((tag, i) => (
             <span
@@ -1114,7 +1115,7 @@ function CellEditor({
             </span>
           ))}
           <input
-            placeholder="+ 标签"
+            placeholder={t("map.addTag")}
             style={{ ...inputStyle, width: "70px", fontSize: "11px" }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -1131,7 +1132,7 @@ function CellEditor({
 
       {/* Connections */}
       <div style={{ marginTop: "4px", borderTop: `1px solid ${T.borderDim}`, paddingTop: "6px" }}>
-        <div style={{ color: T.textSub, marginBottom: "4px", fontWeight: "bold" }}>连接</div>
+        <div style={{ color: T.textSub, marginBottom: "4px", fontWeight: "bold" }}>{t("section.connections")}</div>
         {cell.connections.map((conn, i) => {
           const targetMapId = conn.targetMap ?? currentMapId;
           const targetMapCells = targetMapId === currentMapId ? mapData.cells : [];
@@ -1223,7 +1224,7 @@ function CellEditor({
                     newConns[i] = { ...newConns[i], targetCell: newTarget };
                     onChange({ ...cell, connections: newConns });
                   }}
-                  placeholder="区格ID"
+                  placeholder={t("map.cellIdPh")}
                   style={{ ...inputStyle, width: "80px" }}
                 />
               )}
@@ -1238,10 +1239,10 @@ function CellEditor({
                   newConns[i] = { ...newConns[i], travelTime: val };
                   onChange({ ...cell, connections: newConns });
                 }}
-                title="移动耗时(分)"
+                title={t("map.travelTimeTitle")}
                 style={{ ...inputStyle, width: "50px" }}
               />
-              <span style={{ color: T.textDim, fontSize: "11px" }}>分</span>
+              <span style={{ color: T.textDim, fontSize: "11px" }}>{t("ui.minutes")}</span>
               <label style={{ display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" }}>
                 <input
                   type="checkbox"
@@ -1254,7 +1255,7 @@ function CellEditor({
                   }}
                   style={{ margin: 0 }}
                 />
-                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>可感知</span>
+                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>{t("map.canSense")}</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" }}>
                 <input
@@ -1271,9 +1272,9 @@ function CellEditor({
                   }}
                   style={{ margin: 0 }}
                 />
-                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>仅感知</span>
+                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>{t("map.senseOnly")}</span>
               </label>
-              <HelpTip text="可感知: NPC可透过此连接察觉对面角色。仅感知: NPC可感知但不可通行（如玻璃墙、阳台）" />
+              <HelpTip text={t("map.senseHelp")} />
               <button
                 onClick={() => {
                   const newConns = cell.connections.filter((_, j) => j !== i);
@@ -1301,7 +1302,7 @@ function CellEditor({
             }}
             style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
           >
-            [+单向连接]
+            [{t("btn.addOneWayConn")}]
           </button>
           <button
             onClick={() => {
@@ -1333,7 +1334,7 @@ function CellEditor({
             }}
             style={{ ...btnStyle, padding: "2px 8px", color: T.accent, borderColor: T.accentDim }}
           >
-            [+双向连接]
+            [{t("btn.addTwoWayConn")}]
           </button>
         </div>
       </div>
@@ -1349,10 +1350,10 @@ function CellEditor({
         }}
       >
         <button onClick={onDelete} style={{ ...btnStyle, color: T.danger }}>
-          [删除区格]
+          [{t("btn.deleteCell")}]
         </button>
         <button onClick={onClose} style={{ ...btnStyle, color: T.textSub }}>
-          [关闭]
+          [{t("btn.close")}]
         </button>
       </div>
     </Section>
@@ -1414,14 +1415,14 @@ function BgImagePicker({
           whiteSpace: "nowrap",
         }}
       >
-        {image ?? "无"}
+        {image ?? t("ui.none")}
       </span>
       <button onClick={() => fileRef.current?.click()} style={{ ...btn, padding: "2px 8px", color: T.accent }}>
-        [选择]
+        [{t("btn.select")}]
       </button>
       {image && (
         <button onClick={() => onChange(undefined)} style={{ ...btn, padding: "2px 8px", color: T.danger }}>
-          [清除]
+          [{t("btn.clear")}]
         </button>
       )}
       <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />

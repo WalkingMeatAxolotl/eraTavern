@@ -1,5 +1,6 @@
 import T from "../../theme";
 import { useEffect, useState, useCallback } from "react";
+import { t } from "../../i18n/ui";
 import type { GameDefinitions, RawCharacterData } from "../../types/game";
 import { fetchDefinitions, fetchCharacterConfigs, patchCharacter } from "../../api/client";
 import CharacterEditor from "./CharacterEditor";
@@ -65,7 +66,7 @@ export default function CharacterManager({
   };
 
   if (!definitions) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
   // Editor view
@@ -118,7 +119,7 @@ export default function CharacterManager({
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 角色列表 ==</span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.charList")} ==</span>
         {!readOnly && (
           <button
             onClick={handleNew}
@@ -132,7 +133,7 @@ export default function CharacterManager({
               fontSize: "13px",
             }}
           >
-            [+ 新建角色]
+            [{t("btn.newChar")}]
           </button>
         )}
       </div>
@@ -175,10 +176,10 @@ export default function CharacterManager({
                 <ToggleSwitch
                   on={isActive}
                   onColor="#e89a19"
-                  label="启用"
+                  label={t("field.enabled")}
                   onClick={() => {
                     if (char.isPlayer && isActive) {
-                      alert("请先切换玩家角色后再冻结该角色");
+                      alert(t("msg.freezePlayerFirst"));
                       return;
                     }
                     handleToggleActive(char.id, isActive);

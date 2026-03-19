@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { GameDefinitions, OutfitType } from "../../types/game";
 import { saveOutfitTypes } from "../../api/client";
 import T from "../../theme";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import { HelpButton, HelpPanel, helpSub, helpP } from "../shared/HelpToggle";
 import { inputStyle, labelStyle } from "../shared/styles";
 
@@ -12,23 +13,6 @@ interface Props {
   isNew: boolean;
   onBack: () => void;
 }
-
-const SLOT_LABELS: Record<string, string> = {
-  hat: "帽子",
-  upperBody: "上半身",
-  upperUnderwear: "上半身内衣",
-  lowerBody: "下半身",
-  lowerUnderwear: "下半身内衣",
-  hands: "手",
-  feet: "脚",
-  shoes: "鞋子",
-  mainHand: "主手",
-  offHand: "副手",
-  back: "背部",
-  accessory1: "装饰品1",
-  accessory2: "装饰品2",
-  accessory3: "装饰品3",
-};
 
 export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, onBack }: Props) {
   const [id, setId] = useState(isNew ? "" : outfit.id);
@@ -58,15 +42,15 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
 
   const handleSave = async () => {
     if (!id.trim() || !name.trim()) {
-      setMessage("ID 和名称不能为空");
+      setMessage(t("val.idNameRequired"));
       return;
     }
     if (id === "default") {
-      setMessage("不能使用 'default' 作为 ID");
+      setMessage(t("msg.noDefaultId"));
       return;
     }
     if (isNew && allOutfits.some((o) => o.id === id)) {
-      setMessage("该 ID 已存在");
+      setMessage(t("msg.idExists"));
       return;
     }
     setSaving(true);
@@ -75,19 +59,19 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
       const entry: OutfitType = { id, name, description, copyDefault, slots };
       const next = isNew ? [...allOutfits, entry] : allOutfits.map((o) => (o.id === outfit.id ? entry : o));
       const result = await saveOutfitTypes(next);
-      setMessage(result.success ? "已保存" : result.message);
+      setMessage(result.success ? t("msg.saved") : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.saveFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确定要删除服装预设「${name || id}」吗？`)) return;
+    if (!confirm(t("confirm.deleteOutfit", { name: name || id }))) return;
     setSaving(true);
     try {
       const next = allOutfits.filter((o) => o.id !== outfit.id);
@@ -98,7 +82,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
         setMessage(result.message);
       }
     } catch (e) {
-      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
@@ -109,7 +93,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建服装预设" : "编辑服装预设"} ==
+          == {isNew ? t("editor.newOutfit") : t("editor.editOutfit")} ==
         </span>
       </div>
 
@@ -123,26 +107,26 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
               value={id}
               onChange={(e) => setId(e.target.value)}
               disabled={!isNew}
-              placeholder="英文标识符"
+              placeholder={t("ph.idPlaceholder")}
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>名称</div>
+            <div style={labelStyle}>{t("field.name")}</div>
             <input
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="显示名称"
+              placeholder={t("ph.displayName")}
             />
           </div>
         </div>
         <div>
-          <div style={labelStyle}>描述</div>
+          <div style={labelStyle}>{t("field.description")}</div>
           <input
             style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="可选描述"
+            placeholder={t("ph.optionalDesc")}
           />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -157,16 +141,16 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
             }}
           >
             <input type="checkbox" checked={copyDefault} onChange={() => setCopyDefault(!copyDefault)} />
-            初始继承默认服装
+            {t("outfit.copyDefault")}
           </label>
           <HelpButton show={showHelp} onToggle={() => setShowHelp((v) => !v)} />
         </div>
         {showHelp && (
           <HelpPanel>
-            <div style={helpSub}>开启</div>
-            <div style={helpP}>角色未自定义此预设时，使用角色自己的默认服装内容。</div>
-            <div style={helpSub}>关闭</div>
-            <div style={helpP}>使用下方定义的默认槽位内容，所有角色共享。</div>
+            <div style={helpSub}>{t("outfit.helpOn")}</div>
+            <div style={helpP}>{t("outfit.helpOnDesc")}</div>
+            <div style={helpSub}>{t("outfit.helpOff")}</div>
+            <div style={helpP}>{t("outfit.helpOffDesc")}</div>
           </HelpPanel>
         )}
       </div>
@@ -183,7 +167,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
               fontWeight: "bold",
             }}
           >
-            == 默认槽位内容 ==
+            == {t("outfit.defaultSlotContent")} ==
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             {clothingSlots.map((slot) => {
@@ -195,7 +179,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
                   style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "2px" }}
                 >
                   <span style={{ minWidth: "100px", color: T.textSub }}>{SLOT_LABELS[slot] ?? slot}:</span>
-                  {items.length === 0 && <span style={{ color: T.textDim }}>(空)</span>}
+                  {items.length === 0 && <span style={{ color: T.textDim }}>{t("empty.slot")}</span>}
                   {items.map((itemId, i) => {
                     const def = definitions.clothingDefs[itemId];
                     return (
@@ -229,7 +213,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
                       setSlots(newSlots);
                     }}
                   >
-                    <option value="">+添加</option>
+                    <option value="">{t("btn.addClothingItem")}</option>
                     {options
                       .filter((c) => !items.includes(c.id))
                       .map((c) => (
@@ -246,7 +230,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
       )}
       {copyDefault && !showHelp && (
         <div style={{ color: T.textDim, fontSize: "12px", marginBottom: "16px" }}>
-          （角色未自定义时将继承其默认服装内容）
+          {t("outfit.inheritHint")}
         </div>
       )}
 
@@ -264,7 +248,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
             fontSize: "13px",
           }}
         >
-          [返回]
+          [{t("btn.return")}]
         </button>
         <button
           onClick={handleSave}
@@ -279,7 +263,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
             fontSize: "13px",
           }}
         >
-          [保存]
+          [{t("btn.save")}]
         </button>
         {!isNew && (
           <button
@@ -295,16 +279,14 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
               fontSize: "13px",
             }}
           >
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         {message && (
           <span
             style={{
               color:
-                message.includes("失败") || message.includes("不能") || message.includes("已存在")
-                  ? T.danger
-                  : T.successDim,
+                message === t("msg.saved") ? T.successDim : T.danger,
               fontSize: "12px",
             }}
           >

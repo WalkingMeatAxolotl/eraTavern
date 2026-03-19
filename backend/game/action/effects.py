@@ -566,7 +566,7 @@ def _apply_single_effect(
                     partner_name = p_char_data.get("basicInfo", {}).get("name", partner_id)
                 # Build time string
                 t = game_state.time
-                time_str = f"{t.year}年{t.season_name}{t.day}日{t.hour:02d}时"
+                time_str = f"{t.year}年{t.season_display}{t.day}日{t.hour:02d}时"
                 exp_entry["first"] = {
                     "event": eff.get("eventLabel", key),
                     "location": loc_name,

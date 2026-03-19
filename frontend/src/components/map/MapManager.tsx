@@ -1,5 +1,6 @@
 import T from "../../theme";
 import { useEffect, useState } from "react";
+import { t } from "../../i18n/ui";
 import { fetchMapsRaw, createMap } from "../../api/client";
 import MapEditor from "./MapEditor";
 
@@ -75,7 +76,7 @@ export default function MapManager({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ color: T.accent, fontSize: "15px", fontWeight: "bold" }}>== 地图管理 ==</div>
+      <div style={{ color: T.accent, fontSize: "15px", fontWeight: "bold" }}>== {t("header.mapMgmt")} ==</div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
         {filteredMaps.map((m) => (
@@ -107,7 +108,7 @@ export default function MapManager({
               cursor: "pointer",
             }}
           >
-            [+ 新建地图]
+            [{t("btn.newMap")}]
           </button>
         )}
       </div>
@@ -124,22 +125,22 @@ export default function MapManager({
             maxWidth: "400px",
           }}
         >
-          <div style={{ color: T.textSub, fontSize: "13px" }}>新建地图</div>
+          <div style={{ color: T.textSub, fontSize: "13px" }}>{t("map.newMapTitle")}</div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>ID</span>
             <input value={newId} onChange={(e) => setNewId(e.target.value)} placeholder="map-id" style={inputStyle} />
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>名称</span>
+            <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>{t("field.name")}</span>
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="地图名称"
+              placeholder={t("map.mapNamePlaceholder")}
               style={inputStyle}
             />
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>行数</span>
+            <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>{t("map.rowCount")}</span>
             <input
               type="number"
               value={newRows}
@@ -148,7 +149,7 @@ export default function MapManager({
               max={100}
               style={{ ...inputStyle, width: "60px" }}
             />
-            <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>列数</span>
+            <span style={{ width: "40px", fontSize: "12px", color: T.textSub }}>{t("map.colCount")}</span>
             <input
               type="number"
               value={newCols}
@@ -169,7 +170,7 @@ export default function MapManager({
                 cursor: "pointer",
               }}
             >
-              创建
+              {t("btn.create")}
             </button>
             <button
               onClick={() => setCreating(false)}
@@ -181,7 +182,7 @@ export default function MapManager({
                 cursor: "pointer",
               }}
             >
-              取消
+              {t("btn.cancel")}
             </button>
           </div>
         </div>

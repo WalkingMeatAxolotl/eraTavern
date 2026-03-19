@@ -1,4 +1,5 @@
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import type { CharacterState } from "../../types/game";
 
 type CompactTab = "basic" | "clothing";
@@ -48,10 +49,10 @@ export default function CompactCharacterInfo({
       {/* Tab bar */}
       <div style={{ borderBottom: `1px solid ${T.border}`, marginBottom: "6px", display: "flex" }}>
         <button style={tabStyle(activeTab === "basic" && !detailOpen)} onClick={() => onTabChange("basic")}>
-          [基本]
+          [{t("charInfo.basic")}]
         </button>
         <button style={tabStyle(activeTab === "clothing" && !detailOpen)} onClick={() => onTabChange("clothing")}>
-          [服装]
+          [{t("charInfo.clothing")}]
         </button>
         <button
           style={{
@@ -60,7 +61,7 @@ export default function CompactCharacterInfo({
           }}
           onClick={onToggleDetail}
         >
-          [详细{detailOpen ? "▲" : "▼"}]
+          [{detailOpen ? t("btn.detailClose") : t("btn.detailOpen")}]
         </button>
       </div>
 
@@ -75,7 +76,7 @@ export default function CompactCharacterInfo({
             ))}
             {favToPlayer !== undefined && (
               <span style={{ marginRight: "10px" }}>
-                好感度: <span style={{ color: T.text }}>{favToPlayer}</span>
+                {t("charInfo.favorability")} <span style={{ color: T.text }}>{favToPlayer}</span>
               </span>
             )}
           </div>
@@ -119,14 +120,14 @@ export default function CompactCharacterInfo({
             >
               {slot.slotLabel}:{" "}
               {slot.occluded ? (
-                "【？？？】"
+                t("ui.occluded")
               ) : slot.itemId ? (
                 <>
-                  [{slot.itemName}]{slot.state === "halfWorn" && <span style={{ color: T.danger }}> (半穿)</span>}
-                  {slot.state === "off" && <span style={{ color: T.danger }}> (脱下)</span>}
+                  [{slot.itemName}]{slot.state === "halfWorn" && <span style={{ color: T.danger }}> {t("ui.halfWorn")}</span>}
+                  {slot.state === "off" && <span style={{ color: T.danger }}> {t("ui.off")}</span>}
                 </>
               ) : (
-                "无"
+                t("ui.none")
               )}
             </div>
           ))}

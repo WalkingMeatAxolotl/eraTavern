@@ -128,15 +128,28 @@ class TestSeasonName:
     @pytest.mark.parametrize(
         "season_idx, expected",
         [
+            (0, "spring"),
+            (1, "summer"),
+            (2, "autumn"),
+            (3, "winter"),
+        ],
+    )
+    def test_season_name(self, season_idx, expected):
+        t = GameTime(season=season_idx)
+        assert t.season_name == expected
+
+    @pytest.mark.parametrize(
+        "season_idx, expected",
+        [
             (0, "春"),
             (1, "夏"),
             (2, "秋"),
             (3, "冬"),
         ],
     )
-    def test_season_name(self, season_idx, expected):
+    def test_season_display(self, season_idx, expected):
         t = GameTime(season=season_idx)
-        assert t.season_name == expected
+        assert t.season_display == expected
 
 
 class TestWeekday:
@@ -145,13 +158,13 @@ class TestWeekday:
     @pytest.mark.parametrize(
         "day, expected",
         [
-            (1, "星期一"),
-            (2, "星期二"),
-            (3, "星期三"),
-            (4, "星期四"),
-            (5, "星期五"),
-            (6, "星期六"),
-            (7, "星期日"),
+            (1, "mon"),
+            (2, "tue"),
+            (3, "wed"),
+            (4, "thu"),
+            (5, "fri"),
+            (6, "sat"),
+            (7, "sun"),
         ],
     )
     def test_weekday(self, day, expected):
@@ -169,9 +182,11 @@ class TestToDict:
             "year",
             "season",
             "seasonName",
+            "seasonDisplay",
             "day",
             "totalDays",
             "weekday",
+            "weekdayDisplay",
             "hour",
             "minute",
             "weatherId",
@@ -196,10 +211,12 @@ class TestToDict:
         d = t.to_dict()
         assert d["year"] == 2
         assert d["season"] == 3
-        assert d["seasonName"] == "冬"
+        assert d["seasonName"] == "winter"
+        assert d["seasonDisplay"] == "冬"
         assert d["day"] == 5
         assert d["totalDays"] == t.total_days
-        assert d["weekday"] == "星期五"
+        assert d["weekday"] == "fri"
+        assert d["weekdayDisplay"] == "星期五"
         assert d["hour"] == 14
         assert d["minute"] == 45
         assert d["weatherId"] == t.weather

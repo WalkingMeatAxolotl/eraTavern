@@ -111,6 +111,26 @@ export const EventScope = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Seasons & days of week (enum values for time conditions)
+// ---------------------------------------------------------------------------
+export const Season = {
+  SPRING: "spring",
+  SUMMER: "summer",
+  AUTUMN: "autumn",
+  WINTER: "winter",
+} as const;
+
+export const DayOfWeek = {
+  MON: "mon",
+  TUE: "tue",
+  WED: "wed",
+  THU: "thu",
+  FRI: "fri",
+  SAT: "sat",
+  SUN: "sun",
+} as const;
+
+// ---------------------------------------------------------------------------
 // Built-in action types
 // ---------------------------------------------------------------------------
 export const ActionType = {

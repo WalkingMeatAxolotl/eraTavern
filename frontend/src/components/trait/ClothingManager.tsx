@@ -1,28 +1,11 @@
 import T from "../../theme";
 import { useEffect, useState, useCallback } from "react";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import type { GameDefinitions, ClothingDefinition } from "../../types/game";
 import { fetchDefinitions, fetchClothingDefs } from "../../api/client";
 import ClothingEditor from "./ClothingEditor";
 import OutfitEditor from "./OutfitEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
-
-const SLOT_LABELS: Record<string, string> = {
-  hat: "帽子",
-  upperBody: "上半身",
-  upperUnderwear: "上半身内衣",
-  lowerBody: "下半身",
-  lowerUnderwear: "下半身内衣",
-  hands: "手",
-  feet: "脚",
-  shoes: "鞋子",
-  mainHand: "主手",
-  offHand: "副手",
-  back: "背部",
-  accessory: "装饰品",
-  accessory1: "装饰品1",
-  accessory2: "装饰品2",
-  accessory3: "装饰品3",
-};
 
 const hoverStyles = `
   .cm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
@@ -76,7 +59,7 @@ export default function ClothingManager({
   };
 
   if (!definitions) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
   // Outfit editor view
@@ -154,7 +137,7 @@ export default function ClothingManager({
       <style>{hoverStyles}</style>
       {/* Header: title + both create buttons */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 服装列表 ==</span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.clothingList")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
             <button
@@ -173,7 +156,7 @@ export default function ClothingManager({
                 fontSize: "13px",
               }}
             >
-              [+ 新建预设]
+              [{t("btn.newPreset")}]
             </button>
             <button
               className="cm-action-btn"
@@ -188,7 +171,7 @@ export default function ClothingManager({
                 fontSize: "13px",
               }}
             >
-              [+ 新建服装]
+              [{t("btn.newClothing")}]
             </button>
           </div>
         )}
@@ -196,19 +179,19 @@ export default function ClothingManager({
 
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
         {/* ── Outfit Presets section ── */}
-        <SectionDivider label="服装预设" />
+        <SectionDivider label={t("clothing.presetSection")} />
         {(() => {
           const types = definitions.outfitTypes ?? [];
           return (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
-              {types.length === 0 && <span style={{ color: T.textDim, fontSize: "12px" }}>(无)</span>}
-              {types.map((t) => (
+              {types.length === 0 && <span style={{ color: T.textDim, fontSize: "12px" }}>({t("ui.none")})</span>}
+              {types.map((ot) => (
                 <button
                   className="cm-item"
-                  key={t.id}
+                  key={ot.id}
                   onClick={() => {
                     setIsNewOutfit(false);
-                    setEditingOutfitId(t.id);
+                    setEditingOutfitId(ot.id);
                   }}
                   style={{
                     position: "relative",
@@ -222,9 +205,9 @@ export default function ClothingManager({
                     transition: "background-color 0.15s, border-color 0.15s",
                   }}
                 >
-                  {t.name || t.id}
+                  {ot.name || ot.id}
                   <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "4px" }}>
-                    {t.copyDefault ? "(继承)" : `(${Object.values(t.slots).filter((v) => v.length > 0).length}槽)`}
+                    {ot.copyDefault ? `(${t("clothing.inheritTag")})` : `(${t("clothing.slotCountTag", { count: Object.values(ot.slots).filter((v) => v.length > 0).length })})`}
                   </span>
                 </button>
               ))}
@@ -233,7 +216,7 @@ export default function ClothingManager({
         })()}
 
         {/* ── Clothing Items section ── */}
-        <SectionDivider label="服装" />
+        <SectionDivider label={t("clothing.itemSection")} />
         {slots.map((slotKey) => {
           const items = grouped[slotKey] || [];
           const slotCollapsed = isCollapsed(slotKey);
@@ -310,7 +293,7 @@ export default function ClothingManager({
               <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
                 {isCollapsed("__other__") ? "\u25B6" : "\u25BC"}
               </span>{" "}
-              未分类 ({grouped["__other__"].length})
+              {t("label.uncategorized")} ({grouped["__other__"].length})
             </button>
             {!isCollapsed("__other__") && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>

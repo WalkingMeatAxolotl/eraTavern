@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { saveSession } from "../../api/client";
+import { t } from "../../i18n/ui";
 import T from "../../theme";
 
 interface FloatingActionsProps {
@@ -34,7 +35,7 @@ export default function FloatingActions({
       setMessage(result.success ? result.message : result.message);
       onApplied();
     } catch (e) {
-      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.saveFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setBusy(false);
       setTimeout(() => setMessage(""), 3000);
@@ -70,27 +71,27 @@ export default function FloatingActions({
         boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
       }}
     >
-      <span style={{ color: T.textDim, fontSize: "11px", whiteSpace: "nowrap" }}>有未保存的配置改动</span>
+      <span style={{ color: T.textDim, fontSize: "11px", whiteSpace: "nowrap" }}>{t("ui.unsavedChanges")}</span>
       <button
         onClick={onRevert}
         disabled={busy}
         style={{ ...btnStyle, color: T.textSub }}
-        title="放弃所有未保存的修改，恢复到上次保存的状态"
+        title={t("ui.discardTip")}
       >
-        [撤销变更]
+        [{t("btn.revert")}]
       </button>
       <button
         onClick={handleSave}
         disabled={busy}
         style={{ ...btnStyle, color: T.accent }}
-        title="保存修改到扩展文件并应用到当前游戏"
+        title={t("ui.saveTip")}
       >
-        {busy ? "保存中..." : "[保存变更]"}
+        {busy ? t("status.saving") : `[${t("btn.saveChanges")}]`}
       </button>
       {message && (
         <span
           style={{
-            color: message.includes("失败") ? T.danger : T.success,
+            color: message.includes(t("ui.failedKeyword")) ? T.danger : T.success,
             fontSize: "11px",
             whiteSpace: "nowrap",
           }}

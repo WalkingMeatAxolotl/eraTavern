@@ -8,6 +8,7 @@ import {
   fetchCharacterConfigs,
 } from "../../api/client";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import { VarStepType, EF, ArithOp } from "../../constants";
 import { inputStyle, labelStyle } from "../shared/styles";
 
@@ -27,21 +28,21 @@ const OP_OPTIONS: { value: string; label: string }[] = [
   { value: ArithOp.DIVIDE, label: "/" },
   { value: ArithOp.MIN, label: "min" },
   { value: ArithOp.MAX, label: "max" },
-  { value: ArithOp.FLOOR, label: "下限(不低于)" },
-  { value: ArithOp.CAP, label: "上限(不超过)" },
+  { value: ArithOp.FLOOR, label: t("op.floor") },
+  { value: ArithOp.CAP, label: t("op.cap") },
 ];
 
 const TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: VarStepType.ABILITY, label: "能力值" },
-  { value: VarStepType.RESOURCE, label: "资源" },
-  { value: VarStepType.BASIC_INFO, label: "基础信息" },
-  { value: VarStepType.TRAIT_COUNT, label: "特质计数" },
-  { value: VarStepType.HAS_TRAIT, label: "拥有特质" },
-  { value: VarStepType.EXPERIENCE, label: "经历次数" },
-  { value: VarStepType.ITEM_COUNT, label: "物品数量" },
-  { value: VarStepType.FAVORABILITY, label: "好感度" },
-  { value: VarStepType.CONSTANT, label: "常量" },
-  { value: VarStepType.VARIABLE, label: "其他变量" },
+  { value: VarStepType.ABILITY, label: t("varStep.ability") },
+  { value: VarStepType.RESOURCE, label: t("varStep.resource") },
+  { value: VarStepType.BASIC_INFO, label: t("varStep.basicInfo") },
+  { value: VarStepType.TRAIT_COUNT, label: t("varStep.traitCount") },
+  { value: VarStepType.HAS_TRAIT, label: t("varStep.hasTrait") },
+  { value: VarStepType.EXPERIENCE, label: t("varStep.experience") },
+  { value: VarStepType.ITEM_COUNT, label: t("varStep.itemCount") },
+  { value: VarStepType.FAVORABILITY, label: t("varStep.favorability") },
+  { value: VarStepType.CONSTANT, label: t("varStep.constant") },
+  { value: VarStepType.VARIABLE, label: t("varStep.variable") },
 ];
 
 const selectStyle: React.CSSProperties = {
@@ -71,7 +72,7 @@ function isMultiplicative(op: string): boolean {
 }
 
 function formulaPreview(steps: VariableStep[], bidirectional?: boolean): string {
-  if (steps.length === 0) return "(空)";
+  if (steps.length === 0) return t("empty.slot");
 
   const parts: string[] = [];
   let i = 0;
@@ -199,7 +200,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
 
   const handleSave = async () => {
     if (!id.trim() || !name.trim()) {
-      setMessage("ID 和名称不能为空");
+      setMessage(t("val.idNameRequired"));
       return;
     }
     setSaving(true);
@@ -216,20 +217,20 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       };
       const result = isNew ? await createVariableDef(data) : await saveVariableDef(variable.id, data);
       if (result.success) {
-        setMessage("已确定");
+        setMessage(t("status.saved"));
         if (isNew) setTimeout(onBack, 500);
       } else {
         setMessage(result.message);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.saveFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确认删除变量 "${name || id}"？`)) return;
+    if (!confirm(t("confirm.deleteVar", { name: name || id }))) return;
     const result = await deleteVariableDef(variable.id);
     if (result.success) onBack();
     else setMessage(result.message);
@@ -243,7 +244,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
     // Need to save first if there are unsaved changes
     const varId = isNew ? "" : variable.id;
     if (!varId) {
-      setTestError("请先保存变量后再测试");
+      setTestError(t("msg.saveFirstTest"));
       return;
     }
 
@@ -252,10 +253,10 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       if (res.success && res.result !== undefined && res.steps) {
         setTestResult({ result: res.result, steps: res.steps });
       } else {
-        setTestError(res.message ?? "求值失败");
+        setTestError(res.message ?? t("ui.evalFailed"));
       }
     } catch (e) {
-      setTestError(`请求失败: ${e instanceof Error ? e.message : e}`);
+      setTestError(t("ui.requestFailed", { error: e instanceof Error ? e.message : String(e) }));
     }
   };
 
@@ -310,10 +311,10 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建变量" : `编辑: ${variable.name || variable.id}`} ==
+          == {isNew ? t("editor.newVar") : t("editor.editNamed", { name: variable.name || variable.id })} ==
         </span>
         <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
-          [返回列表]
+          [{t("btn.back")}]
         </button>
       </div>
 
@@ -326,29 +327,29 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             value={id}
             onChange={(e) => setId(e.target.value)}
             disabled={!isNew || isReadOnly}
-            placeholder="变量ID"
+            placeholder={t("ph.varId")}
           />
         </div>
         <div style={{ flex: 2 }}>
-          <div style={labelStyle}>名称</div>
+          <div style={labelStyle}>{t("field.name")}</div>
           <input
             style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={isReadOnly}
-            placeholder="显示名称"
+            placeholder={t("ph.displayName")}
           />
         </div>
       </div>
 
       <div style={{ marginBottom: "12px" }}>
-        <div style={labelStyle}>描述</div>
+        <div style={labelStyle}>{t("field.description")}</div>
         <input
           style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           disabled={isReadOnly}
-          placeholder="可选描述"
+          placeholder={t("ph.optionalDesc")}
         />
       </div>
 
@@ -362,13 +363,13 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             disabled={isReadOnly}
             style={{ accentColor: T.accent }}
           />
-          双向变量 — 步骤可引用目标角色的数据（用于角色间关系计算）
+          {t("var.bidirectional")}
         </label>
       </div>
 
       {/* Tags */}
       <div style={{ marginBottom: "12px" }}>
-        <div style={labelStyle}>标签</div>
+        <div style={labelStyle}>{t("field.tags")}</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
           {allTags.map((tag) => (
             <button
@@ -387,7 +388,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               {tag}
             </button>
           ))}
-          {allTags.length === 0 && <span style={{ color: T.textDim, fontSize: "11px" }}>无可用标签</span>}
+          {allTags.length === 0 && <span style={{ color: T.textDim, fontSize: "11px" }}>{t("empty.noAvailTags")}</span>}
         </div>
       </div>
 
@@ -401,7 +402,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           borderRadius: "3px",
         }}
       >
-        <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "4px" }}>公式预览</div>
+        <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "4px" }}>{t("section.formulaPreview")}</div>
         <div style={{ color: T.accent, fontSize: "13px", wordBreak: "break-all" }}>
           {formulaPreview(steps, isBidirectional)}
         </div>
@@ -409,7 +410,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
 
       {/* Steps editor */}
       <div style={{ marginBottom: "12px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px" }}>计算步骤</div>
+        <div style={{ ...labelStyle, marginBottom: "6px" }}>{t("section.computeSteps")}</div>
         <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             {steps.map((step, i) => (
@@ -441,7 +442,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                 textAlign: "center",
               }}
             >
-              [+ 添加步骤]
+              [{t("btn.addStep")}]
             </button>
           )}
         </div>
@@ -472,18 +473,18 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             fontSize: "13px",
           }}
         >
-          {testOpen ? "\u25BC" : "\u25B6"} 测试计算
+          {testOpen ? "\u25BC" : "\u25B6"} {t("ui.testCompute")}
         </button>
         {testOpen && (
           <div style={{ padding: "8px 12px", backgroundColor: T.bg3 }}>
             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px", flexWrap: "wrap" }}>
-              <span style={{ color: T.textSub, fontSize: "12px" }}>执行者:</span>
+              <span style={{ color: T.textSub, fontSize: "12px" }}>{t("target.self")}:</span>
               <select
                 style={{ ...selectStyle, flex: 1, minWidth: "120px" }}
                 value={testCharId}
                 onChange={(e) => setTestCharId(e.target.value)}
               >
-                {testCharacters.length === 0 && <option value="">无角色</option>}
+                {testCharacters.length === 0 && <option value="">{t("ui.noCharacter")}</option>}
                 {testCharacters.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.id})
@@ -492,13 +493,13 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               </select>
               {isBidirectional && (
                 <>
-                  <span style={{ color: T.textSub, fontSize: "12px" }}>目标角色:</span>
+                  <span style={{ color: T.textSub, fontSize: "12px" }}>{t("target.target")}:</span>
                   <select
                     style={{ ...selectStyle, flex: 1, minWidth: "120px" }}
                     value={testTargetId}
                     onChange={(e) => setTestTargetId(e.target.value)}
                   >
-                    <option value="">（无）</option>
+                    <option value="">{t("ui.noSelection")}</option>
                     {testCharacters
                       .filter((c) => c.id !== testCharId)
                       .map((c) => (
@@ -514,7 +515,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                 style={{ ...btnBase, color: T.accent, padding: "4px 12px" }}
                 disabled={!testCharId || isNew}
               >
-                [计算]
+                [{t("btn.compute")}]
               </button>
             </div>
 
@@ -543,7 +544,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                       }}
                     >
                       <span style={{ color: T.textSub }}>
-                        {s.index === 0 ? "初始" : opSymbol(s.op)} <span style={{ color: T.textSub }}>{s.type}</span>
+                        {s.index === 0 ? t("var.initial") : opSymbol(s.op)} <span style={{ color: T.textSub }}>{s.type}</span>
                         {s.label && <span style={{ color: T.textDim }}> ({s.label})</span>} ={" "}
                         <span style={{ color: T.text }}>{s.stepValue}</span>
                       </span>
@@ -563,13 +564,13 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
                     fontWeight: "bold",
                   }}
                 >
-                  结果: {testResult.result}
+                  {t("var.result")}: {testResult.result}
                 </div>
               </div>
             )}
 
             {isNew && (
-              <div style={{ color: T.textSub, fontSize: "11px", marginTop: "4px" }}>* 请先保存变量后才能测试</div>
+              <div style={{ color: T.textSub, fontSize: "11px", marginTop: "4px" }}>{t("msg.saveFirstTestNote")}</div>
             )}
           </div>
         )}
@@ -588,19 +589,19 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       >
         {!isReadOnly && (
           <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
-            [{saving ? "提交中..." : "确定"}]
+            [{saving ? t("status.submitting") : t("btn.confirm")}]
           </button>
         )}
         {!isReadOnly && !isNew && (
           <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
-          [返回列表]
+          [{t("btn.back")}]
         </button>
         {message && (
-          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px", marginLeft: "8px" }}>
+          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px", marginLeft: "8px" }}>
             {message}
           </span>
         )}
@@ -697,7 +698,7 @@ function StepRow({
       {!readOnly && (
         <span
           style={{ cursor: "grab", color: T.textDim, fontSize: "14px", userSelect: "none", padding: "0 2px" }}
-          title="拖拽排序"
+          title={t("ui.dragSort")}
         >
           {"\u2807"}
         </span>
@@ -708,7 +709,7 @@ function StepRow({
 
       {/* Operator */}
       {isFirst ? (
-        <span style={{ color: T.textSub, fontSize: "11px", minWidth: "60px", textAlign: "center" }}>初始值</span>
+        <span style={{ color: T.textSub, fontSize: "11px", minWidth: "60px", textAlign: "center" }}>{t("var.initialValue")}</span>
       ) : (
         <select
           style={{ ...selectStyle, minWidth: "60px" }}
@@ -777,8 +778,8 @@ function StepRow({
           onChange={(e) => onChange({ source: e.target.value as "self" | "target" })}
           disabled={readOnly}
         >
-          <option value="self">执行者</option>
-          <option value="target">目标角色</option>
+          <option value="self">{t("target.self")}</option>
+          <option value="target">{t("target.target")}</option>
         </select>
       )}
 
@@ -801,7 +802,7 @@ function StepRow({
             onChange={(e) => onChange({ key: e.target.value })}
             disabled={readOnly}
           >
-            <option value="">选择能力</option>
+            <option value="">{t("opt.selectAbility")}</option>
             {(definitions?.template.abilities ?? []).map((a) => (
               <option key={a.key} value={a.key}>
                 {a.label} ({a.key})
@@ -817,7 +818,7 @@ function StepRow({
             onChange={(e) => onChange({ key: e.target.value })}
             disabled={readOnly}
           >
-            <option value="">选择字段</option>
+            <option value="">{t("opt.selectField")}</option>
             {(definitions?.template.basicInfo ?? [])
               .filter((f) => f.type === "number")
               .map((f) => (
@@ -836,7 +837,7 @@ function StepRow({
               onChange={(e) => onChange({ key: e.target.value })}
               disabled={readOnly}
             >
-              <option value="">选择资源</option>
+              <option value="">{t("opt.selectResource")}</option>
               {(definitions?.template.resources ?? []).map((r) => (
                 <option key={r.key} value={r.key}>
                   {r.label} ({r.key})
@@ -849,8 +850,8 @@ function StepRow({
               onChange={(e) => onChange({ field: e.target.value as "value" | "max" })}
               disabled={readOnly}
             >
-              <option value="value">当前值</option>
-              <option value="max">最大值</option>
+              <option value="value">{t("opt.currentValue")}</option>
+              <option value="max">{t("opt.maxValue")}</option>
             </select>
           </>
         )}
@@ -862,7 +863,7 @@ function StepRow({
             onChange={(e) => onChange({ traitGroup: e.target.value })}
             disabled={readOnly}
           >
-            <option value="">选择特质分类</option>
+            <option value="">{t("opt.selectTraitCat")}</option>
             {(definitions?.template.traits ?? []).map((t) => (
               <option key={t.key} value={t.key}>
                 {t.label} ({t.key})
@@ -887,7 +888,7 @@ function StepRow({
                   onChange={(e) => onChange({ traitGroup: e.target.value, traitId: "" })}
                   disabled={readOnly}
                 >
-                  <option value="">选择分类</option>
+                  <option value="">{t("opt.selectCategory")}</option>
                   {templateTraits.map((t) => (
                     <option key={t.key} value={t.key}>
                       {t.label} ({t.key})
@@ -900,14 +901,14 @@ function StepRow({
                   onChange={(e) => onChange({ traitId: e.target.value })}
                   disabled={readOnly}
                 >
-                  <option value="">选择特质</option>
+                  <option value="">{t("opt.selectTrait")}</option>
                   {traitsInCategory.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name} ({d.id})
                     </option>
                   ))}
                 </select>
-                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }} title="拥有=1, 没有=0">
+                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }} title={t("ph.hasTraitNote")}>
                   1/0
                 </span>
               </>
@@ -921,7 +922,7 @@ function StepRow({
             onChange={(e) => onChange({ key: e.target.value })}
             disabled={readOnly}
           >
-            <option value="">选择经历</option>
+            <option value="">{t("opt.selectExp")}</option>
             {(definitions?.template.experiences ?? []).map((ex) => (
               <option key={ex.key} value={ex.key}>
                 {ex.label} ({ex.key})
@@ -937,7 +938,7 @@ function StepRow({
             onChange={(e) => onChange({ key: e.target.value })}
             disabled={readOnly}
           >
-            <option value="">选择物品</option>
+            <option value="">{t("opt.selectItem")}</option>
             {Object.entries(definitions?.itemDefs ?? {}).map(([id, def]) => (
               <option key={id} value={id}>
                 {(def as any).name} ({id})
@@ -948,7 +949,7 @@ function StepRow({
 
         {step.type === VarStepType.FAVORABILITY && (
           <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>
-            {step.source === "target" ? "目标角色→执行者" : "执行者→目标角色"}
+            {step.source === "target" ? t("target.targetToSelf") : t("target.selfToTarget")}
           </span>
         )}
 
@@ -959,7 +960,7 @@ function StepRow({
             onChange={(e) => onChange({ varId: e.target.value })}
             disabled={readOnly}
           >
-            <option value="">选择变量</option>
+            <option value="">{t("opt.selectVar")}</option>
             {varOptions.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name || v.id}
@@ -975,8 +976,8 @@ function StepRow({
         value={step.label ?? ""}
         onChange={(e) => onChange({ label: e.target.value })}
         disabled={readOnly}
-        placeholder="备注"
-        title="步骤备注（可选）"
+        placeholder={t("ph.stepNote")}
+        title={t("ph.stepNoteTitle")}
       />
 
       {/* Remove button */}

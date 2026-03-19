@@ -1,4 +1,5 @@
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 
 interface AddonTabBarProps {
   addons: { id: string; version: string }[];
@@ -38,7 +39,7 @@ export default function AddonTabBar({ addons, selectedAddon, onSelect }: AddonTa
           borderColor: selectedAddon === null ? T.border : T.borderDim,
         }}
       >
-        [全部(只读)]
+        [{t("addon.allReadOnly")}]
       </button>
       {addons.map((a) => (
         <button

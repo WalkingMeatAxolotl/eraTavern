@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from "../../types/game";
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../../api/client";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import { EF, EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
@@ -28,10 +29,10 @@ function buildTargetOptions(defs: GameDefinitions) {
   // Resources → "{label}(最大值)"
   if (defs.template.resources.length > 0) {
     groups.push({
-      label: "资源",
+      label: t("trait.groupResource"),
       options: defs.template.resources.map((r) => ({
         value: r.key,
-        label: `${r.label}(最大值)`,
+        label: `${r.label}${t("trait.maxValueSuffix")}`,
       })),
     });
   }
@@ -39,7 +40,7 @@ function buildTargetOptions(defs: GameDefinitions) {
   // Abilities
   if (defs.template.abilities.length > 0) {
     groups.push({
-      label: "能力",
+      label: t("trait.groupAbility"),
       options: defs.template.abilities.map((a) => ({
         value: a.key,
         label: a.label,
@@ -51,7 +52,7 @@ function buildTargetOptions(defs: GameDefinitions) {
   const numberFields = defs.template.basicInfo.filter((f) => f.type === "number");
   if (numberFields.length > 0) {
     groups.push({
-      label: "基本信息",
+      label: t("trait.groupBasicInfo"),
       options: numberFields.map((f) => ({
         value: f.key,
         label: f.label,
@@ -94,7 +95,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
   const handleSave = async () => {
     if (!id.trim() || !name.trim()) {
-      setMessage("ID 和名称不能为空");
+      setMessage(t("val.idNameRequired"));
       return;
     }
     setSaving(true);
@@ -114,20 +115,20 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         return;
       }
       const result = isNew ? await createTraitDef(data) : await saveTraitDef(trait.id, data);
-      setMessage(result.success ? "已确定" : result.message);
+      setMessage(result.success ? t("status.saved") : result.message);
       if (result.success && isNew) {
         // Return to list after creating
         setTimeout(onBack, 500);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.saveFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确定要删除特质「${name || id}」吗？`)) return;
+    if (!confirm(t("confirm.deleteTrait", { name: name || id }))) return;
     setSaving(true);
     try {
       if (addonCrud) {
@@ -142,7 +143,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         setMessage(result.message);
       }
     } catch (e) {
-      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
@@ -160,9 +161,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建特质" : "编辑特质"} ==
+          == {isNew ? t("editor.newTrait") : t("editor.editTrait")} ==
         </span>
-        {trait.source && <span style={{ color: T.accent, fontSize: "12px" }}>来源: {trait.source}</span>}
+        {trait.source && <span style={{ color: T.accent, fontSize: "12px" }}>{t("field.source")}: {trait.source}</span>}
       </div>
 
       {/* Basic info */}
@@ -173,7 +174,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
             <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>名称</div>
+            <div style={labelStyle}>{t("field.name")}</div>
             <input
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={name}
@@ -184,7 +185,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>分类</div>
+            <div style={labelStyle}>{t("field.category")}</div>
             <select
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={category}
@@ -199,7 +200,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
             </select>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>描述</div>
+            <div style={labelStyle}>{t("field.description")}</div>
             <input
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={description}
@@ -213,7 +214,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       {/* Experience-specific hint */}
       {category === EF.EXPERIENCE && (
         <div style={{ marginBottom: "16px" }}>
-          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>经验设定</div>
+          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>{t("trait.expSettings")}</div>
           <div
             style={{
               borderLeft: `2px solid ${T.borderLight}`,
@@ -223,9 +224,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               lineHeight: 1.5,
             }}
           >
-            经验会自动作用于全部角色，记录事件发生的次数。
+            {t("trait.expHint1")}
             <br />
-            通过行动效果中的「经验」类型来增加次数，首次触发时自动记录事件/地点/对象。
+            {t("trait.expHint2")}
           </div>
         </div>
       )}
@@ -233,7 +234,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       {/* Ability-specific fields */}
       {category === EF.ABILITY && (
         <div style={{ marginBottom: "16px" }}>
-          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>能力设定</div>
+          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>{t("trait.abilitySettings")}</div>
           <div
             style={{
               borderLeft: `2px solid ${T.borderLight}`,
@@ -245,7 +246,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           >
             <div style={{ display: "flex", gap: "12px" }}>
               <div style={{ flex: 1 }}>
-                <div style={labelStyle}>默认经验值</div>
+                <div style={labelStyle}>{t("trait.defaultExp")}</div>
                 <input
                   type="number"
                   min={0}
@@ -256,7 +257,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={labelStyle}>等级预览</div>
+                <div style={labelStyle}>{t("trait.gradePreview")}</div>
                 <div style={{ ...inputStyle, backgroundColor: "transparent", border: "none", paddingTop: "6px" }}>
                   {(() => {
                     const grades = ["G", "F", "E", "D", "C", "B", "A", "S"];
@@ -276,12 +277,12 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                   onChange={(e) => setDecayEnabled(e.target.checked)}
                   disabled={isReadOnly}
                 />
-                <span style={{ ...labelStyle, marginBottom: 0 }}>启用数值回落</span>
+                <span style={{ ...labelStyle, marginBottom: 0 }}>{t("trait.enableDecay")}</span>
               </label>
               {decayEnabled && (
                 <div style={{ display: "flex", gap: "12px", marginTop: "6px" }}>
                   <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>每隔(游戏分钟)</div>
+                    <div style={labelStyle}>{t("trait.decayInterval")}</div>
                     <input
                       type="number"
                       min={5}
@@ -293,19 +294,19 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>下降类型</div>
+                    <div style={labelStyle}>{t("trait.decayType")}</div>
                     <select
                       style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
                       value={decay.type}
                       onChange={(e) => setDecay({ ...decay, type: e.target.value as "fixed" | "percentage" })}
                       disabled={isReadOnly}
                     >
-                      <option value={MagnitudeType.FIXED}>固定值</option>
-                      <option value={MagnitudeType.PERCENTAGE}>百分比</option>
+                      <option value={MagnitudeType.FIXED}>{t("trait.fixedValue")}</option>
+                      <option value={MagnitudeType.PERCENTAGE}>{t("trait.percentage")}</option>
                     </select>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>下降量{decay.type === MagnitudeType.PERCENTAGE ? "(%)" : ""}</div>
+                    <div style={labelStyle}>{decay.type === MagnitudeType.PERCENTAGE ? t("trait.decayAmountPctLabel") : t("trait.decayAmountLabel")}</div>
                     <input
                       type="number"
                       min={1}
@@ -329,7 +330,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
       {/* Effects */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>效果</div>
+        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>{t("section.effects")}</div>
         <div
           style={{
             borderLeft: `2px solid ${T.borderLight}`,
@@ -376,8 +377,8 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
                 disabled={isReadOnly}
               >
-                <option value={EffectDirection.INCREASE}>增加</option>
-                <option value={EffectDirection.DECREASE}>减少</option>
+                <option value={EffectDirection.INCREASE}>{t("trait.increase")}</option>
+                <option value={EffectDirection.DECREASE}>{t("trait.decrease")}</option>
               </select>
 
               {/* Magnitude type */}
@@ -387,8 +388,8 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
                 disabled={isReadOnly}
               >
-                <option value={MagnitudeType.FIXED}>固定值</option>
-                <option value={MagnitudeType.PERCENTAGE}>百分比</option>
+                <option value={MagnitudeType.FIXED}>{t("trait.fixedValue")}</option>
+                <option value={MagnitudeType.PERCENTAGE}>{t("trait.percentage")}</option>
               </select>
 
               {/* Value */}
@@ -440,7 +441,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                 alignSelf: "flex-start",
               }}
             >
-              [+ 添加效果]
+              [{t("btn.addEffect")}]
             </button>
           )}
         </div>
@@ -462,7 +463,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               fontSize: "13px",
             }}
           >
-            [确定]
+            [{t("btn.confirm")}]
           </button>
         )}
         {!isReadOnly && !isNew && (
@@ -479,7 +480,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               fontSize: "13px",
             }}
           >
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         <button
@@ -494,10 +495,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
             fontSize: "13px",
           }}
         >
-          [返回列表]
+          [{t("btn.back")}]
         </button>
         {message && (
-          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

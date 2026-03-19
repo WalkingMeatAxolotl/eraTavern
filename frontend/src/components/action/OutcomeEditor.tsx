@@ -6,6 +6,7 @@
 import { useState } from "react";
 import type { ActionOutcome, ActionEffect, SuggestNext, EffectFilterDef } from "../../types/game";
 import T from "../../theme";
+import { t as t_ } from "../../i18n/ui";
 import { EF, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
 import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/styles";
@@ -44,9 +45,9 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
     return JSON.stringify(t);
   };
   const targetLabel = (t: ActionEffect["target"]): string => {
-    if (!t || t === "self") return "执行者";
-    if (t === "{{targetId}}") return "目标角色";
-    if (typeof t === "object") return "过滤目标";
+    if (!t || t === "self") return t_("target.self");
+    if (t === "{{targetId}}") return t_("target.target");
+    if (typeof t === "object") return t_("target.filtered");
     return npcList.find((n) => n.id === t)?.name ?? t;
   };
 
@@ -175,9 +176,9 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
           value={outcome.label}
           onChange={(e) => update({ label: e.target.value })}
           disabled={disabled}
-          placeholder="标签"
+          placeholder={t_("outcome.label")}
         />
-        <span style={{ color: T.textSub, fontSize: "11px" }}>权重:</span>
+        <span style={{ color: T.textSub, fontSize: "11px" }}>{t_("label.weight")}</span>
         <input
           type="number"
           min={0}
@@ -208,34 +209,34 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
           modifiers={outcome.weightModifiers ?? []}
           onChange={(mods) => update({ weightModifiers: mods.length > 0 ? mods : undefined })}
           disabled={disabled}
-          label="↳ 权重修正"
+          label={t_("outcome.weightMod")}
         />
       </div>
 
       {/* Effects grouped by target */}
       <div style={{ marginBottom: "8px" }}>
         {subHeader(
-          "效果",
+          t_("outcome.effects"),
           "#6ec6ff",
           outcome.effects.length,
           !disabled && (
             <div style={{ display: "flex", gap: "4px" }}>
               <button className="ae-add-btn" onClick={() => addTargetGroup("self")} style={addBtnStyle}>
-                [+ 执行者]
+                [+ {t_("target.self")}]
               </button>
               {targetType === TargetType.NPC && (
                 <button className="ae-add-btn" onClick={() => addTargetGroup("target")} style={addBtnStyle}>
-                  [+ 目标角色]
+                  [+ {t_("target.target")}]
                 </button>
               )}
               <button className="ae-add-btn" onClick={() => addTargetGroup("filter")} style={addBtnStyle}>
-                [+ 过滤]
+                [+ {t_("target.filtered")}]
               </button>
             </div>
           ),
         )}
         {targetGroups.length === 0 && (
-          <div style={{ color: T.textDim, fontSize: "11px", paddingLeft: "12px" }}>无效果</div>
+          <div style={{ color: T.textDim, fontSize: "11px", paddingLeft: "12px" }}>{t_("empty.noEffects")}</div>
         )}
         {targetGroups.map((group) => (
           <div
@@ -279,9 +280,9 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                         }}
                         disabled={disabled}
                       >
-                        <option value="all">全部角色</option>
-                        <option value="current">当前地点</option>
-                        <option value="specific">指定地点</option>
+                        <option value="all">{t_("opt.allChars")}</option>
+                        <option value="current">{t_("opt.currentLocation")}</option>
+                        <option value="specific">{t_("opt.specificLocation")}</option>
                       </select>
                       {typeof f.cell === "object" && f.cell !== null && f.cell !== "current" && (
                         <>
@@ -333,7 +334,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                           disabled={disabled}
                           style={{ accentColor: T.accent }}
                         />
-                        排除执行者
+                        {t_("ui.excludeSelf")}
                       </label>
                     </>
                   );
@@ -344,7 +345,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                   onClick={() => addEffectForTarget(group.target)}
                   style={{ ...addBtnStyle, marginLeft: "auto" }}
                 >
-                  [+ 效果]
+                  [+ {t_("btn.addEffect")}]
                 </button>
               )}
             </div>
@@ -390,7 +391,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                           })
                         }
                         disabled={disabled}
-                        label="↳ 数值修正"
+                        label={t_("outcome.valueMod")}
                       />
                     </div>
                   )}
@@ -404,7 +405,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
       {/* Action Chain (suggestNext) — collapsible */}
       <div style={{ marginBottom: "6px" }}>
         {toggleHeader(
-          "行动链",
+          t_("outcome.actionChain"),
           "#e9a045",
           showChain,
           () => setShowChain(!showChain),
@@ -428,7 +429,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
         {showChain && (
           <div style={{ paddingLeft: "12px" }}>
             {chainCount === 0 && (
-              <div style={{ color: T.textDim, fontSize: "11px" }}>无行动链（此结果后NPC自由选择下一行动）</div>
+              <div style={{ color: T.textDim, fontSize: "11px" }}>{t_("outcome.noChain")}</div>
             )}
             {(outcome.suggestNext ?? []).map((sn, snIdx) => {
               const mode = sn.category ? "category" : "action";
@@ -465,10 +466,10 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                       }
                     }}
                     disabled={disabled}
-                    title="匹配模式：单个行动 或 整个分类"
+                    title={t_("outcome.matchMode")}
                   >
-                    <option value="action">行动</option>
-                    <option value="category">分类</option>
+                    <option value="action">{t_("outcome.action")}</option>
+                    <option value="category">{t_("opt.category")}</option>
                   </select>
                   {mode === "action" ? (
                     <select
@@ -477,7 +478,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                       onChange={(e) => updateSn({ actionId: e.target.value })}
                       disabled={disabled}
                     >
-                      <option value="">-- 选择行动 --</option>
+                      <option value="">{t_("outcome.selectAction")}</option>
                       {actionList.map((a) => (
                         <option key={a.id} value={a.id}>
                           {a.name} ({a.id})
@@ -491,7 +492,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                       onChange={(e) => updateSn({ category: e.target.value })}
                       disabled={disabled}
                     >
-                      <option value="">-- 选择分类 --</option>
+                      <option value="">{t_("outcome.selectCategory")}</option>
                       {categoryList.map((c) => (
                         <option key={c} value={c}>
                           {c}
@@ -506,7 +507,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                     value={sn.bonus}
                     onChange={(e) => updateSn({ bonus: Number(e.target.value) })}
                     disabled={disabled}
-                    title="权重加成"
+                    title={t_("outcome.bonusWeight")}
                   />
                   <span style={{ color: T.textDim, fontSize: "11px", whiteSpace: "nowrap" }}>/</span>
                   <input
@@ -516,9 +517,9 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                     step={5}
                     onChange={(e) => updateSn({ decay: Math.max(5, Math.ceil(Number(e.target.value) / 5) * 5) })}
                     disabled={disabled}
-                    title="衰减时间(分钟)"
+                    title={t_("outcome.decayTime")}
                   />
-                  <span style={{ color: T.textDim, fontSize: "11px" }}>分</span>
+                  <span style={{ color: T.textDim, fontSize: "11px" }}>{t_("ui.minutes")}</span>
                   {!disabled && (
                     <button
                       className="ae-del-btn"
@@ -540,7 +541,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
 
       {/* Output templates — collapsible */}
       <div>
-        {toggleHeader("结果输出", "#7ecf7e", showOutTpl, () => setShowOutTpl(!showOutTpl), tplCount)}
+        {toggleHeader(t_("outcome.outputTpl"), "#7ecf7e", showOutTpl, () => setShowOutTpl(!showOutTpl), tplCount)}
         {showOutTpl && (
           <div style={{ paddingLeft: "12px" }}>
             <TemplateListEditor

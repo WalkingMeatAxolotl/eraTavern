@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ItemDefinition } from "../../types/game";
 import { createItemDef, saveItemDef, deleteItemDef } from "../../api/client";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import { inputStyle, labelStyle } from "../shared/styles";
@@ -48,7 +49,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
 
   const handleSave = async () => {
     if (!id.trim() || !name.trim()) {
-      setMessage("ID 和名称不能为空");
+      setMessage(t("val.idNameRequired"));
       return;
     }
     setSaving(true);
@@ -64,19 +65,19 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
         return;
       }
       const result = isNew ? await createItemDef(data) : await saveItemDef(item.id, data);
-      setMessage(result.success ? "已确定" : result.message);
+      setMessage(result.success ? t("status.saved") : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.saveFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确定要删除物品「${name || id}」吗？`)) return;
+    if (!confirm(t("confirm.deleteItem", { name: name || id }))) return;
     setSaving(true);
     try {
       if (addonCrud) {
@@ -91,7 +92,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
         setMessage(result.message);
       }
     } catch (e) {
-      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
@@ -102,9 +103,9 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建物品" : "编辑物品"} ==
+          == {isNew ? t("editor.newItem") : t("editor.editItem")} ==
         </span>
-        {item.source && <span style={{ color: T.accent, fontSize: "12px" }}>来源: {item.source}</span>}
+        {item.source && <span style={{ color: T.accent, fontSize: "12px" }}>{t("field.source")}: {item.source}</span>}
       </div>
 
       {/* Basic info */}
@@ -115,7 +116,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
             <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>名称</div>
+            <div style={labelStyle}>{t("field.name")}</div>
             <input
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={name}
@@ -127,7 +128,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
 
         {/* Tags */}
         <div>
-          <div style={labelStyle}>标签</div>
+          <div style={labelStyle}>{t("field.tags")}</div>
           {/* Selected tags */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
             {tags.map((t) => (
@@ -163,7 +164,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
                 )}
               </span>
             ))}
-            {tags.length === 0 && <span style={{ color: T.textDim }}>无</span>}
+            {tags.length === 0 && <span style={{ color: T.textDim }}>{t("ui.none")}</span>}
           </div>
           {/* Available tags from pool (clickable) */}
           {!isReadOnly && availableTags.length > 0 && (
@@ -202,13 +203,13 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
               onBlur={() => {
                 if (tagInput.trim()) addTag(tagInput);
               }}
-              placeholder="自定义标签..."
+              placeholder={t("ui.customTag")}
             />
           )}
         </div>
 
         <div>
-          <div style={labelStyle}>描述</div>
+          <div style={labelStyle}>{t("field.description")}</div>
           <textarea
             style={{
               ...inputStyle,
@@ -225,7 +226,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
 
         <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>最大堆叠数</div>
+            <div style={labelStyle}>{t("field.maxStack")}</div>
             <input
               type="number"
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
@@ -236,7 +237,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
             />
           </div>
           <div>
-            <div style={labelStyle}>可出售</div>
+            <div style={labelStyle}>{t("field.sellable")}</div>
             <label
               style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isReadOnly ? "default" : "pointer" }}
             >
@@ -246,11 +247,11 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
                 onChange={(e) => setSellable(e.target.checked)}
                 disabled={isReadOnly}
               />
-              <span style={{ fontSize: "12px" }}>{sellable ? "是" : "否"}</span>
+              <span style={{ fontSize: "12px" }}>{sellable ? t("ui.yes") : t("ui.no")}</span>
             </label>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>价格</div>
+            <div style={labelStyle}>{t("field.price")}</div>
             <input
               type="number"
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
@@ -279,7 +280,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
               fontSize: "13px",
             }}
           >
-            [确定]
+            [{t("btn.confirm")}]
           </button>
         )}
         {!isReadOnly && !isNew && (
@@ -296,7 +297,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
               fontSize: "13px",
             }}
           >
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         <button
@@ -311,10 +312,10 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
             fontSize: "13px",
           }}
         >
-          [返回列表]
+          [{t("btn.back")}]
         </button>
         {message && (
-          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

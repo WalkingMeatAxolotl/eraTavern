@@ -212,15 +212,15 @@ class TestTimeCondition:
         assert not _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_season(self, game_state):
-        game_state.time.season = 0  # 春
+        game_state.time.season = 0  # spring
         char = game_state.characters["player"]
-        cond = [{"type": "time", "season": "春"}]
+        cond = [{"type": "time", "season": "spring"}]
         assert _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_season_mismatch(self, game_state):
-        game_state.time.season = 2  # 秋
+        game_state.time.season = 2  # autumn
         char = game_state.characters["player"]
-        cond = [{"type": "time", "season": "春"}]
+        cond = [{"type": "time", "season": "spring"}]
         assert not _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_day_of_week(self, game_state):

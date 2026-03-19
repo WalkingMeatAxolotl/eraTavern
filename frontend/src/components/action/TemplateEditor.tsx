@@ -8,6 +8,7 @@ import T from "../../theme";
 import { useEditorContext } from "../shared/EditorContext";
 import { ConditionItemEditor } from "../shared/ConditionEditor";
 import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/styles";
+import { t } from "../../i18n/ui";
 
 export function TemplateListEditor({
   templates,
@@ -33,12 +34,12 @@ export function TemplateListEditor({
         <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
           {!disabled && templates.length === 0 && (
             <button className="ae-add-btn" onClick={add} style={addBtnStyle}>
-              [+ 模板]
+              [{t("btn.addTemplate")}]
             </button>
           )}
           {templates.length === 1 && !disabled && (
             <button className="ae-add-btn" onClick={add} style={addBtnStyle}>
-              [+ 分支]
+              [{t("btn.addBranch")}]
             </button>
           )}
         </div>
@@ -68,10 +69,10 @@ export function TemplateListEditor({
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
         {!disabled && (
           <button className="ae-add-btn" onClick={add} style={addBtnStyle}>
-            [+ 分支]
+            [{t("btn.addBranch")}]
           </button>
         )}
-        <span style={{ color: T.textDim, fontSize: "11px" }}>满足条件的模板中随机选择（按权重）</span>
+        <span style={{ color: T.textDim, fontSize: "11px" }}>{t("tpl.randomHelp")}</span>
       </div>
       {templates.map((entry, idx) => (
         <div
@@ -85,7 +86,7 @@ export function TemplateListEditor({
         >
           <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
             <span style={{ color: "#6ec6ff", fontSize: "11px", fontWeight: "bold" }}>#{idx + 1}</span>
-            <span style={{ color: T.textSub, fontSize: "11px" }}>权重:</span>
+            <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.weight")}</span>
             <input
               type="number"
               min={0}
@@ -155,13 +156,13 @@ export function TemplateConditionsEditor({
       }}
     >
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
-        <span style={{ color: T.textSub, fontSize: "11px" }}>↳ 条件</span>
+        <span style={{ color: T.textSub, fontSize: "11px" }}>{t("outcome.condLabel")}</span>
         {!disabled && (
           <button className="ae-add-btn" onClick={addCond} style={addBtnStyle}>
             [+]
           </button>
         )}
-        {conditions.length === 0 && <span style={{ color: T.textDim, fontSize: "11px" }}>无条件（始终可选）</span>}
+        {conditions.length === 0 && <span style={{ color: T.textDim, fontSize: "11px" }}>{t("empty.noCondSelect")}</span>}
       </div>
       {conditions.map((item, idx) => (
         <div key={idx} style={{ marginBottom: "2px" }}>
@@ -203,41 +204,41 @@ export function TemplateVarHelp() {
       }}
     >
       <div style={{ color: T.accent, fontSize: "11px", fontWeight: "bold", marginBottom: "4px" }}>
-        可用变量 (self = 行动者, target = 目标)
+        {t("tpl.varHelp")}
       </div>
-      {row("player", "行动者名称 (= self.name)")}
-      {row("target", "目标名称 (= target.name)")}
-      {row("outcome", "结果标签 (成功/失败等)")}
-      {row("outcomeGrade", "结果等级 (success/fail等)")}
-      {row("effects", "效果摘要")}
-      {row("time", "当前游戏时间")}
-      {row("weather", "当前天气")}
-      {row("location", "行动者所在地点")}
+      {row("player", t("tpl.var.player"))}
+      {row("target", t("tpl.var.target"))}
+      {row("outcome", t("tpl.var.outcome"))}
+      {row("outcomeGrade", t("tpl.var.outcomeGrade"))}
+      {row("effects", t("tpl.var.effects"))}
+      {row("time", t("tpl.var.time"))}
+      {row("weather", t("tpl.var.weather"))}
+      {row("location", t("tpl.var.location"))}
 
       <div style={{ color: "#e9a045", fontSize: "11px", fontWeight: "bold", marginTop: "6px", marginBottom: "2px" }}>
-        资源 (self.resource.X / target.resource.X)
+        {t("tpl.cat.resource")}
       </div>
       {resourceKeys.map((r) => row(`self.resource.${r.key}`, r.label))}
 
       <div style={{ color: "#e9a045", fontSize: "11px", fontWeight: "bold", marginTop: "6px", marginBottom: "2px" }}>
-        能力 (self.ability.X = 等级, self.abilityExp.X = 经验值)
+        {t("tpl.cat.ability")}
       </div>
-      {abilityKeys.map((a) => row(`self.ability.${a.key}`, `${a.label} 等级`))}
+      {abilityKeys.map((a) => row(`self.ability.${a.key}`, t("tpl.abilityLevel", { label: a.label })))}
 
       <div style={{ color: "#e9a045", fontSize: "11px", fontWeight: "bold", marginTop: "6px", marginBottom: "2px" }}>
-        基本属性 (self.basicInfo.X / target.basicInfo.X)
+        {t("tpl.cat.basicInfo")}
       </div>
       {basicInfoNumKeys.map((b) => row(`self.basicInfo.${b.key}`, b.label))}
 
       <div style={{ color: "#e9a045", fontSize: "11px", fontWeight: "bold", marginTop: "6px", marginBottom: "2px" }}>
-        服装 (self.clothing.X / target.clothing.X)
+        {t("tpl.cat.clothing")}
       </div>
-      {clothingSlots.map((sl) => row(`self.clothing.${sl}`, `${sl} 槽位衣物名`))}
+      {clothingSlots.map((sl) => row(`self.clothing.${sl}`, t("tpl.slotClothing", { slot: sl })))}
 
       <div style={{ color: "#e9a045", fontSize: "11px", fontWeight: "bold", marginTop: "6px", marginBottom: "2px" }}>
-        特质 (self.trait.X / target.trait.X)
+        {t("tpl.cat.trait")}
       </div>
-      {traitCategories.map((t) => row(`self.trait.${t.key}`, `${t.label} 值`))}
+      {traitCategories.map((tc) => row(`self.trait.${tc.key}`, t("tpl.traitValue", { label: tc.label })))}
     </div>
   );
 }

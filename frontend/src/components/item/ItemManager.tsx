@@ -2,6 +2,7 @@ import T from "../../theme";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ItemDefinition } from "../../types/game";
 import { fetchItemDefs, fetchItemTags, createItemTag, deleteItemTag } from "../../api/client";
+import { t } from "../../i18n/ui";
 import ItemEditor from "./ItemEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { Tooltip } from "../shared/Tooltip";
@@ -143,7 +144,7 @@ export default function ItemManager({
   }, [visibleTags, tagGrouped]);
 
   if (loading) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
   // Editor view
@@ -182,7 +183,7 @@ export default function ItemManager({
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 物品列表 ==</span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.itemList")} ==</span>
           {/* View toggle */}
           <div style={{ display: "flex", gap: "2px" }}>
             <button
@@ -190,14 +191,14 @@ export default function ItemManager({
               onClick={() => setViewMode("byTag")}
               style={viewTabStyle(viewMode === "byTag")}
             >
-              按标签
+              {t("btn.byTag")}
             </button>
             <button
               className="im-view-tab"
               onClick={() => setViewMode("byItem")}
               style={viewTabStyle(viewMode === "byItem")}
             >
-              按物品
+              {t("btn.byItem")}
             </button>
           </div>
         </div>
@@ -217,7 +218,7 @@ export default function ItemManager({
                 transition: "background-color 0.1s, border-color 0.1s",
               }}
             >
-              [标签管理]
+              [{t("btn.tagMgmt")}]
             </button>
           )}
           {!readOnly && (
@@ -235,7 +236,7 @@ export default function ItemManager({
                 transition: "background-color 0.1s, border-color 0.1s",
               }}
             >
-              [+ 新建物品]
+              [{t("btn.newItem")}]
             </button>
           )}
         </div>
@@ -252,7 +253,7 @@ export default function ItemManager({
             borderRadius: "3px",
           }}
         >
-          <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "6px" }}>标签池</div>
+          <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "6px" }}>{t("ui.tagPool")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>
             {allTags.map((tag) => (
               <span
@@ -286,7 +287,7 @@ export default function ItemManager({
                 </button>
               </span>
             ))}
-            {allTags.length === 0 && <span style={{ color: T.textDim }}>无标签</span>}
+            {allTags.length === 0 && <span style={{ color: T.textDim }}>{t("empty.noTags")}</span>}
           </div>
           <div style={{ display: "flex", gap: "4px" }}>
             <input
@@ -307,7 +308,7 @@ export default function ItemManager({
                   handleAddTag();
                 }
               }}
-              placeholder="新标签名..."
+              placeholder={t("ui.newTagPlaceholder")}
             />
             <button
               className="im-action-btn"
@@ -349,7 +350,7 @@ export default function ItemManager({
         />
       )}
 
-      {filteredItems.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>暂无物品</div>}
+      {filteredItems.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>{t("empty.items")}</div>}
     </div>
   );
 }
@@ -379,7 +380,7 @@ function ByTagView({
   const showItemTooltip = (item: ItemDefinition, el: HTMLElement) => {
     const tags = itemTagsMap[item.id] ?? [];
     if (tags.length > 0) {
-      setTooltipInfo({ text: `标签: ${tags.join(", ")}`, el });
+      setTooltipInfo({ text: `${t("field.tags")}: ${tags.join(", ")}`, el });
     }
   };
 
@@ -465,7 +466,7 @@ function ByTagView({
             <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
               {(collapsed["tag:__untagged__"] ?? false) ? "\u25B6" : "\u25BC"}
             </span>{" "}
-            未分类
+            {t("label.uncategorized")}
             <span style={{ color: T.textDim, marginLeft: "4px", fontSize: "11px" }}>({untagged.length})</span>
           </button>
           {!(collapsed["tag:__untagged__"] ?? false) && (
@@ -516,7 +517,7 @@ function ByItemView({
   const showTagTooltip = (tag: string, el: HTMLElement) => {
     const names = tagItemNames[tag] ?? [];
     if (names.length > 0) {
-      const display = names.length > 8 ? names.slice(0, 8).join(", ") + ` ... 共${names.length}个` : names.join(", ");
+      const display = names.length > 8 ? names.slice(0, 8).join(", ") + ` ... (${names.length})` : names.join(", ");
       setTooltipInfo({ text: display, el });
     }
   };
@@ -562,7 +563,7 @@ function ByItemView({
               color: T.textDim,
             }}
           >
-            <span>未分类</span>
+            <span>{t("label.uncategorized")}</span>
             <span style={{ flex: 1, height: "1px", backgroundColor: T.borderDim }} />
           </div>
           {groups.untagged.map((item) => (

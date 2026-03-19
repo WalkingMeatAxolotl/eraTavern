@@ -5,8 +5,27 @@ from __future__ import annotations
 import random
 from typing import Any
 
-SEASONS = ["春", "夏", "秋", "冬"]
-WEEKDAYS = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+from game.constants import Season, DayOfWeek
+
+SEASONS = Season.ALL  # ["spring", "summer", "autumn", "winter"]
+WEEKDAYS = DayOfWeek.ALL  # ["mon", "tue", ..., "sun"]
+
+# Display names (Chinese) — keyed by enum value
+SEASON_DISPLAY = {
+    Season.SPRING: "春",
+    Season.SUMMER: "夏",
+    Season.AUTUMN: "秋",
+    Season.WINTER: "冬",
+}
+WEEKDAY_DISPLAY = {
+    DayOfWeek.MON: "星期一",
+    DayOfWeek.TUE: "星期二",
+    DayOfWeek.WED: "星期三",
+    DayOfWeek.THU: "星期四",
+    DayOfWeek.FRI: "星期五",
+    DayOfWeek.SAT: "星期六",
+    DayOfWeek.SUN: "星期日",
+}
 
 WEATHER_TABLE = {
     "sunny": {"name": "晴天", "icon": "☀"},
@@ -15,14 +34,19 @@ WEATHER_TABLE = {
     "snowy": {"name": "雪天", "icon": "❄"},
 }
 
-SEASON_TEMP_BASE = {"春": 18, "夏": 30, "秋": 20, "冬": 5}
+SEASON_TEMP_BASE = {
+    Season.SPRING: 18,
+    Season.SUMMER: 30,
+    Season.AUTUMN: 20,
+    Season.WINTER: 5,
+}
 
 # Weather probability weights per season [sunny, cloudy, rainy, snowy]
 SEASON_WEATHER_WEIGHTS = {
-    "春": [3, 3, 2, 0],
-    "夏": [5, 2, 3, 0],
-    "秋": [3, 3, 2, 0],
-    "冬": [2, 3, 0, 3],
+    Season.SPRING: [3, 3, 2, 0],
+    Season.SUMMER: [5, 2, 3, 0],
+    Season.AUTUMN: [3, 3, 2, 0],
+    Season.WINTER: [2, 3, 0, 3],
 }
 WEATHER_IDS = ["sunny", "cloudy", "rainy", "snowy"]
 
@@ -81,11 +105,23 @@ class GameTime:
 
     @property
     def season_name(self) -> str:
+        """Enum value (e.g. 'spring') — used for data/logic comparison."""
         return SEASONS[self.season]
 
     @property
+    def season_display(self) -> str:
+        """Display name (e.g. '春') — used for UI text."""
+        return SEASON_DISPLAY[self.season_name]
+
+    @property
     def weekday(self) -> str:
+        """Enum value (e.g. 'mon') — used for data/logic comparison."""
         return WEEKDAYS[(self.day - 1) % 7]
+
+    @property
+    def weekday_display(self) -> str:
+        """Display name (e.g. '星期一') — used for UI text."""
+        return WEEKDAY_DISPLAY[self.weekday]
 
     def to_dict(self) -> dict[str, Any]:
         w = WEATHER_TABLE[self.weather]
@@ -93,9 +129,11 @@ class GameTime:
             "year": self.year,
             "season": self.season,
             "seasonName": self.season_name,
+            "seasonDisplay": self.season_display,
             "day": self.day,
             "totalDays": self.total_days,
             "weekday": self.weekday,
+            "weekdayDisplay": self.weekday_display,
             "hour": self.hour,
             "minute": self.minute,
             "weatherId": self.weather,
@@ -103,9 +141,9 @@ class GameTime:
             "weatherIcon": w["icon"],
             "temperature": self.temperature,
             "displayText": (
-                f"{self.season_name}{self.day}日"
+                f"{self.season_display}{self.day}日"
                 f"[{self.total_days}日目]"
-                f"({self.weekday}) "
+                f"({self.weekday_display}) "
                 f"{self.hour:02d}:{self.minute:02d} "
                 f"{w['icon']} ({w['name']}) "
                 f"{self.temperature}℃"

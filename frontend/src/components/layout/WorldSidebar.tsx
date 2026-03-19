@@ -11,6 +11,7 @@ import {
   uploadAsset,
 } from "../../api/client";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import { Overlay, ConfirmModal, modalBtnStyle } from "../shared/Modal";
 
 interface WorldSidebarProps {
@@ -59,14 +60,14 @@ function CreateWorldModal({ onCreated, onCancel }: { onCreated: (id: string) => 
 
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>新建世界</div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{t("world.createTitle")}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <div>
-          <div style={labelStyle}>名称</div>
-          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="我的世界" />
+          <div style={labelStyle}>{t("field.name")}</div>
+          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("world.myWorld")} />
         </div>
         <div>
-          <div style={labelStyle}>ID（英文数字、-、_）</div>
+          <div style={labelStyle}>{t("world.idLabel")}</div>
           <input
             style={inputStyle}
             value={id}
@@ -78,14 +79,14 @@ function CreateWorldModal({ onCreated, onCancel }: { onCreated: (id: string) => 
       </div>
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
         <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>
-          取消
+          {t("btn.cancel")}
         </button>
         <button
           onClick={handleCreate}
           disabled={busy || !id.trim() || !name.trim()}
           style={{ ...modalBtnStyle(T.bg2, T.success), opacity: busy || !id.trim() || !name.trim() ? 0.5 : 1 }}
         >
-          {busy ? "创建中..." : "创建"}
+          {busy ? t("btn.creating") : t("btn.create")}
         </button>
       </div>
     </Overlay>
@@ -235,9 +236,9 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
       {showCreateModal && <CreateWorldModal onCreated={handleCreated} onCancel={() => setShowCreateModal(false)} />}
       {deleteConfirm && (
         <ConfirmModal
-          title="删除世界"
-          message={`确认删除世界「${deleteConfirm.name}」(${deleteConfirm.id})？此操作不可撤销。`}
-          confirmLabel="确认删除"
+          title={t("world.deleteTitle")}
+          message={t("world.deleteMsg", { name: deleteConfirm.name, id: deleteConfirm.id })}
+          confirmLabel={t("world.confirmDelete")}
           danger
           onConfirm={handleDelete}
           onCancel={() => setDeleteConfirm(null)}
@@ -245,9 +246,9 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
       )}
       {unloadConfirm && (
         <ConfirmModal
-          title="卸载世界"
-          message="确认卸载当前世界？未保存的更改将丢失。"
-          confirmLabel="确认卸载"
+          title={t("world.unloadTitle")}
+          message={t("world.unloadMsg")}
+          confirmLabel={t("world.confirmUnload")}
           danger
           onConfirm={handleUnload}
           onCancel={() => setUnloadConfirm(false)}
@@ -278,7 +279,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
             gap: "6px",
           }}
         >
-          <span style={{ color: T.accent, fontSize: "13px", fontWeight: "bold" }}>世界</span>
+          <span style={{ color: T.accent, fontSize: "13px", fontWeight: "bold" }}>{t("world.worlds")}</span>
           <span style={{ color: T.textDim, fontSize: "11px" }}>({worlds.length})</span>
           <span style={{ flex: 1 }} />
           <button
@@ -312,7 +313,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
         >
           {worlds.length === 0 ? (
             <div style={{ color: T.textDim, fontSize: "11px", padding: "16px 8px", textAlign: "center" }}>
-              没有已保存的世界
+              {t("ui.noSavedWorlds")}
             </div>
           ) : (
             worlds.map((w) => {
@@ -406,7 +407,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                           fontWeight: "bold",
                         }}
                       >
-                        当前
+                        {t("ui.current")}
                       </span>
                     )}
                     <span style={{ color: T.textDim, fontSize: "11px", flexShrink: 0 }}>
@@ -440,7 +441,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                               marginTop: "2px",
                             }}
                           >
-                            <span style={{ color: T.textDim, fontSize: "10px" }}>启用扩展</span>
+                            <span style={{ color: T.textDim, fontSize: "10px" }}>{t("world.enabledAddons")}</span>
                             {w.addons.map((a) => (
                               <span
                                 key={`${a.id}@${a.version}`}
@@ -462,9 +463,9 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
 
                       {/* Action buttons */}
                       <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                        {!active && <ToggleBtn label="切换" active={false} onClick={() => handleSelectWorld(w.id)} />}
+                        {!active && <ToggleBtn label={t("btn.switch")} active={false} onClick={() => handleSelectWorld(w.id)} />}
                         <ToggleBtn
-                          label="编辑信息"
+                          label={t("btn.editInfo")}
                           active={isEditingThis}
                           onClick={() => {
                             if (isEditingThis) {
@@ -491,7 +492,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                               borderRadius: "3px",
                             }}
                           >
-                            卸载
+                            {t("btn.unload")}
                           </button>
                         )}
                         {!active && (
@@ -510,7 +511,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                               borderRadius: "3px",
                             }}
                           >
-                            [删除]
+                            [{t("btn.delete")}]
                           </button>
                         )}
                       </div>
@@ -527,7 +528,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                           }}
                         >
                           <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                            <span style={{ color: T.textDim, minWidth: "32px" }}>名称</span>
+                            <span style={{ color: T.textDim, minWidth: "32px" }}>{t("field.name")}</span>
                             <input
                               value={metaName}
                               onChange={(e) => setMetaName(e.target.value)}
@@ -535,7 +536,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                             />
                           </div>
                           <div style={{ display: "flex", gap: "6px", alignItems: "flex-start" }}>
-                            <span style={{ color: T.textDim, minWidth: "32px", paddingTop: "4px" }}>简介</span>
+                            <span style={{ color: T.textDim, minWidth: "32px", paddingTop: "4px" }}>{t("field.intro")}</span>
                             <textarea
                               value={metaDesc}
                               onChange={(e) => setMetaDesc(e.target.value)}
@@ -544,7 +545,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                             />
                           </div>
                           <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                            <span style={{ color: T.textDim, minWidth: "32px" }}>封面</span>
+                            <span style={{ color: T.textDim, minWidth: "32px" }}>{t("field.cover")}</span>
                             <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
                               {metaCover && (
                                 <img
@@ -569,7 +570,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                {metaCover || "无"}
+                                {metaCover || t("ui.none")}
                               </span>
                               <input
                                 type="file"
@@ -596,7 +597,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                                   borderRadius: "3px",
                                 }}
                               >
-                                选择
+                                {t("btn.select")}
                               </button>
                               {metaCover && (
                                 <button
@@ -611,7 +612,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                                     borderRadius: "3px",
                                   }}
                                 >
-                                  移除
+                                  {t("btn.remove")}
                                 </button>
                               )}
                             </div>
@@ -630,7 +631,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                                 color: T.success,
                               }}
                             >
-                              [保存]
+                              [{t("btn.save")}]
                             </button>
                             <button
                               onClick={() => setEditingMeta(null)}
@@ -644,7 +645,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                                 color: T.textSub,
                               }}
                             >
-                              [取消]
+                              [{t("btn.cancel")}]
                             </button>
                           </div>
                         </div>

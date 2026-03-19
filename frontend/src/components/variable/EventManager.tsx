@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import { EF, EffType, EffectOp, ClothingState, TriggerMode, EventScope, TargetType } from "../../constants";
 import { HelpButton, HelpPanel, helpSub, helpP, helpEm, helpDim } from "../shared/HelpToggle";
 import type {
@@ -65,16 +66,16 @@ const sectionTitleStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
 });
 
 const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
-  { value: EffType.RESOURCE, label: "资源" },
-  { value: EffType.ABILITY, label: "能力(经验值)" },
-  { value: EffType.EXPERIENCE, label: "经历记录" },
-  { value: EffType.BASIC_INFO, label: "基本属性" },
-  { value: EffType.FAVORABILITY, label: "好感度" },
-  { value: EffType.TRAIT, label: "特质" },
-  { value: EffType.ITEM, label: "物品" },
-  { value: EffType.CLOTHING, label: "服装" },
-  { value: EffType.POSITION, label: "位置" },
-  { value: EffType.WORLD_VAR, label: "世界变量" },
+  { value: EffType.RESOURCE, label: t("eff.resource") },
+  { value: EffType.ABILITY, label: t("eff.ability") },
+  { value: EffType.EXPERIENCE, label: t("eff.experience") },
+  { value: EffType.BASIC_INFO, label: t("eff.basicInfo") },
+  { value: EffType.FAVORABILITY, label: t("eff.favorability") },
+  { value: EffType.TRAIT, label: t("eff.trait") },
+  { value: EffType.ITEM, label: t("eff.item") },
+  { value: EffType.CLOTHING, label: t("eff.clothing") },
+  { value: EffType.POSITION, label: t("eff.position") },
+  { value: EffType.WORLD_VAR, label: t("eff.worldVar") },
 ];
 
 const hoverStyles = `
@@ -147,7 +148,7 @@ export default function EventManager({
   const filteredWVs = selectedAddon ? worldVars.filter((v) => v.source === selectedAddon) : worldVars;
 
   if (loading) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
   // ── Editor view ──
@@ -194,7 +195,7 @@ export default function EventManager({
 
       {/* == 世界变量 == */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 世界变量 ==</span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.worldVars")} ==</span>
         {!readOnly && (
           <button
             className="em-action-btn"
@@ -209,7 +210,7 @@ export default function EventManager({
               fontSize: "13px",
             }}
           >
-            [+ 添加变量]
+            [{t("btn.addVar")}]
           </button>
         )}
       </div>
@@ -235,17 +236,17 @@ export default function EventManager({
           >
             <span style={{ color: T.text }}>{v.name || v.id}</span>
             <span style={{ color: T.textDim, fontSize: "11px" }}>{v.type}</span>
-            <span style={{ color: T.textDim, fontSize: "11px" }}>默认: {v.default}</span>
+            <span style={{ color: T.textDim, fontSize: "11px" }}>{t("event.default", { value: String(v.default) })}</span>
           </button>
         ))}
         {filteredWVs.length === 0 && (
-          <div style={{ color: T.textDim, padding: "4px 0", fontSize: "11px" }}>暂无世界变量</div>
+          <div style={{ color: T.textDim, padding: "4px 0", fontSize: "11px" }}>{t("empty.worldVars")}</div>
         )}
       </div>
 
       {/* == 全局事件 == */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 全局事件 ==</span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.globalEvents")} ==</span>
         {!readOnly && (
           <button
             className="em-action-btn"
@@ -260,15 +261,15 @@ export default function EventManager({
               fontSize: "13px",
             }}
           >
-            [+ 新建事件]
+            [{t("btn.newEvent")}]
           </button>
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         {filteredEvents.map((evt) => {
           const modeLabel =
-            evt.triggerMode === TriggerMode.ON_CHANGE ? "变化触发" : evt.triggerMode === TriggerMode.WHILE ? "持续触发" : "一次性";
-          const scopeLabel = evt.targetScope === EventScope.EACH_CHARACTER ? "每个角色" : "无目标";
+            evt.triggerMode === TriggerMode.ON_CHANGE ? t("event.onChangeShort") : evt.triggerMode === TriggerMode.WHILE ? t("event.whileShort") : t("event.onceShort");
+          const scopeLabel = evt.targetScope === EventScope.EACH_CHARACTER ? t("event.eachCharShort") : t("event.noTargetShort");
           return (
             <button
               key={evt.id}
@@ -291,12 +292,12 @@ export default function EventManager({
               <span style={{ color: T.text }}>{evt.name || evt.id}</span>
               <span style={{ color: "#c78dff", fontSize: "11px" }}>{modeLabel}</span>
               <span style={{ color: T.textDim, fontSize: "11px" }}>{scopeLabel}</span>
-              {evt.enabled === false && <span style={{ color: T.danger, fontSize: "11px" }}>[禁用]</span>}
+              {evt.enabled === false && <span style={{ color: T.danger, fontSize: "11px" }}>[{t("event.disabled")}]</span>}
             </button>
           );
         })}
         {filteredEvents.length === 0 && (
-          <div style={{ color: T.textDim, padding: "4px 0", fontSize: "11px" }}>暂无全局事件</div>
+          <div style={{ color: T.textDim, padding: "4px 0", fontSize: "11px" }}>{t("empty.globalEvents")}</div>
         )}
       </div>
     </div>
@@ -348,7 +349,7 @@ function WorldVarEditor({
   };
 
   const handleDelete = async () => {
-    if (!confirm("确定删除此世界变量？")) return;
+    if (!confirm(t("confirm.deleteWorldVar"))) return;
     const res = await deleteWorldVariableDef(variable.id);
     if (!res.success) {
       alert(res.message);
@@ -362,19 +363,19 @@ function WorldVarEditor({
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建世界变量" : `编辑: ${variable.name || variable.id}`} ==
+          == {isNew ? t("editor.newWorldVar") : t("editor.editNamed", { name: variable.name || variable.id })} ==
         </span>
         <div style={{ display: "flex", gap: "6px" }}>
           <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
-            [返回]
+            [{t("btn.return")}]
           </button>
           {!isNew && (
             <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
-              [删除]
+              [{t("btn.delete")}]
             </button>
           )}
           <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
-            {saving ? "保存中..." : "[确定]"}
+            {saving ? t("status.saving") : `[${t("btn.confirm")}]`}
           </button>
         </div>
       </div>
@@ -386,20 +387,20 @@ function WorldVarEditor({
           <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>名称</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>{t("field.name")}</label>
           <input style={{ ...inputStyle, flex: 1 }} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>说明</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>{t("field.note")}</label>
           <input
             style={{ ...inputStyle, flex: 1 }}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="可选"
+            placeholder={t("ui.optional")}
           />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>类型</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>{t("field.type")}</label>
           <select
             style={{ ...inputStyle }}
             value={type}
@@ -410,14 +411,14 @@ function WorldVarEditor({
           </select>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>默认值</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>{t("field.defaultValue")}</label>
           <input
             style={{ ...inputStyle, width: "80px" }}
             type="number"
             value={defaultVal}
             onChange={(e) => setDefaultVal(Number(e.target.value))}
           />
-          {type === "boolean" && <span style={{ color: T.textDim, fontSize: "11px" }}>0 = false, 1 = true</span>}
+          {type === "boolean" && <span style={{ color: T.textDim, fontSize: "11px" }}>{t("event.boolHelp")}</span>}
         </div>
       </div>
     </div>
@@ -520,7 +521,7 @@ function EventEditor({
   };
 
   const handleDelete = async () => {
-    if (!confirm("确定删除此事件？")) return;
+    if (!confirm(t("confirm.deleteEvent"))) return;
     const res = await deleteEventDef(event.id);
     if (!res.success) {
       alert(res.message);
@@ -549,7 +550,7 @@ function EventEditor({
   const removeEffect = (idx: number) => setEffects(effects.filter((_, i) => i !== idx));
 
   const outfitTypes = [
-    { id: "default", name: "默认服装" },
+    { id: "default", name: t("label.defaultOutfit") },
     ...(definitions?.outfitTypes ?? []).map((t) => ({ id: t.id, name: t.name })),
   ];
 
@@ -597,19 +598,19 @@ function EventEditor({
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建事件" : `编辑: ${event.name || event.id}`} ==
+          == {isNew ? t("editor.newEvent") : t("editor.editNamed", { name: event.name || event.id })} ==
         </span>
         <div style={{ display: "flex", gap: "6px" }}>
           <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
-            [返回]
+            [{t("btn.return")}]
           </button>
           {!isNew && (
             <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
-              [删除]
+              [{t("btn.delete")}]
             </button>
           )}
           <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
-            {saving ? "保存中..." : "[确定]"}
+            {saving ? t("status.saving") : `[${t("btn.confirm")}]`}
           </button>
         </div>
       </div>
@@ -621,32 +622,32 @@ function EventEditor({
           <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>名称</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.name")}</label>
           <input style={{ ...inputStyle, flex: 1 }} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>说明</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.note")}</label>
           <input
             style={{ ...inputStyle, flex: 1 }}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="可选"
+            placeholder={t("ui.optional")}
           />
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>触发模式</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.triggerMode")}</label>
           <select
             style={inputStyle}
             value={triggerMode}
             onChange={(e) => setTriggerMode(e.target.value as EventDefinition["triggerMode"])}
           >
-            <option value={TriggerMode.ON_CHANGE}>on_change (变化触发)</option>
-            <option value={TriggerMode.WHILE}>while (持续触发)</option>
-            <option value={TriggerMode.ONCE}>once (一次性)</option>
+            <option value={TriggerMode.ON_CHANGE}>{t("event.modeOnChange")}</option>
+            <option value={TriggerMode.WHILE}>{t("event.modeWhile")}</option>
+            <option value={TriggerMode.ONCE}>{t("event.modeOnce")}</option>
           </select>
           {triggerMode === TriggerMode.WHILE && (
             <>
-              <label style={{ color: T.textSub, fontSize: "11px" }}>冷却(分钟)</label>
+              <label style={{ color: T.textSub, fontSize: "11px" }}>{t("field.cooldown")}</label>
               <input
                 style={{ ...inputStyle, width: "60px" }}
                 type="number"
@@ -660,59 +661,55 @@ function EventEditor({
         </div>
         {showTriggerHelp && (
           <HelpPanel>
-            <div style={{ ...helpP, marginBottom: "2px" }}>控制事件在条件满足时何时触发。</div>
-            <div style={helpSub}>on_change — 变化触发</div>
+            <div style={{ ...helpP, marginBottom: "2px" }}>{t("help.triggerIntro")}</div>
+            <div style={helpSub}>{t("help.onChangeTitle")}</div>
             <div style={helpP}>
-              条件从 <span style={helpEm}>不满足 → 满足</span>{" "}
-              的瞬间触发一次。条件持续满足期间不会重复触发，必须先变回不满足、再次满足时才会再次触发。
+              {t("help.onChangeDesc", { em1: t("help.onChangeEm") })}
             </div>
-            <div style={helpDim}>适合"进入某状态时"的事件。例：好感度首次达到 50 时触发特殊对话。</div>
-            <div style={helpSub}>while — 持续触发</div>
-            <div style={helpP}>每次检查时只要条件满足就触发，受冷却时间（分钟）限制避免过于频繁。</div>
-            <div style={helpDim}>适合持续性效果。例：天气为雨天时，每 10 分钟所有人心情 -1。</div>
-            <div style={helpSub}>once — 一次性</div>
+            <div style={helpDim}>{t("help.onChangeExample")}</div>
+            <div style={helpSub}>{t("help.whileTitle")}</div>
+            <div style={helpP}>{t("help.whileDesc")}</div>
+            <div style={helpDim}>{t("help.whileExample")}</div>
+            <div style={helpSub}>{t("help.onceTitle")}</div>
             <div style={helpP}>
-              条件满足时触发 <span style={helpEm}>一次</span> 后永久标记为已完成，之后不会再触发。
+              {t("help.onceDesc", { em1: t("help.onceEm") })}
             </div>
-            <div style={helpDim}>适合一次性剧情事件。例：第一次击败 Boss 后解锁新区域。</div>
-            <div style={helpSub}>on_change vs once 的区别</div>
+            <div style={helpDim}>{t("help.onceExample")}</div>
+            <div style={helpSub}>{t("help.onChangeVsOnceTitle")}</div>
             <div style={helpP}>
-              <span style={helpEm}>on_change</span> 在条件恢复不满足后可以再次触发（多次），
-              <span style={helpEm}>once</span> 触发后永远不再触发（仅一次）。
+              {t("help.onChangeVsOnceDesc", { em1: "on_change", em2: "once" })}
             </div>
           </HelpPanel>
         )}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>目标范围</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.targetScope")}</label>
           <select
             style={inputStyle}
             value={targetScope}
             onChange={(e) => setTargetScope(e.target.value as EventDefinition["targetScope"])}
           >
-            <option value={EventScope.EACH_CHARACTER}>each_character (每个角色)</option>
-            <option value={EventScope.NONE}>none (无目标)</option>
+            <option value={EventScope.EACH_CHARACTER}>{t("event.scopeEach")}</option>
+            <option value={EventScope.NONE}>{t("event.scopeNone")}</option>
           </select>
           <HelpButton show={showScopeHelp} onToggle={() => setShowScopeHelp((v) => !v)} />
         </div>
         {showScopeHelp && (
           <HelpPanel>
-            <div style={{ ...helpP, marginBottom: "2px" }}>控制事件对谁评估和执行效果。</div>
-            <div style={helpSub}>each_character — 每个角色</div>
+            <div style={{ ...helpP, marginBottom: "2px" }}>{t("help.scopeIntro")}</div>
+            <div style={helpSub}>{t("help.eachCharTitle")}</div>
             <div style={helpP}>
-              对每个角色 <span style={helpEm}>分别</span> 评估条件、分别执行效果。效果中的{" "}
-              <span style={helpEm}>self</span> 指当前被评估的角色。
+              {t("help.eachCharDesc", { em1: t("help.eachCharEm1"), em2: t("help.eachCharEm2") })}
             </div>
-            <div style={helpDim}>例：任何角色 HP 低于 10 时自动获得特质"濒死"——每个角色独立判断。</div>
-            <div style={helpSub}>none — 无目标</div>
+            <div style={helpDim}>{t("help.eachCharExample")}</div>
+            <div style={helpSub}>{t("help.noneTitle")}</div>
             <div style={helpP}>
-              无角色上下文，仅在玩家行动后评估一次。条件只能使用 <span style={helpEm}>世界变量</span>、
-              <span style={helpEm}>时间</span> 等全局条件，效果只能修改 <span style={helpEm}>世界变量</span>。
+              {t("help.noneDesc", { em1: t("help.noneEm1"), em2: t("help.noneEm2"), em3: t("help.noneEm3") })}
             </div>
-            <div style={helpDim}>例：当世界变量 tavern_open = 1 时，设置 customers_arriving = 1。</div>
+            <div style={helpDim}>{t("help.noneExample")}</div>
           </HelpPanel>
         )}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>启用</label>
+          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.enabled")}</label>
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
         </div>
       </div>
@@ -720,18 +717,18 @@ function EventEditor({
       {/* Conditions */}
       <div style={sectionStyle("cond")}>
         <div style={sectionTitleStyle("cond")}>
-          <span style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>条件 (AND)</span>
+          <span style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.conditionsAnd")}</span>
           <div style={{ display: "flex", gap: "4px" }}>
             <button onClick={addCondition} style={addBtnStyle}>
-              [+ 条件]
+              [{t("btn.addCondition")}]
             </button>
             <button onClick={addOrGroup} style={addBtnStyle}>
-              [+ OR]
+              [{t("btn.addOr")}]
             </button>
           </div>
         </div>
         <div style={{ padding: "0 8px" }}>
-          {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无条件（始终满足）</div>}
+          {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noCondMatch")}</div>}
           {conditions.map((item, idx) => (
             <div
               key={idx}
@@ -757,13 +754,13 @@ function EventEditor({
       {/* Effects */}
       <div style={sectionStyle("eff")}>
         <div style={sectionTitleStyle("eff")}>
-          <span style={{ color: SEC.eff.color, fontSize: "12px", fontWeight: "bold" }}>效果</span>
+          <span style={{ color: SEC.eff.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.effects")}</span>
           <button onClick={addEffect} style={addBtnStyle}>
-            [+ 效果]
+            [{t("btn.addEffect")}]
           </button>
         </div>
         <div style={{ padding: "0 8px" }}>
-          {effects.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无效果</div>}
+          {effects.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noEffects")}</div>}
           {effects.map((eff, idx) => (
             <div
               key={idx}
@@ -789,7 +786,7 @@ function EventEditor({
       <div style={sectionStyle("tpl")}>
         <div style={sectionTitleStyle("tpl")}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ color: SEC.tpl.color, fontSize: "12px", fontWeight: "bold" }}>输出模板</span>
+            <span style={{ color: SEC.tpl.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.outputTpl")}</span>
             <button
               onClick={() => setShowVarHelp((v) => !v)}
               style={{ ...btnBase, color: showVarHelp ? T.danger : T.textSub, fontSize: "11px" }}
@@ -803,7 +800,7 @@ function EventEditor({
             style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
             value={outputTemplate}
             onChange={(e) => setOutputTemplate(e.target.value)}
-            placeholder="例: {{self.name}} 踩到了陷阱！"
+            placeholder={t("ph.outputExample")}
           />
           {showVarHelp && (
             <EventTemplateVarHelp
@@ -854,7 +851,7 @@ function EffectFieldEditor({
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
           >
-            <option value="">选择</option>
+            <option value="">{t("opt.select")}</option>
             {(effect.type === EF.RESOURCE
               ? ctx.resourceKeys
               : effect.type === EF.ABILITY
@@ -871,8 +868,8 @@ function EffectFieldEditor({
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value={EffectOp.ADD}>增加</option>
-            <option value={EffectOp.SET}>设为</option>
+            <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
+            <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
           </select>
           <input
             style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
@@ -891,8 +888,8 @@ function EffectFieldEditor({
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value={EffectOp.ADD}>增加</option>
-            <option value={EffectOp.SET}>设为</option>
+            <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
+            <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
           </select>
           <input
             style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
@@ -911,15 +908,15 @@ function EffectFieldEditor({
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value={EffectOp.ADD}>添加</option>
-            <option value={EffectOp.REMOVE}>移除</option>
+            <option value={EffectOp.ADD}>{t("effOp.add")}</option>
+            <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
           </select>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
           >
-            <option value="">分类</option>
+            <option value="">{t("opt.category")}</option>
             {ctx.traitCategories.map((c) => (
               <option key={c.key} value={c.key}>
                 {c.label}
@@ -931,7 +928,7 @@ function EffectFieldEditor({
             value={effect.traitId ?? ""}
             onChange={(e) => update({ traitId: e.target.value })}
           >
-            <option value="">特质</option>
+            <option value="">{t("opt.selectTrait")}</option>
             {ctx.traitList
               .filter((t) => !effect.key || t.category === effect.key)
               .map((t) => (
@@ -951,15 +948,15 @@ function EffectFieldEditor({
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value={EffectOp.ADD}>给予</option>
-            <option value={EffectOp.REMOVE}>移除</option>
+            <option value={EffectOp.ADD}>{t("effOp.give")}</option>
+            <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
           </select>
           <select
             style={{ ...inputStyle, fontSize: "11px" }}
             value={effect.itemId ?? ""}
             onChange={(e) => update({ itemId: e.target.value })}
           >
-            <option value="">选择物品</option>
+            <option value="">{t("opt.selectItem")}</option>
             {ctx.itemList.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name}
@@ -983,7 +980,7 @@ function EffectFieldEditor({
             value={effect.slot ?? ""}
             onChange={(e) => update({ slot: e.target.value })}
           >
-            <option value="">槽位</option>
+            <option value="">{t("opt.slot")}</option>
             {ctx.clothingSlots.map((s) => (
               <option key={s} value={s}>
                 {SLOT_LABELS[s] ?? s}
@@ -995,10 +992,10 @@ function EffectFieldEditor({
             value={effect.state ?? ClothingState.WORN}
             onChange={(e) => update({ state: e.target.value })}
           >
-            <option value={ClothingState.WORN}>穿着</option>
-            <option value={ClothingState.HALF_WORN}>半穿</option>
-            <option value={ClothingState.OFF}>脱下</option>
-            <option value={ClothingState.EMPTY}>无衣物</option>
+            <option value={ClothingState.WORN}>{t("clothingState.worn")}</option>
+            <option value={ClothingState.HALF_WORN}>{t("clothingState.halfWorn")}</option>
+            <option value={ClothingState.OFF}>{t("clothingState.off")}</option>
+            <option value={ClothingState.EMPTY}>{t("clothingState.empty")}</option>
           </select>
         </>
       )}
@@ -1011,7 +1008,7 @@ function EffectFieldEditor({
             value={effect.mapId ?? ""}
             onChange={(e) => update({ mapId: e.target.value })}
           >
-            <option value="">选择地图</option>
+            <option value="">{t("opt.selectMap")}</option>
             {ctx.mapList.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -1024,7 +1021,7 @@ function EffectFieldEditor({
               value={effect.cellId ?? ""}
               onChange={(e) => update({ cellId: Number(e.target.value) })}
             >
-              <option value="">选择格子</option>
+              <option value="">{t("opt.selectCell")}</option>
               {(ctx.mapList.find((m) => m.id === effect.mapId)?.cells ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name || `#${c.id}`}
@@ -1042,7 +1039,7 @@ function EffectFieldEditor({
             style={{ ...inputStyle, width: "80px", fontSize: "11px" }}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
-            placeholder="经验key"
+            placeholder={t("ph.expKey")}
           />
           <input
             style={{ ...inputStyle, width: "40px", fontSize: "11px" }}
@@ -1061,7 +1058,7 @@ function EffectFieldEditor({
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
           >
-            <option value="">选择世界变量</option>
+            <option value="">{t("opt.selectWorldVar")}</option>
             {ctx.worldVarList.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name}
@@ -1073,8 +1070,8 @@ function EffectFieldEditor({
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
-            <option value={EffectOp.SET}>设为</option>
-            <option value={EffectOp.ADD}>增加</option>
+            <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
+            <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
           </select>
           <input
             style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
@@ -1138,32 +1135,32 @@ function EventTemplateVarHelp({
       }}
     >
       <div style={{ color: T.accent, fontSize: "11px", fontWeight: "bold", marginBottom: "4px" }}>
-        可用变量 {isNone ? "(目标范围为 none，无角色上下文，self/target 变量不可用)" : "(self = 当前评估的角色)"}
+        {isNone ? t("help.availVarsNone") : t("help.availVarsSelf")}
       </div>
 
-      {row("time", "当前游戏时间")}
-      {row("weather", "当前天气")}
-      {row("effects", "效果摘要")}
+      {row("time", t("help.varTime"))}
+      {row("weather", t("help.varWeather"))}
+      {row("effects", t("help.varEffects"))}
 
       {!isNone && (
         <>
-          {row("self", "当前角色名称 (= self.name)")}
-          {row("location", "当前角色所在地点")}
+          {row("self", t("help.varSelf"))}
+          {row("location", t("help.varLocation"))}
 
-          <div style={cat}>资源 (self.resource.X)</div>
+          <div style={cat}>{t("help.catResource")}</div>
           {resourceKeys.map((r) => row(`self.resource.${r.key}`, r.label))}
 
-          <div style={cat}>能力 (self.ability.X = 等级, self.abilityExp.X = 经验值)</div>
-          {abilityKeys.map((a) => row(`self.ability.${a.key}`, `${a.label} 等级`))}
+          <div style={cat}>{t("help.catAbility")}</div>
+          {abilityKeys.map((a) => row(`self.ability.${a.key}`, t("help.abilityLevel", { label: a.label })))}
 
-          <div style={cat}>基本属性 (self.basicInfo.X)</div>
+          <div style={cat}>{t("help.catBasicInfo")}</div>
           {basicInfoNumKeys.map((b) => row(`self.basicInfo.${b.key}`, b.label))}
 
-          <div style={cat}>服装 (self.clothing.X)</div>
-          {clothingSlots.map((sl) => row(`self.clothing.${sl}`, `${sl} 槽位衣物名`))}
+          <div style={cat}>{t("help.catClothing")}</div>
+          {clothingSlots.map((sl) => row(`self.clothing.${sl}`, t("help.slotClothing", { slot: sl })))}
 
-          <div style={cat}>特质 (self.trait.X)</div>
-          {traitCategories.map((t) => row(`self.trait.${t.key}`, `${t.label} 值`))}
+          <div style={cat}>{t("help.catTrait")}</div>
+          {traitCategories.map((tc) => row(`self.trait.${tc.key}`, t("help.traitValue", { label: tc.label })))}
         </>
       )}
     </div>

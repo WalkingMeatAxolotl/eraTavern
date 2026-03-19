@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import type { GameDefinitions, TraitGroup } from "../../types/game";
 import { createTraitGroup, saveTraitGroup, deleteTraitGroup } from "../../api/client";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 
@@ -37,7 +38,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
 
   const handleSave = async () => {
     if (!data.id || !data.name) {
-      setMessage("ID 和名称不能为空");
+      setMessage(t("val.idNameRequired"));
       return;
     }
     setSaving(true);
@@ -72,7 +73,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确定删除特质组 "${data.name}" ？`)) return;
+    if (!confirm(t("confirm.deleteTraitGroup", { name: data.name }))) return;
     setSaving(true);
     try {
       if (addonCrud) {
@@ -101,10 +102,10 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建特质组" : `编辑特质组: ${data.name}`} ==
+          == {isNew ? t("editor.newTraitGroup") : t("editor.editTraitGroup", { name: data.name })} ==
         </span>
         <button onClick={onBack} style={btnStyle(T.textSub)}>
-          [返回]
+          [{t("btn.return")}]
         </button>
       </div>
 
@@ -119,7 +120,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       </Row>
 
       {/* Name */}
-      <Row label="名称">
+      <Row label={t("field.name")}>
         <input
           value={data.name}
           onChange={(e) => setData((prev) => ({ ...prev, name: e.target.value }))}
@@ -129,7 +130,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       </Row>
 
       {/* Category */}
-      <Row label="分类">
+      <Row label={t("field.category")}>
         <select
           value={data.category}
           onChange={(e) => setData((prev) => ({ ...prev, category: e.target.value, traits: [] }))}
@@ -145,7 +146,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       </Row>
 
       {/* Exclusive */}
-      <Row label="互斥">
+      <Row label={t("field.exclusive")}>
         <label
           style={{
             display: "flex",
@@ -163,12 +164,12 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
             disabled={isReadOnly}
             style={{ cursor: isReadOnly ? "default" : "pointer" }}
           />
-          同组只能选一个
+          {t("trait.exclusiveHint")}
         </label>
       </Row>
 
       {/* Member traits */}
-      <div style={{ marginTop: "8px", marginBottom: "4px", color: T.textSub }}>成员特质:</div>
+      <div style={{ marginTop: "8px", marginBottom: "4px", color: T.textSub }}>{t("trait.memberTraits")}</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center", marginBottom: "8px" }}>
         {data.traits.map((tid) => {
           const def = definitions.traitDefs[tid];
@@ -239,16 +240,16 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       >
         {!isReadOnly && (
           <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
-            [{saving ? "提交中..." : "确定"}]
+            [{saving ? t("status.submitting") : t("btn.confirm")}]
           </button>
         )}
         {!isReadOnly && !isNew && (
           <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         <button onClick={onBack} style={btnStyle(T.textSub)}>
-          [返回]
+          [{t("btn.return")}]
         </button>
         {message && (
           <span

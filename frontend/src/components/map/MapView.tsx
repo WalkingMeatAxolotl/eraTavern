@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { GameMap, MapGrid } from "../../types/game";
+import { t } from "../../i18n/ui";
 
 interface MapViewProps {
   map: GameMap;
@@ -38,7 +39,7 @@ export default function MapView({ map, playerCellId, onCellClick }: MapViewProps
           key={`${rowIdx}-${colIdx}`}
           style={style}
           onClick={isMovable ? () => onCellClick(cell.cellId!) : undefined}
-          title={isPlayerHere ? "当前位置" : isMovable ? `移动到 ${cell.text}号` : undefined}
+          title={isPlayerHere ? t("map.currentPos") : isMovable ? t("map.moveTo", { cell: cell.text }) : undefined}
         >
           {cell.text || "\u00A0"}
         </span>

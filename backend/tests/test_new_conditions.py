@@ -73,9 +73,9 @@ class TestWeatherCondition:
 
     def test_weather_with_season(self, game_state):
         game_state.time.weather = "snowy"
-        game_state.time.season = 3  # 冬
+        game_state.time.season = 3  # winter
         char = game_state.characters["player"]
-        cond = [{"type": "time", "weather": "snowy", "season": "冬"}]
+        cond = [{"type": "time", "weather": "snowy", "season": "winter"}]
         assert _evaluate_conditions(cond, char, game_state, char_id="player")
 
     def test_no_weather_field_passes(self, game_state):

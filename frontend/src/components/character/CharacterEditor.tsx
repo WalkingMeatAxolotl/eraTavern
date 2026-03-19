@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import type { GameDefinitions, RawCharacterData } from "../../types/game";
 import { saveCharacterConfig, createCharacter, deleteCharacter, uploadAsset } from "../../api/client";
 import T from "../../theme";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import { HelpButton, HelpPanel } from "../shared/HelpToggle";
 
 interface Props {
@@ -12,23 +13,6 @@ interface Props {
   onBack: () => void;
 }
 
-const SLOT_LABELS: Record<string, string> = {
-  hat: "帽子",
-  upperBody: "上半身",
-  upperUnderwear: "上半身内衣",
-  lowerBody: "下半身",
-  lowerUnderwear: "下半身内衣",
-  hands: "手",
-  feet: "脚",
-  shoes: "鞋子",
-  mainHand: "主手",
-  offHand: "副手",
-  back: "背部",
-  accessory1: "装饰品1",
-  accessory2: "装饰品2",
-  accessory3: "装饰品3",
-};
-
 const GRADES = ["G", "F", "E", "D", "C", "B", "A", "S"];
 function expToGrade(exp: number): string {
   const level = Math.min(Math.floor(exp / 1000), GRADES.length - 1);
@@ -38,10 +22,10 @@ function expToGrade(exp: number): string {
 type CharTab = "basic" | "outfit" | "traits" | "items" | "llm";
 
 const TAB_LABELS: { key: CharTab; label: string }[] = [
-  { key: "basic", label: "基本" },
-  { key: "outfit", label: "服装" },
-  { key: "traits", label: "特质" },
-  { key: "items", label: "物品" },
+  { key: "basic", label: t("charEdit.basic") },
+  { key: "outfit", label: t("charEdit.outfit") },
+  { key: "traits", label: t("charEdit.traits") },
+  { key: "items", label: t("charEdit.items") },
   { key: "llm", label: "LLM" },
 ];
 
@@ -141,7 +125,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确定删除角色 "${data.id}" ？`)) return;
+    if (!confirm(t("confirm.deleteChar", { name: data.id }))) return;
     setSaving(true);
     try {
       await deleteCharacter(data.id);
@@ -157,10 +141,10 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建角色" : `编辑: ${data.id}`} ==
+          == {isNew ? t("editor.newChar") : t("editor.editNamed", { name: data.id })} ==
         </span>
         <button onClick={onBack} style={btnStyle(T.textSub)}>
-          [返回列表]
+          [{t("btn.back")}]
         </button>
       </div>
 
@@ -189,7 +173,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* === Tab: 基本 === */}
       {tab === "basic" && (
         <>
-          <Section title="基本设置">
+          <Section title={t("section.basicSettings")}>
             <Row label="ID">
               <input
                 value={data.id}
@@ -198,7 +182,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 style={inputStyle(isNew ? undefined : T.textDim)}
               />
             </Row>
-            <Row label="立绘">
+            <Row label={t("field.portrait")}>
               <PortraitPicker
                 portrait={data.portrait ?? null}
                 characterId={data.id}
@@ -207,7 +191,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             </Row>
           </Section>
 
-          <Section title="基本信息">
+          <Section title={t("section.basicInfo")}>
             {template.basicInfo.map((field) => (
               <Row key={field.key} label={field.label}>
                 <input
@@ -223,7 +207,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             ))}
           </Section>
 
-          <Section title="初始资源">
+          <Section title={t("section.initialResources")}>
             {template.resources.map((field) => {
               const res = data.resources?.[field.key] ?? { value: field.defaultValue, max: field.defaultMax };
               return (
@@ -260,8 +244,8 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             })}
           </Section>
 
-          <Section title="初始位置">
-            <Row label="地图">
+          <Section title={t("section.initialPosition")}>
+            <Row label={t("field.map")}>
               <select
                 value={posMapId}
                 onChange={(e) => {
@@ -277,7 +261,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 ))}
               </select>
             </Row>
-            <Row label="区域">
+            <Row label={t("field.area")}>
               <select
                 value={data.position.cellId}
                 onChange={(e) => updateField("position", { mapId: posMapId, cellId: Number(e.target.value) })}
@@ -292,8 +276,8 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             </Row>
           </Section>
 
-          <Section title="休息位置">
-            <Row label="地图">
+          <Section title={t("section.restPosition")}>
+            <Row label={t("field.map")}>
               <select
                 value={restMapId}
                 onChange={(e) => {
@@ -309,7 +293,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 ))}
               </select>
             </Row>
-            <Row label="区域">
+            <Row label={t("field.area")}>
               <select
                 value={data.restPosition?.cellId ?? data.position.cellId}
                 onChange={(e) => updateField("restPosition", { mapId: restMapId, cellId: Number(e.target.value) })}
@@ -328,7 +312,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
       {/* === Tab: 服装 === */}
       {tab === "outfit" && (
-        <Section title="服装预设">
+        <Section title={t("section.outfitPresets")}>
           {(() => {
             const outfits: Record<string, Record<string, string[]>> = data.outfits &&
             Object.keys(data.outfits).length > 0
@@ -342,7 +326,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 })();
             const outfitTypeDefs = definitions.outfitTypes ?? [];
             const outfitTypeIds = ["default", ...outfitTypeDefs.map((t) => t.id)];
-            const outfitNameMap: Record<string, string> = { default: "默认服装" };
+            const outfitNameMap: Record<string, string> = { default: t("label.defaultOutfit") };
             for (const t of outfitTypeDefs) outfitNameMap[t.id] = t.name;
             const activeKey = outfitTypeIds.includes(selectedOutfit) ? selectedOutfit : "default";
             const hasCustom = !!outfits[activeKey];
@@ -393,7 +377,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
                     {hasCustom ? (
                       <>
-                        <span style={{ color: T.textDim, fontSize: "12px" }}>已自定义</span>
+                        <span style={{ color: T.textDim, fontSize: "12px" }}>{t("ui.customized")}</span>
                         <button
                           style={{ ...btnStyle(T.danger), fontSize: "12px", padding: "2px 8px" }}
                           onClick={() => {
@@ -402,12 +386,12 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                             updateOutfits(next);
                           }}
                         >
-                          [恢复继承]
+                          [{t("btn.restoreInherit")}]
                         </button>
                       </>
                     ) : (
                       <>
-                        <span style={{ color: T.textDim, fontSize: "12px" }}>继承中</span>
+                        <span style={{ color: T.textDim, fontSize: "12px" }}>{t("ui.inherited")}</span>
                         <button
                           style={{ ...btnStyle(T.accent), fontSize: "12px", padding: "2px 8px" }}
                           onClick={() => {
@@ -418,7 +402,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                             updateOutfits({ ...outfits, [activeKey]: source });
                           }}
                         >
-                          [自定义]
+                          [{t("btn.customize")}]
                         </button>
                       </>
                     )}
@@ -441,7 +425,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                         }}
                       >
                         <span style={{ minWidth: "100px", color: T.textSub }}>{SLOT_LABELS[slot] ?? slot}:</span>
-                        {items.length === 0 && <span style={{ color: T.textDim }}>(空)</span>}
+                        {items.length === 0 && <span style={{ color: T.textDim }}>{t("empty.slot")}</span>}
                         {items.map((itemId, i) => {
                           const def = clothingDefs[itemId];
                           return (
@@ -476,7 +460,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                               });
                             }}
                           >
-                            <option value="">+添加</option>
+                            <option value="">{t("btn.addClothingItem")}</option>
                             {options
                               .filter((c) => !items.includes(c.id))
                               .map((c) => (
@@ -499,9 +483,9 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* === Tab: 特质 === */}
       {tab === "traits" && (
         <>
-          <Section title="初始特质">
+          <Section title={t("section.initialTraits")}>
             {template.traits.filter((f) => f.key !== "ability" && f.key !== "experience").length === 0 && (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>无特质类别定义</div>
+              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noTraitCats")}</div>
             )}
             {template.traits
               .filter((f) => f.key !== "ability" && f.key !== "experience")
@@ -625,7 +609,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                           }}
                           style={selectStyle()}
                         >
-                          <option value="">选择...</option>
+                          <option value="">{t("opt.selectEllipsis")}</option>
                           {curPendingGroupDef.traits
                             .filter((tid) => curPendingGroupDef.exclusive !== false || !ids.includes(tid))
                             .map((tid) => {
@@ -644,9 +628,9 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               })}
           </Section>
 
-          <Section title="初始能力">
+          <Section title={t("section.initialAbility")}>
             {(template.abilities ?? []).length === 0 ? (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>无能力定义 (在属性页面添加「能力」类别的特质)</div>
+              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noAbilityDefs")}</div>
             ) : (
               <div
                 style={{
@@ -680,7 +664,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             )}
           </Section>
 
-          <Section title="初始经验">
+          <Section title={t("section.initialExp")}>
             {(template.experiences ?? []).length > 0 ? (
               <div
                 style={{
@@ -707,7 +691,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                             ...ex,
                             count: nc,
                             first:
-                              nc > 0 ? (ex.first ?? { event: "未知", location: "未知", target: "未知" }) : undefined,
+                              nc > 0 ? (ex.first ?? { event: t("ui.unknown"), location: t("ui.unknown"), target: t("ui.unknown") }) : undefined,
                           };
                           updateField("experiences", ne);
                         }}
@@ -718,7 +702,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 })}
               </div>
             ) : (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>无经验定义 (在属性页面添加「经验」类别)</div>
+              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noExpDefs")}</div>
             )}
           </Section>
         </>
@@ -727,7 +711,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* === Tab: 物品 === */}
       {tab === "items" && (
         <>
-          <Section title="初始物品栏">
+          <Section title={t("section.initialInventory")}>
             {(data.inventory ?? []).map((entry, idx) => {
               const def = itemDefs[entry.itemId];
               const itemName = def?.name ?? entry.itemId;
@@ -773,7 +757,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   }}
                   style={selectStyle()}
                 >
-                  <option value="">+ 添加物品</option>
+                  <option value="">{t("btn.addItem")}</option>
                   {available.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -783,11 +767,11 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               );
             })()}
             {Object.keys(itemDefs).length === 0 && (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>无可用物品定义 (在物品页面添加)</div>
+              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noItemDefs")}</div>
             )}
           </Section>
 
-          <Section title="初始好感度">
+          <Section title={t("section.initialFav")}>
             {Object.entries(data.favorability ?? {}).map(([targetId, val]) => {
               const tc = allCharacters.find((c) => c.id === targetId);
               const tn = tc ? String(tc.basicInfo?.name || targetId) : targetId;
@@ -828,7 +812,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   }}
                   style={selectStyle()}
                 >
-                  <option value="">+ 添加好感度</option>
+                  <option value="">{t("btn.addFav")}</option>
                   {available.map((c) => (
                     <option key={c.id} value={c.id}>
                       {String(c.basicInfo?.name || c.id)}
@@ -838,7 +822,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               );
             })()}
             {!allCharacters.some((c) => c.id !== data.id) && (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>无其他角色</div>
+              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noOtherChars")}</div>
             )}
           </Section>
         </>
@@ -847,10 +831,10 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* === Tab: LLM === */}
       {tab === "llm" && (
         <SectionWithHelp
-          title="LLM 描述"
+          title={t("section.llmDesc")}
           showHelp={showLlmHelp}
           onToggleHelp={() => setShowLlmHelp((v) => !v)}
-          helpContent="不参与游戏逻辑，仅供 LLM 生成叙事时使用。用 {{player.llm.字段名}} 或 {{target.llm.字段名}} 在提示词中引用。"
+          helpContent={t("help.llmDesc")}
         >
           {Object.entries(data.llm ?? {}).map(([key, val]) => (
             <div key={key} style={{ marginBottom: "6px" }}>
@@ -866,7 +850,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                     llm[nk] = v;
                     updateField("llm", llm);
                   }}
-                  placeholder="字段名"
+                  placeholder={t("ph.fieldName")}
                   style={{ ...inputStyle(), width: "120px", fontSize: "12px" }}
                 />
                 <button
@@ -902,7 +886,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             }}
             style={{ ...inputStyle(), width: "auto", fontSize: "12px" }}
           >
-            <option value="">+ 添加字段</option>
+            <option value="">{t("btn.addField")}</option>
             {["personality", "appearance", "speech", "background"]
               .filter((k) => !(data.llm ?? {})[k])
               .map((k) => (
@@ -910,7 +894,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   {k}
                 </option>
               ))}
-            <option value={`custom-${Date.now()}`}>自定义...</option>
+            <option value={`custom-${Date.now()}`}>{t("ui.custom")}</option>
           </select>
         </SectionWithHelp>
       )}
@@ -926,15 +910,15 @@ export default function CharacterEditor({ character, definitions, allCharacters,
         }}
       >
         <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
-          [{saving ? "提交中..." : "确定"}]
+          [{saving ? t("status.submitting") : t("btn.confirm")}]
         </button>
         {!isNew && (
           <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         <button onClick={onBack} style={btnStyle(T.textSub)}>
-          [返回列表]
+          [{t("btn.back")}]
         </button>
         {message && (
           <span
@@ -1098,13 +1082,13 @@ function PortraitPicker({
           }}
         />
       )}
-      <span style={{ fontSize: "12px", color: T.textSub, minWidth: "60px" }}>{portrait ?? "无"}</span>
+      <span style={{ fontSize: "12px", color: T.textSub, minWidth: "60px" }}>{portrait ?? t("ui.none")}</span>
       <button onClick={() => fileRef.current?.click()} style={btnStyle(T.accent)}>
-        [选择图片]
+        [{t("btn.selectImage")}]
       </button>
       {portrait && (
         <button onClick={() => onChange(null)} style={btnStyle(T.danger)}>
-          [清除]
+          [{t("btn.clear")}]
         </button>
       )}
       <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />

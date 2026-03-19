@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import {
   fetchSaves,
   createSave,
@@ -102,7 +103,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
   };
 
   const handleLoad = async (slotId: string) => {
-    if (!confirm("当前未保存的进度将丢失，确定要读取存档吗？")) return;
+    if (!confirm(t("confirm.loadSave"))) return;
     setLoading(true);
     try {
       const res = await loadSave(slotId);
@@ -116,7 +117,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
   };
 
   const handleDelete = async (slotId: string) => {
-    if (!confirm("确定要删除此存档吗？")) return;
+    if (!confirm(t("confirm.deleteSave"))) return;
     await deleteSave(slotId);
     await refresh();
   };
@@ -145,7 +146,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
       {/* Save management */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 存档管理 ==</span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.saveSlots")} ==</span>
 
           {/* Create save */}
           {!creating ? (
@@ -161,10 +162,10 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                   cursor: saves.length >= MAX_SLOTS ? "not-allowed" : "pointer",
                 }}
               >
-                [创建存档]
+                [{t("btn.createSave")}]
               </button>
               {saves.length >= MAX_SLOTS && (
-                <span style={{ fontSize: "11px", color: T.textDim }}>已达上限 {MAX_SLOTS} 个</span>
+                <span style={{ fontSize: "11px", color: T.textDim }}>{t("save.maxSlots", { max: MAX_SLOTS })}</span>
               )}
             </div>
           ) : (
@@ -177,7 +178,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                   if (e.key === "Enter") handleCreate();
                   if (e.key === "Escape") setCreating(false);
                 }}
-                placeholder="存档名称"
+                placeholder={t("save.namePlaceholder")}
                 style={{ ...inputStyle, flex: 1, maxWidth: 200 }}
               />
               <button
@@ -185,7 +186,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                 disabled={loading || !newName.trim()}
                 style={{ ...btnBase, opacity: !newName.trim() ? 0.5 : 1 }}
               >
-                确定
+                {t("btn.confirm")}
               </button>
               <button
                 onClick={() => {
@@ -194,7 +195,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                 }}
                 style={btnBase}
               >
-                取消
+                {t("btn.cancel")}
               </button>
             </div>
           )}
@@ -231,10 +232,10 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                           style={{ ...inputStyle, flex: 1, maxWidth: 180 }}
                         />
                         <button onClick={() => handleRename(s.slotId)} style={btnBase}>
-                          确定
+                          {t("btn.confirm")}
                         </button>
                         <button onClick={() => setRenamingId(null)} style={btnBase}>
-                          取消
+                          {t("btn.cancel")}
                         </button>
                       </div>
                     ) : (
@@ -245,8 +246,8 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                           <span style={{ margin: "0 4px", color: T.textFaint }}>&middot;</span>
                           {s.timestamp?.replace("T", " ")}
                           {mismatch && (
-                            <span style={{ color: T.danger, marginLeft: "6px" }} title="存档的扩展版本与当前不一致">
-                              [版本不匹配]
+                            <span style={{ color: T.danger, marginLeft: "6px" }} title={t("save.versionMismatchTip")}>
+                              [{t("save.versionMismatch")}]
                             </span>
                           )}
                         </div>
@@ -258,7 +259,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                   {!isRenaming && (
                     <div style={{ display: "flex", gap: "4px", marginLeft: "8px", flexShrink: 0 }}>
                       <button onClick={() => handleLoad(s.slotId)} disabled={loading} style={btnBase}>
-                        [读取]
+                        [{t("btn.loadSave")}]
                       </button>
                       <button
                         onClick={() => {
@@ -267,20 +268,20 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                         }}
                         style={btnBase}
                       >
-                        [重命名]
+                        [{t("btn.renameSave")}]
                       </button>
                       <button
                         onClick={() => handleDelete(s.slotId)}
                         style={{ ...btnBase, color: T.danger, borderColor: `${T.danger}66` }}
                       >
-                        [删除]
+                        [{t("btn.delete")}]
                       </button>
                     </div>
                   )}
                 </div>
               );
             })}
-            {saves.length === 0 && <div style={{ color: T.textDim, fontSize: "11px", padding: "4px 0" }}>暂无存档</div>}
+            {saves.length === 0 && <div style={{ color: T.textDim, fontSize: "11px", padding: "4px 0" }}>{t("empty.saves")}</div>}
           </div>
         </>
       )}
@@ -288,9 +289,9 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
       {/* World-level LLM preset */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== LLM 预设 ==</span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.llmPresets")} ==</span>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>世界级预设</span>
+            <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>{t("world.worldPreset")}</span>
             <select
               style={{ ...inputStyle, width: "200px" }}
               value={worldPreset}
@@ -300,14 +301,14 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                 await updateWorldMeta(worldId, { llmPreset: val });
               }}
             >
-              <option value="">（跟随全局）</option>
+              <option value="">{t("llm.followGlobal")}</option>
               {presetList.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name || p.id}
                 </option>
               ))}
             </select>
-            <span style={{ fontSize: "11px", color: T.textDim }}>覆盖全局默认</span>
+            <span style={{ fontSize: "11px", color: T.textDim }}>{t("world.overrideGlobal")}</span>
           </div>
         </>
       )}
@@ -315,7 +316,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
       {/* Restart — destructive, placed last */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 危险操作 ==</span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.dangerZone")} ==</span>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
               onClick={onRestart}
@@ -326,9 +327,9 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                 borderColor: `${T.danger}66`,
               }}
             >
-              [重新开始游戏]
+              [{t("btn.restartGame")}]
             </button>
-            <span style={{ fontSize: "11px", color: T.textDim }}>重新加载所有数据，重置时间和角色状态</span>
+            <span style={{ fontSize: "11px", color: T.textDim }}>{t("save.restartHint")}</span>
           </div>
         </>
       )}

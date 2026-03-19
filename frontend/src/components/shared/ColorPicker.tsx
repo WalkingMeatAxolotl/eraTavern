@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 
 const STORAGE_KEY = "tavern_recent_colors";
 const MAX_RECENT = 10;
@@ -113,7 +114,7 @@ export default function ColorPicker({ value, onChange }: Props) {
           flexShrink: 0,
           position: "relative",
         }}
-        title="选择颜色"
+        title={t("ui.pickColor")}
       >
         <span
           style={{

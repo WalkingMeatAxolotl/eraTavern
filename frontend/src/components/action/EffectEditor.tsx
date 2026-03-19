@@ -5,23 +5,23 @@
  */
 import type { ActionEffect } from "../../types/game";
 import T from "../../theme";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EffType, EF, EffectOp, ClothingState } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import { SLOT_LABELS } from "../shared/ConditionEditor";
 import { inputStyle } from "../shared/styles";
 
 const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
-  { value: EffType.RESOURCE, label: "资源" },
-  { value: EffType.ABILITY, label: "能力(经验值)" },
-  { value: EffType.EXPERIENCE, label: "经历记录" },
-  { value: EffType.BASIC_INFO, label: "基本属性" },
-  { value: EffType.FAVORABILITY, label: "好感度" },
-  { value: EffType.TRAIT, label: "特质" },
-  { value: EffType.ITEM, label: "物品" },
-  { value: EffType.CLOTHING, label: "服装" },
-  { value: EffType.POSITION, label: "位置" },
-  { value: EffType.WORLD_VAR, label: "世界变量" },
-  { value: EffType.OUTFIT, label: "服装预设" },
+  { value: EffType.RESOURCE, label: t("eff.resource") },
+  { value: EffType.ABILITY, label: t("eff.ability") },
+  { value: EffType.EXPERIENCE, label: t("eff.experience") },
+  { value: EffType.BASIC_INFO, label: t("eff.basicInfo") },
+  { value: EffType.FAVORABILITY, label: t("eff.favorability") },
+  { value: EffType.TRAIT, label: t("eff.trait") },
+  { value: EffType.ITEM, label: t("eff.item") },
+  { value: EffType.CLOTHING, label: t("eff.clothing") },
+  { value: EffType.POSITION, label: t("eff.position") },
+  { value: EffType.WORLD_VAR, label: t("eff.worldVar") },
+  { value: EffType.OUTFIT, label: t("eff.outfit") },
 ];
 
 export interface EffectEditorProps {
@@ -76,7 +76,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 onChange={(e) => update({ key: e.target.value })}
                 disabled={disabled}
               >
-                <option value="">选择</option>
+                <option value="">{t("opt.select")}</option>
                 {(effect.type === EF.RESOURCE
                   ? resourceKeys
                   : effect.type === EF.ABILITY
@@ -94,8 +94,8 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 onChange={(e) => update({ op: e.target.value })}
                 disabled={disabled}
               >
-                <option value={EffectOp.ADD}>增加</option>
-                <option value={EffectOp.SET}>设为</option>
+                <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
+                <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
               </select>
               <button
                 type="button"
@@ -114,7 +114,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                   }
                 }}
                 disabled={disabled}
-                title="切换固定值/变量引用"
+                title={t("eff.toggleVarRef")}
               >
                 V
               </button>
@@ -126,7 +126,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                     onChange={(e) => update({ value: { ...varVal!, varId: e.target.value } as any })}
                     disabled={disabled}
                   >
-                    <option value="">选择变量</option>
+                    <option value="">{t("opt.selectVar")}</option>
                     {variableList.map((v) => (
                       <option key={v.id} value={v.id}>
                         {v.name}
@@ -180,7 +180,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
           >
-            <option value="">选择</option>
+            <option value="">{t("opt.select")}</option>
             {experienceKeys.map((k) => (
               <option key={k.key} value={k.key}>
                 {k.label}
@@ -200,28 +200,28 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
 
       {effect.type === EF.FAVORABILITY && (
         <>
-          <span style={{ color: T.textSub, fontSize: "11px" }}>源:</span>
+          <span style={{ color: T.textSub, fontSize: "11px" }}>{t("eff.favFrom")}</span>
           <select
             style={inputStyle}
             value={effect.favFrom ?? "{{targetId}}"}
             onChange={(e) => update({ favFrom: e.target.value })}
             disabled={disabled}
           >
-            <option value="self">执行者</option>
-            <option value="{{targetId}}">目标角色</option>
-            <option value="{{player}}">玩家</option>
+            <option value="self">{t("target.self")}</option>
+            <option value="{{targetId}}">{t("target.target")}</option>
+            <option value="{{player}}">{t("target.player")}</option>
           </select>
           <span style={{ color: T.textSub, fontSize: "11px" }}>→</span>
-          <span style={{ color: T.textSub, fontSize: "11px" }}>对象:</span>
+          <span style={{ color: T.textSub, fontSize: "11px" }}>{t("eff.favTo")}</span>
           <select
             style={inputStyle}
             value={effect.favTo ?? "self"}
             onChange={(e) => update({ favTo: e.target.value })}
             disabled={disabled}
           >
-            <option value="self">执行者</option>
-            <option value="{{targetId}}">目标角色</option>
-            <option value="{{player}}">玩家</option>
+            <option value="self">{t("target.self")}</option>
+            <option value="{{targetId}}">{t("target.target")}</option>
+            <option value="{{player}}">{t("target.player")}</option>
           </select>
           <select
             style={inputStyle}
@@ -229,8 +229,8 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
           >
-            <option value={EffectOp.ADD}>增加</option>
-            <option value={EffectOp.SET}>设为</option>
+            <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
+            <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
           </select>
           {(() => {
             const isVarMode = typeof effect.value === "object" && effect.value !== null;
@@ -251,7 +251,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                     else update({ value: { varId: variableList[0]?.id ?? "", multiply: 1 } as any });
                   }}
                   disabled={disabled}
-                  title="切换固定值/变量引用"
+                  title={t("eff.toggleVarRef")}
                 >
                   V
                 </button>
@@ -263,7 +263,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                       onChange={(e) => update({ value: { ...varVal!, varId: e.target.value } as any })}
                       disabled={disabled}
                     >
-                      <option value="">选择变量</option>
+                      <option value="">{t("opt.selectVar")}</option>
                       {variableList.map((v) => (
                         <option key={v.id} value={v.id}>
                           {v.name}
@@ -319,8 +319,8 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
           >
-            <option value={EffectOp.ADD}>添加</option>
-            <option value={EffectOp.REMOVE}>移除</option>
+            <option value={EffectOp.ADD}>{t("effOp.add")}</option>
+            <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
           </select>
           <select
             style={inputStyle}
@@ -328,7 +328,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
           >
-            <option value="">分类</option>
+            <option value="">{t("opt.category")}</option>
             {traitCategories.map((c) => (
               <option key={c.key} value={c.key}>
                 {c.label}
@@ -341,7 +341,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ traitId: e.target.value })}
             disabled={disabled}
           >
-            <option value="">特质</option>
+            <option value="">{t("cond.trait")}</option>
             {traitList
               .filter((t) => !effect.key || t.category === effect.key)
               .map((t) => (
@@ -361,8 +361,8 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
           >
-            <option value={EffectOp.ADD}>添加</option>
-            <option value={EffectOp.REMOVE}>移除</option>
+            <option value={EffectOp.ADD}>{t("effOp.add")}</option>
+            <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
           </select>
           <select
             style={inputStyle}
@@ -370,7 +370,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ itemId: e.target.value })}
             disabled={disabled}
           >
-            <option value="">选择物品</option>
+            <option value="">{t("opt.selectItem")}</option>
             {itemList.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name}
@@ -395,8 +395,8 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
           >
-            <option value={EffectOp.SET}>设置状态</option>
-            <option value={EffectOp.REMOVE}>脱下</option>
+            <option value={EffectOp.SET}>{t("effOp.setState")}</option>
+            <option value={EffectOp.REMOVE}>{t("effOp.undress")}</option>
           </select>
           <select
             style={inputStyle}
@@ -404,7 +404,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ slot: e.target.value })}
             disabled={disabled}
           >
-            <option value="">槽位</option>
+            <option value="">{t("opt.slot")}</option>
             {clothingSlots.map((s) => (
               <option key={s} value={s}>
                 {SLOT_LABELS[s] ?? s}
@@ -417,10 +417,10 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ state: e.target.value })}
             disabled={disabled}
           >
-            <option value={ClothingState.WORN}>穿着</option>
-            <option value={ClothingState.HALF_WORN}>半穿</option>
-            <option value={ClothingState.OFF}>脱下</option>
-            <option value={ClothingState.EMPTY}>无衣物</option>
+            <option value={ClothingState.WORN}>{t("clothingState.worn")}</option>
+            <option value={ClothingState.HALF_WORN}>{t("clothingState.halfWorn")}</option>
+            <option value={ClothingState.OFF}>{t("clothingState.off")}</option>
+            <option value={ClothingState.EMPTY}>{t("clothingState.empty")}</option>
           </select>
         </>
       )}
@@ -433,9 +433,9 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
           >
-            <option value={EffectOp.SWITCH}>切换预设</option>
-            <option value={EffectOp.ADD}>添加衣物</option>
-            <option value={EffectOp.REMOVE}>移除衣物</option>
+            <option value={EffectOp.SWITCH}>{t("effOp.switchPreset")}</option>
+            <option value={EffectOp.ADD}>{t("effOp.addClothing")}</option>
+            <option value={EffectOp.REMOVE}>{t("effOp.removeClothing")}</option>
           </select>
           {effect.op === EffectOp.SWITCH && (
             <select
@@ -444,7 +444,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
               onChange={(e) => update({ outfitKey: e.target.value })}
               disabled={disabled}
             >
-              <option value="">选择预设</option>
+              <option value="">{t("opt.selectPreset")}</option>
               {outfitTypes.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
@@ -460,7 +460,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 onChange={(e) => update({ outfitKey: e.target.value })}
                 disabled={disabled}
               >
-                <option value="">选择预设</option>
+                <option value="">{t("opt.selectPreset")}</option>
                 {outfitTypes.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -473,7 +473,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 onChange={(e) => update({ slot: e.target.value, itemId: undefined })}
                 disabled={disabled}
               >
-                <option value="">槽位</option>
+                <option value="">{t("opt.slot")}</option>
                 {clothingSlots.map((s) => (
                   <option key={s} value={s}>
                     {SLOT_LABELS[s] ?? s}
@@ -486,7 +486,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 onChange={(e) => update({ itemId: e.target.value })}
                 disabled={disabled}
               >
-                <option value="">选择服装</option>
+                <option value="">{t("opt.selectClothing")}</option>
                 {clothingList
                   .filter((c) => !effect.slot || (c.slots ?? [c.slot]).includes(effect.slot))
                   .map((c) => (
@@ -505,7 +505,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 onChange={(e) => update({ outfitKey: e.target.value || undefined })}
                 disabled={disabled}
               >
-                <option value="">任意预设</option>
+                <option value="">{t("opt.anyPreset")}</option>
                 {outfitTypes.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -518,7 +518,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 onChange={(e) => update({ slot: e.target.value || undefined })}
                 disabled={disabled}
               >
-                <option value="">任意槽位</option>
+                <option value="">{t("opt.anySlot")}</option>
                 {clothingSlots.map((s) => (
                   <option key={s} value={s}>
                     {SLOT_LABELS[s] ?? s}
@@ -541,7 +541,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 onChange={(e) => update({ mapId: e.target.value, cellId: undefined })}
                 disabled={disabled}
               >
-                <option value="">选择地图</option>
+                <option value="">{t("opt.selectMap")}</option>
                 {mapList.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
@@ -555,7 +555,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                   onChange={(e) => update({ cellId: e.target.value ? Number(e.target.value) : undefined })}
                   disabled={disabled}
                 >
-                  <option value="">选择格子</option>
+                  <option value="">{t("opt.selectCell")}</option>
                   {cellOptions.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name ?? `#${c.id}`}
@@ -575,7 +575,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
           >
-            <option value="">选择世界变量</option>
+            <option value="">{t("opt.selectWorldVar")}</option>
             {worldVarList.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name}
@@ -588,8 +588,8 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
           >
-            <option value={EffectOp.ADD}>增加</option>
-            <option value={EffectOp.SET}>设为</option>
+            <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
+            <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
           </select>
           <input
             type="number"

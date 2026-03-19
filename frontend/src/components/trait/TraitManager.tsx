@@ -1,5 +1,6 @@
 import T from "../../theme";
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { t } from "../../i18n/ui";
 import type { GameDefinitions, TraitDefinition, TraitGroup } from "../../types/game";
 import { fetchDefinitions, fetchTraitDefs, fetchTraitGroups } from "../../api/client";
 import TraitEditor from "./TraitEditor";
@@ -71,7 +72,7 @@ export default function TraitManager({
   };
 
   if (!definitions) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
   // Group editor view
@@ -228,14 +229,14 @@ function TraitList({
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       <style>{hoverStyles}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 属性列表 ==</span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.traitList")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
             <button className="tm-action-btn" onClick={onNewGroup} style={btnBase}>
-              [+ 新建特质组]
+              [{t("btn.newTraitGroup")}]
             </button>
             <button className="tm-action-btn" onClick={onNewTrait} style={btnBase}>
-              [+ 新建]
+              [{t("btn.newTrait")}]
             </button>
           </div>
         )}
@@ -245,7 +246,7 @@ function TraitList({
         {/* ── Ability section ── */}
         {abilityCats.length > 0 && (
           <>
-            <SectionDivider label="能力" />
+            <SectionDivider label={t("trait.sectionAbility")} />
             {abilityCats.map((cat) => renderCategory(cat))}
           </>
         )}
@@ -253,7 +254,7 @@ function TraitList({
         {/* ── Experience section ── */}
         {experienceCats.length > 0 && (
           <>
-            <SectionDivider label="经验" />
+            <SectionDivider label={t("trait.sectionExperience")} />
             {experienceCats.map((cat) => renderCategory(cat))}
           </>
         )}
@@ -261,7 +262,7 @@ function TraitList({
         {/* ── Trait section ── */}
         {traitCats.length > 0 && (
           <>
-            <SectionDivider label="特质" />
+            <SectionDivider label={t("trait.sectionTrait")} />
             {traitCats.map((cat) => renderCategory(cat))}
           </>
         )}
@@ -269,7 +270,7 @@ function TraitList({
         {/* Uncategorized */}
         {grouped["__other__"] && grouped["__other__"].length > 0 && (
           <CategorySection
-            label="未分类"
+            label={t("label.uncategorized")}
             traitCount={grouped["__other__"].length}
             groupCount={0}
             isCollapsed={collapsed["__other__"] ?? false}
@@ -323,7 +324,7 @@ function CategorySection({
     return new Set(g?.traits ?? []);
   }, [hoveredGroupId, groups]);
 
-  const countLabel = groupCount > 0 ? `${traitCount} + ${groupCount}组` : `${traitCount}`;
+  const countLabel = groupCount > 0 ? `${traitCount} + ${t("trait.groupCountLabel", { count: groupCount })}` : `${traitCount}`;
   return (
     <div>
       <button
@@ -378,7 +379,7 @@ function CategorySection({
                       transition: "background-color 0.1s, border-color 0.1s",
                     }}
                   >
-                    [收起组详情]
+                    [{t("trait.collapseGroups")}]
                   </button>
                 </div>
               ) : (
@@ -405,7 +406,7 @@ function CategorySection({
                       transition: "background-color 0.1s, border-color 0.1s",
                     }}
                   >
-                    [展开组详情]
+                    [{t("trait.expandGroups")}]
                   </button>
                 </div>
               )}

@@ -139,6 +139,30 @@ class EventScope:
 
 
 # ---------------------------------------------------------------------------
+# Seasons & days of week (enum values for time conditions)
+# ---------------------------------------------------------------------------
+class Season:
+    SPRING = "spring"
+    SUMMER = "summer"
+    AUTUMN = "autumn"
+    WINTER = "winter"
+
+    ALL = ["spring", "summer", "autumn", "winter"]
+
+
+class DayOfWeek:
+    MON = "mon"
+    TUE = "tue"
+    WED = "wed"
+    THU = "thu"
+    FRI = "fri"
+    SAT = "sat"
+    SUN = "sun"
+
+    ALL = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+
+# ---------------------------------------------------------------------------
 # Built-in action types
 # ---------------------------------------------------------------------------
 class ActionType:

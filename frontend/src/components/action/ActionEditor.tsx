@@ -9,6 +9,7 @@ import type {
 } from "../../types/game";
 import { createActionDef, saveActionDef, deleteActionDef, fetchLLMPresets } from "../../api/client";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import { TargetType } from "../../constants";
 import { EditorProvider } from "../shared/EditorContext";
 import type { EditorContextValue } from "../shared/EditorContext";
@@ -133,7 +134,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   const itemList = Object.values(itemDefs);
   const clothingList = Object.values(clothingDefs);
   const outfitTypes = [
-    { id: "default", name: "默认服装" },
+    { id: "default", name: t("label.defaultOutfit") },
     ...(definitions.outfitTypes ?? []).map((t) => ({ id: t.id, name: t.name })),
   ];
   const npcList = Object.values(characters ?? {}).filter((c) => !c.isPlayer);
@@ -174,7 +175,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
 
   // --- Outcome helpers ---
   const addOutcome = () => {
-    setOutcomes([...outcomes, { grade: "success", label: "成功", weight: 100, effects: [] }]);
+    setOutcomes([...outcomes, { grade: "success", label: t("outcome.defaultLabel"), weight: 100, effects: [] }]);
   };
   const removeOutcome = (idx: number) => {
     setOutcomes(outcomes.filter((_, i) => i !== idx));
@@ -187,7 +188,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
 
   const handleSave = async () => {
     if (!id.trim() || !name.trim()) {
-      setMessage("ID 和名称不能为空");
+      setMessage(t("val.idNameRequired"));
       return;
     }
     setSaving(true);
@@ -218,19 +219,19 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
         return;
       }
       const result = isNew ? await createActionDef(data) : await saveActionDef(action.id, data);
-      setMessage(result.success ? "已确定" : result.message);
+      setMessage(result.success ? t("status.saved") : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.saveFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确定要删除行动「${name || id}」吗？`)) return;
+    if (!confirm(t("confirm.deleteAction", { name: name || id }))) return;
     setSaving(true);
     try {
       if (addonCrud) {
@@ -242,7 +243,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       if (result.success) onBack();
       else setMessage(result.message);
     } catch (e) {
-      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
@@ -276,16 +277,16 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建行动" : "编辑行动"} ==
+          == {isNew ? t("editor.newAction") : t("editor.editAction")} ==
         </span>
-        {action.source && <span style={{ color: T.accent, fontSize: "12px" }}>来源: {action.source}</span>}
+        {action.source && <span style={{ color: T.accent, fontSize: "12px" }}>{t("field.source")}: {action.source}</span>}
       </div>
 
       {/* Basic info */}
       <div style={sectionStyle("basic")}>
         <div style={sectionTitleStyle("basic")}>
           <span className="ae-sec-title" style={{ color: SEC.basic.color, fontSize: "12px", fontWeight: "bold" }}>
-            基本信息
+            {t("section.basicInfo")}
           </span>
         </div>
         <div style={{ ...sectionContent, display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -295,7 +296,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
               <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={labelStyle}>名称</div>
+              <div style={labelStyle}>{t("field.name")}</div>
               <input
                 className="ae-input"
                 style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
@@ -305,7 +306,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
               />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={labelStyle}>分类</div>
+              <div style={labelStyle}>{t("field.category")}</div>
               <select
                 className="ae-input"
                 style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
@@ -320,7 +321,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                     {c}
                   </option>
                 ))}
-                <option value="__custom__">自定义...</option>
+                <option value="__custom__">{t("ui.custom")}</option>
               </select>
               {!categoryList.includes(category) && (
                 <input
@@ -329,14 +330,14 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   disabled={isReadOnly}
-                  placeholder="输入新分类"
+                  placeholder={t("ui.customInput")}
                 />
               )}
             </div>
           </div>
           <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
             <div>
-              <div style={labelStyle}>目标类型</div>
+              <div style={labelStyle}>{t("field.targetType")}</div>
               <select
                 className="ae-input"
                 style={inputStyle}
@@ -344,12 +345,12 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 onChange={(e) => setTargetType(e.target.value as ActionDefinition["targetType"])}
                 disabled={isReadOnly}
               >
-                <option value={TargetType.NONE}>无目标</option>
-                <option value={TargetType.NPC}>角色</option>
+                <option value={TargetType.NONE}>{t("ui.noTarget")}</option>
+                <option value={TargetType.NPC}>{t("ui.npc")}</option>
               </select>
             </div>
             <div>
-              <div style={labelStyle}>时间消耗(分)</div>
+              <div style={labelStyle}>{t("field.timeCost")}</div>
               <input
                 className="ae-input"
                 type="number"
@@ -376,11 +377,11 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 onChange={(e) => setTriggerLLM(e.target.checked)}
                 disabled={isReadOnly}
               />
-              <span style={{ fontSize: "12px" }}>触发LLM</span>
+              <span style={{ fontSize: "12px" }}>{t("field.triggerLlm")}</span>
             </label>
             {triggerLLM && (
               <div>
-                <div style={labelStyle}>LLM 预设</div>
+                <div style={labelStyle}>{t("field.llmPreset")}</div>
                 <select
                   className="ae-input"
                   style={{ ...inputStyle, width: "160px" }}
@@ -388,7 +389,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                   onChange={(e) => setLlmPreset(e.target.value)}
                   disabled={isReadOnly}
                 >
-                  <option value="">（跟随默认）</option>
+                  <option value="">{t("ui.followDefault")}</option>
                   {llmPresetList.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name || p.id}
@@ -405,13 +406,13 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       <div style={sectionStyle("weight")}>
         <div style={sectionTitleStyle("weight")}>
           <span className="ae-sec-title" style={{ color: SEC.weight.color, fontSize: "12px", fontWeight: "bold" }}>
-            NPC 权重
+            {t("field.npcWeight")}
           </span>
         </div>
         <div style={sectionContent}>
           <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
             <div>
-              <div style={labelStyle}>基础权重</div>
+              <div style={labelStyle}>{t("field.baseWeight")}</div>
               <input
                 className="ae-input"
                 type="number"
@@ -421,7 +422,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 onChange={(e) => setNpcWeight(Math.max(0, Number(e.target.value)))}
                 disabled={isReadOnly}
               />
-              <div style={{ color: T.textDim, fontSize: "11px", marginTop: "2px" }}>0 = NPC不会执行此行动</div>
+              <div style={{ color: T.textDim, fontSize: "11px", marginTop: "2px" }}>{t("npc.zeroWeight")}</div>
             </div>
             <div
               style={{
@@ -436,7 +437,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 modifiers={npcWeightModifiers}
                 onChange={setNpcWeightModifiers}
                 disabled={isReadOnly}
-                label="↳ 权重修正"
+                label={t("outcome.weightMod")}
               />
             </div>
           </div>
@@ -447,24 +448,24 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       <div style={sectionStyle("cond")}>
         <div style={sectionTitleStyle("cond")}>
           <span className="ae-sec-title" style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>
-            显示条件 (AND)
+            {t("section.showConditionsAnd")}
           </span>
           {!isReadOnly && (
             <div style={{ display: "flex", gap: "4px" }}>
               <button className="ae-add-btn" onClick={addCondition} style={addBtnStyle}>
-                [+ 条件]
+                [{t("btn.addCondition")}]
               </button>
               <button className="ae-add-btn" onClick={addOrGroup} style={addBtnStyle}>
-                [+ OR]
+                [{t("btn.addOr")}]
               </button>
               <button className="ae-add-btn" onClick={addAndGroup} style={addBtnStyle}>
-                [+ AND]
+                [{t("btn.addAnd")}]
               </button>
             </div>
           )}
         </div>
         <div style={sectionContent}>
-          {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无条件（始终显示）</div>}
+          {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noCondShow")}</div>}
           {conditions.map((item, idx) => (
             <div key={idx} style={listRowStyle(idx, idx === conditions.length - 1)}>
               <ConditionItemEditor
@@ -483,16 +484,16 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       <div style={sectionStyle("outcome")}>
         <div style={sectionTitleStyle("outcome")}>
           <span className="ae-sec-title" style={{ color: SEC.outcome.color, fontSize: "12px", fontWeight: "bold" }}>
-            结果分级
+            {t("section.outcomes")}
           </span>
           {!isReadOnly && (
             <button className="ae-add-btn" onClick={addOutcome} style={addBtnStyle}>
-              [+ 结果]
+              [{t("btn.addOutcome")}]
             </button>
           )}
         </div>
         <div style={sectionContent}>
-          {outcomes.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>无结果（固定成功）</div>}
+          {outcomes.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>{t("outcome.noOutcomes")}</div>}
           {outcomes.map((outcome, idx) => (
             <OutcomeEditor
               key={idx}
@@ -510,7 +511,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
         <div style={sectionTitleStyle("template")}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <span className="ae-sec-title" style={{ color: SEC.template.color, fontSize: "12px", fontWeight: "bold" }}>
-              行为模板
+              {t("npc.outputTpl")}
             </span>
             <button
               className="ae-btn"
@@ -557,7 +558,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
               cursor: saving ? "not-allowed" : "pointer",
             }}
           >
-            [确定]
+            [{t("btn.confirm")}]
           </button>
         )}
         {!isReadOnly && !isNew && (
@@ -572,7 +573,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
               cursor: saving ? "not-allowed" : "pointer",
             }}
           >
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         <button
@@ -580,10 +581,10 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           onClick={onBack}
           style={{ ...smallBtnStyle(T.textSub), padding: "5px 16px", fontSize: "13px" }}
         >
-          [返回列表]
+          [{t("btn.back")}]
         </button>
         {message && (
-          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

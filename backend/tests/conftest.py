@@ -18,7 +18,19 @@ class MockTime:
 
     @property
     def season_name(self):
+        return ["spring", "summer", "autumn", "winter"][self.season]
+
+    @property
+    def season_display(self):
         return ["春", "夏", "秋", "冬"][self.season]
+
+    @property
+    def weekday(self):
+        return ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][(self.day - 1) % 7]
+
+    @property
+    def weekday_display(self):
+        return ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][(self.day - 1) % 7]
 
     def advance(self, minutes: int):
         self.minute += minutes

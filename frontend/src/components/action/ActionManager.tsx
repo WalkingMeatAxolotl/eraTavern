@@ -2,6 +2,7 @@ import T from "../../theme";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ActionDefinition, GameDefinitions } from "../../types/game";
 import { fetchActionDefs, fetchDefinitions } from "../../api/client";
+import { t } from "../../i18n/ui";
 import ActionEditor from "./ActionEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 
@@ -76,7 +77,7 @@ export default function ActionManager({
   }, [filteredActions]);
 
   if (loading || !defs) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
   // Editor view
@@ -111,7 +112,7 @@ export default function ActionManager({
     >
       <style>{hoverStyles}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 行动列表 ==</span>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.actionList")} ==</span>
         {!readOnly && (
           <button
             className="am-action-btn"
@@ -126,7 +127,7 @@ export default function ActionManager({
               fontSize: "13px",
             }}
           >
-            [+ 新建行动]
+            [{t("btn.newAction")}]
           </button>
         )}
       </div>
@@ -135,7 +136,7 @@ export default function ActionManager({
         {catOrder.map((cat) => {
           const catActions = grouped[cat] || [];
           const catCollapsed = isCollapsed(cat);
-          const displayCat = cat === "__uncategorized__" ? "未分类" : cat;
+          const displayCat = cat === "__uncategorized__" ? t("label.uncategorized") : cat;
           return (
             <div key={cat}>
               <button
@@ -187,7 +188,7 @@ export default function ActionManager({
             </div>
           );
         })}
-        {actions.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>暂无行动</div>}
+        {actions.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>{t("empty.actions")}</div>}
       </div>
     </div>
   );

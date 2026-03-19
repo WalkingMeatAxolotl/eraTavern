@@ -1,5 +1,6 @@
 import T from "../../theme";
 import { useMemo, useState } from "react";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import type { GameAction, OutfitTarget } from "../../types/game";
 import { ActionType, TargetType } from "../../constants";
 
@@ -14,24 +15,7 @@ interface ActionMenuProps {
 }
 
 const ALL_TAB = "__all__";
-const BASIC_TAB = "基本";
-
-const SLOT_LABELS: Record<string, string> = {
-  hat: "帽子",
-  upperBody: "上半身",
-  upperUnderwear: "上半身内衣",
-  lowerBody: "下半身",
-  lowerUnderwear: "下半身内衣",
-  hands: "手",
-  feet: "脚",
-  shoes: "鞋子",
-  mainHand: "主手",
-  offHand: "副手",
-  back: "背部",
-  accessory1: "装饰品1",
-  accessory2: "装饰品2",
-  accessory3: "装饰品3",
-};
+const BASIC_TAB = t("label.basic");
 
 type MenuMode = "normal" | "moveDetail" | "lookDetail" | "outfitSelect" | "outfitDetail";
 
@@ -62,7 +46,7 @@ export default function ActionMenu({
     const g: Record<string, GameAction[]> = {};
     const configTabs: string[] = [];
     for (const a of configuredActions) {
-      const cat = a.category || "其他";
+      const cat = a.category || t("ui.other");
       if (!g[cat]) {
         g[cat] = [];
         configTabs.push(cat);
@@ -120,7 +104,7 @@ export default function ActionMenu({
           fontSize: "12px",
         }}
       >
-        [返回]
+        [{t("btn.return")}]
       </button>
     </div>
   );
@@ -137,7 +121,7 @@ export default function ActionMenu({
   if (menuMode === "moveDetail" && moveAction?.targets) {
     return (
       <div style={container}>
-        {subHeader("移动")}
+        {subHeader(t("menu.move"))}
         {moveAction.targets.map((target, idx) => (
           <button
             key={`${target.targetMap || ""}-${target.targetCell}`}
@@ -155,7 +139,7 @@ export default function ActionMenu({
           >
             [{idx + 1}] {target.targetMapName ? `${target.targetMapName} - ` : ""}
             {target.targetCellName}
-            <span style={{ color: T.textSub, fontSize: "11px" }}> ({target.travelTime ?? 10}分)</span>
+            <span style={{ color: T.textSub, fontSize: "11px" }}> ({target.travelTime ?? 10}{t("ui.minutes")})</span>
           </button>
         ))}
       </div>
@@ -166,7 +150,7 @@ export default function ActionMenu({
   if (menuMode === "lookDetail" && lookAction?.targets) {
     return (
       <div style={container}>
-        {subHeader("查看")}
+        {subHeader(t("menu.look"))}
         {lookAction.targets.map((target, idx) => (
           <button
             key={`look-${target.targetMap || ""}-${target.targetCell}`}
@@ -194,7 +178,7 @@ export default function ActionMenu({
   if (menuMode === "outfitSelect" && outfitAction?.outfitTargets) {
     return (
       <div style={container}>
-        {subHeader("换装")}
+        {subHeader(t("menu.changeOutfit"))}
         {outfitAction.outfitTargets.map((ot) => (
           <button
             key={ot.outfitId}
@@ -216,7 +200,7 @@ export default function ActionMenu({
             }}
           >
             {ot.outfitName}
-            {ot.current && <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "6px" }}>(当前)</span>}
+            {ot.current && <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "6px" }}>({t("ui.current")})</span>}
           </button>
         ))}
       </div>
@@ -251,7 +235,7 @@ export default function ActionMenu({
               fontSize: "12px",
             }}
           >
-            [返回]
+            [{t("btn.return")}]
           </button>
         </div>
         {slotsWithItems.map(([slot, items]) => (
@@ -283,7 +267,7 @@ export default function ActionMenu({
           </div>
         ))}
         {slotsWithItems.length === 0 && (
-          <div style={{ color: T.textDim, fontSize: "12px", marginBottom: "8px" }}>此预设没有服装内容</div>
+          <div style={{ color: T.textDim, fontSize: "12px", marginBottom: "8px" }}>{t("menu.emptyOutfit")}</div>
         )}
         <button
           onClick={() => {
@@ -301,7 +285,7 @@ export default function ActionMenu({
             marginTop: "6px",
           }}
         >
-          [确认换装] <span style={{ color: T.textSub, fontSize: "11px" }}>(5分)</span>
+          [{t("btn.confirmOutfit")}] <span style={{ color: T.textSub, fontSize: "11px" }}>(5{t("ui.minutes")})</span>
         </button>
       </div>
     );
@@ -319,14 +303,14 @@ export default function ActionMenu({
           fontWeight: "bold",
         }}
       >
-        == 行动 ==
+        == {t("menu.actions")} ==
       </div>
 
       {/* Category tabs */}
       {tabs.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", borderBottom: `1px solid ${T.border}`, marginBottom: "8px" }}>
           <button style={tabStyle(ALL_TAB)} onClick={() => setActiveTab(ALL_TAB)}>
-            [全部]
+            [{t("menu.all")}]
           </button>
           {tabs.map((tab) => (
             <button key={tab} style={tabStyle(tab)} onClick={() => setActiveTab(tab)}>
@@ -339,7 +323,7 @@ export default function ActionMenu({
       {/* Basic: move, look, outfit as entry buttons */}
       {showBasic && (
         <div style={{ marginBottom: "8px" }}>
-          {activeTab === ALL_TAB && <div style={{ color: T.textSub, marginBottom: "4px" }}>基本:</div>}
+          {activeTab === ALL_TAB && <div style={{ color: T.textSub, marginBottom: "4px" }}>{t("label.basic")}:</div>}
           {moveAction && (
             <button
               onClick={() => setMenuMode("moveDetail")}
@@ -351,8 +335,8 @@ export default function ActionMenu({
                 cursor: disabled ? "not-allowed" : "pointer",
               }}
             >
-              [移动...]
-              <span style={{ color: T.textSub, fontSize: "11px" }}> ({moveAction.targets?.length ?? 0}个目标)</span>
+              [{t("menu.moveEllipsis")}]
+              <span style={{ color: T.textSub, fontSize: "11px" }}> ({t("menu.moveTargets", { count: moveAction.targets?.length ?? 0 })})</span>
             </button>
           )}
           {lookAction && (
@@ -366,8 +350,8 @@ export default function ActionMenu({
                 cursor: disabled ? "not-allowed" : "pointer",
               }}
             >
-              [查看...]
-              <span style={{ color: T.textSub, fontSize: "11px" }}> ({lookAction.targets?.length ?? 0}个目标)</span>
+              [{t("menu.lookEllipsis")}]
+              <span style={{ color: T.textSub, fontSize: "11px" }}> ({t("menu.lookTargets", { count: lookAction.targets?.length ?? 0 })})</span>
             </button>
           )}
           {outfitAction && (
@@ -381,7 +365,7 @@ export default function ActionMenu({
                 cursor: disabled ? "not-allowed" : "pointer",
               }}
             >
-              [换装...]
+              [{t("menu.outfitEllipsis")}]
             </button>
           )}
         </div>
@@ -400,7 +384,7 @@ export default function ActionMenu({
               if (action.enabled === false && action.disabledReason) {
                 tooltip = action.disabledReason;
               } else if (needsNpc && !selectedNpcId) {
-                tooltip = "请先选择目标NPC";
+                tooltip = t("msg.selectTargetNpc");
               }
               return (
                 <button
@@ -429,7 +413,7 @@ export default function ActionMenu({
         );
       })}
 
-      {actions.length === 0 && <div style={{ color: T.textDim }}>无可用行动</div>}
+      {actions.length === 0 && <div style={{ color: T.textDim }}>{t("empty.noActions")}</div>}
     </div>
   );
 }

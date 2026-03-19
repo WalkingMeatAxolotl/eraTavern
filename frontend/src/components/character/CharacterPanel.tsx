@@ -1,4 +1,5 @@
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import type { CharacterState } from "../../types/game";
 
 export type DetailTab = "basic" | "ability" | "experience" | "inventory" | "social";
@@ -11,11 +12,11 @@ interface CharacterPanelProps {
 }
 
 const TAB_ITEMS: { key: DetailTab; label: string }[] = [
-  { key: "basic", label: "基本" },
-  { key: "ability", label: "能力" },
-  { key: "experience", label: "经验" },
-  { key: "inventory", label: "物品" },
-  { key: "social", label: "社交" },
+  { key: "basic", label: t("charPanel.basic") },
+  { key: "ability", label: t("charPanel.ability") },
+  { key: "experience", label: t("charPanel.experience") },
+  { key: "inventory", label: t("charPanel.inventory") },
+  { key: "social", label: t("charPanel.social") },
 ];
 
 export default function CharacterPanel({ character, activeTab, onTabChange, onClose }: CharacterPanelProps) {
@@ -59,13 +60,13 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
           }}
           onClick={onClose}
         >
-          [关闭详细▲]
+          [{t("btn.closeDetail")}]
         </button>
       </div>
 
       {activeTab === "basic" && (
         <>
-          <Section title="基本信息">
+          <Section title={t("section.basicInfo")}>
             {Object.entries(basicInfo).map(([key, field]) => (
               <div key={key}>
                 {field.label}: {field.value}
@@ -73,7 +74,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
             ))}
           </Section>
 
-          <Section title="资源">
+          <Section title={t("section.resources")}>
             {Object.entries(resources).map(([key, res]) => (
               <div key={key} style={{ marginBottom: "4px" }}>
                 <div>
@@ -101,19 +102,19 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
             ))}
           </Section>
 
-          <Section title="服装">
+          <Section title={t("section.clothing")}>
             {clothing.map((slot) => (
               <div key={slot.slot} style={{ color: slot.occluded ? T.textFaint : slot.itemId ? T.text : T.textDim }}>
                 {slot.slotLabel}:{" "}
                 {slot.occluded ? (
-                  "【？？？】"
+                  t("ui.occluded")
                 ) : slot.itemId ? (
                   <>
-                    [{slot.itemName}]{slot.state === "halfWorn" && <span style={{ color: T.danger }}> (半穿)</span>}
-                    {slot.state === "off" && <span style={{ color: T.danger }}> (脱下)</span>}
+                    [{slot.itemName}]{slot.state === "halfWorn" && <span style={{ color: T.danger }}> {t("ui.halfWorn")}</span>}
+                    {slot.state === "off" && <span style={{ color: T.danger }}> {t("ui.off")}</span>}
                   </>
                 ) : (
-                  "无"
+                  t("ui.none")
                 )}
               </div>
             ))}
@@ -123,15 +124,15 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
 
       {activeTab === "ability" && (
         <>
-          <Section title="特质">
+          <Section title={t("section.traits")}>
             {traits.map((trait) => (
               <div key={trait.key}>
-                {trait.label}: {trait.values.length > 0 ? trait.values.map((v) => `[${v}]`).join(" ") : "无"}
+                {trait.label}: {trait.values.length > 0 ? trait.values.map((v) => `[${v}]`).join(" ") : t("ui.none")}
               </div>
             ))}
           </Section>
 
-          <Section title="能力">
+          <Section title={t("section.abilities")}>
             <div
               style={{
                 display: "grid",
@@ -150,7 +151,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
       )}
 
       {activeTab === "experience" && (
-        <Section title="经验记录">
+        <Section title={t("section.expRecord")}>
           {experiences && experiences.length > 0 ? (
             experiences.filter((exp) => exp.count > 0).length > 0 ? (
               experiences
@@ -158,28 +159,28 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                 .map((exp) => (
                   <div key={exp.key} style={{ marginBottom: "6px" }}>
                     <div>
-                      {exp.label}: <span style={{ color: T.accent }}>{exp.count}</span>回
+                      {exp.label}: <span style={{ color: T.accent }}>{exp.count}</span>{t("ui.times")}
                     </div>
                     {exp.first && (
                       <div style={{ color: T.textSub, fontSize: "11px", paddingLeft: "12px" }}>
-                        第一次: {exp.first.time ?? ""}
-                        {exp.first.location && <>，在{exp.first.location}</>}
-                        {exp.first.target && <>，和 {exp.first.target}</>}
+                        {t("charPanel.firstTime", { time: exp.first.time ?? "" })}
+                        {exp.first.location && t("charPanel.atLocation", { location: exp.first.location })}
+                        {exp.first.target && t("charPanel.withTarget", { target: exp.first.target })}
                       </div>
                     )}
                   </div>
                 ))
             ) : (
-              <div style={{ color: T.textDim }}>无经验记录</div>
+              <div style={{ color: T.textDim }}>{t("empty.noExpRecord")}</div>
             )
           ) : (
-            <div style={{ color: T.textDim }}>无经验定义</div>
+            <div style={{ color: T.textDim }}>{t("empty.noExpDefShort")}</div>
           )}
         </Section>
       )}
 
       {activeTab === "inventory" && (
-        <Section title="物品栏">
+        <Section title={t("section.inventory")}>
           {inventory.length > 0 ? (
             inventory.map((inv) => (
               <div key={inv.itemId}>
@@ -188,13 +189,13 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
               </div>
             ))
           ) : (
-            <div style={{ color: T.textDim }}>无</div>
+            <div style={{ color: T.textDim }}>{t("ui.none")}</div>
           )}
         </Section>
       )}
 
       {activeTab === "social" && (
-        <Section title="社交关系">
+        <Section title={t("section.socialRel")}>
           {favorability && favorability.length > 0 ? (
             favorability.map((fav) => (
               <div key={fav.id} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
@@ -224,7 +225,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
               </div>
             ))
           ) : (
-            <div style={{ color: T.textDim }}>暂无社交关系</div>
+            <div style={{ color: T.textDim }}>{t("empty.social")}</div>
           )}
         </Section>
       )}

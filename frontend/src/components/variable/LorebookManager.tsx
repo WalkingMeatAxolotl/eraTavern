@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 import { LorebookMode } from "../../constants";
 import type { LorebookEntry } from "../../types/game";
 import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLorebookEntry } from "../../api/client";
@@ -96,11 +97,11 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
 
   const handleSave = async () => {
     if (!entry.id.trim()) {
-      setMessage("ID 不能为空");
+      setMessage(t("val.idRequired"));
       return;
     }
     if (!entry.name.trim()) {
-      setMessage("名称不能为空");
+      setMessage(t("val.nameRequired"));
       return;
     }
     setSaving(true);
@@ -108,34 +109,34 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
     try {
       const result = isNew ? await createLorebookEntry(entry) : await saveLorebookEntry(entry.id, entry);
       if (result.success) {
-        setMessage("已保存");
+        setMessage(t("msg.saved"));
         if (isNew) {
           setIsNew(false);
           setEditingId(entry.id);
         }
         loadEntries();
       } else {
-        setMessage(result.message || "保存失败");
+        setMessage(result.message || t("msg.saveFailed", { error: "" }));
       }
     } catch (e) {
-      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.saveFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确定要删除「${entry.name || entry.id}」吗？`)) return;
+    if (!confirm(t("confirm.deleteEntry", { name: entry.name || entry.id }))) return;
     setSaving(true);
     try {
       const result = await deleteLorebookEntry(entry.id);
       if (result.success) {
         handleBack();
       } else {
-        setMessage(result.message || "删除失败");
+        setMessage(result.message || t("msg.deleteFailed", { error: "" }));
       }
     } catch (e) {
-      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
@@ -157,15 +158,15 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
     return (
       <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 世界书 ==</span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.lorebook")} ==</span>
           <button onClick={handleNew} style={btnStyle(T.successDim)}>
-            [+ 新建条目]
+            [{t("btn.newEntry")}]
           </button>
         </div>
 
         {filteredEntries.length === 0 && (
           <div style={{ color: T.textDim, fontSize: "12px", padding: "8px 0" }}>
-            暂无条目。世界书条目可为 LLM 提供世界观、设定等背景信息。
+            {t("empty.lorebook")}
           </div>
         )}
 
@@ -195,12 +196,12 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
               <span>
                 <span style={{ fontWeight: "bold" }}>{e.name || e.id}</span>
                 <span style={{ color: T.textDim, marginLeft: "8px", fontSize: "11px" }}>
-                  {e.insertMode === LorebookMode.ALWAYS ? "[常驻]" : e.keywords.slice(0, 3).join(", ")}
+                  {e.insertMode === LorebookMode.ALWAYS ? `[${t("lorebook.alwaysOn")}]` : e.keywords.slice(0, 3).join(", ")}
                   {e.keywords.length > 3 ? "..." : ""}
                 </span>
               </span>
               <span style={{ color: T.textDim, fontSize: "11px" }}>
-                {e.enabled ? "" : "[禁用]"} P:{e.priority}
+                {e.enabled ? "" : `[${t("lorebook.disabled")}]`} P:{e.priority}
               </span>
             </button>
           ))}
@@ -216,16 +217,16 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建条目" : "编辑条目"} ==
+          == {isNew ? t("editor.newEntry") : t("editor.editEntry")} ==
         </span>
         <button onClick={handleBack} style={btnStyle(T.textSub)}>
-          [返回列表]
+          [{t("btn.back")}]
         </button>
       </div>
 
       {/* Basic info */}
       <div style={sectionStyle}>
-        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>基本信息</div>
+        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>{t("section.basicInfo")}</div>
         <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
           <div style={{ flex: 1 }}>
             <div style={labelStyle}>ID</div>
@@ -237,7 +238,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>名称</div>
+            <div style={labelStyle}>{t("field.name")}</div>
             <input
               style={inputStyle}
               value={entry.name}
@@ -247,7 +248,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
         </div>
         <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
           <div style={{ width: "120px" }}>
-            <div style={labelStyle}>优先级</div>
+            <div style={labelStyle}>{t("lorebook.priority")}</div>
             <input
               style={inputStyle}
               type="number"
@@ -256,14 +257,14 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
             />
           </div>
           <div style={{ width: "160px" }}>
-            <div style={labelStyle}>触发方式</div>
+            <div style={labelStyle}>{t("lorebook.triggerMode")}</div>
             <select
               style={inputStyle}
               value={entry.insertMode}
               onChange={(e) => setEntry((prev) => ({ ...prev, insertMode: e.target.value as "keyword" | "always" }))}
             >
-              <option value={LorebookMode.KEYWORD}>关键词触发</option>
-              <option value={LorebookMode.ALWAYS}>始终注入</option>
+              <option value={LorebookMode.KEYWORD}>{t("lorebook.keywordTrigger")}</option>
+              <option value={LorebookMode.ALWAYS}>{t("lorebook.alwaysInject")}</option>
             </select>
           </div>
           <div>
@@ -275,7 +276,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
                 onChange={(e) => setEntry((prev) => ({ ...prev, enabled: e.target.checked }))}
                 style={{ accentColor: T.accent }}
               />
-              启用
+              {t("field.enabled")}
             </label>
           </div>
         </div>
@@ -284,7 +285,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
       {/* Keywords */}
       {entry.insertMode === LorebookMode.KEYWORD && (
         <div style={sectionStyle}>
-          <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>关键词</div>
+          <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>{t("section.keywords")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>
             {entry.keywords.map((kw) => (
               <span
@@ -329,44 +330,44 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
                   addKeyword();
                 }
               }}
-              placeholder="输入关键词后回车"
+              placeholder={t("lorebook.keywordPlaceholder")}
             />
             <button onClick={addKeyword} style={btnStyle(T.textSub)}>
-              [添加]
+              [{t("effOp.add")}]
             </button>
           </div>
           <div style={{ color: T.textDim, fontSize: "11px", marginTop: "4px" }}>
-            当行动结果、角色名、地点名中包含任一关键词时，自动注入此条目内容
+            {t("lorebook.keywordHelp")}
           </div>
         </div>
       )}
 
       {/* Content */}
       <div style={sectionStyle}>
-        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>内容</div>
+        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>{t("section.content")}</div>
         <textarea
           style={{ ...inputStyle, minHeight: "150px", resize: "vertical", fontFamily: T.fontMono }}
           value={entry.content}
           onChange={(e) => setEntry((prev) => ({ ...prev, content: e.target.value }))}
-          placeholder="注入给 LLM 的设定文本..."
+          placeholder={t("lorebook.contentPlaceholder")}
         />
       </div>
 
       {/* Action buttons */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
         <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
-          [保存]
+          [{t("btn.save")}]
         </button>
         {!isNew && (
           <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         <button onClick={handleBack} style={btnStyle(T.textSub)}>
-          [返回列表]
+          [{t("btn.back")}]
         </button>
         {message && (
-          <span style={{ color: message === "已保存" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span style={{ color: message === t("msg.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

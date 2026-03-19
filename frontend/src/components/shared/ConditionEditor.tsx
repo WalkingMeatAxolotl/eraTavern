@@ -6,48 +6,33 @@
  */
 import type { ActionCondition, ConditionItem } from "../../types/game";
 import T from "../../theme";
-import { CondType, EF, CondTarget, TargetType, ClothingState } from "../../constants";
+import { CondType, EF, CondTarget, TargetType, ClothingState, Season, DayOfWeek } from "../../constants";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import { useEditorContext } from "./EditorContext";
 import type { MapInfo } from "./EditorContext";
 import { inputStyle, addBtnStyle, delBtnStyle, smallBtnStyle, listRowStyle } from "./styles";
 export { inputStyle, addBtnStyle, delBtnStyle, smallBtnStyle, rowBg, listRowStyle } from "./styles";
-
-export const SLOT_LABELS: Record<string, string> = {
-  hat: "帽子",
-  upperBody: "上半身",
-  upperUnderwear: "上半身内衣",
-  lowerBody: "下半身",
-  lowerUnderwear: "下半身内衣",
-  hands: "手",
-  feet: "脚",
-  shoes: "鞋子",
-  mainHand: "主手",
-  offHand: "副手",
-  back: "背部",
-  accessory1: "装饰品1",
-  accessory2: "装饰品2",
-  accessory3: "装饰品3",
-};
+export { SLOT_LABELS } from "../../i18n/ui";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const CONDITION_TYPES: { value: ActionCondition["type"]; label: string; group?: string }[] = [
-  { value: CondType.RESOURCE, label: "资源", group: "角色" },
-  { value: CondType.ABILITY, label: "能力", group: "角色" },
-  { value: CondType.BASIC_INFO, label: "基本属性", group: "角色" },
-  { value: CondType.FAVORABILITY, label: "好感度", group: "角色" },
-  { value: CondType.EXPERIENCE, label: "经验", group: "角色" },
-  { value: CondType.VARIABLE, label: "派生变量", group: "角色" },
-  { value: CondType.TRAIT, label: "特质", group: "角色" },
-  { value: CondType.HAS_ITEM, label: "持有物品", group: "角色" },
-  { value: CondType.OUTFIT, label: "服装预设", group: "角色" },
-  { value: CondType.CLOTHING, label: "服装状态", group: "角色" },
-  { value: CondType.LOCATION, label: "地点", group: "场景" },
-  { value: CondType.NPC_PRESENT, label: "NPC在场", group: "场景" },
-  { value: CondType.TIME, label: "时间", group: "全局" },
-  { value: CondType.WORLD_VAR, label: "世界变量", group: "全局" },
+  { value: CondType.RESOURCE, label: t("cond.resource"), group: t("cond.group.character") },
+  { value: CondType.ABILITY, label: t("cond.ability"), group: t("cond.group.character") },
+  { value: CondType.BASIC_INFO, label: t("cond.basicInfo"), group: t("cond.group.character") },
+  { value: CondType.FAVORABILITY, label: t("cond.favorability"), group: t("cond.group.character") },
+  { value: CondType.EXPERIENCE, label: t("cond.experience"), group: t("cond.group.character") },
+  { value: CondType.VARIABLE, label: t("cond.variable"), group: t("cond.group.character") },
+  { value: CondType.TRAIT, label: t("cond.trait"), group: t("cond.group.character") },
+  { value: CondType.HAS_ITEM, label: t("cond.hasItem"), group: t("cond.group.character") },
+  { value: CondType.OUTFIT, label: t("cond.outfit"), group: t("cond.group.character") },
+  { value: CondType.CLOTHING, label: t("cond.clothing"), group: t("cond.group.character") },
+  { value: CondType.LOCATION, label: t("cond.location"), group: t("cond.group.scene") },
+  { value: CondType.NPC_PRESENT, label: t("cond.npcPresent"), group: t("cond.group.scene") },
+  { value: CondType.TIME, label: t("cond.time"), group: t("cond.group.global") },
+  { value: CondType.WORLD_VAR, label: t("cond.worldVar"), group: t("cond.group.global") },
 ];
 
 const OPS = [">=", "<=", ">", "<", "==", "!="];
@@ -161,9 +146,9 @@ export function ConditionItemEditor({
             padding: "1px 4px",
             fontWeight: isNot ? "bold" : "normal",
           }}
-          title={isNot ? "取消取反" : "点击取反"}
+          title={isNot ? t("cond.negUntoggle") : t("cond.negToggle")}
         >
-          {isNot ? "非" : "是"}
+          {isNot ? t("cond.negFalse") : t("cond.negTrue")}
         </button>
       ) : (
         <span
@@ -174,7 +159,7 @@ export function ConditionItemEditor({
             fontWeight: isNot ? "bold" : "normal",
           }}
         >
-          {isNot ? "非" : "是"}
+          {isNot ? t("cond.negFalse") : t("cond.negTrue")}
         </span>
       )}
       <ConditionLeafEditor
@@ -210,7 +195,7 @@ function ConditionGroupEditor({
   disabled: boolean;
   depth: number;
 }) {
-  const label = type === "and" ? "AND 组" : "OR 组";
+  const label = type === "and" ? t("cond.andGroup") : t("cond.orGroup");
   const labelColor = type === "and" ? "#6ec6ff" : "#e9a045";
   const borderColor = [T.border, T.borderLight, T.textDim][depth % 3];
 
@@ -245,19 +230,19 @@ function ConditionGroupEditor({
           {!disabled && depth + 1 < MAX_UI_DEPTH && (
             <>
               <button className="ae-add-btn" onClick={addLeaf} style={addBtnStyle}>
-                [+条件]
+                [{t("cond.addCond")}]
               </button>
               <button className="ae-add-btn" onClick={addOr} style={addBtnStyle}>
-                [+OR]
+                [{t("cond.addOr")}]
               </button>
               <button className="ae-add-btn" onClick={addAnd} style={addBtnStyle}>
-                [+AND]
+                [{t("cond.addAnd")}]
               </button>
             </>
           )}
           {!disabled && depth + 1 >= MAX_UI_DEPTH && (
             <button className="ae-add-btn" onClick={addLeaf} style={addBtnStyle}>
-              [+条件]
+              [{t("cond.addCond")}]
             </button>
           )}
           {!disabled && (
@@ -371,8 +356,8 @@ function ConditionLeafEditor({
           onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })}
           disabled={disabled || actionTargetType !== TargetType.NPC}
         >
-          <option value={CondTarget.SELF}>执行者</option>
-          {actionTargetType === TargetType.NPC && <option value={CondTarget.TARGET}>目标角色</option>}
+          <option value={CondTarget.SELF}>{t("target.self")}</option>
+          {actionTargetType === TargetType.NPC && <option value={CondTarget.TARGET}>{t("target.target")}</option>}
         </select>
       )}
 
@@ -387,7 +372,7 @@ function ConditionLeafEditor({
           onChange={(e) => update({ npcId: e.target.value || undefined })}
           disabled={disabled}
         >
-          <option value="">任意NPC</option>
+          <option value="">{t("opt.anyNpc")}</option>
           {npcList.map((n) => (
             <option key={n.id} value={n.id}>
               {n.name}
@@ -404,7 +389,7 @@ function ConditionLeafEditor({
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
           >
-            <option value="">选择</option>
+            <option value="">{t("opt.select")}</option>
             {(effectiveType === EF.RESOURCE
               ? resourceKeys
               : effectiveType === EF.ABILITY
@@ -448,7 +433,7 @@ function ConditionLeafEditor({
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
           >
-            <option value="">分类</option>
+            <option value="">{t("opt.category")}</option>
             {traitCategories.map((c) => (
               <option key={c.key} value={c.key}>
                 {c.label}
@@ -461,7 +446,7 @@ function ConditionLeafEditor({
             onChange={(e) => update({ traitId: e.target.value })}
             disabled={disabled}
           >
-            <option value="">选择特质</option>
+            <option value="">{t("opt.selectTrait")}</option>
             {traitList
               .filter((t) => !condition.key || t.category === condition.key)
               .map((t) => (
@@ -493,8 +478,8 @@ function ConditionLeafEditor({
             }}
             disabled={disabled}
           >
-            <option value="self_to_target">执行者→目标角色</option>
-            <option value="target_to_self">目标角色→执行者</option>
+            <option value="self_to_target">{t("target.selfToTarget")}</option>
+            <option value="target_to_self">{t("target.targetToSelf")}</option>
           </select>
           <select
             style={inputStyle}
@@ -526,7 +511,7 @@ function ConditionLeafEditor({
             onChange={(e) => update({ itemId: e.target.value || undefined })}
             disabled={disabled}
           >
-            <option value="">任意物品</option>
+            <option value="">{t("opt.anyItem")}</option>
             {itemList.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name}
@@ -538,7 +523,7 @@ function ConditionLeafEditor({
             value={condition.tag ?? ""}
             onChange={(e) => update({ tag: e.target.value || undefined })}
             disabled={disabled}
-            placeholder="标签筛选"
+            placeholder={t("cond.tagFilter")}
           />
           <select
             style={{ ...inputStyle, width: "auto" }}
@@ -548,7 +533,7 @@ function ConditionLeafEditor({
             }
             disabled={disabled}
           >
-            <option value="">不限数量</option>
+            <option value="">{t("opt.anyQty")}</option>
             {OPS.map((op) => (
               <option key={op} value={op}>
                 {op}
@@ -574,7 +559,7 @@ function ConditionLeafEditor({
           onChange={(e) => update({ outfitId: e.target.value })}
           disabled={disabled}
         >
-          <option value="">选择预设</option>
+          <option value="">{t("opt.selectPreset")}</option>
           {outfitTypes.map((o) => (
             <option key={o.id} value={o.id}>
               {o.name}
@@ -596,7 +581,7 @@ function ConditionLeafEditor({
                 onChange={(e) => update({ slot: e.target.value, itemId: undefined })}
                 disabled={disabled}
               >
-                <option value="">选择槽位</option>
+                <option value="">{t("opt.selectSlot")}</option>
                 {clothingSlots.map((s) => (
                   <option key={s} value={s}>
                     {SLOT_LABELS[s] ?? s}
@@ -609,7 +594,7 @@ function ConditionLeafEditor({
                 onChange={(e) => update({ itemId: e.target.value || undefined })}
                 disabled={disabled}
               >
-                <option value="">任意衣物</option>
+                <option value="">{t("opt.anyClothing")}</option>
                 {slotClothing.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -622,11 +607,11 @@ function ConditionLeafEditor({
                 onChange={(e) => update({ state: e.target.value || undefined })}
                 disabled={disabled}
               >
-                <option value="">任意状态</option>
-                <option value={ClothingState.WORN}>穿着</option>
-                <option value={ClothingState.HALF_WORN}>半穿</option>
-                <option value={ClothingState.OFF}>脱下</option>
-                <option value={ClothingState.EMPTY}>无衣物</option>
+                <option value="">{t("opt.anyState")}</option>
+                <option value={ClothingState.WORN}>{t("clothingState.worn")}</option>
+                <option value={ClothingState.HALF_WORN}>{t("clothingState.halfWorn")}</option>
+                <option value={ClothingState.OFF}>{t("clothingState.off")}</option>
+                <option value={ClothingState.EMPTY}>{t("clothingState.empty")}</option>
               </select>
             </>
           );
@@ -642,7 +627,7 @@ function ConditionLeafEditor({
               update({ hourMin: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })
             }
             disabled={disabled}
-            placeholder="时起"
+            placeholder={t("label.timeFrom")}
             min={0}
             max={23}
           />
@@ -655,7 +640,7 @@ function ConditionLeafEditor({
               update({ hourMax: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })
             }
             disabled={disabled}
-            placeholder="时止"
+            placeholder={t("label.timeTo")}
             min={0}
             max={23}
           />
@@ -665,10 +650,15 @@ function ConditionLeafEditor({
             onChange={(e) => update({ season: e.target.value || undefined })}
             disabled={disabled}
           >
-            <option value="">任意季节</option>
-            {["春", "夏", "秋", "冬"].map((s) => (
-              <option key={s} value={s}>
-                {s}
+            <option value="">{t("opt.anySeason")}</option>
+            {([
+              [Season.SPRING, "season.spring"],
+              [Season.SUMMER, "season.summer"],
+              [Season.AUTUMN, "season.autumn"],
+              [Season.WINTER, "season.winter"],
+            ] as const).map(([val, key]) => (
+              <option key={val} value={val}>
+                {t(key)}
               </option>
             ))}
           </select>
@@ -678,10 +668,18 @@ function ConditionLeafEditor({
             onChange={(e) => update({ dayOfWeek: e.target.value || undefined })}
             disabled={disabled}
           >
-            <option value="">任意星期</option>
-            {["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map((d) => (
-              <option key={d} value={d}>
-                {d}
+            <option value="">{t("opt.anyWeekday")}</option>
+            {([
+              [DayOfWeek.MON, "day.mon"],
+              [DayOfWeek.TUE, "day.tue"],
+              [DayOfWeek.WED, "day.wed"],
+              [DayOfWeek.THU, "day.thu"],
+              [DayOfWeek.FRI, "day.fri"],
+              [DayOfWeek.SAT, "day.sat"],
+              [DayOfWeek.SUN, "day.sun"],
+            ] as const).map(([val, key]) => (
+              <option key={val} value={val}>
+                {t(key)}
               </option>
             ))}
           </select>
@@ -691,11 +689,11 @@ function ConditionLeafEditor({
             onChange={(e) => update({ weather: e.target.value || undefined })}
             disabled={disabled}
           >
-            <option value="">任意天气</option>
-            <option value="sunny">☀ 晴天</option>
-            <option value="cloudy">☁ 多云</option>
-            <option value="rainy">🌧 雨天</option>
-            <option value="snowy">❄ 雪天</option>
+            <option value="">{t("opt.anyWeather")}</option>
+            <option value="sunny">{t("weather.sunny")}</option>
+            <option value="cloudy">{t("weather.cloudy")}</option>
+            <option value="rainy">{t("weather.rainy")}</option>
+            <option value="snowy">{t("weather.snowy")}</option>
           </select>
         </>
       )}
@@ -712,8 +710,8 @@ function ConditionLeafEditor({
                   onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })}
                   disabled={disabled}
                 >
-                  <option value={CondTarget.SELF}>执行者→目标角色</option>
-                  <option value={CondTarget.TARGET}>目标角色→执行者</option>
+                  <option value={CondTarget.SELF}>{t("target.selfToTarget")}</option>
+                  <option value={CondTarget.TARGET}>{t("target.targetToSelf")}</option>
                 </select>
               )}
               <select
@@ -722,14 +720,14 @@ function ConditionLeafEditor({
                 onChange={(e) => update({ varId: e.target.value })}
                 disabled={disabled}
               >
-                <option value="">选择变量</option>
-                {variableList.length > 0 && <option disabled>── 单向 ──</option>}
+                <option value="">{t("opt.selectVar")}</option>
+                {variableList.length > 0 && <option disabled>{t("modGroup.uni")}</option>}
                 {variableList.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.name}
                   </option>
                 ))}
-                {actionTargetType === TargetType.NPC && (biVarList ?? []).length > 0 && <option disabled>── 双向 ──</option>}
+                {actionTargetType === TargetType.NPC && (biVarList ?? []).length > 0 && <option disabled>{t("modGroup.bi")}</option>}
                 {actionTargetType === TargetType.NPC &&
                   (biVarList ?? []).map((v) => (
                     <option key={v.id} value={v.id}>
@@ -768,7 +766,7 @@ function ConditionLeafEditor({
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
           >
-            <option value="">选择世界变量</option>
+            <option value="">{t("opt.selectWorldVar")}</option>
             {worldVarList.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name}
@@ -843,7 +841,7 @@ function LocationCondEditor({
         onChange={(e) => onChange({ mapId: e.target.value, cellIds: [], cellTags: [] })}
         disabled={disabled}
       >
-        <option value="">选择地图</option>
+        <option value="">{t("opt.selectMap")}</option>
         {mapList.map((m) => (
           <option key={m.id} value={m.id}>
             {m.name}

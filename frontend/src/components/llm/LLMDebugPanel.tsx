@@ -1,5 +1,6 @@
 import { useState } from "react";
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 
 export interface LLMDebugEntry {
   timestamp: string;
@@ -55,7 +56,7 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
       {!collapsed && (
         <div style={{ padding: "4px 0" }}>
           {entries.length === 0 && (
-            <div style={{ color: T.textDim, padding: "8px 10px" }}>暂无调用记录。执行 LLM 生成后会显示在这里。</div>
+            <div style={{ color: T.textDim, padding: "8px 10px" }}>{t("empty.debugLog")}</div>
           )}
           {entries.map((entry, idx) => {
             const isExpanded = expandedIdx === idx;
@@ -196,8 +197,8 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                     {/* Usage */}
                     {entry.usage && (
                       <div style={{ color: T.textDim }}>
-                        Tokens: 输入 {entry.usage.prompt_tokens ?? "?"} | 输出 {entry.usage.completion_tokens ?? "?"} |
-                        合计 {entry.usage.total_tokens ?? "?"}
+                        Tokens: {t("llm.tokenInput")} {entry.usage.prompt_tokens ?? "?"} | {t("llm.tokenOutput")} {entry.usage.completion_tokens ?? "?"} |
+                        {t("llm.tokenTotal")} {entry.usage.total_tokens ?? "?"}
                       </div>
                     )}
                   </div>

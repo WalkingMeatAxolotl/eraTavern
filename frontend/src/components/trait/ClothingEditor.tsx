@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { GameDefinitions, ClothingDefinition, TraitEffect } from "../../types/game";
 import { createClothingDef, saveClothingDef, deleteClothingDef } from "../../api/client";
 import T from "../../theme";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { HelpButton, HelpPanel, helpSub, helpP, helpEm } from "../shared/HelpToggle";
@@ -12,20 +13,20 @@ function buildTargetOptions(defs: GameDefinitions) {
   const groups: { label: string; options: { value: string; label: string }[] }[] = [];
   if (defs.template.resources.length > 0) {
     groups.push({
-      label: "资源",
-      options: defs.template.resources.map((r) => ({ value: r.key, label: `${r.label}(最大值)` })),
+      label: t("trait.groupResource"),
+      options: defs.template.resources.map((r) => ({ value: r.key, label: `${r.label}${t("trait.maxValueSuffix")}` })),
     });
   }
   if (defs.template.abilities.length > 0) {
     groups.push({
-      label: "能力",
+      label: t("trait.groupAbility"),
       options: defs.template.abilities.map((a) => ({ value: a.key, label: a.label })),
     });
   }
   const numberFields = defs.template.basicInfo.filter((f) => f.type === "number");
   if (numberFields.length > 0) {
     groups.push({
-      label: "基本信息",
+      label: t("trait.groupBasicInfo"),
       options: numberFields.map((f) => ({ value: f.key, label: f.label })),
     });
   }
@@ -46,23 +47,6 @@ interface Props {
   addonCrud?: AddonCrud;
 }
 
-const SLOT_LABELS: Record<string, string> = {
-  hat: "帽子",
-  upperBody: "上半身",
-  upperUnderwear: "上半身内衣",
-  lowerBody: "下半身",
-  lowerUnderwear: "下半身内衣",
-  hands: "手",
-  feet: "脚",
-  shoes: "鞋子",
-  mainHand: "主手",
-  offHand: "副手",
-  back: "背部",
-  accessory: "装饰品",
-  accessory1: "装饰品1",
-  accessory2: "装饰品2",
-  accessory3: "装饰品3",
-};
 
 
 export default function ClothingEditor({ clothing, definitions, isNew, onBack, addonCrud }: Props) {
@@ -107,7 +91,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
 
   const handleSave = async () => {
     if (!id.trim() || !name.trim()) {
-      setMessage("ID 和名称不能为空");
+      setMessage(t("val.idNameRequired"));
       return;
     }
     setSaving(true);
@@ -123,19 +107,19 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         return;
       }
       const result = isNew ? await createClothingDef(data) : await saveClothingDef(clothing.id, data);
-      setMessage(result.success ? "已确定" : result.message);
+      setMessage(result.success ? t("status.saved") : result.message);
       if (result.success && isNew) {
         setTimeout(onBack, 500);
       }
     } catch (e) {
-      setMessage(`保存失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.saveFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`确定要删除服装「${name || id}」吗？`)) return;
+    if (!confirm(t("confirm.deleteClothing", { name: name || id }))) return;
     setSaving(true);
     try {
       if (addonCrud) {
@@ -150,7 +134,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         setMessage(result.message);
       }
     } catch (e) {
-      setMessage(`删除失败: ${e instanceof Error ? e.message : e}`);
+      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
@@ -164,9 +148,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? "新建服装" : "编辑服装"} ==
+          == {isNew ? t("editor.newClothing") : t("editor.editClothing")} ==
         </span>
-        {clothing.source && <span style={{ color: T.accent, fontSize: "12px" }}>来源: {clothing.source}</span>}
+        {clothing.source && <span style={{ color: T.accent, fontSize: "12px" }}>{t("field.source")}: {clothing.source}</span>}
       </div>
 
       {/* Basic info */}
@@ -177,7 +161,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>名称</div>
+            <div style={labelStyle}>{t("field.name")}</div>
             <input
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
               value={name}
@@ -188,14 +172,14 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         </div>
         <div>
           <div style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "6px" }}>
-            装备槽位 {selectedSlots.length > 1 && <span style={{ color: T.accent }}>(多槽位)</span>}
+            {t("clothing.equipSlot")} {selectedSlots.length > 1 && <span style={{ color: T.accent }}>({t("clothing.multiSlot")})</span>}
             <HelpButton show={showSlotHelp} onToggle={() => setShowSlotHelp((v) => !v)} />
           </div>
           {showSlotHelp && (
             <HelpPanel>
-              <div style={helpP}>服装占据的角色槽位。大多数服装只有一个槽位。</div>
-              <div style={helpSub}>多槽位</div>
-              <div style={helpP}>如连体衣同时占据上半身+下半身，穿上后这些槽位都被占据。</div>
+              <div style={helpP}>{t("clothing.slotHelp")}</div>
+              <div style={helpSub}>{t("clothing.multiSlot")}</div>
+              <div style={helpP}>{t("clothing.multiSlotHelp")}</div>
             </HelpPanel>
           )}
           <div
@@ -285,16 +269,16 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             gap: "6px",
           }}
         >
-          遮挡槽位
+          {t("clothing.occlusionSlot")}
           <HelpButton show={showOcclusionHelp} onToggle={() => setShowOcclusionHelp((v) => !v)} />
         </div>
         {showOcclusionHelp && (
           <HelpPanel>
             <div style={helpP}>
-              穿着此服装时，遮挡的其他槽位将被隐藏（显示为 <span style={helpEm}>???</span>）。
+              {t("clothing.occlusionHelp1")}<span style={helpEm}>???</span>
             </div>
             <div style={helpP}>
-              仅 <span style={helpEm}>worn</span> 状态生效，halfWorn 不遮挡。不影响效果计算。
+              {t("clothing.occlusionHelp2")}<span style={helpEm}>worn</span>{t("clothing.occlusionHelp2b")}
             </div>
           </HelpPanel>
         )}
@@ -358,13 +342,13 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               ))}
             </select>
           )}
-          {occlusion.length === 0 && <span style={{ color: T.textDim }}>无</span>}
+          {occlusion.length === 0 && <span style={{ color: T.textDim }}>{t("ui.none")}</span>}
         </div>
       </div>
 
       {/* Effects */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>效果</div>
+        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>{t("section.effects")}</div>
         <div
           style={{
             borderLeft: `2px solid ${T.borderLight}`,
@@ -408,8 +392,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
                 disabled={isReadOnly}
               >
-                <option value={EffectDirection.INCREASE}>增加</option>
-                <option value={EffectDirection.DECREASE}>减少</option>
+                <option value={EffectDirection.INCREASE}>{t("trait.increase")}</option>
+                <option value={EffectDirection.DECREASE}>{t("trait.decrease")}</option>
               </select>
               <select
                 style={{ ...inputStyle, width: "70px" }}
@@ -417,8 +401,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
                 disabled={isReadOnly}
               >
-                <option value={MagnitudeType.FIXED}>固定值</option>
-                <option value={MagnitudeType.PERCENTAGE}>百分比</option>
+                <option value={MagnitudeType.FIXED}>{t("trait.fixedValue")}</option>
+                <option value={MagnitudeType.PERCENTAGE}>{t("trait.percentage")}</option>
               </select>
               <input
                 type="number"
@@ -463,7 +447,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 fontSize: "12px",
               }}
             >
-              [+ 添加效果]
+              [{t("btn.addEffect")}]
             </button>
           )}
         </div>
@@ -485,7 +469,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               fontSize: "13px",
             }}
           >
-            [确定]
+            [{t("btn.confirm")}]
           </button>
         )}
         {!isReadOnly && !isNew && (
@@ -502,7 +486,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               fontSize: "13px",
             }}
           >
-            [删除]
+            [{t("btn.delete")}]
           </button>
         )}
         <button
@@ -517,10 +501,10 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             fontSize: "13px",
           }}
         >
-          [返回列表]
+          [{t("btn.back")}]
         </button>
         {message && (
-          <span style={{ color: message === "已确定" ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
     </div>

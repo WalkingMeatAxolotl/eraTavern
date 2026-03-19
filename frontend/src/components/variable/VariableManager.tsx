@@ -1,5 +1,6 @@
 import T from "../../theme";
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { t } from "../../i18n/ui";
 import type { VariableDefinition, GameDefinitions } from "../../types/game";
 import {
   fetchVariableDefs,
@@ -154,7 +155,7 @@ export default function VariableManager({
   }, [visibleTags, tagGrouped]);
 
   if (loading) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>加载中...</div>;
+    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
   // Editor view
@@ -199,7 +200,7 @@ export default function VariableManager({
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 派生变量 ==</span>
+          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.derivedVars")} ==</span>
           {/* View toggle */}
           <div style={{ display: "flex", gap: "2px" }}>
             <button
@@ -207,14 +208,14 @@ export default function VariableManager({
               onClick={() => setViewMode("byTag")}
               style={viewTabStyle(viewMode === "byTag")}
             >
-              按标签
+              {t("btn.byTagView")}
             </button>
             <button
               className="vm-view-tab"
               onClick={() => setViewMode("byVar")}
               style={viewTabStyle(viewMode === "byVar")}
             >
-              按变量
+              {t("btn.byVarView")}
             </button>
           </div>
         </div>
@@ -234,7 +235,7 @@ export default function VariableManager({
                 transition: "background-color 0.1s, border-color 0.1s",
               }}
             >
-              [标签管理]
+              [{t("btn.tagMgmt")}]
             </button>
           )}
           {!readOnly && (
@@ -251,7 +252,7 @@ export default function VariableManager({
                 fontSize: "13px",
               }}
             >
-              [+ 新建变量]
+              [{t("btn.newVar")}]
             </button>
           )}
         </div>
@@ -268,7 +269,7 @@ export default function VariableManager({
             borderRadius: "3px",
           }}
         >
-          <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "6px" }}>标签池</div>
+          <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "6px" }}>{t("var.tagPool")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>
             {allTags.map((tag) => (
               <span
@@ -302,7 +303,7 @@ export default function VariableManager({
                 </button>
               </span>
             ))}
-            {allTags.length === 0 && <span style={{ color: T.textDim }}>无标签</span>}
+            {allTags.length === 0 && <span style={{ color: T.textDim }}>{t("empty.noTags")}</span>}
           </div>
           <div style={{ display: "flex", gap: "4px" }}>
             <input
@@ -323,7 +324,7 @@ export default function VariableManager({
                   handleAddTag();
                 }
               }}
-              placeholder="新标签名..."
+              placeholder={t("var.newTagPlaceholder")}
             />
             <button
               className="vm-action-btn"
@@ -356,11 +357,11 @@ export default function VariableManager({
           color: T.textDim,
         }}
       >
-        <span style={{ color: T.accent, fontWeight: "bold" }}>单向变量</span>
+        <span style={{ color: T.accent, fontWeight: "bold" }}>{t("section.uniVars")}</span>
         <div style={{ flex: 1, borderBottom: `1px solid ${T.border}` }} />
       </div>
       {singleVars.length === 0 ? (
-        <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>暂无单向变量</div>
+        <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>{t("empty.uniVars")}</div>
       ) : viewMode === "byTag" ? (
         <ByTagView
           visibleTags={visibleTags}
@@ -387,11 +388,11 @@ export default function VariableManager({
           color: T.textDim,
         }}
       >
-        <span style={{ color: T.accent, fontWeight: "bold" }}>双向变量</span>
+        <span style={{ color: T.accent, fontWeight: "bold" }}>{t("section.biVars")}</span>
         <div style={{ flex: 1, borderBottom: `1px solid ${T.border}` }} />
       </div>
       {biVars.length === 0 ? (
-        <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>暂无双向变量</div>
+        <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>{t("empty.biVars")}</div>
       ) : viewMode === "byTag" ? (
         <ByTagView
           visibleTags={visibleTags}
@@ -437,7 +438,7 @@ function ByTagView({
   const showVarTooltip = (v: VariableDefinition, el: HTMLElement) => {
     const tags = varTagsMap[v.id] ?? [];
     if (tags.length > 0) {
-      setTooltipInfo({ text: `标签: ${tags.join(", ")}`, el });
+      setTooltipInfo({ text: t("var.tagsLabel", { tags: tags.join(", ") }), el });
     }
   };
 
@@ -523,7 +524,7 @@ function ByTagView({
             <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
               {(collapsed["tag:__untagged__"] ?? false) ? "\u25B6" : "\u25BC"}
             </span>{" "}
-            未分类
+            {t("label.uncategorized")}
             <span style={{ color: T.textDim, marginLeft: "4px", fontSize: "11px" }}>
               ({untagged.filter((v) => !filterFn || filterFn(v)).length})
             </span>
@@ -578,7 +579,7 @@ function ByVarView({
   const showTagTooltip = (tag: string, el: HTMLElement) => {
     const names = tagVarNames[tag] ?? [];
     if (names.length > 0) {
-      const display = names.length > 8 ? names.slice(0, 8).join(", ") + ` ... 共${names.length}个` : names.join(", ");
+      const display = names.length > 8 ? names.slice(0, 8).join(", ") + ` ... ${t("var.totalCount", { count: names.length })}` : names.join(", ");
       setTooltipInfo({ text: display, el });
     }
   };
@@ -623,7 +624,7 @@ function ByVarView({
               color: T.textDim,
             }}
           >
-            <span>未分类</span>
+            <span>{t("label.uncategorized")}</span>
             <span style={{ flex: 1, height: "1px", backgroundColor: T.borderDim }} />
           </div>
           {groups.untagged.map((v) => (

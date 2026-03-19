@@ -5,15 +5,10 @@
  */
 import type { ValueModifier } from "../../types/game";
 import T from "../../theme";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EF, BonusMode, CondTarget, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import {
-  inputStyle,
-  addBtnStyle,
-  delBtnStyle,
-  listRowStyle,
-  SLOT_LABELS,
-} from "../shared/ConditionEditor";
+import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/ConditionEditor";
 
 export function ModifierListEditor({
   modifiers,
@@ -94,25 +89,25 @@ export function ModifierListEditor({
             disabled={disabled}
           >
             <option disabled style={{ fontWeight: "bold" }}>
-              ── 数值 ──
+              {t("modGroup.numeric")}
             </option>
-            <option value={EF.RESOURCE}>资源</option>
-            <option value={EF.BASIC_INFO}>基本属性</option>
-            <option value={EF.ABILITY}>能力</option>
-            <option value={EF.EXPERIENCE}>经验</option>
-            {targetType === TargetType.NPC && <option value={EF.FAVORABILITY}>好感度</option>}
-            <option value={EF.VARIABLE}>派生变量</option>
+            <option value={EF.RESOURCE}>{t("cond.resource")}</option>
+            <option value={EF.BASIC_INFO}>{t("cond.basicInfo")}</option>
+            <option value={EF.ABILITY}>{t("cond.ability")}</option>
+            <option value={EF.EXPERIENCE}>{t("cond.experience")}</option>
+            {targetType === TargetType.NPC && <option value={EF.FAVORABILITY}>{t("cond.favorability")}</option>}
+            <option value={EF.VARIABLE}>{t("cond.variable")}</option>
             <option disabled style={{ fontWeight: "bold" }}>
-              ── 状态 ──
+              {t("modGroup.state")}
             </option>
-            <option value={EF.TRAIT}>特质</option>
-            <option value={EF.HAS_ITEM}>持有物品</option>
-            <option value={EF.OUTFIT}>服装预设</option>
-            <option value={EF.CLOTHING}>服装状态</option>
+            <option value={EF.TRAIT}>{t("cond.trait")}</option>
+            <option value={EF.HAS_ITEM}>{t("cond.hasItem")}</option>
+            <option value={EF.OUTFIT}>{t("cond.outfit")}</option>
+            <option value={EF.CLOTHING}>{t("cond.clothing")}</option>
             <option disabled style={{ fontWeight: "bold" }}>
-              ── 全局 ──
+              {t("modGroup.global")}
             </option>
-            <option value={EF.WORLD_VAR}>世界变量</option>
+            <option value={EF.WORLD_VAR}>{t("cond.worldVar")}</option>
           </select>
 
           {![EF.FAVORABILITY, EF.WORLD_VAR].includes(mod.type) &&
@@ -123,8 +118,8 @@ export function ModifierListEditor({
                 onChange={(e) => update(idx, { ...mod, modTarget: e.target.value })}
                 disabled={disabled || targetType !== TargetType.NPC}
               >
-                <option value={CondTarget.SELF}>执行者</option>
-                {targetType === TargetType.NPC && <option value={CondTarget.TARGET}>目标角色</option>}
+                <option value={CondTarget.SELF}>{t("target.self")}</option>
+                {targetType === TargetType.NPC && <option value={CondTarget.TARGET}>{t("target.target")}</option>}
               </select>
             )}
 
@@ -142,7 +137,7 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
               <input
                 type="number"
                 style={{ ...inputStyle, width: "55px" }}
@@ -168,7 +163,7 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
               <input
                 type="number"
                 style={{ ...inputStyle, width: "55px" }}
@@ -194,7 +189,7 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
               <input
                 type="number"
                 style={{ ...inputStyle, width: "55px" }}
@@ -220,7 +215,7 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
               <input
                 type="number"
                 style={{ ...inputStyle, width: "55px" }}
@@ -254,7 +249,7 @@ export function ModifierListEditor({
                 onChange={(e) => update(idx, { ...mod, value: e.target.value })}
                 disabled={disabled}
               >
-                <option value="">任意值</option>
+                <option value="">{t("opt.anyValue")}</option>
                 {traitList
                   .filter((t) => t.category === mod.key)
                   .map((t) => (
@@ -273,7 +268,7 @@ export function ModifierListEditor({
               onChange={(e) => update(idx, { ...mod, itemId: e.target.value })}
               disabled={disabled}
             >
-              <option value="">选择物品</option>
+              <option value="">{t("opt.selectItem")}</option>
               {itemList.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.name}
@@ -304,7 +299,7 @@ export function ModifierListEditor({
               onChange={(e) => update(idx, { ...mod, slot: e.target.value })}
               disabled={disabled}
             >
-              <option value="">选择槽位</option>
+              <option value="">{t("opt.selectSlot")}</option>
               {clothingSlots.map((s) => (
                 <option key={s} value={s}>
                   {SLOT_LABELS[s] ?? s}
@@ -321,10 +316,10 @@ export function ModifierListEditor({
                 onChange={(e) => update(idx, { ...mod, source: e.target.value })}
                 disabled={disabled}
               >
-                <option value={CondTarget.TARGET}>目标角色→执行者</option>
-                <option value={CondTarget.SELF}>执行者→目标角色</option>
+                <option value={CondTarget.TARGET}>{t("target.targetToSelf")}</option>
+                <option value={CondTarget.SELF}>{t("target.selfToTarget")}</option>
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
               <input
                 type="number"
                 style={{ ...inputStyle, width: "55px" }}
@@ -348,8 +343,8 @@ export function ModifierListEditor({
                       onChange={(e) => update(idx, { ...mod, modTarget: e.target.value })}
                       disabled={disabled}
                     >
-                      <option value={CondTarget.SELF}>执行者→目标角色</option>
-                      <option value={CondTarget.TARGET}>目标角色→执行者</option>
+                      <option value={CondTarget.SELF}>{t("target.selfToTarget")}</option>
+                      <option value={CondTarget.TARGET}>{t("target.targetToSelf")}</option>
                     </select>
                   )}
                   <select
@@ -358,14 +353,14 @@ export function ModifierListEditor({
                     onChange={(e) => update(idx, { ...mod, varId: e.target.value })}
                     disabled={disabled}
                   >
-                    <option value="">选择变量</option>
-                    {variableList.length > 0 && <option disabled>── 单向 ──</option>}
+                    <option value="">{t("opt.selectVar")}</option>
+                    {variableList.length > 0 && <option disabled>{t("modGroup.uni")}</option>}
                     {variableList.map((v) => (
                       <option key={v.id} value={v.id}>
                         {v.name}
                       </option>
                     ))}
-                    {targetType === TargetType.NPC && (biVarList ?? []).length > 0 && <option disabled>── 双向 ──</option>}
+                    {targetType === TargetType.NPC && (biVarList ?? []).length > 0 && <option disabled>{t("modGroup.bi")}</option>}
                     {targetType === TargetType.NPC &&
                       (biVarList ?? []).map((v) => (
                         <option key={v.id} value={v.id}>
@@ -373,7 +368,7 @@ export function ModifierListEditor({
                         </option>
                       ))}
                   </select>
-                  <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
+                  <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
                   <input
                     type="number"
                     style={{ ...inputStyle, width: "55px" }}
@@ -394,14 +389,14 @@ export function ModifierListEditor({
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })}
                 disabled={disabled}
               >
-                <option value="">选择世界变量</option>
+                <option value="">{t("opt.selectWorldVar")}</option>
                 {worldVarList.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.name}
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>每</span>
+              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
               <input
                 type="number"
                 style={{ ...inputStyle, width: "55px" }}

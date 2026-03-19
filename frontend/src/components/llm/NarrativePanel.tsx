@@ -1,5 +1,6 @@
 import T from "../../theme";
 import { useEffect, useRef, useCallback } from "react";
+import { t } from "../../i18n/ui";
 import type { NarrativeEntry } from "../../types/game";
 import type { LLMDebugEntry } from "./LLMDebugPanel";
 
@@ -88,13 +89,13 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
         const contentType = resp.headers.get("content-type") || "";
         if (!contentType.includes("text/event-stream")) {
           const data = await resp.json();
-          updateLLM(idx, { error: data.message || data.error || "生成失败", status: "error" });
+          updateLLM(idx, { error: data.message || data.error || t("llm.generateFailed"), status: "error" });
           return;
         }
 
         const reader = resp.body?.getReader();
         if (!reader) {
-          updateLLM(idx, { error: "无法读取响应流", status: "error" });
+          updateLLM(idx, { error: t("llm.cannotReadStream"), status: "error" });
           return;
         }
 
@@ -141,9 +142,9 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
                   }
                   return;
                 } else if (eventType === "llm_error") {
-                  updateLLM(idx, { error: data.detail || data.error || "生成失败", status: "error" });
+                  updateLLM(idx, { error: data.detail || data.error || t("llm.generateFailed"), status: "error" });
                   if (onDebugEntry) {
-                    onDebugEntry({ ...debugEntry, error: data.detail || data.error || "生成失败" } as LLMDebugEntry);
+                    onDebugEntry({ ...debugEntry, error: data.detail || data.error || t("llm.generateFailed") } as LLMDebugEntry);
                   }
                   return;
                 }
@@ -164,7 +165,7 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
         }
       } catch (e) {
         if (controller.signal.aborted) return;
-        updateLLM(idx, { error: e instanceof Error ? e.message : "生成失败", status: "error" });
+        updateLLM(idx, { error: e instanceof Error ? e.message : t("llm.generateFailed"), status: "error" });
       }
     },
     [entries, updateLLM],
@@ -207,7 +208,7 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
         }}
       >
         {entries.length === 0 ? (
-          <div style={{ color: T.textDim }}>暂无消息</div>
+          <div style={{ color: T.textDim }}>{t("empty.messages")}</div>
         ) : (
           entries.map((entry, idx) => {
             const llm = llmStates[idx] || { text: "", status: "idle", error: "" };
@@ -238,7 +239,7 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
                         fontSize: "12px",
                       }}
                     >
-                      [LLM 生成]
+                      [{t("llm.btnGenerate")}]
                     </button>
                   </div>
                 )}
@@ -265,7 +266,7 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
                           animation: "llm-pulse 1s ease-in-out infinite",
                         }}
                       />
-                      [LLM 生成中]
+                      [{t("llm.generating")}]
                     </div>
                     {llm.text && (
                       <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
@@ -286,7 +287,7 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
                         marginBottom: "4px",
                       }}
                     >
-                      <span style={{ color: T.accent, fontSize: "11px" }}>[LLM 叙事]</span>
+                      <span style={{ color: T.accent, fontSize: "11px" }}>[{t("llm.narrative")}]</span>
                       {isLatest && (
                         <button
                           onClick={() => startGeneration(idx)}
@@ -300,7 +301,7 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
                             fontSize: "11px",
                           }}
                         >
-                          [重新生成]
+                          [{t("llm.btnRegenerate")}]
                         </button>
                       )}
                     </div>
@@ -311,7 +312,7 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
                 {llm.status === "error" && (
                   <div style={{ marginTop: "8px", borderTop: `1px solid ${T.border}`, paddingTop: "8px" }}>
                     <div style={{ color: T.danger, fontSize: "12px", marginBottom: "4px" }}>
-                      {llm.error || "LLM 生成失败"}
+                      {llm.error || t("llm.generateError")}
                     </div>
                     {isLatest && (
                       <button
@@ -326,7 +327,7 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
                           fontSize: "11px",
                         }}
                       >
-                        [重试]
+                        [{t("llm.btnRetry")}]
                       </button>
                     )}
                   </div>

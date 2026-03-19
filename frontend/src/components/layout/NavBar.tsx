@@ -1,4 +1,5 @@
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 
 type NavPage =
   | "characters"
@@ -28,21 +29,21 @@ interface NavBarProps {
 type NavItem = { key: NavPage; label: string };
 
 const worldTabs: NavItem[] = [
-  { key: "characters", label: "人物" },
-  { key: "traits", label: "属性" },
-  { key: "clothing", label: "服装" },
-  { key: "items", label: "物品" },
-  { key: "actions", label: "行动" },
-  { key: "variables", label: "变量" },
-  { key: "events", label: "事件" },
-  { key: "lorebook", label: "世界书" },
-  { key: "maps", label: "地图" },
-  { key: "settings", label: "世界设置" },
+  { key: "characters", label: t("nav.characters") },
+  { key: "traits", label: t("nav.traits") },
+  { key: "clothing", label: t("nav.clothing") },
+  { key: "items", label: t("nav.items") },
+  { key: "actions", label: t("nav.actions") },
+  { key: "variables", label: t("nav.variables") },
+  { key: "events", label: t("nav.events") },
+  { key: "lorebook", label: t("nav.lorebook") },
+  { key: "maps", label: t("nav.maps") },
+  { key: "settings", label: t("nav.settings") },
 ];
 
 const globalTabs: NavItem[] = [
-  { key: "llm", label: "LLM设置" },
-  { key: "system", label: "系统设置" },
+  { key: "llm", label: t("nav.llm") },
+  { key: "system", label: t("nav.system") },
 ];
 
 export default function NavBar({
@@ -105,7 +106,7 @@ export default function NavBar({
         {/* Left: world toggle + world name + separator + nav tabs */}
         <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
           <button style={sideToggleStyle(leftOpen)} onClick={onToggleLeft}>
-            [世界]
+            [{t("btn.world")}]
           </button>
           {worldName && (
             <span
@@ -147,7 +148,7 @@ export default function NavBar({
           ))}
           <span style={{ color: T.borderDim, margin: "0 4px" }}>|</span>
           <button style={sideToggleStyle(rightOpen)} onClick={onToggleRight}>
-            [扩展]
+            [{t("btn.addon")}]
           </button>
         </div>
       </div>

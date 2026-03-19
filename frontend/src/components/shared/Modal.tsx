@@ -1,4 +1,5 @@
 import T from "../../theme";
+import { t } from "../../i18n/ui";
 
 export function modalBtnStyle(bg: string, color: string): React.CSSProperties {
   return {
@@ -68,7 +69,7 @@ export function ConfirmModal({
       <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>{message}</div>
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
         <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>
-          取消
+          {t("btn.modalCancel")}
         </button>
         <button onClick={onConfirm} style={modalBtnStyle(danger ? T.dangerBg : T.bg2, danger ? T.danger : T.success)}>
           {confirmLabel}

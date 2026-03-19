@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { t } from "../../i18n/ui";
 import type { AddonInfo } from "../../types/game";
 import {
   fetchAddons,
@@ -103,9 +104,10 @@ function ForkModal({
   };
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>启用 Add-on</div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{t("addon.enableTitle")}</div>
       <div style={{ color: T.text, fontSize: "12px" }}>
-        首次在此世界启用 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>，选择源版本：
+        {t("addon.enableIntroPre")} <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>
+        {t("addon.enableIntroPost")}
       </div>
       {/* Version selector */}
       <div style={{ borderLeft: `2px solid ${T.accent}`, paddingLeft: "10px" }}>
@@ -134,22 +136,23 @@ function ForkModal({
         onClick={() => onChoice(true, selectedVersion)}
         style={{ ...choiceBtn, backgroundColor: T.bg3, color: T.success, border: `1px solid ${T.successDim}` }}
       >
-        <div style={{ fontWeight: "bold", marginBottom: "4px" }}>创建世界专属分支</div>
+        <div style={{ fontWeight: "bold", marginBottom: "4px" }}>{t("addon.createFork")}</div>
         <div style={{ color: T.successDim, fontSize: "11px" }}>
-          复制为{" "}
+          {t("addon.forkDescPre")}{" "}
           <span style={{ color: T.success }}>
             v{selectedVersion}-{worldId}
           </span>
-          ，修改不影响其他世界
+          {t("addon.forkDescPost")}
         </div>
       </button>
       <button
         onClick={() => onChoice(false, selectedVersion)}
         style={{ ...choiceBtn, backgroundColor: T.bg3, color: T.accent, border: `1px solid ${T.accentDim}` }}
       >
-        <div style={{ fontWeight: "bold", marginBottom: "4px" }}>使用现有版本</div>
+        <div style={{ fontWeight: "bold", marginBottom: "4px" }}>{t("addon.useExisting")}</div>
         <div style={{ color: T.accentDim, fontSize: "11px" }}>
-          使用 <span style={{ color: T.accent }}>v{selectedVersion}</span>，修改会影响所有使用此版本的世界
+          {t("addon.useExistingDescPre")} <span style={{ color: T.accent }}>v{selectedVersion}</span>
+          {t("addon.useExistingDescPost")}
         </div>
       </button>
       <button
@@ -163,7 +166,7 @@ function ForkModal({
           padding: "8px",
         }}
       >
-        取消
+        {t("btn.cancel")}
       </button>
     </Overlay>
   );
@@ -206,18 +209,18 @@ function CreateAddonModal({ onCreated, onCancel }: { onCreated: () => void; onCa
 
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>新建 Add-on</div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{t("addon.createTitle")}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <div>
-          <div style={labelStyle}>ID（唯一标识，不可修改）</div>
+          <div style={labelStyle}>{t("addon.idLabel")}</div>
           <input style={inputStyle} value={id} onChange={(e) => setId(e.target.value)} placeholder="my-addon" />
         </div>
         <div>
-          <div style={labelStyle}>名称</div>
-          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="我的扩展包" />
+          <div style={labelStyle}>{t("field.name")}</div>
+          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("addon.myAddon")} />
         </div>
         <div>
-          <div style={labelStyle}>初始版本</div>
+          <div style={labelStyle}>{t("addon.initialVersion")}</div>
           <input style={inputStyle} value={version} onChange={(e) => setVersion(e.target.value)} placeholder="1.0.0" />
         </div>
       </div>
@@ -234,7 +237,7 @@ function CreateAddonModal({ onCreated, onCancel }: { onCreated: () => void; onCa
             border: `1px solid ${T.textFaint}`,
           }}
         >
-          取消
+          {t("btn.cancel")}
         </button>
         <button
           onClick={handleCreate}
@@ -250,7 +253,7 @@ function CreateAddonModal({ onCreated, onCancel }: { onCreated: () => void; onCa
             opacity: busy || !id.trim() || !name.trim() ? 0.5 : 1,
           }}
         >
-          {busy ? "创建中..." : "创建"}
+          {busy ? t("btn.creating") : t("btn.create")}
         </button>
       </div>
     </Overlay>
@@ -275,15 +278,15 @@ function DependencyModal({
   const isEnable = action === "enable";
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{isEnable ? "依赖检查" : "依赖警告"}</div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{isEnable ? t("addon.depCheck") : t("addon.depWarning")}</div>
       <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>
         {isEnable ? (
           <>
-            启用 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> 需要以下依赖：
+            {t("addon.depNeededPre")} <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> {t("addon.depNeededPost")}
           </>
         ) : (
           <>
-            以下 Add-on 依赖 <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>：
+            {t("addon.depByPre")} <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>{t("addon.depByPost")}
           </>
         )}
       </div>
@@ -315,7 +318,7 @@ function DependencyModal({
             textAlign: "center",
           }}
         >
-          {isEnable ? `全部启用 (${related.length + 1} 个)` : `全部禁用 (${related.length + 1} 个)`}
+          {isEnable ? t("addon.enableAll", { count: related.length + 1 }) : t("addon.disableAll", { count: related.length + 1 })}
         </button>
         <button
           onClick={onOnly}
@@ -325,7 +328,7 @@ function DependencyModal({
             textAlign: "center",
           }}
         >
-          {isEnable ? `仅启用 ${addon.name}` : `仅禁用 ${addon.name}`}
+          {isEnable ? t("addon.enableOnly", { name: addon.name }) : t("addon.disableOnly", { name: addon.name })}
         </button>
         <button
           onClick={onCancel}
@@ -336,7 +339,7 @@ function DependencyModal({
             border: `1px solid ${T.textFaint}`,
           }}
         >
-          取消
+          {t("btn.cancel")}
         </button>
       </div>
     </Overlay>
@@ -364,9 +367,9 @@ function VersionSwitchList({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-      <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "2px", fontWeight: "bold" }}>切换版本</div>
+      <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "2px", fontWeight: "bold" }}>{t("addon.switchVersion")}</div>
       {versions.length === 0 ? (
-        <div style={{ fontSize: "11px", color: T.textFaint, padding: "2px 0" }}>无版本</div>
+        <div style={{ fontSize: "11px", color: T.textFaint, padding: "2px 0" }}>{t("addon.noVersions")}</div>
       ) : (
         grouped.map(({ info: vi, indent }) => {
           const ver = vi.version;
@@ -418,7 +421,7 @@ function VersionManagePanel({
 
   const handleCopy = async (target: string) => {
     if (!copySource || copySource === target) return;
-    if (!confirm(`确认将 ${copySource} 的内容覆盖到 ${target}？\n目标版本的实体文件将被替换（元数据保留）。`)) return;
+    if (!confirm(t("confirm.overwriteAddonVer", { source: copySource, target }))) return;
     setBusy(true);
     const result = await overwriteAddonVersion(addonId, copySource, target);
     setBusy(false);
@@ -448,9 +451,9 @@ function VersionManagePanel({
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       {/* Toolbar */}
       <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-        <MiniBtn onClick={onNewVersion}>+ 新版本</MiniBtn>
+        <MiniBtn onClick={onNewVersion}>{t("addon.newVersion")}</MiniBtn>
         <MiniBtn active={copySource !== null} onClick={() => setCopySource(copySource ? null : selectedVersion)}>
-          {copySource ? "取消复制" : "复制内容"}
+          {copySource ? t("addon.cancelCopy") : t("addon.copyContent")}
         </MiniBtn>
       </div>
 
@@ -464,7 +467,7 @@ function VersionManagePanel({
             color: T.accent,
           }}
         >
-          源：<b>{copySource}</b> → 点击目标版本粘贴
+          {t("addon.copySource", { source: copySource })}
         </div>
       )}
 
@@ -508,14 +511,14 @@ function VersionManagePanel({
               {ver}
             </span>
 
-            {isCurrent && <Tag color={T.accent}>当前</Tag>}
-            {isBase && <Tag color={T.successDim}>本体</Tag>}
-            {!isBase && <Tag color="#6ab">分支</Tag>}
+            {isCurrent && <Tag color={T.accent}>{t("addon.tagCurrent")}</Tag>}
+            {isBase && <Tag color={T.successDim}>{t("addon.tagBase")}</Tag>}
+            {!isBase && <Tag color="#6ab">{t("addon.tagBranch")}</Tag>}
 
-            {isCopyTarget && <span style={{ color: T.accent, fontSize: "10px", flexShrink: 0 }}>← 粘贴</span>}
+            {isCopyTarget && <span style={{ color: T.accent, fontSize: "10px", flexShrink: 0 }}>{t("addon.paste")}</span>}
 
             {/* Copy source selector (when in copy mode, click to change source) */}
-            {copySource && copySource === ver && <Tag color={T.accent}>源</Tag>}
+            {copySource && copySource === ver && <Tag color={T.accent}>{t("addon.tagSource")}</Tag>}
 
             {/* Delete — only non-current */}
             {!copySource && !isCurrent && (
@@ -536,7 +539,7 @@ function VersionManagePanel({
                   opacity: 0.6,
                 }}
               >
-                删除
+                {t("btn.delete")}
               </button>
             )}
           </div>
@@ -556,20 +559,20 @@ function VersionManagePanel({
           }}
         >
           <div>
-            确认删除 <span style={{ color: T.danger, fontWeight: "bold" }}>{deleteConfirm}</span>？此操作不可撤销。
+            {t("addon.confirmDeleteVer", { version: deleteConfirm })}
           </div>
           <div style={{ display: "flex", gap: "6px", marginTop: "6px", justifyContent: "flex-end" }}>
             <button
               onClick={() => setDeleteConfirm(null)}
               style={{ ...modalBtnStyle(T.bg2, T.textSub), padding: "3px 10px", fontSize: "11px" }}
             >
-              取消
+              {t("btn.cancel")}
             </button>
             <button
               onClick={() => handleDelete(deleteConfirm)}
               style={{ ...modalBtnStyle(T.dangerBg, T.danger), padding: "3px 10px", fontSize: "11px" }}
             >
-              删除
+              {t("btn.delete")}
             </button>
           </div>
         </div>
@@ -691,9 +694,9 @@ function VersionRow({
       >
         {ver}
       </span>
-      {isCurrent && <Tag color={T.accent}>当前</Tag>}
-      {isBase && <Tag color={T.successDim}>本体</Tag>}
-      {!isBase && <Tag color="#6ab">分支</Tag>}
+      {isCurrent && <Tag color={T.accent}>{t("addon.tagCurrent")}</Tag>}
+      {isBase && <Tag color={T.successDim}>{t("addon.tagBase")}</Tag>}
+      {!isBase && <Tag color="#6ab">{t("addon.tagBranch")}</Tag>}
     </div>
   );
 }
@@ -794,11 +797,11 @@ function AddonMetaEditor({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <MetaField label="名称" value={name} onChange={setName} />
-      <MetaField label="作者" value={author} onChange={setAuthor} />
-      <MetaField label="分类" value={categories} onChange={setCategories} placeholder="用逗号分隔" />
+      <MetaField label={t("field.name")} value={name} onChange={setName} />
+      <MetaField label={t("field.author")} value={author} onChange={setAuthor} />
+      <MetaField label={t("field.categories")} value={categories} onChange={setCategories} placeholder={t("addon.commaSep")} />
       <div style={{ display: "flex", gap: "4px", fontSize: "11px" }}>
-        <span style={{ color: T.textSub, width: "32px", flexShrink: 0, paddingTop: "4px" }}>简介</span>
+        <span style={{ color: T.textSub, width: "32px", flexShrink: 0, paddingTop: "4px" }}>{t("field.intro")}</span>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -807,7 +810,7 @@ function AddonMetaEditor({
         />
       </div>
       <div style={{ display: "flex", gap: "4px", alignItems: "center", fontSize: "11px" }}>
-        <span style={{ color: T.textSub, width: "32px", flexShrink: 0 }}>封面</span>
+        <span style={{ color: T.textSub, width: "32px", flexShrink: 0 }}>{t("field.cover")}</span>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
           {cover && (
             <img
@@ -832,7 +835,7 @@ function AddonMetaEditor({
               whiteSpace: "nowrap",
             }}
           >
-            {cover || "无"}
+            {cover || t("ui.none")}
           </span>
           <input
             type="file"
@@ -845,14 +848,14 @@ function AddonMetaEditor({
             onClick={() => coverFileRef.current?.click()}
             style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.textSub }}
           >
-            选择
+            {t("btn.select")}
           </button>
           {cover && (
             <button
               onClick={() => setCover("")}
               style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.danger }}
             >
-              移除
+              {t("btn.remove")}
             </button>
           )}
         </div>
@@ -862,7 +865,7 @@ function AddonMetaEditor({
           onClick={onClose}
           style={{ ...fieldInputStyle, width: "auto", padding: "3px 10px", cursor: "pointer", color: T.textSub }}
         >
-          取消
+          {t("btn.cancel")}
         </button>
         <button
           onClick={handleSave}
@@ -876,7 +879,7 @@ function AddonMetaEditor({
             borderColor: T.successDim,
           }}
         >
-          {saving ? "保存中..." : "保存"}
+          {saving ? t("status.saving") : t("btn.save")}
         </button>
       </div>
     </div>
@@ -954,7 +957,7 @@ function NewVersionModal({
       if (result.success) {
         onCreated(targetVersion);
       } else {
-        setError(result.message ?? "创建失败");
+        setError(result.message ?? t("addon.createFailed"));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -965,12 +968,9 @@ function NewVersionModal({
 
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>创建新版本</div>
+      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{t("addon.createNewVersion")}</div>
       <div style={{ color: T.textSub, fontSize: "11px" }}>
-        基于{" "}
-        <span style={{ color: T.accent }}>
-          {addonId}@{sourceVersion}
-        </span>
+        {t("addon.basedOn", { source: `${addonId}@${sourceVersion}` })}
       </div>
 
       {/* Mode tabs */}
@@ -990,24 +990,24 @@ function NewVersionModal({
               borderRadius: "4px",
             }}
           >
-            {m === "bump" ? "版本升级" : "创建分支"}
+            {m === "bump" ? t("addon.modeBump") : t("addon.modeBranch")}
           </button>
         ))}
       </div>
 
       {mode === "bump" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <div style={{ color: T.textSub, fontSize: "11px" }}>新的独立版本号（X.Y.Z 格式）：</div>
+          <div style={{ color: T.textSub, fontSize: "11px" }}>{t("addon.bumpHint")}</div>
           <input
             value={version}
             onChange={(e) => setVersion(e.target.value)}
-            placeholder="例如 1.1.0"
+            placeholder={t("addon.egVersion")}
             style={{ ...fieldInputStyle, fontSize: "13px", padding: "6px 8px" }}
           />
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <div style={{ color: T.textSub, fontSize: "11px" }}>分支名称（字母、数字、下划线、横线）：</div>
+          <div style={{ color: T.textSub, fontSize: "11px" }}>{t("addon.branchHint")}</div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <span style={{ color: T.textDim, fontSize: "12px" }}>{getBaseVersion(sourceVersion)}-</span>
             <input
@@ -1020,12 +1020,12 @@ function NewVersionModal({
         </div>
       )}
 
-      {conflict && <div style={{ color: T.danger, fontSize: "11px" }}>版本 {targetVersion} 已存在</div>}
+      {conflict && <div style={{ color: T.danger, fontSize: "11px" }}>{t("addon.versionExists", { version: targetVersion })}</div>}
       {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
 
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
         <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>
-          取消
+          {t("btn.cancel")}
         </button>
         <button
           onClick={handleCreate}
@@ -1036,7 +1036,7 @@ function NewVersionModal({
             cursor: !valid || conflict || saving ? "default" : "pointer",
           }}
         >
-          {saving ? "创建中..." : "创建"}
+          {saving ? t("btn.creating") : t("btn.create")}
         </button>
       </div>
     </Overlay>
@@ -1331,9 +1331,9 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
       )}
       {disablePrompt && (
         <ConfirmModal
-          title="禁用 Add-on"
-          message={`确认禁用「${disablePrompt.addon.name}」？禁用后该 Add-on 的内容将从当前世界移除。`}
-          confirmLabel="确认禁用"
+          title={t("addon.disableTitle")}
+          message={t("addon.disableMsg", { name: disablePrompt.addon.name })}
+          confirmLabel={t("addon.confirmDisable")}
           danger
           onConfirm={handleDisableConfirm}
           onCancel={() => setDisablePrompt(null)}
@@ -1396,9 +1396,9 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
       )}
       {deleteAddonConfirm && (
         <ConfirmModal
-          title="删除 Add-on"
-          message={`确认删除「${deleteAddonConfirm.name}」(${deleteAddonConfirm.id}) 的所有版本？此操作不可撤销。`}
-          confirmLabel="确认删除"
+          title={t("addon.deleteTitle")}
+          message={t("addon.deleteMsg", { name: deleteAddonConfirm.name, id: deleteAddonConfirm.id })}
+          confirmLabel={t("addon.confirmDelete")}
           danger
           onConfirm={handleDeleteAddon}
           onCancel={() => setDeleteAddonConfirm(null)}
@@ -1463,7 +1463,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
         >
           {allAddons.length === 0 ? (
             <div style={{ color: T.textDim, fontSize: "11px", padding: "16px 8px", textAlign: "center" }}>
-              没有已安装的 Add-on
+              {t("addon.noAddons")}
             </div>
           ) : (
             allAddons.map((addon) => {
@@ -1543,7 +1543,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                       <div style={{ fontSize: "11px", color: T.textSub, marginTop: "2px" }}>{addon.id}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
                         <span style={{ fontSize: "11px", color: T.text }}>v{displayVersion}</span>
-                        {isFork && <Tag color="#6ab">分支</Tag>}
+                        {isFork && <Tag color="#6ab">{t("addon.tagBranch")}</Tag>}
                       </div>
                     </div>
 
@@ -1571,19 +1571,19 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                       )}
 
                       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                        {addon.author && <InfoRow label="作者" value={addon.author} />}
+                        {addon.author && <InfoRow label={t("field.author")} value={addon.author} />}
                         {addon.categories && addon.categories.length > 0 && (
-                          <InfoRow label="内容" value={addon.categories.join(", ")} />
+                          <InfoRow label={t("field.contents")} value={addon.categories.join(", ")} />
                         )}
                         {addon.dependencies && addon.dependencies.length > 0 && (
-                          <InfoRow label="依赖" value={addon.dependencies.map((d) => d.id).join(", ")} />
+                          <InfoRow label={t("field.dependencies")} value={addon.dependencies.map((d) => d.id).join(", ")} />
                         )}
                       </div>
 
                       {/* Toggle buttons */}
                       <div style={{ display: "flex", gap: "4px" }}>
                         <ToggleBtn
-                          label="编辑信息"
+                          label={t("btn.editInfo")}
                           active={editingMetaId === addon.id}
                           onClick={() => {
                             setEditingMetaId(editingMetaId === addon.id ? null : addon.id);
@@ -1591,7 +1591,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                           }}
                         />
                         <ToggleBtn
-                          label="版本管理"
+                          label={t("addon.versionMgmt")}
                           active={versionManageId === addon.id}
                           onClick={() => {
                             setVersionManageId(versionManageId === addon.id ? null : addon.id);
@@ -1612,7 +1612,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                               borderRadius: "3px",
                             }}
                           >
-                            [删除]
+                            [{t("btn.delete")}]
                           </button>
                         )}
                       </div>
