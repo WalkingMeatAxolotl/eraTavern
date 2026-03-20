@@ -140,7 +140,7 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "list_entities",
-            "description": "查询当前已有的实体列表（返回 id + name + 关键字段摘要）",
+            "description": "查询已有实体列表。可用 filter 按字段过滤（如 category）",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -148,6 +148,10 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
                         "type": "string",
                         "enum": list(ENTITY_SCHEMAS.keys()),
                         "description": "实体类型",
+                    },
+                    "filter": {
+                        "type": "object",
+                        "description": "可选过滤条件（如 {\"category\": \"mentalTrait\"}）",
                     },
                 },
                 "required": ["entityType"],
@@ -290,10 +294,41 @@ def _summarize_entity(entity_type: str, entity: dict) -> dict[str, Any]:
     return summary
 
 
-def execute_tool_list_entities(gs: GameState, entity_type: str) -> str:
-    """Execute list_entities tool — returns JSON string of entity summaries."""
+def _match_filter(entity: dict, filter_: dict) -> bool:
+    """Check if an entity matches all filter conditions.
+
+    - String values: substring match (case-insensitive)
+    - Array fields: checks if filter value is contained in the array
+    - Other types: exact match
+    """
+    for key, expected in filter_.items():
+        actual = entity.get(key)
+        if actual is None:
+            return False
+        if isinstance(actual, str) and isinstance(expected, str):
+            if expected.lower() not in actual.lower():
+                return False
+        elif isinstance(actual, list) and isinstance(expected, str):
+            if expected not in actual:
+                return False
+        elif actual != expected:
+            return False
+    return True
+
+
+def execute_tool_list_entities(
+    gs: GameState, entity_type: str, filter_: Optional[dict] = None
+) -> str:
+    """Execute list_entities tool — returns JSON string of entity summaries.
+
+    If filter_ is provided, only entities matching all filter fields are returned.
+    E.g. filter_={"category": "mentalTrait"} returns only mental traits.
+    """
     defs = _get_defs(gs, entity_type)
-    summaries = [_summarize_entity(entity_type, e) for e in defs.values()]
+    entities = defs.values()
+    if filter_:
+        entities = [e for e in entities if _match_filter(e, filter_)]
+    summaries = [_summarize_entity(entity_type, e) for e in entities]
     return json.dumps(summaries, ensure_ascii=False)
 
 
@@ -541,7 +576,8 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
     entity_type = arguments.get("entityType", "")
 
     if tool_name == "list_entities":
-        return execute_tool_list_entities(gs, entity_type)
+        filter_ = arguments.get("filter")
+        return execute_tool_list_entities(gs, entity_type, filter_)
 
     if tool_name == "get_schema":
         return execute_tool_get_schema(entity_type, gs)

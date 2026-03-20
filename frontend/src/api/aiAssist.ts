@@ -23,12 +23,25 @@ export interface ToolCallResult extends ToolCallInfo {
   auto: boolean;
 }
 
+export interface AssistDebugEntry {
+  source: string;
+  loop: number;
+  model: string;
+  baseUrl: string;
+  parameters: Record<string, unknown>;
+  messageCount: number;
+  messages: Record<string, unknown>[];
+  usage?: Record<string, unknown>;
+}
+
 export interface AssistCallbacks {
   onChunk: (text: string) => void;
   onToolCallPending: (tc: ToolCallInfo) => void;
   onToolCallResult: (tc: ToolCallResult) => void;
   onDone: (fullText: string) => void;
   onError: (msg: string) => void;
+  onDebug?: (entry: AssistDebugEntry) => void;
+  onUsage?: (usage: Record<string, unknown>) => void;
 }
 
 // --- SSE parser (shared between chat and confirm) ---
@@ -92,6 +105,12 @@ async function readSSEStream(
               break;
             case "llm_error":
               callbacks.onError(data.detail || data.error || "Unknown error");
+              break;
+            case "llm_debug":
+              callbacks.onDebug?.(data);
+              break;
+            case "llm_usage":
+              callbacks.onUsage?.(data);
               break;
           }
         } catch {

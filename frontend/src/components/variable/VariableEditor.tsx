@@ -344,8 +344,8 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
 
       <div style={{ marginBottom: "12px" }}>
         <div style={labelStyle}>{t("field.description")}</div>
-        <input
-          style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+        <textarea
+          style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           disabled={isReadOnly}

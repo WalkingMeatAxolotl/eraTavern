@@ -412,9 +412,20 @@ async def assist_chat(request: Request):
 
         max_loops = 10  # Safety limit to prevent infinite tool-call loops
 
-        for _ in range(max_loops):
+        for loop_i in range(max_loops):
             full_text = ""
             tool_calls = None
+
+            # Send debug info before each LLM call
+            yield _format_sse("llm_debug", {
+                "source": "ai_assist",
+                "loop": loop_i,
+                "model": api_config.get("model", ""),
+                "baseUrl": api_config.get("baseUrl", ""),
+                "parameters": api_config.get("parameters", {}),
+                "messageCount": len(messages),
+                "messages": messages,
+            })
 
             async for event_type, event_data in call_llm_streaming(api_config, messages, tools=ASSIST_TOOLS):
                 if event_type == "llm_chunk":
@@ -426,7 +437,9 @@ async def assist_chat(request: Request):
                     yield _format_sse("llm_error", event_data)
                     return
                 elif event_type == "llm_done":
-                    pass  # We handle done after the loop check
+                    # Forward usage info for debug tracking
+                    if event_data.get("usage"):
+                        yield _format_sse("llm_usage", event_data["usage"])
 
             # Build the assistant message for history
             assistant_msg: dict = {"role": "assistant", "content": full_text}

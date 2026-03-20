@@ -122,8 +122,8 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
         </div>
         <div>
           <div style={labelStyle}>{t("field.description")}</div>
-          <input
-            style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+          <textarea
+            style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t("ph.optionalDesc")}

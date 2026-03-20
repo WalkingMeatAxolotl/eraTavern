@@ -681,7 +681,10 @@ export default function App() {
       {/* Right area: addon sidebar, AI drawer, or spacer */}
       {aiDrawerOpen ? (
         <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>
-          <AiDrawer onEntityChanged={() => setSessionKey((k) => k + 1)} />
+          <AiDrawer
+            onEntityChanged={() => setSessionKey((k) => k + 1)}
+            onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e as any])}
+          />
         </div>
       ) : rightOpen ? (
         <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>

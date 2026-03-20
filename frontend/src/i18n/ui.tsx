@@ -938,6 +938,8 @@ export const UI: Record<string, string> = {
   "ai.toolRejected": "已拒绝",
   "ai.noPreset": "未配置 AI 辅助预设，请在 LLM 设置中配置",
   "ai.newSession": "新建会话",
+  "ai.thinking": "思考中...",
+  "ai.thinkingBlock": "思考过程",
   "ai.jsonInvalid": "JSON 格式错误",
   "ai.jsonMustBeObject": "必须是 JSON 对象",
   "ai.jsonMissingFields": "缺少 id 或 name 字段",

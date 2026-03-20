@@ -164,8 +164,9 @@ function BatchCreateToolCall({ args, entityLabel, entityType, status, result, on
   status: ToolCallStatus; result?: string;
   onConfirm?: (overrideArgs?: Record<string, unknown>) => void; onReject?: () => void; disabled?: boolean;
 }) {
-    const entities = (args.entities as Record<string, unknown>[]) || [];
-    const [selected, setSelected] = useState<Set<number>>(() => new Set(entities.map((_, i) => i)));
+    const originalEntities = (args.entities as Record<string, unknown>[]) || [];
+    const [editedEntities, setEditedEntities] = useState<Record<string, unknown>[]>([...originalEntities]);
+    const [selected, setSelected] = useState<Set<number>>(() => new Set(originalEntities.map((_, i) => i)));
 
     const toggleSelect = (idx: number) => {
       setSelected((prev) => {
@@ -201,7 +202,7 @@ function BatchCreateToolCall({ args, entityLabel, entityType, status, result, on
 
     return (
       <div style={wrapStyle}>
-        {entities.map((entity, i) => (
+        {editedEntities.map((entity, i) => (
           <div key={i} style={{ display: "flex", gap: "6px", alignItems: "flex-start" }}>
             {status === "pending" && (
               <input
@@ -212,7 +213,17 @@ function BatchCreateToolCall({ args, entityLabel, entityType, status, result, on
               />
             )}
             <div style={{ flex: 1 }}>
-              <EntityCard entityType={entityType} entity={entity} />
+              <EntityCard
+                entityType={entityType}
+                entity={entity}
+                onEntityChange={status === "pending" ? (updated) => {
+                  setEditedEntities((prev) => {
+                    const next = [...prev];
+                    next[i] = updated;
+                    return next;
+                  });
+                } : undefined}
+              />
             </div>
           </div>
         ))}
@@ -220,7 +231,7 @@ function BatchCreateToolCall({ args, entityLabel, entityType, status, result, on
           <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
             <button
               onClick={() => {
-                const selectedEntities = entities.filter((_, i) => selected.has(i));
+                const selectedEntities = editedEntities.filter((_, i) => selected.has(i));
                 onConfirm?.({ ...args, entities: selectedEntities });
               }}
               disabled={disabled || selected.size === 0}

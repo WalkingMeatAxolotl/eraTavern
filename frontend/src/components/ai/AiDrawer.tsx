@@ -39,6 +39,7 @@ interface ChatMessage {
 
 export interface AiDrawerProps {
   onEntityChanged?: () => void;
+  onDebugEntry?: (entry: Record<string, unknown>) => void;
 }
 
 // --- Styles ---
@@ -90,9 +91,73 @@ const msgBubble = (role: string): React.CSSProperties => ({
   wordBreak: "break-word",
 });
 
+// --- Think block helpers ---
+
+/** Split text into thinking and visible parts based on <think> tags */
+function splitThinkContent(text: string): { think: string; visible: string } {
+  const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/);
+  if (thinkMatch) {
+    const think = thinkMatch[1].trim();
+    const visible = text.replace(/<think>[\s\S]*?<\/think>/, "").trim();
+    return { think, visible };
+  }
+  // Unclosed <think> tag (still streaming)
+  const openMatch = text.match(/<think>([\s\S]*)/);
+  if (openMatch) {
+    return { think: openMatch[1].trim(), visible: "" };
+  }
+  return { think: "", visible: text };
+}
+
+function ThinkBlock({ content, defaultOpen }: { content: string; defaultOpen: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  if (!content) return null;
+  return (
+    <div style={{ marginBottom: "6px" }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          background: "none",
+          border: "none",
+          color: T.textDim,
+          cursor: "pointer",
+          fontSize: "11px",
+          padding: "2px 0",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+        }}
+      >
+        <span style={{ fontSize: "10px" }}>{open ? "▼" : "▶"}</span>
+        {t("ai.thinkingBlock")}
+      </button>
+      {open && (
+        <pre
+          style={{
+            padding: "6px 8px",
+            backgroundColor: T.bg3,
+            borderRadius: "3px",
+            fontSize: "11px",
+            fontFamily: T.fontMono,
+            color: T.textDim,
+            overflow: "auto",
+            maxHeight: "200px",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            margin: "2px 0 0 0",
+            borderLeft: `2px solid ${T.border}`,
+          }}
+        >
+          {content}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 // --- Component ---
 
-export default function AiDrawer({ onEntityChanged }: AiDrawerProps) {
+export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProps) {
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -203,8 +268,14 @@ export default function AiDrawer({ onEntityChanged }: AiDrawerProps) {
         setMessages((prev) => [...prev, { role: "assistant", content: `⚠️ ${msg}` }]);
         scrollToBottom();
       },
+      onDebug: (entry: Record<string, unknown>) => {
+        onDebugEntry?.({ ...entry, timestamp: Date.now() });
+      },
+      onUsage: (usage: Record<string, unknown>) => {
+        onDebugEntry?.({ source: "ai_assist_usage", usage, timestamp: Date.now() });
+      },
     };
-  }, [scrollToBottom, updateLastAssistant]);
+  }, [scrollToBottom, updateLastAssistant, onDebugEntry]);
 
   // Send a message
   const handleSend = useCallback(() => {
@@ -319,8 +390,19 @@ export default function AiDrawer({ onEntityChanged }: AiDrawerProps) {
               </div>
             )}
 
-            {/* Message content */}
-            {msg.content && <div style={msgBubble(msg.role)}>{msg.content}</div>}
+            {/* Message content — separate think blocks from visible text */}
+            {msg.content && (() => {
+              if (msg.role === "assistant") {
+                const { think, visible } = splitThinkContent(msg.content);
+                return (
+                  <>
+                    {think && <ThinkBlock content={think} defaultOpen={false} />}
+                    {visible && <div style={msgBubble("assistant")}>{visible}</div>}
+                  </>
+                );
+              }
+              return <div style={msgBubble(msg.role)}>{msg.content}</div>;
+            })()}
 
             {/* Tool calls */}
             {msg.toolCalls?.map((tc) => (
@@ -339,16 +421,33 @@ export default function AiDrawer({ onEntityChanged }: AiDrawerProps) {
           </div>
         ))}
 
-        {/* Streaming text */}
-        {streamingText && (
-          <div>
+        <style>{`@keyframes ai-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
+
+        {/* Thinking indicator — waiting for first token */}
+        {isGenerating && !streamingText && (
+          <div style={{ padding: "8px 0" }}>
             <div style={{ fontSize: "10px", color: T.textDim, marginBottom: "2px" }}>AI</div>
-            <div style={{ ...msgBubble("assistant"), color: T.text }}>
-              {streamingText}
-              <span style={{ color: T.accent, animation: "blink 1s infinite" }}>▌</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: T.textDim, fontSize: "12px" }}>
+              <span style={{ display: "inline-block", animation: "ai-pulse 1.5s ease-in-out infinite", color: T.accent }}>●</span>
+              {t("ai.thinking")}
             </div>
           </div>
         )}
+
+        {/* Streaming text */}
+        {streamingText && (() => {
+          const { think, visible } = splitThinkContent(streamingText);
+          return (
+            <div>
+              <div style={{ fontSize: "10px", color: T.textDim, marginBottom: "2px" }}>AI</div>
+              {think && <ThinkBlock content={think} defaultOpen={true} />}
+              <div style={{ ...msgBubble("assistant"), color: T.text }}>
+                {visible || (!think ? streamingText : "")}
+                <span style={{ color: T.accent, animation: "ai-pulse 1s ease-in-out infinite" }}>▌</span>
+              </div>
+            </div>
+          );
+        })()}
 
         <div ref={messagesEndRef} />
       </div>

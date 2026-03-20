@@ -183,31 +183,29 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
             />
           </div>
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.category")}</div>
-            <select
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              disabled={isReadOnly}
-            >
-              {definitions.template.traits.map((t) => (
-                <option key={t.key} value={t.key}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.description")}</div>
-            <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={isReadOnly}
-            />
-          </div>
+        <div>
+          <div style={labelStyle}>{t("field.category")}</div>
+          <select
+            style={{ ...inputStyle, width: "200px", boxSizing: "border-box" }}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            disabled={isReadOnly}
+          >
+            {definitions.template.traits.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <div style={labelStyle}>{t("field.description")}</div>
+          <textarea
+            style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={isReadOnly}
+          />
         </div>
       </div>
 
