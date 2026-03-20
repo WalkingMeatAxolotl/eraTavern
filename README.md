@@ -30,17 +30,18 @@
 
 ---
 
-Build complete text adventure games through visual editors and shareable addon packs — no code required. The engine handles action resolution, NPC behavior, and game logic. An integrated LLM layer transforms game events into rich narrative text.
+Build complete text adventure games with visual editors — no code required. Describe what you need to a built-in AI agent and it creates traits, items, and equipment for you. The engine handles action resolution, NPC decisions, and game logic. An LLM layer turns every interaction into immersive narrative text. All content lives in addon packs — mix and match them to build your own world.
 
 ---
 
 ## &#x1F3AE; What This Engine Does
 
-Create game content (addons) with visual editors. The engine takes care of:
+Create game content (addons) with visual editors — or let the AI Agent do it for you. The engine takes care of:
 
 - **Action Resolution** — Condition trees (AND/OR/NOT, 15+ types), multiple outcome branches, costs/effects/weight modifiers
 - **Autonomous NPC Behavior** — NPCs make decisions within their perception range: pathfinding, choosing actions, interacting with others — no scripting needed
 - **LLM Narration** — Action results + character state + lorebook entries assembled into prompts for narrative generation
+- **AI Assist Agent** — Chat with an AI to create and edit game entities (traits, items, clothing) through natural language. The agent uses tool calling to query schemas, list existing content, and create/update entities — all with human-in-the-loop confirmation before any write operation
 - **Character Templates** — One template defines the attribute structure (resources, abilities, traits, clothing slots) for all characters
 - **Derived Variables** — Visual formula editor for computed values based on attributes, favorability, traits — used in conditions and weight modifiers
 - **Addon System** — All content packaged into addons with version management, dependency tracking, and per-world branching
