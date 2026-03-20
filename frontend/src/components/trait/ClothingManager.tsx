@@ -95,12 +95,7 @@ export default function ClothingManager({
     };
 
     return (
-      <ClothingEditor
-        clothing={isNew ? blank : (existing ?? blank)}
-        definitions={definitions}
-        isNew={isNew}
-        onBack={handleBack}
-      />
+      <ClothingEditor clothing={isNew ? blank : (existing ?? blank)} definitions={definitions} isNew={isNew} onBack={handleBack} />
     );
   }
 

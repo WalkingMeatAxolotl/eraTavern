@@ -35,6 +35,7 @@ import MapManager from "./components/map/MapManager";
 import SettingsPage from "./components/settings/SettingsPage";
 import FloatingActions from "./components/layout/FloatingActions";
 import LLMPresetManager from "./components/llm/LLMPresetManager";
+import AiDrawer from "./components/ai/AiDrawer";
 
 type NavPage =
   | "characters"
@@ -69,6 +70,9 @@ export default function App() {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
 
+  // AI Assist drawer state
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+
   // Session state (current world + addons)
   const [currentWorldId, setCurrentWorldId] = useState("");
   const [currentWorldName, setCurrentWorldName] = useState("");
@@ -82,6 +86,14 @@ export default function App() {
   const [editorOpen, setEditorOpen] = useState(false);
 
   const esRef = useRef<EventSource | null>(null);
+
+  // AI drawer: mutually exclusive with addon sidebar
+  const toggleAiDrawer = useCallback(() => {
+    setAiDrawerOpen((v) => {
+      if (!v) setRightOpen(false); // close addon sidebar when opening AI
+      return !v;
+    });
+  }, []);
 
   const player = gameState ? (Object.values(gameState.characters).find((c) => c.isPlayer) ?? null) : null;
 
@@ -624,7 +636,12 @@ export default function App() {
         leftOpen={leftOpen}
         rightOpen={rightOpen}
         onToggleLeft={() => setLeftOpen((v) => !v)}
-        onToggleRight={() => setRightOpen((v) => !v)}
+        aiOpen={aiDrawerOpen}
+        onToggleAi={toggleAiDrawer}
+        onToggleRight={() => {
+          setRightOpen((v) => !v);
+          setAiDrawerOpen(false); // close AI drawer when toggling addon sidebar
+        }}
       />
 
       {/* Left area: sidebar or spacer */}
@@ -661,8 +678,12 @@ export default function App() {
         {renderCenter()}
       </div>
 
-      {/* Right area: sidebar or spacer */}
-      {rightOpen ? (
+      {/* Right area: addon sidebar, AI drawer, or spacer */}
+      {aiDrawerOpen ? (
+        <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>
+          <AiDrawer onEntityChanged={() => setSessionKey((k) => k + 1)} />
+        </div>
+      ) : rightOpen ? (
         <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>
           <AddonSidebar
             key={addonListKey}

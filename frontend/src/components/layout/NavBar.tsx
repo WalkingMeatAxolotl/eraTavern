@@ -22,8 +22,10 @@ interface NavBarProps {
   maxWidth: number;
   leftOpen: boolean;
   rightOpen: boolean;
+  aiOpen: boolean;
   onToggleLeft: () => void;
   onToggleRight: () => void;
+  onToggleAi: () => void;
 }
 
 type NavItem = { key: NavPage; label: string };
@@ -53,8 +55,10 @@ export default function NavBar({
   maxWidth,
   leftOpen,
   rightOpen,
+  aiOpen,
   onToggleLeft,
   onToggleRight,
+  onToggleAi,
 }: NavBarProps) {
   const btnStyle = (active: boolean): React.CSSProperties => ({
     padding: "4px 12px",
@@ -147,6 +151,9 @@ export default function NavBar({
             </button>
           ))}
           <span style={{ color: T.borderDim, margin: "0 4px" }}>|</span>
+          <button style={sideToggleStyle(aiOpen)} onClick={onToggleAi}>
+            [AI]
+          </button>
           <button style={sideToggleStyle(rightOpen)} onClick={onToggleRight}>
             [{t("btn.addon")}]
           </button>

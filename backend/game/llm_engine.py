@@ -38,6 +38,7 @@ def _pl(game_state: Any, key: str) -> str:
     labels = tpl.get("promptLabels", {})
     return labels.get(key, _DEFAULT_PROMPT_LABELS.get(key, key))
 
+
 # ---------------------------------------------------------------------------
 # Variable helpers
 # ---------------------------------------------------------------------------
@@ -841,8 +842,16 @@ def build_raw_output(action_result: dict) -> str:
 async def call_llm_streaming(
     api_config: dict,
     messages: list[dict[str, str]],
+    tools: Optional[list[dict]] = None,
 ):
-    """Call LLM API with streaming. Yields (event_type, data_dict) tuples."""
+    """Call LLM API with streaming. Yields (event_type, data_dict) tuples.
+
+    When *tools* is provided the payload includes a ``tools`` array and the
+    streaming parser will accumulate ``delta.tool_calls`` fragments.  If the
+    model decides to call one or more tools instead of (or in addition to)
+    producing text, an extra ``("tool_calls", [...])`` event is yielded
+    **before** the final ``llm_done``.
+    """
     base_url = api_config.get("baseUrl", "").rstrip("/")
     api_key = api_config.get("apiKey", "")
     model = api_config.get("model", "")
@@ -859,6 +868,8 @@ async def call_llm_streaming(
         "messages": messages,
         "stream": streaming,
     }
+    if tools:
+        payload["tools"] = tools
     if params.get("temperature") is not None:
         payload["temperature"] = params["temperature"]
     if params.get("maxTokens"):
@@ -875,6 +886,8 @@ async def call_llm_streaming(
             if streaming:
                 full_text = ""
                 usage = None
+                # tool_calls accumulator: {index: {id, function: {name, arguments}}}
+                tc_acc: dict[int, dict] = {}
                 async with client.stream("POST", url, json=payload, headers=headers) as resp:
                     if resp.status_code != 200:
                         body = await resp.aread()
@@ -898,10 +911,36 @@ async def call_llm_streaming(
                             continue
                         if chunk.get("usage"):
                             usage = chunk["usage"]
-                        delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                        if delta:
-                            full_text += delta
-                            yield ("llm_chunk", {"text": delta})
+                        choice = chunk.get("choices", [{}])[0]
+                        delta = choice.get("delta", {})
+
+                        # --- text content ---
+                        text_part = delta.get("content", "")
+                        if text_part:
+                            full_text += text_part
+                            yield ("llm_chunk", {"text": text_part})
+
+                        # --- tool_calls (streamed in fragments) ---
+                        for tc_delta in delta.get("tool_calls", []):
+                            idx = tc_delta.get("index", 0)
+                            if idx not in tc_acc:
+                                tc_acc[idx] = {
+                                    "id": tc_delta.get("id", ""),
+                                    "type": "function",
+                                    "function": {"name": "", "arguments": ""},
+                                }
+                            acc = tc_acc[idx]
+                            if tc_delta.get("id"):
+                                acc["id"] = tc_delta["id"]
+                            fn = tc_delta.get("function", {})
+                            if fn.get("name"):
+                                acc["function"]["name"] += fn["name"]
+                            if fn.get("arguments"):
+                                acc["function"]["arguments"] += fn["arguments"]
+
+                # Yield accumulated tool_calls (if any) before llm_done
+                if tc_acc:
+                    yield ("tool_calls", [tc_acc[i] for i in sorted(tc_acc)])
                 done_data: dict[str, Any] = {"fullText": full_text}
                 if usage:
                     done_data["usage"] = usage
@@ -918,10 +957,14 @@ async def call_llm_streaming(
                     )
                     return
                 body = resp.json()
-                text = body.get("choices", [{}])[0].get("message", {}).get("content", "")
-                done_data = {"fullText": text}
+                msg = body.get("choices", [{}])[0].get("message", {})
+                text = msg.get("content", "") or ""
+                done_data: dict[str, Any] = {"fullText": text}
                 if body.get("usage"):
                     done_data["usage"] = body["usage"]
+                # Non-streaming: tool_calls arrive in a single message
+                if msg.get("tool_calls"):
+                    yield ("tool_calls", msg["tool_calls"])
                 yield ("llm_done", done_data)
     except httpx.ConnectError:
         yield ("llm_error", {"error": "LLM_CONNECTION_FAILED", "detail": ""})

@@ -47,8 +47,6 @@ interface Props {
   addonCrud?: AddonCrud;
 }
 
-
-
 export default function ClothingEditor({ clothing, definitions, isNew, onBack, addonCrud }: Props) {
   const addonPrefix = clothing.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(clothing.id));

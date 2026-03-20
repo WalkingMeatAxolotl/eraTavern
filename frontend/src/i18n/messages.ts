@@ -102,6 +102,12 @@ const ERROR_MESSAGES: Record<string, string> = {
   ACTION_NO_TARGET_CELL: "未指定目标方格",
   ACTION_MOVE_BLOCKED: "无法移动到目标方格",
   ACTION_NO_OUTFIT: "未指定预设",
+
+  // --- AI Assist ---
+  AI_ASSIST_NO_PRESET: "未配置 AI 辅助预设，请在 LLM 设置 → 全局 中配置",
+  AI_ASSIST_PRESET_INVALID: "AI 辅助预设无效或 API 服务未配置",
+  AI_ASSIST_SESSION_ERROR: "AI 会话错误",
+  AI_ASSIST_TOOL_FAILED: "工具执行失败: {detail}",
 };
 
 /**

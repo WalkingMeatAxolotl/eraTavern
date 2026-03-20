@@ -57,6 +57,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export interface AppConfig {
   maxWidth: number;
   defaultLlmPreset: string;
+  aiAssistPresetId: string;
 }
 
 export async function fetchConfig(): Promise<AppConfig> {

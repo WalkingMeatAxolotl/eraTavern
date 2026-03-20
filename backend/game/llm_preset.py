@@ -32,6 +32,7 @@ def list_presets() -> list[dict]:
                     "id": data.get("id", d.name),
                     "name": data.get("name", d.name),
                     "description": data.get("description", ""),
+                    "type": data.get("type", "narrative"),
                 }
             )
         except (json.JSONDecodeError, OSError):

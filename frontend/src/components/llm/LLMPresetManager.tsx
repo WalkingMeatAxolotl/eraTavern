@@ -19,6 +19,7 @@ import {
   updateConfig,
 } from "../../api/client";
 
+import { HelpButton, HelpPanel, helpP } from "../shared/HelpToggle";
 import { inputStyle as _inputStyle, labelStyle } from "../shared/styles";
 
 // --- Styles ---
@@ -47,11 +48,14 @@ const btnStyle = (color: string): React.CSSProperties => ({
 
 // --- Default objects ---
 
-function makeBlankPreset(): LLMPreset {
-  return {
+const BUILTIN_CONTEXT_ENTRY_ID = "__assist_context__";
+
+function makeBlankPreset(type: "narrative" | "assist" = "narrative"): LLMPreset {
+  const base: LLMPreset = {
     id: "",
     name: "",
     description: "",
+    type,
     providerId: "",
     postProcessing: "mergeConsecutiveSameRole",
     parameters: {
@@ -63,6 +67,20 @@ function makeBlankPreset(): LLMPreset {
     },
     promptEntries: [],
   };
+  if (type === "assist") {
+    // Assist presets start with a builtin context entry
+    base.promptEntries = [
+      {
+        id: BUILTIN_CONTEXT_ENTRY_ID,
+        name: t("llm.builtinContext"),
+        enabled: true,
+        role: "system",
+        content: "",
+        position: 0,
+      },
+    ];
+  }
+  return base;
 }
 
 function makeBlankProvider(): LLMProvider {
@@ -162,6 +180,7 @@ function PromptEntryRow({
   onMove,
   onDelete,
   contentRef,
+  isAssistPreset,
 }: {
   entry: LLMPromptEntry;
   index: number;
@@ -172,7 +191,9 @@ function PromptEntryRow({
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
   contentRef: React.RefObject<HTMLTextAreaElement | null>;
+  isAssistPreset?: boolean;
 }) {
+  const isBuiltin = entry.id === BUILTIN_CONTEXT_ENTRY_ID;
   const roleColors: Record<string, string> = {
     system: T.accent,
     user: T.success,
@@ -246,15 +267,16 @@ function PromptEntryRow({
         </span>
         <span
           style={{
-            color: T.text,
+            color: isBuiltin ? T.accent : T.text,
             fontSize: "12px",
             flex: 1,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+            fontStyle: isBuiltin ? "italic" : "normal",
           }}
         >
-          {entry.name || entry.id}
+          {isBuiltin ? `🔒 ${t("llm.builtinContext")}` : entry.name || entry.id}
         </span>
         <span style={{ color: T.textDim, fontSize: "10px" }}>{expanded ? "▼" : "▶"}</span>
       </div>
@@ -262,86 +284,113 @@ function PromptEntryRow({
       {/* Expanded editor */}
       {expanded && (
         <div style={{ ...sectionStyle, marginTop: "4px", marginBottom: "8px" }}>
-          <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-            <div style={{ flex: 1 }}>
-              <div style={labelStyle}>{t("field.name")}</div>
-              <input
-                style={inputStyle}
-                value={entry.name}
-                onChange={(e) => onChange({ ...entry, name: e.target.value })}
-              />
-            </div>
-            <div style={{ width: "120px" }}>
-              <div style={labelStyle}>{t("field.role")}</div>
-              <select
-                style={{ ...inputStyle }}
-                value={entry.role}
-                onChange={(e) => onChange({ ...entry, role: e.target.value as LLMPromptEntry["role"] })}
-              >
-                <option value="system">system</option>
-                <option value="user">user</option>
-                <option value="assistant">assistant</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={labelStyle}>{t("field.content")}</div>
-          <textarea
-            ref={contentRef}
-            style={{ ...inputStyle, minHeight: "100px", resize: "vertical", fontFamily: T.fontMono }}
-            value={entry.content}
-            onChange={(e) => onChange({ ...entry, content: e.target.value })}
-          />
-
-          {/* Variable chips */}
-          <div style={{ marginTop: "6px", padding: "6px 8px", backgroundColor: T.bg3, borderRadius: "3px" }}>
-            <div style={{ ...labelStyle, marginBottom: "4px" }}>{t("llm.availableVars")}</div>
-            {VARIABLE_GROUPS.map((g) => (
-              <div key={g.label} style={{ marginBottom: "2px" }}>
-                <span style={{ color: T.textDim, fontSize: "10px", marginRight: "6px" }}>{g.label}:</span>
-                {g.vars.map((v) => (
-                  <button
-                    key={v.name}
-                    title={v.desc}
-                    style={{
-                      padding: "1px 6px",
-                      margin: "1px 2px",
-                      backgroundColor: T.bg2,
-                      color: T.accent,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "2px",
-                      cursor: "pointer",
-                      fontSize: "11px",
-                      fontFamily: T.fontMono,
-                    }}
-                    onClick={() => {
-                      const ta = contentRef.current;
-                      if (!ta) return;
-                      const tag = `{{${v.name}}}`;
-                      const start = ta.selectionStart;
-                      const end = ta.selectionEnd;
-                      const val = ta.value;
-                      const newVal = val.substring(0, start) + tag + val.substring(end);
-                      onChange({ ...entry, content: newVal });
-                      // Restore cursor after React re-render
-                      setTimeout(() => {
-                        ta.focus();
-                        ta.setSelectionRange(start + tag.length, start + tag.length);
-                      }, 0);
-                    }}
+          {isBuiltin ? (
+            /* Builtin context entry — only role selector + hint */
+            <>
+              <div style={{ display: "flex", gap: "12px", marginBottom: "6px", alignItems: "center" }}>
+                <div style={{ width: "120px" }}>
+                  <div style={labelStyle}>{t("field.role")}</div>
+                  <select
+                    style={{ ...inputStyle }}
+                    value={entry.role}
+                    onChange={(e) => onChange({ ...entry, role: e.target.value as LLMPromptEntry["role"] })}
                   >
-                    {`{{${v.name}}}`}
-                  </button>
-                ))}
+                    <option value="system">system</option>
+                    <option value="user">user</option>
+                  </select>
+                </div>
               </div>
-            ))}
-          </div>
+              <div style={{ color: T.textDim, fontSize: "12px", padding: "8px", backgroundColor: T.bg3, borderRadius: "3px" }}>
+                {t("llm.builtinContextHint")}
+              </div>
+            </>
+          ) : (
+            /* Regular entry — full editor */
+            <>
+              <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={labelStyle}>{t("field.name")}</div>
+                  <input
+                    style={inputStyle}
+                    value={entry.name}
+                    onChange={(e) => onChange({ ...entry, name: e.target.value })}
+                  />
+                </div>
+                <div style={{ width: "120px" }}>
+                  <div style={labelStyle}>{t("field.role")}</div>
+                  <select
+                    style={{ ...inputStyle }}
+                    value={entry.role}
+                    onChange={(e) => onChange({ ...entry, role: e.target.value as LLMPromptEntry["role"] })}
+                  >
+                    <option value="system">system</option>
+                    <option value="user">user</option>
+                    <option value="assistant">assistant</option>
+                  </select>
+                </div>
+              </div>
 
-          <div style={{ marginTop: "6px" }}>
-            <button style={btnStyle(T.danger)} onClick={onDelete}>
-              [{t("btn.deleteEntry")}]
-            </button>
-          </div>
+              <div style={labelStyle}>{t("field.content")}</div>
+              <textarea
+                ref={contentRef}
+                style={{ ...inputStyle, minHeight: "100px", resize: "vertical", fontFamily: T.fontMono }}
+                value={entry.content}
+                onChange={(e) => onChange({ ...entry, content: e.target.value })}
+              />
+
+              {/* Variable chips — only for narrative presets */}
+              {!isAssistPreset && (
+                <div style={{ marginTop: "6px", padding: "6px 8px", backgroundColor: T.bg3, borderRadius: "3px" }}>
+                  <div style={{ ...labelStyle, marginBottom: "4px" }}>{t("llm.availableVars")}</div>
+                  {VARIABLE_GROUPS.map((g) => (
+                    <div key={g.label} style={{ marginBottom: "2px" }}>
+                      <span style={{ color: T.textDim, fontSize: "10px", marginRight: "6px" }}>{g.label}:</span>
+                      {g.vars.map((v) => (
+                        <button
+                          key={v.name}
+                          title={v.desc}
+                          style={{
+                            padding: "1px 6px",
+                            margin: "1px 2px",
+                            backgroundColor: T.bg2,
+                            color: T.accent,
+                            border: `1px solid ${T.border}`,
+                            borderRadius: "2px",
+                            cursor: "pointer",
+                            fontSize: "11px",
+                            fontFamily: T.fontMono,
+                          }}
+                          onClick={() => {
+                            const ta = contentRef.current;
+                            if (!ta) return;
+                            const tag = `{{${v.name}}}`;
+                            const start = ta.selectionStart;
+                            const end = ta.selectionEnd;
+                            const val = ta.value;
+                            const newVal = val.substring(0, start) + tag + val.substring(end);
+                            onChange({ ...entry, content: newVal });
+                            // Restore cursor after React re-render
+                            setTimeout(() => {
+                              ta.focus();
+                              ta.setSelectionRange(start + tag.length, start + tag.length);
+                            }, 0);
+                          }}
+                        >
+                          {`{{${v.name}}}`}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ marginTop: "6px" }}>
+                <button style={btnStyle(T.danger)} onClick={onDelete}>
+                  [{t("btn.deleteEntry")}]
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -547,7 +596,7 @@ function ProviderEditor({
 // --- Main component ---
 
 export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?: LLMDebugEntry[] }) {
-  const [presets, setPresets] = useState<{ id: string; name: string; description: string }[]>([]);
+  const [presets, setPresets] = useState<{ id: string; name: string; description: string; type?: string }[]>([]);
   const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [preset, setPreset] = useState<LLMPreset>(makeBlankPreset());
@@ -555,8 +604,10 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
+  const [showTypeHelp, setShowTypeHelp] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
   const [globalPreset, setGlobalPreset] = useState("");
+  const [aiAssistPreset, setAiAssistPreset] = useState("");
   const [subTab, setSubTab] = useState<"presets" | "providers" | "global" | "debug">("presets");
 
   // Provider editor state (within global tab)
@@ -574,6 +625,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       setPresets(presetList);
       setProviders(providerList);
       setGlobalPreset(cfg.defaultLlmPreset || "");
+      setAiAssistPreset(cfg.aiAssistPresetId || "");
     } catch (e) {
       console.error("Failed to load LLM data:", e);
     }
@@ -597,6 +649,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       }
       if (!data.parameters) data.parameters = makeBlankPreset().parameters;
       if (!data.postProcessing) data.postProcessing = "mergeConsecutiveSameRole";
+      if (!data.type) data.type = "narrative";
       setPreset(data);
       setEditingId(id);
       setIsNew(false);
@@ -607,8 +660,8 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
     }
   };
 
-  const handleNew = () => {
-    setPreset(makeBlankPreset());
+  const handleNew = (type: "narrative" | "assist" = "narrative") => {
+    setPreset(makeBlankPreset(type));
     setEditingId("__new__");
     setIsNew(true);
     setMessage("");
@@ -797,7 +850,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
               style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}
             >
               <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.llmPresets")} ==</span>
-              <button onClick={handleNew} style={btnStyle(T.successDim)}>
+              <button onClick={() => handleNew()} style={btnStyle(T.successDim)}>
                 [{t("btn.newPresetFull")}]
               </button>
             </div>
@@ -831,6 +884,18 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.border)}
                 >
                   <span>
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        padding: "1px 4px",
+                        borderRadius: "2px",
+                        marginRight: "6px",
+                        backgroundColor: p.type === "assist" ? T.accent : T.bg3,
+                        color: p.type === "assist" ? T.bg1 : T.textDim,
+                      }}
+                    >
+                      {p.type === "assist" ? t("llm.presetTypeAssist") : t("llm.presetTypeNarrative")}
+                    </span>
                     <span style={{ fontWeight: "bold" }}>{p.name || p.id}</span>
                     {p.name && <span style={{ color: T.textDim, marginLeft: "8px", fontSize: "11px" }}>{p.id}</span>}
                   </span>
@@ -948,13 +1013,37 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                 }}
               >
                 <option value="">{t("llm.noPreset")}</option>
-                {presets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name || p.id}
-                  </option>
-                ))}
+                {presets
+                  .filter((p) => p.type !== "assist")
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name || p.id}
+                    </option>
+                  ))}
               </select>
               <span style={{ fontSize: "11px", color: T.textDim }}>{t("llm.globalPresetHint")}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+              <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>{t("llm.aiAssistPreset")}</span>
+              <select
+                style={{ ...inputStyle, width: "200px" }}
+                value={aiAssistPreset}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setAiAssistPreset(val);
+                  await updateConfig({ aiAssistPresetId: val });
+                }}
+              >
+                <option value="">{t("llm.noPreset")}</option>
+                {presets
+                  .filter((p) => p.type === "assist")
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name || p.id}
+                    </option>
+                  ))}
+              </select>
+              <span style={{ fontSize: "11px", color: T.textDim }}>{t("llm.aiAssistPresetHint")}</span>
             </div>
           </>
         )}
@@ -1001,13 +1090,62 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
             />
           </div>
         </div>
-        <div>
+        <div style={{ marginBottom: "6px" }}>
           <div style={labelStyle}>{t("field.description")}</div>
           <input
             style={inputStyle}
             value={preset.description}
             onChange={(e) => setPreset((p) => ({ ...p, description: e.target.value }))}
           />
+        </div>
+        <div>
+          <div style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "6px" }}>
+            {t("llm.presetType")}
+            <HelpButton show={showTypeHelp} onToggle={() => setShowTypeHelp((v) => !v)} />
+          </div>
+          {showTypeHelp && (
+            <HelpPanel>
+              <p style={helpP}>
+                <b>{t("llm.presetTypeNarrative")}</b>：{t("llm.presetTypeNarrativeDesc")}
+              </p>
+              <p style={helpP}>
+                <b>{t("llm.presetTypeAssist")}</b>：{t("llm.presetTypeAssistDesc")}
+              </p>
+            </HelpPanel>
+          )}
+          <select
+            style={{ ...inputStyle, width: "200px" }}
+            value={preset.type || "narrative"}
+            onChange={(e) => {
+              const newType = e.target.value as "narrative" | "assist";
+              setPreset((p) => {
+                const updated = { ...p, type: newType };
+                // When switching to assist, ensure builtin context entry exists
+                if (newType === "assist" && !p.promptEntries.some((pe) => pe.id === BUILTIN_CONTEXT_ENTRY_ID)) {
+                  const maxPos = p.promptEntries.reduce((m, pe) => Math.max(m, pe.position), -1);
+                  updated.promptEntries = [
+                    ...p.promptEntries,
+                    {
+                      id: BUILTIN_CONTEXT_ENTRY_ID,
+                      name: t("llm.builtinContext"),
+                      enabled: true,
+                      role: "system" as const,
+                      content: "",
+                      position: maxPos + 1,
+                    },
+                  ];
+                }
+                // When switching to narrative, remove builtin entry
+                if (newType === "narrative") {
+                  updated.promptEntries = p.promptEntries.filter((pe) => pe.id !== BUILTIN_CONTEXT_ENTRY_ID);
+                }
+                return updated;
+              });
+            }}
+          >
+            <option value="narrative">{t("llm.presetTypeNarrative")}</option>
+            <option value="assist">{t("llm.presetTypeAssist")}</option>
+          </select>
         </div>
       </div>
 
@@ -1123,10 +1261,13 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
               }
             }}
             onDelete={() => {
+              // Prevent deleting builtin context entry
+              if (entry.id === BUILTIN_CONTEXT_ENTRY_ID) return;
               const realIdx = preset.promptEntries.findIndex((pe) => pe.id === entry.id);
               if (realIdx >= 0) deleteEntry(realIdx);
             }}
             contentRef={contentRef}
+            isAssistPreset={preset.type === "assist"}
           />
         ))}
       </div>

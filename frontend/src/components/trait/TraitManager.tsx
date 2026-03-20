@@ -109,12 +109,7 @@ export default function TraitManager({
     };
 
     return (
-      <TraitEditor
-        trait={isNew ? blank : (existing ?? blank)}
-        definitions={definitions}
-        isNew={isNew}
-        onBack={handleBack}
-      />
+      <TraitEditor trait={isNew ? blank : (existing ?? blank)} definitions={definitions} isNew={isNew} onBack={handleBack} />
     );
   }
 

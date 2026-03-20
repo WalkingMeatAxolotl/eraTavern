@@ -66,6 +66,7 @@ Create game content (addons) with visual editors. The engine takes care of:
 | **Trait Groups** | Exclusive/non-exclusive grouping with auto-replacement |
 | **Ability Decay** | Experience values decay over time with configurable rate and interval |
 | **Prompt Labels** | LLM prompt text adapts to addon language, enabling non-Chinese content packs |
+| **AI Assist Agent** | Chat-based AI assistant for creating and editing entities — tool calling with human-in-the-loop confirmation |
 
 ### For Players
 

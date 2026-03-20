@@ -613,6 +613,7 @@ export interface LLMPreset {
   id: string;
   name: string;
   description: string;
+  type?: "narrative" | "assist";
   providerId: string;
   postProcessing: string;
   parameters: LLMParameters;
