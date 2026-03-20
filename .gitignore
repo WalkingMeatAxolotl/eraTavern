@@ -28,8 +28,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Game data - worlds (all user-created)
+# Game data - worlds (user-created, keep only example)
 worlds/*
+!worlds/example_world/
 !worlds/put_worlds_here
 
 # User data (saves, LLM presets with API keys, etc.)
@@ -41,9 +42,9 @@ backend/data/saves/
 saves/
 llm-presets/
 
-# Game data - addons (keep only base)
+# Game data - addons (user-created, keep only example)
 addons/*
-!addons/base/
+!addons/example_addon/
 !addons/put_addons_here
 
 # Development plans (local only)

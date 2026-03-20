@@ -1,0 +1,345 @@
+{
+  "clothing": [
+    {
+      "id": "iron_sword",
+      "name": "铁剑",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.power",
+          "value": 500
+        }
+      ],
+      "slots": [
+        "mainHand"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "wooden_staff",
+      "name": "木杖",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.wisdom",
+          "value": 500
+        }
+      ],
+      "slots": [
+        "mainHand"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "wooden_shield",
+      "name": "木盾",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "stamina",
+          "value": 300
+        }
+      ],
+      "slots": [
+        "offHand"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "lantern",
+      "name": "提灯",
+      "effects": [],
+      "slots": [
+        "offHand"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "straw_hat",
+      "name": "草帽",
+      "effects": [],
+      "slots": [
+        "hat"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "wizard_hat",
+      "name": "巫师帽",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.wisdom",
+          "value": 300
+        }
+      ],
+      "slots": [
+        "hat"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "leather_armor",
+      "name": "皮甲",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "stamina",
+          "value": 500
+        }
+      ],
+      "slots": [
+        "upperBody"
+      ],
+      "occlusion": [
+        "upperUnderwear"
+      ]
+    },
+    {
+      "id": "silk_robe",
+      "name": "丝绸长袍",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.wisdom",
+          "value": 200
+        }
+      ],
+      "slots": [
+        "upperBody"
+      ],
+      "occlusion": [
+        "upperUnderwear"
+      ]
+    },
+    {
+      "id": "cotton_shirt",
+      "name": "棉布衬衫",
+      "effects": [],
+      "slots": [
+        "upperUnderwear"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "linen_undershirt",
+      "name": "亚麻内衣",
+      "effects": [],
+      "slots": [
+        "upperUnderwear"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "leather_pants",
+      "name": "皮裤",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.speed",
+          "value": 200
+        }
+      ],
+      "slots": [
+        "lowerBody"
+      ],
+      "occlusion": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "id": "cloth_skirt",
+      "name": "布裙",
+      "effects": [],
+      "slots": [
+        "lowerBody"
+      ],
+      "occlusion": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "id": "cotton_shorts",
+      "name": "棉短裤",
+      "effects": [],
+      "slots": [
+        "lowerUnderwear"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "leather_gloves",
+      "name": "皮手套",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.power",
+          "value": 100
+        }
+      ],
+      "slots": [
+        "hands"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "iron_gauntlets",
+      "name": "铁护手",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.power",
+          "value": 300
+        }
+      ],
+      "slots": [
+        "hands"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "wool_socks",
+      "name": "羊毛袜",
+      "effects": [],
+      "slots": [
+        "feet"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "silk_stockings",
+      "name": "丝袜",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.speed",
+          "value": 100
+        }
+      ],
+      "slots": [
+        "feet"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "leather_boots",
+      "name": "皮靴",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.speed",
+          "value": 300
+        }
+      ],
+      "slots": [
+        "shoes"
+      ],
+      "occlusion": [
+        "feet"
+      ]
+    },
+    {
+      "id": "straw_sandals",
+      "name": "草鞋",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.speed",
+          "value": 100
+        }
+      ],
+      "slots": [
+        "shoes"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "traveler_cloak",
+      "name": "旅人披风",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "stamina",
+          "value": 200
+        }
+      ],
+      "slots": [
+        "back"
+      ],
+      "occlusion": [
+        "upperBody",
+        "upperUnderwear"
+      ]
+    },
+    {
+      "id": "adventurer_backpack",
+      "name": "冒险者背包",
+      "effects": [],
+      "slots": [
+        "back"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "silver_ring",
+      "name": "银戒指",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "money",
+          "value": 100
+        }
+      ],
+      "slots": [
+        "accessory1"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "jade_pendant",
+      "name": "玉佩",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "energy",
+          "value": 300
+        }
+      ],
+      "slots": [
+        "accessory2"
+      ],
+      "occlusion": []
+    },
+    {
+      "id": "lucky_charm",
+      "name": "幸运符",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.wisdom",
+          "value": 100
+        }
+      ],
+      "slots": [
+        "accessory3"
+      ],
+      "occlusion": []
+    }
+  ]
+}

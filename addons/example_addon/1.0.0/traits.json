@@ -1,0 +1,192 @@
+{
+  "traits": [
+    {
+      "id": "power",
+      "name": "力量",
+      "category": "ability",
+      "description": "",
+      "effects": [],
+      "defaultValue": 2000,
+      "decay": {
+        "type": "percentage",
+        "amount": 1,
+        "intervalMinutes": 1440
+      }
+    },
+    {
+      "id": "speed",
+      "name": "速度",
+      "category": "ability",
+      "description": "",
+      "effects": [],
+      "defaultValue": 2000,
+      "decay": {
+        "type": "percentage",
+        "amount": 1,
+        "intervalMinutes": 5440
+      }
+    },
+    {
+      "id": "wisdom",
+      "name": "智慧",
+      "category": "ability",
+      "description": "",
+      "effects": [],
+      "defaultValue": 2000,
+      "decay": {
+        "type": "percentage",
+        "amount": 1,
+        "intervalMinutes": 1440
+      }
+    },
+    {
+      "id": "human",
+      "name": "人类",
+      "category": "race",
+      "description": "",
+      "effects": []
+    },
+    {
+      "id": "male",
+      "name": "男性",
+      "category": "sexTrait",
+      "description": "",
+      "effects": []
+    },
+    {
+      "id": "female",
+      "name": "女性",
+      "category": "sexTrait",
+      "description": "",
+      "effects": []
+    },
+    {
+      "id": "tall",
+      "name": "高大",
+      "category": "bodyTrait",
+      "description": "",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.power",
+          "value": 500
+        }
+      ]
+    },
+    {
+      "id": "strong",
+      "name": "强壮",
+      "category": "bodyTrait",
+      "description": "天生体格健壮，肌肉结实有力。",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.power",
+          "value": 500
+        },
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "stamina",
+          "value": 300
+        }
+      ],
+      "decay": null
+    },
+    {
+      "id": "nimble",
+      "name": "灵活",
+      "category": "bodyTrait",
+      "description": "身手敏捷，动作轻盈，擅长闪避和跳跃。",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.speed",
+          "value": 500
+        }
+      ],
+      "decay": null
+    },
+    {
+      "id": "brave",
+      "name": "勇敢",
+      "category": "mentalTrait",
+      "description": "面对危险时不退缩，总是第一个冲上前。",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.power",
+          "value": 300
+        }
+      ],
+      "decay": null
+    },
+    {
+      "id": "calm",
+      "name": "沉着",
+      "category": "mentalTrait",
+      "description": "无论遇到什么状况都能保持冷静，做出理性的判断。",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.wisdom",
+          "value": 300
+        }
+      ],
+      "decay": null
+    },
+    {
+      "id": "swordsmanship",
+      "name": "剑术",
+      "category": "techTrait",
+      "description": "经过训练的剑术技巧，能熟练地使用各种刀剑。",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.power",
+          "value": 300
+        },
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.speed",
+          "value": 200
+        }
+      ],
+      "decay": null
+    },
+    {
+      "id": "herbalism",
+      "name": "草药学",
+      "category": "techTrait",
+      "description": "精通各类草药的辨识与调配，能制作简单的药剂。",
+      "effects": [
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "example_addon.wisdom",
+          "value": 300
+        }
+      ],
+      "decay": null
+    }
+  ],
+  "traitGroups": [
+    {
+      "id": "gender",
+      "name": "性别",
+      "category": "sexTrait",
+      "traits": [
+        "male",
+        "female"
+      ],
+      "exclusive": true
+    }
+  ]
+}

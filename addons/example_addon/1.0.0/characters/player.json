@@ -1,0 +1,148 @@
+{
+  "id": "player",
+  "traits": {
+    "ability": [],
+    "bodyTrait": [
+      "nimble"
+    ],
+    "experience": [],
+    "mentalTrait": [
+      "brave"
+    ],
+    "other": [],
+    "race": [
+      "human"
+    ],
+    "sexTrait": [
+      "female"
+    ],
+    "techTrait": [
+      "herbalism"
+    ]
+  },
+  "clothing": {
+    "accessory1": {
+      "itemId": "silver_ring",
+      "state": "worn"
+    },
+    "back": {
+      "itemId": "traveler_cloak",
+      "state": "worn"
+    },
+    "hat": {
+      "itemId": "wizard_hat",
+      "state": "worn"
+    },
+    "lowerBody": {
+      "itemId": "cloth_skirt",
+      "state": "worn"
+    },
+    "lowerUnderwear": {
+      "itemId": "cotton_shorts",
+      "state": "worn"
+    },
+    "mainHand": {
+      "itemId": "wooden_staff",
+      "state": "worn"
+    },
+    "shoes": {
+      "itemId": "leather_boots",
+      "state": "worn"
+    },
+    "upperBody": {
+      "itemId": "silk_robe",
+      "state": "worn"
+    },
+    "upperUnderwear": {
+      "itemId": "cotton_shirt",
+      "state": "worn"
+    }
+  },
+  "isPlayer": true,
+  "active": true,
+  "portrait": "example_addon.player.png",
+  "template": "era-touhou",
+  "basicInfo": {
+    "name": "冒险者",
+    "money": 1000
+  },
+  "resources": {
+    "energy": {
+      "max": 2000,
+      "value": 2000
+    },
+    "stamina": {
+      "max": 7400,
+      "value": 2900
+    }
+  },
+  "abilities": {
+    "power": 9200,
+    "speed": 22100,
+    "wisdom": 36200
+  },
+  "position": {
+    "cellId": 2,
+    "mapId": "tarven"
+  },
+  "restPosition": {
+    "cellId": 0,
+    "mapId": "tarven"
+  },
+  "outfits": {
+    "default": {
+      "accessory1": [
+        "silver_ring"
+      ],
+      "back": [
+        "traveler_cloak"
+      ],
+      "hat": [
+        "wizard_hat"
+      ],
+      "lowerBody": [
+        "cloth_skirt"
+      ],
+      "lowerUnderwear": [
+        "cotton_shorts"
+      ],
+      "mainHand": [
+        "wooden_staff"
+      ],
+      "offHand": [],
+      "shoes": [
+        "leather_boots"
+      ],
+      "upperBody": [
+        "silk_robe"
+      ],
+      "upperUnderwear": [
+        "cotton_shirt"
+      ]
+    }
+  },
+  "inventory": [
+    {
+      "name": "生命药水",
+      "tags": [
+        "consumable",
+        "potion"
+      ],
+      "amount": 1,
+      "itemId": "health_potion"
+    },
+    {
+      "name": "气力药水",
+      "tags": [
+        "consumable",
+        "potion"
+      ],
+      "amount": 1,
+      "itemId": "energy_potion"
+    }
+  ],
+  "llm": {
+    "personality": "初出茅庐的冒险者"
+  },
+  "source": "example_addon"
+}

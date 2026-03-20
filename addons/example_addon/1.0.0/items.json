@@ -1,0 +1,124 @@
+{
+  "items": [
+    {
+      "id": "health_potion",
+      "name": "生命药水",
+      "description": "一瓶散发着淡红色光芒的药水，饮用后能恢复体力。",
+      "tags": [
+        "consumable",
+        "potion"
+      ],
+      "maxStack": 10,
+      "sellable": true,
+      "price": 30
+    },
+    {
+      "id": "energy_potion",
+      "name": "气力药水",
+      "description": "蓝色的浓稠液体，喝下后能迅速恢复气力。",
+      "tags": [
+        "consumable",
+        "potion"
+      ],
+      "maxStack": 10,
+      "sellable": true,
+      "price": 30
+    },
+    {
+      "id": "bread",
+      "name": "面包",
+      "description": "新鲜烤制的麦面包，散发着诱人的香气。",
+      "tags": [
+        "consumable",
+        "food"
+      ],
+      "maxStack": 20,
+      "sellable": true,
+      "price": 5
+    },
+    {
+      "id": "dried_meat",
+      "name": "肉干",
+      "description": "用盐腌制风干的肉条，便于携带，是旅途中的好伙伴。",
+      "tags": [
+        "consumable",
+        "food"
+      ],
+      "maxStack": 20,
+      "sellable": true,
+      "price": 8
+    },
+    {
+      "id": "iron_ore",
+      "name": "铁矿石",
+      "description": "从矿洞中采掘出的粗糙铁矿石，可以用来锻造。",
+      "tags": [
+        "material",
+        "ore"
+      ],
+      "maxStack": 50,
+      "sellable": true,
+      "price": 10
+    },
+    {
+      "id": "herb_bundle",
+      "name": "草药束",
+      "description": "采集来的各类常见草药，捆扎在一起，可用于调配药剂。",
+      "tags": [
+        "material",
+        "herb"
+      ],
+      "maxStack": 30,
+      "sellable": true,
+      "price": 12
+    },
+    {
+      "id": "ancient_coin",
+      "name": "古代钱币",
+      "description": "一枚刻有不明文字的古老钱币，似乎来自很久以前的文明。",
+      "tags": [
+        "treasure",
+        "collectible"
+      ],
+      "maxStack": 99,
+      "sellable": true,
+      "price": 100
+    },
+    {
+      "id": "mysterious_key",
+      "name": "神秘钥匙",
+      "description": "一把造型奇特的钥匙，不知道能打开什么锁。",
+      "tags": [
+        "quest",
+        "key"
+      ],
+      "maxStack": 1,
+      "sellable": false,
+      "price": 0
+    },
+    {
+      "id": "old_map",
+      "name": "旧地图",
+      "description": "一张泛黄的地图，上面标注着一个红色的叉号。",
+      "tags": [
+        "quest",
+        "document"
+      ],
+      "maxStack": 1,
+      "sellable": false,
+      "price": 0
+    },
+    {
+      "id": "rope",
+      "name": "麻绳",
+      "description": "一卷结实的麻绳，长约十米，用途广泛。",
+      "tags": [
+        "tool",
+        "utility"
+      ],
+      "maxStack": 5,
+      "sellable": true,
+      "price": 15
+    }
+  ]
+}

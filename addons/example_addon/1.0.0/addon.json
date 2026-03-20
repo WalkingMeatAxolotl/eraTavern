@@ -1,5 +1,5 @@
 {
-  "id": "Base",
+  "id": "example_addon",
   "version": "1.0.0",
   "dependencies": []
 }

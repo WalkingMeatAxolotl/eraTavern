@@ -1,0 +1,62 @@
+{
+  "actions": [
+    {
+      "id": "rest",
+      "name": "休息",
+      "category": "基础行动",
+      "targetType": "none",
+      "triggerLLM": false,
+      "timeCost": 50,
+      "npcWeight": 0,
+      "npcWeightModifiers": [],
+      "conditions": [],
+      "costs": [],
+      "outcomes": [
+        {
+          "outputTemplates": [
+            {
+              "text": "{{player}}休息的很舒服，精力充沛"
+            }
+          ],
+          "effects": [
+            {
+              "type": "resource",
+              "key": "stamina",
+              "op": "add",
+              "target": "self",
+              "value": 500,
+              "valuePercent": false
+            }
+          ],
+          "grade": "success",
+          "label": "大成功",
+          "weight": 50
+        },
+        {
+          "outputTemplates": [
+            {
+              "text": "{{player}}休息的很舒服"
+            }
+          ],
+          "effects": [
+            {
+              "type": "resource",
+              "key": "stamina",
+              "op": "add",
+              "target": "self",
+              "value": 200
+            }
+          ],
+          "grade": "normal",
+          "label": "成功",
+          "weight": 100
+        }
+      ],
+      "outputTemplates": [
+        {
+          "text": "{{player}}休息了一会儿"
+        }
+      ]
+    }
+  ]
+}

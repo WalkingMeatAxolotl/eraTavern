@@ -1,0 +1,36 @@
+{
+  "presets": [
+    {
+      "text": "#",
+      "color": "#bf2222"
+    },
+    {
+      "text": "桌",
+      "color": "#ffffff"
+    },
+    {
+      "text": "b",
+      "color": "#ffffff"
+    },
+    {
+      "text": "d",
+      "color": "#ffffff"
+    },
+    {
+      "text": "——",
+      "color": "#a07979"
+    },
+    {
+      "text": "田",
+      "color": "#57afc1"
+    },
+    {
+      "text": "——",
+      "color": "#cecaca"
+    },
+    {
+      "text": "|",
+      "color": "#ffffff"
+    }
+  ]
+}

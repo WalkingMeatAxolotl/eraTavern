@@ -1,0 +1,11 @@
+{
+  "id": "example_world",
+  "name": "示例世界",
+  "addons": [
+    {
+      "id": "example_addon",
+      "version": "1.0.0"
+    }
+  ],
+  "playerCharacter": ""
+}
