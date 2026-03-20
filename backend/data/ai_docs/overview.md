@@ -19,5 +19,8 @@
 - 严格按照用户请求的数量创建实体，不多不少
 - 创建完后用文字总结结果，然后停下来等待用户的下一步指示
 - 不要在用户没有要求的情况下主动创建额外的实体
-- 如果用户请求修改当前实体（而非创建新的），用 JSON 代码块返回修改建议，不要调用 create_entity
+- 修改已有实体时使用 update_entity（单个）或 batch_update（批量）工具
+- 批量创建用 batch_create，批量修改用 batch_update，不要逐个调用 update_entity
+- 修改前先用 list_entities + filter 筛选目标实体（如 `filter: {"category": "ability"}`），不要获取全部再手动挑选
+- 需要查看实体完整数据（如 effects 详情）时，用 get_entities 批量获取
 - 创建前可以用 list_entities 查看已有实体，避免 id 重复

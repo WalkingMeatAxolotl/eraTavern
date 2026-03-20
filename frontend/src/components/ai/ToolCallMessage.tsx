@@ -49,7 +49,7 @@ export default function ToolCallMessage({ name, arguments: args, status, result,
   const entityLabel = ENTITY_LABELS[entityType] || entityType;
 
   // --- Read-only tools: compact summary ---
-  if (name === "list_entities" || name === "get_schema") {
+  if (name === "list_entities" || name === "get_schema" || name === "get_entities") {
     let summary = "";
     if (name === "list_entities" && result) {
       try {
@@ -58,6 +58,9 @@ export default function ToolCallMessage({ name, arguments: args, status, result,
       } catch {
         summary = `list_entities(${entityType})`;
       }
+    } else if (name === "get_entities") {
+      const ids = (args.entityIds as string[]) || [];
+      summary = t("ai.toolGetEntities", { count: ids.length, type: entityLabel });
     } else {
       summary = `get_schema(${entityType})`;
     }
@@ -80,6 +83,11 @@ export default function ToolCallMessage({ name, arguments: args, status, result,
   // --- Batch create: multiple entity cards ---
   if (name === "batch_create") {
     return <BatchCreateToolCall args={args} entityLabel={entityLabel} entityType={entityType} status={status} result={result} onConfirm={onConfirm} onReject={onReject} disabled={disabled} />;
+  }
+
+  // --- Batch update: multiple entity modifications ---
+  if (name === "batch_update") {
+    return <BatchUpdateToolCall args={args} entityLabel={entityLabel} entityType={entityType} status={status} result={result} onConfirm={onConfirm} onReject={onReject} disabled={disabled} />;
   }
 
   // --- Unknown tool ---
@@ -155,6 +163,129 @@ function SingleEntityToolCall({ name, args, entityLabel, entityType, status, res
           disabled={disabled}
         />
         {statusBadge()}
+      </div>
+    );
+}
+
+function BatchUpdateToolCall({ args, entityLabel, entityType, status, result, onConfirm, onReject, disabled }: {
+  args: Record<string, unknown>; entityLabel: string; entityType: string;
+  status: ToolCallStatus; result?: string;
+  onConfirm?: (overrideArgs?: Record<string, unknown>) => void; onReject?: () => void; disabled?: boolean;
+}) {
+    const originalUpdates = (args.updates as Array<Record<string, unknown>>) || [];
+    const [editedUpdates, setEditedUpdates] = useState<Array<Record<string, unknown>>>([...originalUpdates]);
+    const [selected, setSelected] = useState<Set<number>>(() => new Set(originalUpdates.map((_, i) => i)));
+
+    const toggleSelect = (idx: number) => {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(idx)) next.delete(idx); else next.add(idx);
+        return next;
+      });
+    };
+
+    const batchStatusBadge = () => {
+      if (status === "confirmed" && result) {
+        try {
+          const r = JSON.parse(result);
+          return (
+            <div style={{ color: T.success, fontSize: "11px", marginTop: "4px" }}>
+              ✓ {t("ai.batchUpdateResult", { count: r.total || 0, type: entityLabel })}
+              {r.errors?.length > 0 && (
+                <span style={{ color: T.danger, marginLeft: "8px" }}>
+                  ({r.errors.length} {t("ai.batchErrors")})
+                </span>
+              )}
+            </div>
+          );
+        } catch {
+          return <div style={{ color: T.success, fontSize: "11px", marginTop: "4px" }}>✓</div>;
+        }
+      }
+      if (status === "rejected") {
+        return <div style={{ color: T.danger, fontSize: "11px", marginTop: "4px" }}>✗ {t("ai.toolRejected")}</div>;
+      }
+      return null;
+    };
+
+    return (
+      <div style={wrapStyle}>
+        {editedUpdates.map((item, i) => {
+          const entityId = String(item.entityId || "");
+          const displayName = (item._displayName as string) || "";
+          const fields = (item.fields as Record<string, unknown>) || {};
+          const fieldNames = Object.keys(fields);
+          // Build a pseudo-entity for EntityCard display
+          const pseudoEntity = { id: entityId, name: displayName, ...fields };
+
+          return (
+            <div key={i} style={{ display: "flex", gap: "6px", alignItems: "flex-start" }}>
+              {status === "pending" && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(i)}
+                  onChange={() => toggleSelect(i)}
+                  style={{ marginTop: "10px", accentColor: T.accent }}
+                />
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ ...autoStyle, marginBottom: "2px" }}>
+                  <span>✏️ {t("ai.toolUpdateTarget", { id: entityId })}: {fieldNames.join(", ")}</span>
+                </div>
+                <EntityCard
+                  entityType={entityType}
+                  entity={pseudoEntity}
+                  onEntityChange={status === "pending" ? (updated) => {
+                    setEditedUpdates((prev) => {
+                      const next = [...prev];
+                      const { id: _id, name: _n, _displayName: _d, ...updatedFields } = updated;
+                      next[i] = { ...next[i], fields: updatedFields };
+                      return next;
+                    });
+                  } : undefined}
+                />
+              </div>
+            </div>
+          );
+        })}
+        {status === "pending" && (
+          <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+            <button
+              onClick={() => {
+                const selectedUpdates = editedUpdates.filter((_, i) => selected.has(i));
+                onConfirm?.({ ...args, updates: selectedUpdates });
+              }}
+              disabled={disabled || selected.size === 0}
+              style={{
+                padding: "3px 10px",
+                border: `1px solid ${T.success}`,
+                borderRadius: "3px",
+                cursor: selected.size > 0 ? "pointer" : "default",
+                fontSize: "11px",
+                backgroundColor: T.bg1,
+                color: T.success,
+              }}
+            >
+              [{t("ai.confirmBatchUpdate", { count: selected.size })}]
+            </button>
+            <button
+              onClick={onReject}
+              disabled={disabled}
+              style={{
+                padding: "3px 10px",
+                border: `1px solid ${T.danger}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "11px",
+                backgroundColor: T.bg1,
+                color: T.danger,
+              }}
+            >
+              [{t("ai.reject")}]
+            </button>
+          </div>
+        )}
+        {batchStatusBadge()}
       </div>
     );
 }

@@ -82,9 +82,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
   };
 
   const pctHint = (value: number, direction: string) => {
-    let m = value / 100;
-    if (direction === EffectDirection.DECREASE) m = 2.0 - m;
-    return `\u00D7${m.toFixed(2)}`;
+    const sign = direction === EffectDirection.INCREASE ? "+" : "-";
+    return `${sign}${value}%`;
   };
 
   const handleSave = async () => {

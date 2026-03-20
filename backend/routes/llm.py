@@ -345,6 +345,21 @@ def _enrich_tool_args(game_state, fn_name: str, fn_args: dict) -> dict:
         existing = defs.get(entity_id)
         if existing and existing.get("name"):
             return {**fn_args, "_displayName": existing["name"]}
+    elif fn_name == "batch_update":
+        from game.ai_assist import _get_defs
+
+        entity_type = fn_args.get("entityType", "")
+        defs = _get_defs(game_state, entity_type)
+        updates = fn_args.get("updates", [])
+        enriched = []
+        for item in updates:
+            eid = item.get("entityId", "")
+            existing = defs.get(eid)
+            if existing and existing.get("name"):
+                enriched.append({**item, "_displayName": existing["name"]})
+            else:
+                enriched.append(item)
+        return {**fn_args, "updates": enriched}
     return fn_args
 
 
@@ -411,6 +426,8 @@ async def assist_chat(request: Request):
         nonlocal messages
 
         max_loops = 10  # Safety limit to prevent infinite tool-call loops
+        # Cache read tool results to avoid duplicate calls within same request
+        read_cache: dict[str, str] = {}
 
         for loop_i in range(max_loops):
             full_text = ""
@@ -442,7 +459,9 @@ async def assist_chat(request: Request):
                         yield _format_sse("llm_usage", event_data["usage"])
 
             # Build the assistant message for history
-            assistant_msg: dict = {"role": "assistant", "content": full_text}
+            # When only tool_calls with no text, content must be null (not "")
+            # for proper tool result association in OpenAI-compatible APIs
+            assistant_msg: dict = {"role": "assistant", "content": full_text or None}
             if tool_calls:
                 assistant_msg["tool_calls"] = tool_calls
             session.messages.append(assistant_msg)
@@ -465,7 +484,12 @@ async def assist_chat(request: Request):
             read_end = len(parsed) if write_idx is None else write_idx
             for i in range(read_end):
                 call_id, fn_name, _, fn_args = parsed[i]
-                result = execute_tool(_h.game_state, fn_name, fn_args)
+                cache_key = f"{fn_name}:{json.dumps(fn_args, sort_keys=True)}"
+                if cache_key in read_cache:
+                    result = read_cache[cache_key]
+                else:
+                    result = execute_tool(_h.game_state, fn_name, fn_args)
+                    read_cache[cache_key] = result
                 yield _format_sse(
                     "tool_call_result",
                     {"callId": call_id, "name": fn_name, "arguments": fn_args, "result": result, "auto": True},

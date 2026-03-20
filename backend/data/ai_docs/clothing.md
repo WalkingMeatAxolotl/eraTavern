@@ -10,7 +10,7 @@
 | name | string | ✅ | 中文显示名称 |
 | slots | string[] | ✅ | 占用的槽位数组（必须使用系统定义的槽位，见下方） |
 | occlusion | string[] | | 遮挡的槽位数组（穿上后隐藏这些槽位的其他服装） |
-| effects | array | | 效果数组，结构同 trait 的 effects |
+| effects | array | | 效果数组，结构和数值体系同 trait（见 trait 文档的 effects 和经验值等级说明） |
 
 ## 槽位系统
 
@@ -48,13 +48,14 @@ occlusion 数组指定穿上此服装后会遮挡的槽位。
 }
 ```
 
+带效果的示例（target 需为已有的能力/资源/变量，用 `get_schema` 查看可用值）：
 ```json
 {
   "id": "iron_gauntlets",
   "name": "铁手套",
   "slots": ["hands"],
   "effects": [
-    { "target": "defense", "effect": "increase", "magnitudeType": "fixed", "value": 3 }
+    { "target": "stamina", "effect": "increase", "magnitudeType": "fixed", "value": 200 }
   ]
 }
 ```

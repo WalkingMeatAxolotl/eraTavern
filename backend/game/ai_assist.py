@@ -56,7 +56,8 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
         "optional": {
             "description": "特质描述文本",
             "effects": "效果数组：[{target, effect, magnitudeType, value}]",
-            "defaultValue": "初始值（ability 类型用，数字）",
+            "defaultValue": "初始值（仅 ability 类型用，默认 0）",
+            "decay": "数值回落（仅 ability 类型）：{amount, type: fixed|percentage, intervalMinutes}，默认 null",
         },
         "example": {
             "id": "brave",
@@ -179,6 +180,29 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
+            "name": "get_entities",
+            "description": "批量获取实体的完整数据（含 effects、defaultValue 等所有字段）。用于查看实体详情。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entityType": {
+                        "type": "string",
+                        "enum": list(ENTITY_SCHEMAS.keys()),
+                        "description": "实体类型",
+                    },
+                    "entityIds": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "要获取的实体完整 ID 数组（如 [\"Base.brave\", \"Base.strong\"]）",
+                    },
+                },
+                "required": ["entityType", "entityIds"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "create_entity",
             "description": "创建一个新的实体。id 使用英文下划线命名，不含命名空间前缀。",
             "parameters": {
@@ -247,15 +271,53 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "batch_update",
+            "description": "批量修改多个已有实体。用于一次修改 2 个以上的实体。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entityType": {
+                        "type": "string",
+                        "enum": WRITABLE_ENTITY_TYPES,
+                        "description": "实体类型",
+                    },
+                    "updates": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "entityId": {
+                                    "type": "string",
+                                    "description": "要修改的实体完整 ID",
+                                },
+                                "fields": {
+                                    "type": "object",
+                                    "description": "要修改的字段",
+                                },
+                            },
+                            "required": ["entityId", "fields"],
+                        },
+                        "description": "修改列表，每项包含 entityId 和 fields",
+                    },
+                },
+                "required": ["entityType", "updates"],
+            },
+        },
+    },
 ]
 
 # Map tool name → safety level: "read" (auto-execute) or "write" (needs confirm)
 TOOL_SAFETY: dict[str, str] = {
     "list_entities": "read",
     "get_schema": "read",
+    "get_entities": "read",
     "create_entity": "write",
     "batch_create": "write",
     "update_entity": "write",
+    "batch_update": "write",
 }
 
 
@@ -281,8 +343,17 @@ def _summarize_entity(entity_type: str, entity: dict) -> dict[str, Any]:
     summary: dict[str, Any] = {"id": entity.get("id", ""), "name": entity.get("name", "")}
     if entity_type == "trait":
         summary["category"] = entity.get("category", "")
+        effects = entity.get("effects", [])
+        if effects:
+            summary["effectCount"] = len(effects)
+        dv = entity.get("defaultValue")
+        if dv is not None:
+            summary["defaultValue"] = dv
     elif entity_type == "clothing":
         summary["slots"] = entity.get("slots", [])
+        effects = entity.get("effects", [])
+        if effects:
+            summary["effectCount"] = len(effects)
     elif entity_type == "traitGroup":
         summary["category"] = entity.get("category", "")
         summary["exclusive"] = entity.get("exclusive", False)
@@ -314,6 +385,25 @@ def _match_filter(entity: dict, filter_: dict) -> bool:
         elif actual != expected:
             return False
     return True
+
+
+_INTERNAL_KEYS = {"_local_id", "source", "_source"}
+
+
+def execute_tool_get_entities(
+    gs: GameState, entity_type: str, entity_ids: list[str]
+) -> str:
+    """Execute get_entities tool — returns full data for requested entities."""
+    defs = _get_defs(gs, entity_type)
+    results = []
+    for eid in entity_ids:
+        entity = defs.get(eid)
+        if entity:
+            clean = {k: v for k, v in entity.items() if k not in _INTERNAL_KEYS}
+            results.append(clean)
+        else:
+            results.append({"id": eid, "_error": "not found"})
+    return json.dumps(results, ensure_ascii=False)
 
 
 def execute_tool_list_entities(
@@ -361,11 +451,43 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
             if slots:
                 content += f"\n\n## 当前系统的槽位可用值\n\n{', '.join(slots)}"
 
-        # For trait/clothing: show available effect targets
+        # For trait/clothing: show available effect targets with value range info
         if entity_type in ("trait", "clothing"):
-            targets = _resolve_valid_values(gs, "effect_targets")
-            if targets:
-                content += f"\n\n## effects.target 可用值\n\n{', '.join(sorted(targets))}"
+            target_lines: list[str] = []
+
+            # Resources (affect max value)
+            for field in template.get("resources", []):
+                key = field.get("key", "")
+                label = field.get("label", key)
+                default_max = field.get("defaultMax", 0)
+                target_lines.append(f"- `{key}` — {label}（资源，影响上限，默认 {default_max}）")
+
+            # Ability traits (exp system, 1000 per grade)
+            if gs.trait_defs:
+                ability_ids = sorted(
+                    tid for tid, t in gs.trait_defs.items() if t.get("category") == "ability"
+                )
+                if ability_ids:
+                    ids_str = ", ".join(f"`{a}`" for a in ability_ids)
+                    target_lines.append(
+                        f"- 能力特质（经验值，每 1000 = 1 级 G→S）：{ids_str}"
+                    )
+
+            # BasicInfo number fields
+            for field in template.get("basicInfo", []):
+                if field.get("type") == "number" and field.get("key"):
+                    key = field["key"]
+                    label = field.get("label", key)
+                    default_val = field.get("defaultValue", 0)
+                    target_lines.append(f"- `{key}` — {label}（数值，默认 {default_val}）")
+
+            # Variables
+            if gs.variable_defs:
+                var_ids = sorted(gs.variable_defs.keys())
+                target_lines.append(f"- 变量：{', '.join(f'`{v}`' for v in var_ids)}")
+
+            if target_lines:
+                content += "\n\n## effects.target 可用值\n\n" + "\n".join(target_lines)
 
     return content
 
@@ -473,6 +595,28 @@ def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, 
     return {"success": True, "entity": _summarize_entity(entity_type, existing)}
 
 
+def execute_tool_batch_update(
+    gs: GameState, entity_type: str, updates: list[dict]
+) -> dict[str, Any]:
+    """Execute batch_update tool — update multiple entities at once.
+
+    Returns {updated: [...summaries], errors: [...messages]}.
+    Called AFTER user confirmation.
+    """
+    updated = []
+    errors = []
+    for i, item in enumerate(updates):
+        entity_id = item.get("entityId", "")
+        fields = item.get("fields", {})
+        result = execute_tool_update_entity(gs, entity_type, entity_id, fields)
+        if result.get("success"):
+            updated.append(result["entity"])
+        else:
+            label = entity_id or f"#{i}"
+            errors.append(f"{label}: {result.get('error', 'unknown')}")
+    return {"updated": updated, "errors": errors, "total": len(updated)}
+
+
 # Reference validation rules — data-driven, not hardcoded per entity type.
 # Each rule: (field_path, resolver) where resolver(gs) → set of valid values.
 # field_path supports: "field" (top-level) and "field[].subfield" (array elements).
@@ -498,12 +642,15 @@ def _resolve_valid_values(gs: GameState, resolver: str) -> set[str]:
     if resolver == "trait_defs":
         return set(gs.trait_defs.keys()) if gs.trait_defs else set()
     if resolver == "effect_targets":
-        # effects.target can reference: variables, ability traits, or basicInfo number fields
+        # effects.target can reference: variables, ability traits, resources, or basicInfo number fields
         targets: set[str] = set()
         if gs.variable_defs:
             targets.update(gs.variable_defs.keys())
         if gs.trait_defs:
             targets.update(tid for tid, t in gs.trait_defs.items() if t.get("category") == "ability")
+        for field in template.get("resources", []):
+            if field.get("key"):
+                targets.add(field["key"])
         for field in template.get("basicInfo", []):
             if field.get("type") == "number" and field.get("key"):
                 targets.add(field["key"])
@@ -582,6 +729,10 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
     if tool_name == "get_schema":
         return execute_tool_get_schema(entity_type, gs)
 
+    if tool_name == "get_entities":
+        entity_ids = arguments.get("entityIds", [])
+        return execute_tool_get_entities(gs, entity_type, entity_ids)
+
     if tool_name == "create_entity":
         entity_data = arguments.get("entity", {})
         result = execute_tool_create_entity(gs, entity_type, entity_data)
@@ -596,6 +747,11 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
         entity_id = arguments.get("entityId", "")
         fields = arguments.get("fields", {})
         result = execute_tool_update_entity(gs, entity_type, entity_id, fields)
+        return json.dumps(result, ensure_ascii=False)
+
+    if tool_name == "batch_update":
+        updates = arguments.get("updates", [])
+        result = execute_tool_batch_update(gs, entity_type, updates)
         return json.dumps(result, ensure_ascii=False)
 
     return json.dumps({"error": f"Unknown tool: {tool_name}"})
@@ -632,7 +788,7 @@ def collect_assist_context(gs: GameState) -> str:
 # Default field values for each entity type — ensures editors don't crash on missing fields
 ENTITY_DEFAULTS: dict[str, dict[str, Any]] = {
     "item": {"tags": [], "description": "", "maxStack": 1, "sellable": False, "price": 0},
-    "trait": {"description": "", "effects": []},
+    "trait": {"description": "", "effects": [], "decay": None},
     "clothing": {"occlusion": [], "effects": []},
     "traitGroup": {"traits": [], "exclusive": False},
 }
@@ -645,9 +801,13 @@ DEFAULT_ASSIST_PROMPT = """\
 - 创建完用户请求的所有实体后，用文字总结结果，然后停下来等待用户的下一步指示
 - 不要在用户没有要求的情况下主动创建额外的实体
 - 修改已有实体时使用 update_entity 工具，创建新实体时使用 create_entity 工具
+- 批量修改多个实体时使用 batch_update 工具（一次修改 2 个以上），批量创建用 batch_create
 - id 使用英文下划线命名（如 iron_sword），name 和 description 用中文
 - 创建前可以先用 list_entities 查看已有实体，避免重复
-- 如果不确定字段格式或可用值，先用 get_schema 查看完整文档"""
+- 修改前先用 list_entities + filter 筛选目标实体（如 {"category": "ability"}），不要获取全部再手动挑选
+- 需要查看实体的完整数据（如 effects 详情）时，用 get_entities 获取
+- 如果不确定字段格式或可用值，先用 get_schema 查看完整文档
+- 不要重复调用相同参数的工具，之前的结果已在对话历史中"""
 
 BUILTIN_CONTEXT_ENTRY_ID = "__assist_context__"
 

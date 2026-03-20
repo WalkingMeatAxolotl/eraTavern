@@ -151,11 +151,10 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     }
   };
 
-  /** Format percentage hint: value=120 increase → "+20%", value=80 decrease → "-20%"
-   *  Multiple percentage effects on same target stack additively: two +20% = +40% total. */
+  /** Format percentage hint: value=5 increase → "+5%", value=5 decrease → "-5%" */
   const pctHint = (value: number, direction: string) => {
-    const delta = direction === EffectDirection.INCREASE ? value - 100 : 100 - value;
-    return `${delta >= 0 ? "+" : ""}${delta}%`;
+    const sign = direction === EffectDirection.INCREASE ? "+" : "-";
+    return `${sign}${value}%`;
   };
 
   const buildData = (): Record<string, unknown> => {

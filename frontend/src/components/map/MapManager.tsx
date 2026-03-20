@@ -75,42 +75,58 @@ export default function MapManager({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ color: T.accent, fontSize: "15px", fontWeight: "bold" }}>== {t("header.mapMgmt")} ==</div>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        {filteredMaps.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => setEditingMapId(m.id)}
-            style={{
-              background: T.bg1,
-              border: `1px solid ${T.borderLight}`,
-              color: T.text,
-              padding: "8px 16px",
-              fontSize: "13px",
-              cursor: "pointer",
-            }}
-          >
-            {m.name}
-            <span style={{ color: T.textDim, marginLeft: "6px" }}>({m.id})</span>
-          </button>
-        ))}
+    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.mapMgmt")} ==</span>
         {!readOnly && (
           <button
             onClick={() => setCreating(true)}
             style={{
-              background: T.successDim,
-              border: `1px solid ${T.success}`,
-              color: "#8f8",
-              padding: "8px 16px",
-              fontSize: "13px",
+              padding: "4px 12px",
+              backgroundColor: T.bg2,
+              color: T.successDim,
+              border: `1px solid ${T.border}`,
+              borderRadius: "3px",
               cursor: "pointer",
+              fontSize: "13px",
             }}
           >
             [{t("btn.newMap")}]
           </button>
         )}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        {filteredMaps.map((m) => (
+          <div
+            key={m.id}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "7px 12px",
+              backgroundColor: T.bg1,
+              borderRadius: "4px",
+            }}
+          >
+            <button
+              onClick={() => setEditingMapId(m.id)}
+              style={{
+                flex: 1,
+                background: "none",
+                border: "none",
+                color: T.text,
+                cursor: "pointer",
+                fontSize: "13px",
+                textAlign: "left",
+                padding: 0,
+              }}
+            >
+              {m.name}
+              <span style={{ color: T.textDim, marginLeft: "6px" }}>({m.id})</span>
+            </button>
+          </div>
+        ))}
       </div>
 
       {creating && (

@@ -36,10 +36,12 @@ def _collect_effects(
             delta = value if direction == EffectDirection.INCREASE else -value
             fixed_deltas[target] = fixed_deltas.get(target, 0) + delta
         else:
-            # percentage: 90 -> x0.9, 120 -> x1.2
-            multiplier = value / 100
-            if direction == EffectDirection.DECREASE:
-                multiplier = 2.0 - multiplier  # 120 decrease -> x0.8
+            # percentage: value = 增减的百分比量
+            # increase 5 -> x1.05, decrease 5 -> x0.95
+            if direction == EffectDirection.INCREASE:
+                multiplier = 1.0 + value / 100
+            else:
+                multiplier = 1.0 - value / 100
             pct_multipliers.setdefault(target, []).append(multiplier)
 
 

@@ -502,8 +502,22 @@ export default function MapEditor({ mapId, onBack }: Props) {
             backgroundPosition: "center",
             padding: "4px",
             userSelect: "none",
+            position: "relative",
           }}
         >
+          {/* Overlay: defaultColor with mapOverlayOpacity on top of background image */}
+          {mapData.backgroundImage && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundColor: mapData.defaultColor,
+                opacity: mapData.mapOverlayOpacity ?? 0.7,
+                pointerEvents: "none",
+                borderRadius: "3px",
+              }}
+            />
+          )}
           <div ref={gridRef} style={{ display: "inline-block", position: "relative" }}>
             {mapData.grid.map((row, ri) => (
               <div key={ri} style={{ display: "flex" }}>
@@ -1187,12 +1201,32 @@ function CellEditor({
                 <select
                   value={conn.targetCell}
                   onChange={(e) => {
+                    const newTarget = Number(e.target.value);
+                    if (newTarget < 0) return;
                     const newConns = [...cell.connections];
-                    newConns[i] = { ...newConns[i], targetCell: Number(e.target.value) };
-                    onChange({ ...cell, connections: newConns });
+                    const isBidi = (newConns[i] as any)._bidirectional;
+                    const { _bidirectional: _, ...cleaned } = newConns[i] as any;
+                    newConns[i] = { ...cleaned, targetCell: newTarget };
+                    const updatedCell = { ...cell, connections: newConns };
+                    // Handle bidirectional: add reverse connection on target
+                    if (isBidi) {
+                      const targetCellData = mapData.cells.find((c) => c.id === newTarget);
+                      if (targetCellData && !targetCellData.connections.some((c) => c.targetCell === cell.id && !c.targetMap)) {
+                        const updatedTarget = {
+                          ...targetCellData,
+                          connections: [...targetCellData.connections, { targetCell: cell.id }],
+                        };
+                        onChangeCells([updatedCell, updatedTarget]);
+                        return;
+                      }
+                    }
+                    onChange(updatedCell);
                   }}
                   style={{ ...inputStyle, width: "130px" }}
                 >
+                  {conn.targetCell < 0 && (
+                    <option value={-1}>{t("map.selectCell")}</option>
+                  )}
                   {targetMapCells
                     .filter(
                       (c) =>
@@ -1290,14 +1324,9 @@ function CellEditor({
         <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
           <button
             onClick={() => {
-              const connectedIds = new Set(cell.connections.filter((c) => !c.targetMap).map((c) => c.targetCell));
-              const target =
-                mapData.cells.find((c) => c.id !== cell.id && !connectedIds.has(c.id)) ??
-                mapData.cells.find((c) => c.id !== cell.id);
-              if (!target) return;
               onChange({
                 ...cell,
-                connections: [...cell.connections, { targetCell: target.id }],
+                connections: [...cell.connections, { targetCell: -1 }],
               });
             }}
             style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
@@ -1306,31 +1335,10 @@ function CellEditor({
           </button>
           <button
             onClick={() => {
-              const connectedIds = new Set(cell.connections.filter((c) => !c.targetMap).map((c) => c.targetCell));
-              const target =
-                mapData.cells.find((c) => c.id !== cell.id && !connectedIds.has(c.id)) ??
-                mapData.cells.find((c) => c.id !== cell.id);
-              if (!target) return;
-              const targetId = target.id;
-              const updatedCurrent = {
+              onChange({
                 ...cell,
-                connections: [...cell.connections, { targetCell: targetId }],
-              };
-              const targetCellData = mapData.cells.find((c) => c.id === targetId);
-              if (!targetCellData) {
-                onChange(updatedCurrent);
-                return;
-              }
-              const hasReverse = targetCellData.connections.some((c) => c.targetCell === cell.id && !c.targetMap);
-              if (hasReverse) {
-                onChange(updatedCurrent);
-              } else {
-                const updatedTarget = {
-                  ...targetCellData,
-                  connections: [...targetCellData.connections, { targetCell: cell.id }],
-                };
-                onChangeCells([updatedCurrent, updatedTarget]);
-              }
+                connections: [...cell.connections, { targetCell: -1, _bidirectional: true } as any],
+              });
             }}
             style={{ ...btnStyle, padding: "2px 8px", color: T.accent, borderColor: T.accentDim }}
           >
