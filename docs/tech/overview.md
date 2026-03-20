@@ -71,14 +71,16 @@ tavernGame/
 │   │   │   ├── events.py                全局事件系统
 │   │   │   ├── templates.py             输出模板系统
 │   │   │   └── helpers.py               共享常量
-│   │   ├── llm_engine.py              LLM 变量收集, 提示词组装, API 调用
-│   │   ├── llm_preset.py / llm_provider.py  LLM 预设/服务 CRUD
+│   │   ├── llm_engine.py              LLM 变量收集, 提示词组装, API 调用 (支持 tools 参数)
+│   │   ├── llm_preset.py / llm_provider.py  LLM 预设/服务 CRUD (preset.type: narrative/assist)
+│   │   ├── ai_assist.py               AI 创作助手 Agent (schema, tools, context, validation)
 │   │   ├── map_engine.py              地图加载, grid 编译, distance/sense matrix
 │   │   ├── time_system.py             游戏时间 (GameTime), 天气, 季节
 │   │   ├── variable_engine.py         衍生变量求值, 循环检测, 调试追踪
 │   │   └── save_manager.py            存档 CRUD
 │   └── data/
-│       └── character_template.json    全局角色模板
+│       ├── character_template.json    全局角色模板
+│       └── ai_docs/                   AI 助手实体文档 (item.md, trait.md, clothing.md, overview.md)
 │
 ├── frontend/src/
 │   ├── App.tsx                      主布局, 全局状态管理
@@ -103,6 +105,8 @@ tavernGame/
 │       │   VariableEditor, VariableManager, EventManager, LorebookManager
 │       ├── llm/                       LLM 系统
 │       │   LLMPresetManager, LLMDebugPanel, NarrativePanel
+│       ├── ai/                        AI 创作助手
+│       │   AiDrawer, EntityCard, ToolCallMessage
 │       ├── layout/                    布局 + 导航
 │       │   NavBar, FloatingActions, WorldSidebar, AddonSidebar, AddonTabBar
 │       └── settings/                  设置
@@ -224,6 +228,7 @@ tavernGame/
 | 世界变量 | `/api/game/world-variables` | 世界变量 CRUD | — |
 | 存档 | `/api/saves` | 存档 CRUD + 加载 | — |
 | LLM | `/api/llm` | API 服务 CRUD、预设 CRUD、模型获取、连接测试、生成 | llm.md |
+| AI 助手 | `/api/llm/assist-*` | Agent 对话 (SSE)、工具确认、session 管理 | llm.md |
 | 资产 | `/api/assets`, `/assets` | 上传 + 静态 serve | — |
 
 ### SSE (`main.py: GET /api/events`)
@@ -240,6 +245,7 @@ tavernGame/
 - `state_update` 与 `game_changed` 携带相同数据（全量状态），区别在语义——前端据此决定是否重置 UI 状态
 - 行动结果（output 文本、NPC 日志）通过 REST API `POST /api/game/action` 的响应返回，不走 SSE
 - LLM 生成通过独立 SSE 流 `POST /api/llm/generate` 返回（`llm_chunk` / `llm_done` / `llm_error`）
+- AI 助手通过 `POST /api/llm/assist-chat` SSE 流返回（`llm_chunk` / `llm_done` / `tool_call_pending` / `tool_call_result` / `llm_debug` / `llm_usage`）
 - 30 秒无事件时发送 keepalive 注释防止连接超时
 - `EventSource` 自动重连，无需手动处理
 

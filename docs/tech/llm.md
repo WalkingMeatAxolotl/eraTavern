@@ -1,18 +1,38 @@
-# LLM 叙事增强系统
+# LLM 系统
+
+本项目的 LLM 集成分为两个独立功能：**叙事增强**（游戏内文本美化）和 **AI 创作助手**（Agent 辅助内容创作）。
 
 ## 相关文件
 
+### 共享基础
+
 | 文件 | 职责 |
 |------|------|
-| `backend/game/llm_preset.py` | 预设文件 CRUD（list/load/save/delete） |
+| `backend/game/llm_preset.py` | 预设文件 CRUD（list/load/save/delete），preset.type: narrative / assist |
 | `backend/game/llm_provider.py` | API 服务文件 CRUD（list/load/save/delete） |
-| `backend/game/llm_engine.py` | 变量收集、提示词组装、LLM API 调用 |
+| `backend/game/llm_engine.py` | LLM API 调用（`call_llm_streaming`，支持 tools 参数 + tool_calls 流式解析） |
 | `backend/routes/llm.py` | REST API 端点（`/api/llm/*`） |
 | `frontend/src/components/llm/LLMPresetManager.tsx` | LLM 设置页（预设管理 + 接口管理 + 全局设置 + 调试日志） |
 | `frontend/src/components/llm/LLMDebugPanel.tsx` | LLM 调试控制台（请求/响应/变量/token） |
+
+### 叙事增强
+
+| 文件 | 职责 |
+|------|------|
 | `frontend/src/components/llm/NarrativePanel.tsx` | 游戏输出区（原始输出 + LLM 叙事） |
 | `frontend/src/components/settings/SettingsPage.tsx` | 世界设置（存档 + 世界级 LLM 预设） |
 | `frontend/src/components/action/ActionEditor.tsx` | 行动级 LLM 预设选择 |
+
+### AI 创作助手
+
+| 文件 | 职责 |
+|------|------|
+| `backend/game/ai_assist.py` | Agent 核心：schema 注册表、工具定义/执行、上下文收集、引用校验 |
+| `backend/data/ai_docs/*.md` | 实体文档（get_schema 工具返回内容 + 动态枚举值） |
+| `frontend/src/api/aiAssist.ts` | SSE 通信层（streamAssistChat、confirmToolCall、deleteSession） |
+| `frontend/src/components/ai/AiDrawer.tsx` | 右侧对话面板（消息列表、流式显示、think 块、[+] 新建会话） |
+| `frontend/src/components/ai/EntityCard.tsx` | 实体预览卡片（可编辑 JSON、confirm/reject 按钮） |
+| `frontend/src/components/ai/ToolCallMessage.tsx` | 工具调用渲染（只读折叠、写操作卡片、批量 checkbox） |
 
 ## 概述
 
@@ -366,3 +386,81 @@ interface CharacterData {
 
 - 条目列表：显示名称、启用状态、关键词数量
 - 编辑视图：ID、名称、关键词（标签输入）、内容（多行文本）、触发模式（keyword/always）、优先级、启用开关
+
+---
+
+## AI 创作助手（Agent）
+
+### 概述
+
+AI 创作助手是一个 **受限 Agent**：通过 function calling 协议让 LLM 调用工具（查询/创建/修改实体），写操作需用户确认（Human-in-the-Loop）。
+
+```
+用户发消息 → 组装 messages + tools → LLM API
+  → 纯文本回复 → 流式返回 → 结束
+  → tool_calls → 只读工具自动执行 → 结果返回 LLM → 循环
+                → 写操作工具 → 暂停等用户确认 → 确认/拒绝 → 结果记入历史
+```
+
+### 预设类型
+
+preset 通过 `type` 字段区分：
+
+| type | 用途 | promptEntries | 特殊条目 |
+|------|------|--------------|---------|
+| `narrative` | 游戏叙事 | 支持 `{{variable}}` 模板插值 | 无 |
+| `assist` | AI 创作助手 | 纯文本，不支持变量插值 | 内置「实体上下文」条目（不可删除，动态填充） |
+
+config.json 的 `aiAssistPresetId` 指定全局 AI 辅助预设。
+
+### 工具定义 (`ai_assist.py`)
+
+| 工具 | 参数 | 安全级别 | 说明 |
+|------|------|---------|------|
+| `list_entities` | entityType, filter? | 只读（自动执行） | 查询实体列表，filter 支持子串匹配 |
+| `get_schema` | entityType | 只读（自动执行） | 返回 ai_docs/ 文档 + 动态枚举值 |
+| `create_entity` | entityType, entity | 写（需确认） | 创建单个实体 |
+| `batch_create` | entityType, entities[] | 写（需确认） | 批量创建，前端 checkbox 选择性确认 |
+| `update_entity` | entityType, entityId, fields | 写（需确认） | 修改已有实体的部分字段 |
+
+可操作的实体类型：item, trait, clothing, traitGroup（写）+ variable（只读）。
+
+### 校验系统
+
+数据驱动的引用校验（`_REF_RULES`），不硬编码字段名：
+
+```python
+_REF_RULES = [
+    ("trait", "category", "template.traits[].key"),
+    ("clothing", "slots[]", "template.clothingSlots"),
+    ("trait", "effects[].target", "effect_targets"),  # variables + ability traits + basicInfo
+    ("traitGroup", "traits[]", "trait_defs"),
+    ...
+]
+```
+
+支持三种字段模式：单值、数组元素、对象数组子字段。
+
+### API 端点
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/llm/assist-chat` | POST | Agent Loop (SSE)：流式文本 + 工具调用 |
+| `/api/llm/assist-confirm-tool` | POST | 确认/拒绝写操作，支持 overrideArgs（用户编辑 JSON） |
+| `/api/llm/assist-session/{id}` | DELETE | 清理 session |
+
+SSE 事件类型：`llm_chunk`, `llm_done`, `llm_error`, `tool_call_pending`, `tool_call_result`, `llm_debug`, `llm_usage`
+
+### Session 管理
+
+- 内存存储（`_assist_sessions` dict），不持久化
+- 生命周期：NavBar [AI] 打开 → 使用中 → [+] 新建清空 → 页面刷新释放
+- 无超时机制（只要页面存在 session 就在）
+
+### 前端架构
+
+- **AiDrawer**：右侧抽屉，NavBar [AI] toggle 控制，与 AddonSidebar 互斥
+- **EntityCard**：pending 状态可编辑 JSON（textarea + 实时校验），已确认状态只读
+- **ToolCallMessage**：只读工具折叠显示，写操作显示卡片 + 确认按钮
+- **BatchCreateToolCall**：checkbox 选择性确认，编辑后数据通过 overrideArgs 传递
+- **Think 块**：检测 `<think>` 标签，流式时展开，完成后折叠可点击展开
