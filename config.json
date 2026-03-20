@@ -2,5 +2,7 @@
   "backendPort": 18000,
   "frontendPort": 15173,
   "maxWidth": 1200,
-  "lastWorldId": "test8"
+  "lastWorldId": "AaaliceTavernWorld",
+  "defaultLlmPreset": "testllm",
+  "aiAssistPresetId": "assit"
 }

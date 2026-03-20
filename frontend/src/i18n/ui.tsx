@@ -1055,6 +1055,18 @@ export const UI: Record<string, string> = {
   "val.idNameRequired": "ID 和名称不能为空",
   "val.idRequired": "ID 不能为空",
   "val.nameRequired": "名称不能为空",
+
+  // === Raw JSON editor ===
+  "json.parseError": "JSON 解析错误",
+  "json.mustBeArray": "JSON 必须是数组",
+  "json.mustBeObject": "JSON 必须是对象",
+  "json.entities": "个实体",
+  "json.warning": "直接编辑磁盘文件。保存后立即覆盖文件并重新加载游戏数据，格式错误可能导致数据异常。请确保了解数据结构后再修改。",
+  "json.saveAndReload": "保存并重载",
+  "json.confirmTitle": "确认保存",
+  "json.confirmMessage": "将直接覆盖磁盘文件并重新加载所有游戏数据。此操作不可撤销。",
+  "json.savedKeyword": "已保存",
+  "json.backToList": "返回列表",
 };
 
 /**

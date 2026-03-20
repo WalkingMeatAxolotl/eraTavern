@@ -6,6 +6,7 @@ import { t } from "../../i18n/ui";
 import ItemEditor from "./ItemEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { Tooltip } from "../shared/Tooltip";
+import { RawJsonView } from "../shared/RawJsonEditor";
 
 const hoverStyles = `
   .im-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
@@ -85,6 +86,7 @@ export default function ItemManager({
 
   const readOnly = selectedAddon === null;
   const filteredItems = selectedAddon ? items.filter((i) => i.source === selectedAddon) : items;
+  const [showJson, setShowJson] = useState(false);
 
   // Auto-collect tags from items
   const visibleTags = useMemo(() => {
@@ -147,6 +149,10 @@ export default function ItemManager({
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
+  if (showJson && selectedAddon) {
+    return <RawJsonView addonId={selectedAddon} filename="items.json" onClose={() => setShowJson(false)} />;
+  }
+
   // Editor view
   if (editingId !== null) {
     const existing = items.find((i) => i.id === editingId);
@@ -203,6 +209,24 @@ export default function ItemManager({
           </div>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
+          {!readOnly && (
+            <button
+              className="im-action-btn"
+              onClick={() => setShowJson(true)}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.textSub,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+                transition: "background-color 0.1s, border-color 0.1s",
+              }}
+            >
+              [JSON]
+            </button>
+          )}
           {!readOnly && (
             <button
               className="im-action-btn"
@@ -351,6 +375,7 @@ export default function ItemManager({
       )}
 
       {filteredItems.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>{t("empty.items")}</div>}
+
     </div>
   );
 }

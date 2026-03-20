@@ -12,6 +12,7 @@ import {
 import VariableEditor from "./VariableEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { Tooltip } from "../shared/Tooltip";
+import { RawJsonView } from "../shared/RawJsonEditor";
 
 const hoverStyles = `
   .vm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
@@ -93,6 +94,8 @@ export default function VariableManager({
 
   const readOnly = selectedAddon === null;
   const addonFiltered = selectedAddon ? variables.filter((v) => v.source === selectedAddon) : variables;
+  const [showJson, setShowJson] = useState(false);
+
   const singleVars = addonFiltered.filter((v) => !v.isBidirectional);
   const biVars = addonFiltered.filter((v) => v.isBidirectional);
   const filteredVars = addonFiltered;
@@ -158,6 +161,10 @@ export default function VariableManager({
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
+  if (showJson && selectedAddon) {
+    return <RawJsonView addonId={selectedAddon} filename="variables.json" onClose={() => setShowJson(false)} />;
+  }
+
   // Editor view
   if (editingId !== null) {
     const existing = variables.find((v) => v.id === editingId);
@@ -220,6 +227,24 @@ export default function VariableManager({
           </div>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
+          {!readOnly && (
+            <button
+              className="vm-action-btn"
+              onClick={() => setShowJson(true)}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.textSub,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+                transition: "background-color 0.1s, border-color 0.1s",
+              }}
+            >
+              [JSON]
+            </button>
+          )}
           {!readOnly && (
             <button
               className="vm-action-btn"
@@ -407,6 +432,7 @@ export default function VariableManager({
       ) : (
         <ByVarView filteredVars={biVars} varTagsMap={varTagsMap} tagVarNames={tagVarNames} onEditVar={handleEdit} />
       )}
+
     </div>
   );
 }

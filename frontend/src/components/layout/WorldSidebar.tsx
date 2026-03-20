@@ -133,6 +133,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
   const [metaName, setMetaName] = useState("");
   const [metaDesc, setMetaDesc] = useState("");
   const [metaCover, setMetaCover] = useState("");
+  const [coverBust, setCoverBust] = useState(Date.now());
   const [metaMessage, setMetaMessage] = useState("");
   const coverFileRef = useRef<HTMLInputElement>(null);
 
@@ -193,7 +194,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
     const result = await updateWorldMeta(worldId, {
       name: metaName,
       description: metaDesc,
-      cover: metaCover || undefined,
+      cover: metaCover,
     });
     if (result.success) {
       setEditingMeta(null);
@@ -344,7 +345,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                   >
                     {w.cover ? (
                       <img
-                        src={`/assets/world/${w.id}/covers/${w.cover}?t=${w.cover}`}
+                        src={`/assets/world/${w.id}/covers/${w.cover}?t=${coverBust}`}
                         alt=""
                         style={{
                           width: "64px",
@@ -549,7 +550,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                             <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
                               {metaCover && (
                                 <img
-                                  src={`/assets/world/${w.id}/covers/${metaCover}?t=${metaCover}`}
+                                  src={`/assets/world/${w.id}/covers/${metaCover}?t=${coverBust}`}
                                   alt=""
                                   style={{
                                     width: "28px",
@@ -581,7 +582,10 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
                                   const file = e.target.files?.[0];
                                   if (!file) return;
                                   const result = await uploadAsset(file, "covers", `world-${w.id}`, { worldId: w.id });
-                                  if (result.success && result.filename) setMetaCover(result.filename);
+                                  if (result.success && result.filename) {
+                                    setMetaCover(result.filename);
+                                    setCoverBust(Date.now());
+                                  }
                                   e.target.value = "";
                                 }}
                               />

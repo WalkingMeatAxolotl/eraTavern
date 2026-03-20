@@ -5,6 +5,7 @@ import { fetchActionDefs, fetchDefinitions } from "../../api/client";
 import { t } from "../../i18n/ui";
 import ActionEditor from "./ActionEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
+import { RawJsonView } from "../shared/RawJsonEditor";
 
 const hoverStyles = `
   .am-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
@@ -60,6 +61,7 @@ export default function ActionManager({
 
   const readOnly = selectedAddon === null;
   const filteredActions = selectedAddon ? actions.filter((a) => a.source === selectedAddon) : actions;
+  const [showJson, setShowJson] = useState(false);
 
   // Group actions by category
   const { catOrder, grouped } = useMemo(() => {
@@ -78,6 +80,10 @@ export default function ActionManager({
 
   if (loading || !defs) {
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+  }
+
+  if (showJson && selectedAddon) {
+    return <RawJsonView addonId={selectedAddon} filename="actions.json" onClose={() => setShowJson(false)} />;
   }
 
   // Editor view
@@ -114,21 +120,38 @@ export default function ActionManager({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.actionList")} ==</span>
         {!readOnly && (
-          <button
-            className="am-action-btn"
-            onClick={handleNew}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: T.bg2,
-              color: T.successDim,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "13px",
-            }}
-          >
-            [{t("btn.newAction")}]
-          </button>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              className="am-action-btn"
+              onClick={() => setShowJson(true)}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.textSub,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [JSON]
+            </button>
+            <button
+              className="am-action-btn"
+              onClick={handleNew}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.successDim,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [{t("btn.newAction")}]
+            </button>
+          </div>
         )}
       </div>
 
@@ -190,6 +213,7 @@ export default function ActionManager({
         })}
         {actions.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>{t("empty.actions")}</div>}
       </div>
+
     </div>
   );
 }

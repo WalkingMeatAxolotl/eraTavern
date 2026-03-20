@@ -6,6 +6,7 @@ import { fetchDefinitions, fetchClothingDefs } from "../../api/client";
 import ClothingEditor from "./ClothingEditor";
 import OutfitEditor from "./OutfitEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
+import { RawJsonView } from "../shared/RawJsonEditor";
 
 const hoverStyles = `
   .cm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
@@ -27,6 +28,7 @@ export default function ClothingManager({
   const { isCollapsed, toggle: toggleCollapse } = useCollapsibleGroups();
   const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null);
   const [isNewOutfit, setIsNewOutfit] = useState(false);
+  const [showJson, setShowJson] = useState(false);
 
   useEffect(() => {
     onEditingChange?.(editingId !== null);
@@ -102,6 +104,10 @@ export default function ClothingManager({
   const readOnly = selectedAddon === null;
   const filteredClothing = selectedAddon ? clothing.filter((c) => c.source === selectedAddon) : clothing;
 
+  if (showJson && selectedAddon) {
+    return <RawJsonView addonId={selectedAddon} filename="clothing.json" onClose={() => setShowJson(false)} />;
+  }
+
   // Group clothing by slot — deduplicate accessory1/2/3 into "accessory"
   const rawSlots = definitions.template.clothingSlots;
   const slots = [...new Set(rawSlots.map((s) => (s.startsWith("accessory") ? "accessory" : s)))];
@@ -135,6 +141,21 @@ export default function ClothingManager({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.clothingList")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              className="cm-action-btn"
+              onClick={() => setShowJson(true)}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.textSub,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [JSON]
+            </button>
             <button
               className="cm-action-btn"
               onClick={() => {
@@ -318,6 +339,7 @@ export default function ClothingManager({
           </div>
         )}
       </div>
+
     </div>
   );
 }

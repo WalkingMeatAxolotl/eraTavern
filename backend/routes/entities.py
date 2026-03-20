@@ -169,6 +169,87 @@ _register_crud(
 
 
 # ===========================================================================
+# Raw JSON file read/write (direct disk access + reload)
+# ===========================================================================
+
+_ALLOWED_RAW_FILES = {
+    "traits.json",
+    "items.json",
+    "clothing.json",
+    "actions.json",
+    "variables.json",
+    "events.json",
+    "lorebook.json",
+}
+
+
+def _resolve_addon_file(addon_id: str, filename: str):
+    """Resolve addon file path. Returns (path, error_resp) tuple."""
+    if filename not in _ALLOWED_RAW_FILES:
+        return None, _resp(False, "RAW_FILE_NOT_ALLOWED", {"filename": filename})
+    gs = _h.game_state
+    target_dir = None
+    for aid, apath in gs.addon_dirs:
+        if aid == addon_id:
+            target_dir = apath
+            break
+    if target_dir is None:
+        return None, _resp(False, "ADDON_NOT_FOUND", {"id": addon_id})
+    return target_dir / filename, None
+
+
+@router.get("/api/game/raw-file/{addon_id}/{filename}")
+async def read_raw_file(addon_id: str, filename: str):
+    """Read a raw JSON file from an addon directory."""
+    filepath, err = _resolve_addon_file(addon_id, filename)
+    if err:
+        return err
+    if not filepath.exists():
+        return {"content": "{}"}
+    with open(filepath, "r", encoding="utf-8") as f:
+        return {"content": f.read()}
+
+
+@router.put("/api/game/raw-file/{addon_id}/{filename}")
+async def write_raw_file(addon_id: str, filename: str, body: dict = Body(...)):
+    """Write a raw JSON file to an addon directory, then reload game state."""
+    filepath, err = _resolve_addon_file(addon_id, filename)
+    if err:
+        return err
+
+    content = body.get("content", "")
+    # Basic JSON validity check
+    import json as _json
+
+    try:
+        _json.loads(content)
+    except _json.JSONDecodeError as e:
+        return _resp(False, "RAW_FILE_INVALID_JSON", {"error": str(e)})
+
+    # Write to disk
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    # Reload all definitions from disk
+    gs = _h.game_state
+    snapshot = gs._snapshot_runtime()
+    gs._load_maps_and_matrices()
+    gs._load_all_defs()
+    gs._resolve_namespaces()
+    gs._build_cell_action_index()
+    gs.npc_goals = {}
+    gs._rebuild_characters(snapshot)
+    gs.dirty = False
+
+    # Notify frontend of state change
+    state = gs.get_full_state()
+    await _h.manager.broadcast("game_changed", state)
+    await _h.manager.broadcast("dirty_update", {"dirty": False})
+
+    return _resp(True, "RAW_FILE_SAVED")
+
+
+# ===========================================================================
 # Definitions (read-only aggregate)
 # ===========================================================================
 

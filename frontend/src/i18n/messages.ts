@@ -103,6 +103,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   ACTION_MOVE_BLOCKED: "无法移动到目标方格",
   ACTION_NO_OUTFIT: "未指定预设",
 
+  // --- Raw file ---
+  RAW_FILE_NOT_ALLOWED: "不允许编辑该文件: {filename}",
+  RAW_FILE_INVALID_JSON: "JSON 格式错误: {error}",
+  RAW_FILE_SAVED: "文件已保存，游戏数据已重新加载",
+
   // --- AI Assist ---
   AI_ASSIST_NO_PRESET: "未配置 AI 辅助预设，请在 LLM 设置 → 全局 中配置",
   AI_ASSIST_PRESET_INVALID: "AI 辅助预设无效或 API 服务未配置",

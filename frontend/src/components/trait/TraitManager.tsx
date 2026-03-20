@@ -6,6 +6,7 @@ import { fetchDefinitions, fetchTraitDefs, fetchTraitGroups } from "../../api/cl
 import TraitEditor from "./TraitEditor";
 import TraitGroupEditor from "./TraitGroupEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
+import { RawJsonView } from "../shared/RawJsonEditor";
 
 const hoverStyles = `
   .tm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
@@ -125,6 +126,7 @@ export default function TraitManager({
       onNewTrait={handleNew}
       onEditGroup={handleEditGroup}
       onNewGroup={handleNewGroup}
+      onReload={loadData}
     />
   );
 }
@@ -142,6 +144,7 @@ interface TraitListProps {
   onNewTrait: () => void;
   onEditGroup: (id: string) => void;
   onNewGroup: () => void;
+  onReload: () => void;
 }
 
 function TraitList({
@@ -155,10 +158,12 @@ function TraitList({
   onNewTrait,
   onEditGroup,
   onNewGroup,
+  onReload,
 }: TraitListProps) {
   const readOnly = selectedAddon === null;
   const filteredTraits = selectedAddon ? traits.filter((t) => t.source === selectedAddon) : traits;
   const filteredGroups = selectedAddon ? traitGroups.filter((g) => g.source === selectedAddon) : traitGroups;
+  const [showJson, setShowJson] = useState(false);
 
   const groupsByCategory = useMemo(() => {
     const result: Record<string, TraitGroup[]> = {};
@@ -220,6 +225,10 @@ function TraitList({
     fontSize: "13px",
   };
 
+  if (showJson && selectedAddon) {
+    return <RawJsonView addonId={selectedAddon} filename="traits.json" onClose={() => setShowJson(false)} />;
+  }
+
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       <style>{hoverStyles}</style>
@@ -227,6 +236,9 @@ function TraitList({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.traitList")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
+            <button className="tm-action-btn" onClick={() => setShowJson(true)} style={{ ...btnBase, color: T.textSub }}>
+              [JSON]
+            </button>
             <button className="tm-action-btn" onClick={onNewGroup} style={btnBase}>
               [{t("btn.newTraitGroup")}]
             </button>
@@ -278,6 +290,7 @@ function TraitList({
           />
         )}
       </div>
+
     </div>
   );
 }

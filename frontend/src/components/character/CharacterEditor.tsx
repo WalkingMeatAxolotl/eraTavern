@@ -4,6 +4,7 @@ import { saveCharacterConfig, createCharacter, deleteCharacter, uploadAsset } fr
 import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { HelpButton, HelpPanel } from "../shared/HelpToggle";
+import { RawJsonPanel } from "../shared/RawJsonEditor";
 
 interface Props {
   character: RawCharacterData;
@@ -37,6 +38,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
   const [selectedOutfit, setSelectedOutfit] = useState<string>("default");
   const [tab, setTab] = useState<CharTab>("basic");
   const [showLlmHelp, setShowLlmHelp] = useState(false);
+  const [jsonMode, setJsonMode] = useState(false);
 
   const { template, clothingDefs, itemDefs, traitDefs, traitGroups, maps } = definitions;
 
@@ -135,6 +137,22 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       setSaving(false);
     }
   };
+
+  if (jsonMode) {
+    return (
+      <RawJsonPanel
+        data={data as unknown as Record<string, unknown>}
+        onSave={async (parsed) => {
+          const result = isNew
+            ? await createCharacter(parsed as unknown as RawCharacterData)
+            : await saveCharacterConfig(data.id, parsed as unknown as RawCharacterData);
+          if (result.success && isNew) onBack();
+          return result;
+        }}
+        onToggle={() => setJsonMode(false)}
+      />
+    );
+  }
 
   return (
     <div style={{ fontSize: "13px", color: T.text, backgroundColor: T.bg2, padding: "12px", borderRadius: "4px" }}>
@@ -919,6 +937,9 @@ export default function CharacterEditor({ character, definitions, allCharacters,
         )}
         <button onClick={onBack} style={btnStyle(T.textSub)}>
           [{t("btn.back")}]
+        </button>
+        <button onClick={() => setJsonMode(true)} style={btnStyle(T.textSub)}>
+          [JSON]
         </button>
         {message && (
           <span

@@ -256,6 +256,29 @@ export async function performAction(
   return handleResponse(res);
 }
 
+// --- Raw file read/write ---
+
+export async function readRawFile(
+  addonId: string,
+  filename: string,
+): Promise<{ content: string }> {
+  const res = await fetch(`${API_BASE}/raw-file/${encodeURIComponent(addonId)}/${encodeURIComponent(filename)}`);
+  return handleResponse(res);
+}
+
+export async function writeRawFile(
+  addonId: string,
+  filename: string,
+  content: string,
+): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/raw-file/${encodeURIComponent(addonId)}/${encodeURIComponent(filename)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  return handleResponse(res);
+}
+
 // --- Character config CRUD ---
 
 export async function fetchDefinitions(): Promise<GameDefinitions> {

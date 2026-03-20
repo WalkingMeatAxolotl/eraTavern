@@ -18,6 +18,84 @@ from .namespace import (
 # Type alias for addon directories list: [(addon_id, addon_path), ...]
 AddonDirs = list[tuple[str, Path]]
 
+# ---------------------------------------------------------------------------
+# Key-ordered JSON output
+# ---------------------------------------------------------------------------
+
+# Priority order for known keys — lower index = appears first.
+_KEY_ORDER: list[str] = [
+    "id",
+    "name",
+    "category",
+    "description",
+    "tags",
+    "type",
+    "default",
+    "targetType",
+    "triggerLLM",
+    "llmPreset",
+    "timeCost",
+    "npcWeight",
+    "npcWeightModifiers",
+    "conditions",
+    "costs",
+    "outcomes",
+    "outputTemplates",
+    "effects",
+    "defaultValue",
+    "decay",
+    "slots",
+    "slot",
+    "steps",
+    "isBidirectional",
+    "keywords",
+    "content",
+    "enabled",
+    "priority",
+    "insertMode",
+    "maxStack",
+    "sellable",
+    "price",
+    "traits",
+    "clothing",
+    "outfitTypes",
+    "isPlayer",
+    "active",
+    "portrait",
+    "template",
+    "basicInfo",
+    "resources",
+    "abilities",
+    "position",
+    "restPosition",
+    "favorability",
+    "outfits",
+    "currentOutfit",
+    "inventory",
+    "llm",
+]
+_KEY_RANK = {k: i for i, k in enumerate(_KEY_ORDER)}
+_FALLBACK = len(_KEY_ORDER)
+
+
+def _sort_obj(obj: Any) -> Any:
+    """Recursively sort dict keys: known keys first by priority, rest alphabetically."""
+    if isinstance(obj, dict):
+        sorted_items = sorted(
+            obj.items(),
+            key=lambda kv: (_KEY_RANK.get(kv[0], _FALLBACK), kv[0]),
+        )
+        return {k: _sort_obj(v) for k, v in sorted_items}
+    if isinstance(obj, list):
+        return [_sort_obj(v) for v in obj]
+    return obj
+
+
+def _dump_json(obj: Any, f: Any) -> None:
+    """Write JSON with ordered keys, 2-space indent, no ASCII escaping."""
+    json.dump(_sort_obj(obj), f, ensure_ascii=False, indent=2)
+
+
 SLOT_LABELS = {
     "hat": "帽子",
     "upperBody": "上半身",
@@ -265,7 +343,7 @@ def _save_entity_defs_file(
     else:
         out = {json_key: clean}
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
+        _dump_json(out, f)
 
 
 def _save_tag_pool_file(data_dir: Path, filename: str, tags: list[str]) -> None:
@@ -274,7 +352,7 @@ def _save_tag_pool_file(data_dir: Path, filename: str, tags: list[str]) -> None:
     existing = _load_json_safe(path)
     existing["tags"] = tags
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+        _dump_json(existing, f)
 
 
 def save_item_defs_file(data_dir: Path, items_list: list[dict]) -> None:
@@ -311,7 +389,7 @@ def save_lorebook_file(data_dir: Path, entries_list: list[dict]) -> None:
         clean.append(entry)
     path = data_dir / "lorebook.json"
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(clean, f, ensure_ascii=False, indent=2)
+        _dump_json(clean, f)
 
 
 def save_world_variable_defs_file(data_dir: Path, variables_list: list[dict]) -> None:
@@ -329,7 +407,7 @@ def save_action_defs_file(data_dir: Path, actions_list: list[dict], addon_id: st
         clean.append(entry)
     path = data_dir / "actions.json"
     with open(path, "w", encoding="utf-8") as f:
-        json.dump({"actions": clean}, f, ensure_ascii=False, indent=2)
+        _dump_json({"actions": clean}, f)
 
 
 def save_clothing_defs_file(
@@ -347,7 +425,7 @@ def save_clothing_defs_file(
     out["clothing"] = clean
     path = data_dir / "clothing.json"
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
+        _dump_json(out, f)
 
 
 def save_character(data_dir: Path, char_data: dict, addon_id: str = "") -> None:
@@ -364,7 +442,7 @@ def save_character(data_dir: Path, char_data: dict, addon_id: str = "") -> None:
     clean["id"] = local_id
     clean = strip_character_namespaces(clean, addon_id)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(clean, f, ensure_ascii=False, indent=2)
+        _dump_json(clean, f)
 
 
 def delete_character(data_dir: Path, char_id: str) -> bool:
@@ -395,4 +473,4 @@ def save_trait_groups_file(data_dir: Path, groups_list: list[dict], addon_id: st
     existing = _load_json_safe(path)
     existing["traitGroups"] = clean
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+        _dump_json(existing, f)

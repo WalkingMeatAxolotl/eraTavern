@@ -7,6 +7,7 @@ import { EF, EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import { inputStyle, labelStyle } from "../shared/styles";
+import { RawJsonPanel } from "../shared/RawJsonEditor";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -77,6 +78,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
   const [message, setMessage] = useState("");
 
   const isReadOnly = false; // all addon entities are editable
+  const [jsonMode, setJsonMode] = useState(false);
   const targetGroups = buildTargetOptions(definitions);
   const allTargets = targetGroups.flatMap((g) => g.options);
 
@@ -155,6 +157,29 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     const delta = direction === EffectDirection.INCREASE ? value - 100 : 100 - value;
     return `${delta >= 0 ? "+" : ""}${delta}%`;
   };
+
+  const buildData = (): Record<string, unknown> => {
+    const data: Record<string, unknown> = { id, name, category, description, effects };
+    if (category === EF.ABILITY) {
+      data.defaultValue = defaultValue;
+      data.decay = decayEnabled ? decay : null;
+    }
+    return data;
+  };
+
+  if (jsonMode) {
+    return (
+      <RawJsonPanel
+        data={buildData()}
+        onSave={async (data) => {
+          const result = isNew ? await createTraitDef({ ...data, source: trait.source } as never) : await saveTraitDef(trait.id, { ...data, source: trait.source } as never);
+          if (result.success && isNew) setTimeout(onBack, 500);
+          return result;
+        }}
+        onToggle={() => setJsonMode(false)}
+      />
+    );
+  }
 
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
@@ -494,6 +519,20 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           }}
         >
           [{t("btn.back")}]
+        </button>
+        <button
+          onClick={() => setJsonMode(true)}
+          style={{
+            padding: "5px 16px",
+            backgroundColor: T.bg2,
+            color: T.textSub,
+            border: `1px solid ${T.border}`,
+            borderRadius: "3px",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          [JSON]
         </button>
         {message && (
           <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>

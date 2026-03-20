@@ -22,6 +22,7 @@ import {
   deleteWorldVariableDef,
   fetchDefinitions,
 } from "../../api/client";
+import { RawJsonView } from "../shared/RawJsonEditor";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { EditorProvider, useEditorContext } from "../shared/EditorContext";
 import type { EditorContextValue, KeyLabel } from "../shared/EditorContext";
@@ -146,6 +147,11 @@ export default function EventManager({
   const readOnly = selectedAddon === null;
   const filteredEvents = selectedAddon ? events.filter((e) => e.source === selectedAddon) : events;
   const filteredWVs = selectedAddon ? worldVars.filter((v) => v.source === selectedAddon) : worldVars;
+  const [showJson, setShowJson] = useState(false);
+
+  if (showJson && selectedAddon) {
+    return <RawJsonView addonId={selectedAddon} filename="events.json" onClose={() => setShowJson(false)} />;
+  }
 
   if (loading) {
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
@@ -197,21 +203,38 @@ export default function EventManager({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.worldVars")} ==</span>
         {!readOnly && (
-          <button
-            className="em-action-btn"
-            onClick={handleNewWV}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: T.bg2,
-              color: T.successDim,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "13px",
-            }}
-          >
-            [{t("btn.addVar")}]
-          </button>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              className="em-action-btn"
+              onClick={() => setShowJson(true)}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.textSub,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [JSON]
+            </button>
+            <button
+              className="em-action-btn"
+              onClick={handleNewWV}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.successDim,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [{t("btn.addVar")}]
+            </button>
+          </div>
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "16px" }}>
@@ -248,21 +271,38 @@ export default function EventManager({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.globalEvents")} ==</span>
         {!readOnly && (
-          <button
-            className="em-action-btn"
-            onClick={handleNewEvent}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: T.bg2,
-              color: T.successDim,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "13px",
-            }}
-          >
-            [{t("btn.newEvent")}]
-          </button>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              className="em-action-btn"
+              onClick={() => setShowJson(true)}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.textSub,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [JSON]
+            </button>
+            <button
+              className="em-action-btn"
+              onClick={handleNewEvent}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: T.bg2,
+                color: T.successDim,
+                border: `1px solid ${T.border}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              [{t("btn.newEvent")}]
+            </button>
+          </div>
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -300,6 +340,7 @@ export default function EventManager({
           <div style={{ color: T.textDim, padding: "4px 0", fontSize: "11px" }}>{t("empty.globalEvents")}</div>
         )}
       </div>
+
     </div>
   );
 }

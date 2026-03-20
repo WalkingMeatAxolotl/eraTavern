@@ -6,6 +6,7 @@ import { t } from "../../i18n/ui";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import { inputStyle, labelStyle } from "../shared/styles";
+import { RawJsonPanel } from "../shared/RawJsonEditor";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -35,6 +36,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
   const [message, setMessage] = useState("");
 
   const isReadOnly = false; // all addon entities are editable
+  const [jsonMode, setJsonMode] = useState(false);
 
   // Tags from pool that aren't already selected
   const availableTags = (allTags ?? []).filter((t) => !tags.includes(t));
@@ -97,6 +99,22 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
       setSaving(false);
     }
   };
+
+  if (jsonMode) {
+    return (
+      <RawJsonPanel
+        data={{ id, name, tags, description, maxStack, sellable, price }}
+        onSave={async (data) => {
+          const result = isNew
+            ? await createItemDef({ ...data, source: item.source } as never)
+            : await saveItemDef(item.id, { ...data, source: item.source } as never);
+          if (result.success && isNew) setTimeout(onBack, 500);
+          return result;
+        }}
+        onToggle={() => setJsonMode(false)}
+      />
+    );
+  }
 
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
@@ -313,6 +331,20 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
           }}
         >
           [{t("btn.back")}]
+        </button>
+        <button
+          onClick={() => setJsonMode(true)}
+          style={{
+            padding: "5px 16px",
+            backgroundColor: T.bg2,
+            color: T.textSub,
+            border: `1px solid ${T.border}`,
+            borderRadius: "3px",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          [JSON]
         </button>
         {message && (
           <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>

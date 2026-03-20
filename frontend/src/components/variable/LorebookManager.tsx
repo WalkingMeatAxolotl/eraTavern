@@ -4,6 +4,7 @@ import { t } from "../../i18n/ui";
 import { LorebookMode } from "../../constants";
 import type { LorebookEntry } from "../../types/game";
 import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLorebookEntry } from "../../api/client";
+import { RawJsonView } from "../shared/RawJsonEditor";
 import { inputStyle as _inputStyle, labelStyle } from "../shared/styles";
 
 const inputStyle: React.CSSProperties = {
@@ -153,15 +154,28 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
     setEntry((e) => ({ ...e, keywords: e.keywords.filter((k) => k !== kw) }));
   };
 
+  const [showJson, setShowJson] = useState(false);
+
+  if (showJson && selectedAddon !== "__all__") {
+    return <RawJsonView addonId={selectedAddon} filename="lorebook.json" onClose={() => setShowJson(false)} />;
+  }
+
   // --- List view ---
   if (editingId === null) {
     return (
       <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.lorebook")} ==</span>
-          <button onClick={handleNew} style={btnStyle(T.successDim)}>
-            [{t("btn.newEntry")}]
-          </button>
+          <div style={{ display: "flex", gap: "6px" }}>
+            {selectedAddon !== "__all__" && (
+              <button onClick={() => setShowJson(true)} style={btnStyle(T.textSub)}>
+                [JSON]
+              </button>
+            )}
+            <button onClick={handleNew} style={btnStyle(T.successDim)}>
+              [{t("btn.newEntry")}]
+            </button>
+          </div>
         </div>
 
         {filteredEntries.length === 0 && (
@@ -208,6 +222,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
         </div>
 
         {message && <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>}
+
       </div>
     );
   }

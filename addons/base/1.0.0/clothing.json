@@ -1,257 +1,2496 @@
 {
-  "outfitTypes": [
-    {
-      "id": "test",
-      "name": "test",
-      "description": "",
-      "copyDefault": false,
-      "slots": {
-        "hat": [
-          "base.iron-helm"
-        ],
-        "upperBody": [
-          "base.leather-armor"
-        ],
-        "upperUnderwear": [
-          "base.undershirt"
-        ]
-      }
-    }
-  ],
   "clothing": [
     {
-      "id": "straw-hat",
-      "name": "草帽",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "folding_fan",
+      "name": "折扇",
+      "slots": [
+        "mainHand"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "paper_umbrella",
+      "name": "纸伞",
+      "slots": [
+        "mainHand"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.perception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.investigation",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "lantern",
+      "name": "提灯",
+      "slots": [
+        "mainHand"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.healing",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "wooden_staff",
+      "name": "木杖",
+      "slots": [
+        "mainHand"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "cat_ear_headband",
+      "name": "猫耳发箍",
       "slots": [
         "hat"
       ]
     },
     {
-      "id": "iron-helm",
-      "name": "铁盔",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.knowledge",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.intelligence",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "witch_hat",
+      "name": "魔女尖帽",
       "slots": [
         "hat"
       ]
     },
     {
-      "id": "wizard-hat",
-      "name": "法师帽",
       "occlusion": [],
-      "effects": [],
-      "slots": [
-        "hat"
-      ]
-    },
-    {
+      "effects": [
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.deception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
       "id": "hood",
       "name": "兜帽",
-      "occlusion": [],
-      "effects": [],
       "slots": [
         "hat"
       ]
     },
     {
-      "id": "cloth-shirt",
-      "name": "布衫",
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.healing",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "flower_crown",
+      "name": "花冠",
+      "slots": [
+        "hat"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.perception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "beret",
+      "name": "贝雷帽",
+      "slots": [
+        "hat"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.deception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "fox_mask",
+      "name": "狐狸面具",
+      "slots": [
+        "hat"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "ribbon_bow",
+      "name": "缎带蝴蝶结",
+      "slots": [
+        "hat"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "straw_hat",
+      "name": "斗笠",
+      "slots": [
+        "hat"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.leadership",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "tiara",
+      "name": "皇冠发饰",
+      "slots": [
+        "hat"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.investigation",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "goggles",
+      "name": "护目镜",
+      "slots": [
+        "hat"
+      ]
+    },
+    {
       "occlusion": [
         "upperUnderwear"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.communication",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "sailor_uniform_top",
+      "name": "水手服",
       "slots": [
         "upperBody"
       ]
     },
     {
-      "id": "leather-armor",
-      "name": "皮甲",
-      "occlusion": [
-        "upperUnderwear"
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.healing",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
       ],
-      "effects": [],
+      "id": "cardigan",
+      "name": "开衫毛衣",
       "slots": [
         "upperBody"
       ]
     },
     {
-      "id": "chain-mail",
-      "name": "锁子甲",
       "occlusion": [
         "upperUnderwear"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "qipao_top",
+      "name": "旗袍上衣",
       "slots": [
         "upperBody"
       ]
     },
     {
-      "id": "robe",
-      "name": "长袍",
+      "occlusion": [
+        "upperUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.strength",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.deception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "leather_jacket",
+      "name": "皮夹克",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "upperUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.healing",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.perception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "miko_top",
+      "name": "巫女服上衣",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
+      "id": "maid_apron_dress",
+      "name": "女仆围裙装",
+      "slots": [
+        "upperBody",
+        "lowerBody"
+      ],
       "occlusion": [
         "upperUnderwear",
         "lowerUnderwear"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.cooking",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "occlusion": [
+        "upperUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "cloak_coat",
+      "name": "斗篷大衣",
+      "slots": [
+        "upperBody",
+        "back"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "off_shoulder_camisole",
+      "name": "露肩吊带衫",
       "slots": [
         "upperBody"
       ]
     },
     {
-      "id": "cloak",
-      "name": "斗篷",
       "occlusion": [],
-      "effects": [],
-      "slots": [
-        "upperBody"
-      ]
-    },
-    {
-      "id": "undershirt",
-      "name": "内衣",
-      "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "white_bra",
+      "name": "白色胸衣",
       "slots": [
         "upperUnderwear"
       ]
     },
     {
-      "id": "cloth-pants",
-      "name": "布裤",
-      "occlusion": [
-        "lowerUnderwear"
-      ],
-      "effects": [],
-      "slots": [
-        "lowerBody"
-      ]
-    },
-    {
-      "id": "leather-pants",
-      "name": "皮裤",
-      "occlusion": [
-        "lowerUnderwear"
-      ],
-      "effects": [],
-      "slots": [
-        "lowerBody"
-      ]
-    },
-    {
-      "id": "skirt",
-      "name": "裙子",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "lace_camisole",
+      "name": "蕾丝小吊带",
       "slots": [
-        "lowerBody"
+        "upperUnderwear"
       ]
     },
     {
-      "id": "armored-greaves",
-      "name": "胫甲裙",
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "sarashi",
+      "name": "晒布缠胸",
+      "slots": [
+        "upperUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "sports_bra",
+      "name": "运动内衣",
+      "slots": [
+        "upperUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "ribbon_bra",
+      "name": "缎带束胸",
+      "slots": [
+        "upperUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "silk_dudou",
+      "name": "丝绸肚兜",
+      "slots": [
+        "upperUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "frilly_underwear_top",
+      "name": "荷叶边内衣",
+      "slots": [
+        "upperUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.deception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "black_corset",
+      "name": "黑色束腰胸衣",
+      "slots": [
+        "upperUnderwear"
+      ]
+    },
+    {
+      "occlusion": [
+        "upperUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.intelligence",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.communication",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "school_blazer",
+      "name": "学院西装外套",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "hanfu_ruqun_top",
+      "name": "襦裙上襦",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "upperUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.willpower",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "oversized_hoodie",
+      "name": "宽松连帽卫衣",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "upperUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.negotiation",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "kimono_top",
+      "name": "和服上衣",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "crop_top",
+      "name": "露脐短上衣",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "lolita_blouse",
+      "name": "洛丽塔衬衫",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "upperUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.intelligence",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.knowledge",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "robe_of_stars",
+      "name": "星纹法袍",
+      "slots": [
+        "upperBody"
+      ]
+    },
+    {
       "occlusion": [
         "lowerUnderwear"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "pleated_skirt",
+      "name": "百褶裙",
       "slots": [
         "lowerBody"
       ]
     },
     {
-      "id": "shorts",
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "hot_pants",
       "name": "短裤",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "lolita_skirt",
+      "name": "洛丽塔蓬蓬裙",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.strength",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "leather_pants",
+      "name": "皮裤",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.negotiation",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "ruqun_lower",
+      "name": "襦裙下裳",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.combat",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "armor_greaves",
+      "name": "铠甲裤裙",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.healing",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.perception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "miko_hakama",
+      "name": "巫女绯袴",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "cargo_pants",
+      "name": "工装裤",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "slit_long_skirt",
+      "name": "开叉长裙",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.communication",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.intelligence",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "school_skirt",
+      "name": "学院制服裙",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.negotiation",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "kimono_lower",
+      "name": "和服下裳",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "fluffy_tutu",
+      "name": "蜘蛛纱达达裙",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "denim_shorts",
+      "name": "牛仔短裙",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.combat",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "china_slit_skirt",
+      "name": "中华高叉裙",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "bloomers",
+      "name": "灯笼裤",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.deception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "asymmetric_skirt",
+      "name": "不对称裙摊",
+      "slots": [
+        "lowerBody"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "white_panties",
+      "name": "白色小内内",
       "slots": [
         "lowerUnderwear"
       ]
     },
     {
-      "id": "leather-gloves",
-      "name": "皮手套",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "striped_panties",
+      "name": "条纹胖次",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "lace_panties",
+      "name": "蕾丝内裤",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "spats",
+      "name": "安全裤",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.willpower",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.combat",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "fundoshi",
+      "name": "兑裈布",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "silk_shorts",
+      "name": "丝绸短裤",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "ribbon_panties",
+      "name": "缎带小内内",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "bloomers_underwear",
+      "name": "南瓜裤",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.deception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "black_thong",
+      "name": "黑色丁字裤",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.willpower",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "bear_print_panties",
+      "name": "小熊印花内内",
+      "slots": [
+        "lowerUnderwear"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.combat",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "fingerless_gloves",
+      "name": "露指手套",
       "slots": [
         "hands"
       ]
     },
     {
-      "id": "gauntlets",
-      "name": "铁手甲",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "lace_gloves",
+      "name": "蕾丝手套",
       "slots": [
         "hands"
       ]
     },
     {
-      "id": "socks",
-      "name": "袜子",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.combat",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.strength",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "iron_gauntlets",
+      "name": "铁护手",
+      "slots": [
+        "hands"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.willpower",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.healing",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "prayer_beads_bracelet",
+      "name": "念珠手串",
+      "slots": [
+        "hands"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "cat_paw_gloves",
+      "name": "猫爪毛绒手套",
+      "slots": [
+        "hands"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "charm_bracelet",
+      "name": "小挂件手链",
+      "slots": [
+        "hands"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.combat",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "leather_bracer",
+      "name": "皮护腕",
+      "slots": [
+        "hands"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "silk_ribbon_wristband",
+      "name": "丝绸缠腕带",
+      "slots": [
+        "hands"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.perception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "red_string_bracelet",
+      "name": "红绳手绳",
+      "slots": [
+        "hands"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "white_knee_socks",
+      "name": "白色过膝袜",
       "slots": [
         "feet"
       ]
     },
     {
-      "id": "leather-boots",
-      "name": "皮靴",
-      "occlusion": [
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "black_thigh_highs",
+      "name": "黑色过膝袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "striped_socks",
+      "name": "条纹过膝袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.deception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "fishnet_stockings",
+      "name": "网袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "ankle_socks",
+      "name": "短袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "tabi_socks",
+      "name": "足袋",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "ribbon_stockings",
+      "name": "缎带绑带袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.combat",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "leg_wraps",
+      "name": "绷带绑腿",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.willpower",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.healing",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "fluffy_wool_socks",
+      "name": "毛茸茸羊毛袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "id": "cat_print_socks",
+      "name": "猫猫印花袜",
+      "slots": [
         "feet"
       ],
-      "effects": [],
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "white_pantyhose",
+      "name": "白色连裤袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [
+        "lowerUnderwear"
+      ],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "black_pantyhose",
+      "name": "黑色连裤袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "garter_stockings",
+      "name": "吊带袜",
+      "slots": [
+        "feet"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.intelligence",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.communication",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "loafers",
+      "name": "乐福鞋",
       "slots": [
         "shoes"
       ]
     },
     {
-      "id": "sandals",
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "mary_janes",
+      "name": "玛丽珍鞋",
+      "slots": [
+        "shoes"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.strength",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "leather_boots",
+      "name": "皮靠鞋",
+      "slots": [
+        "shoes"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.perception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.willpower",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "geta",
+      "name": "木屣",
+      "slots": [
+        "shoes"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "sneakers",
+      "name": "运动鞋",
+      "slots": [
+        "shoes"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "high_heels",
+      "name": "高跟鞋",
+      "slots": [
+        "shoes"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "embroidered_shoes",
+      "name": "绣花鞋",
+      "slots": [
+        "shoes"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "straw_sandals",
       "name": "草鞋",
-      "occlusion": [],
-      "effects": [],
       "slots": [
         "shoes"
       ]
     },
     {
-      "id": "iron-boots",
-      "name": "铁靴",
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "ribbon_ballet_shoes",
+      "name": "缎带芝蕾鞋",
+      "slots": [
+        "shoes"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "adventurer_backpack",
+      "name": "冒险者背包",
+      "slots": [
+        "back"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.leadership",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "red_cape",
+      "name": "红色披风",
+      "slots": [
+        "back"
+      ]
+    },
+    {
+      "id": "black_cloak",
+      "name": "黑色斗篷",
+      "slots": [
+        "back"
+      ],
       "occlusion": [
+        "upperBody",
+        "upperUnderwear",
+        "lowerBody",
+        "lowerUnderwear",
+        "hands",
         "feet"
       ],
-      "effects": [],
-      "slots": [
-        "shoes"
+      "effects": [
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.deception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
       ]
     },
     {
-      "id": "necklace",
-      "name": "项链",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        }
+      ],
+      "id": "fur_mantle",
+      "name": "毛皮披肩",
+      "slots": [
+        "back"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.intelligence",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.knowledge",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "school_bag",
+      "name": "学生书包",
+      "slots": [
+        "back"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.healing",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "white_shawl",
+      "name": "白色披巾",
+      "slots": [
+        "back"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "suspenders",
+      "name": "背带",
+      "slots": [
+        "back"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.stealth",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "drawstring_pouch_bag",
+      "name": "束口包袋",
+      "slots": [
+        "back"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.performance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "silk_veil_cape",
+      "name": "薄纱罗裳",
+      "slots": [
+        "back"
+      ]
+    },
+    {
+      "id": "travel_cloak",
+      "name": "旅行斗篷",
+      "slots": [
+        "back"
+      ],
+      "occlusion": [
+        "upperBody",
+        "lowerBody",
+        "upperUnderwear",
+        "lowerUnderwear",
+        "feet",
+        "hands"
+      ],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.perception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "bell_choker",
+      "name": "铃铛项圈",
       "slots": [
         "accessory1"
       ]
     },
     {
-      "id": "ring",
-      "name": "戒指",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.perception",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "crystal_earrings",
+      "name": "水晶耳坠",
       "slots": [
-        "accessory2"
+        "accessory1"
       ]
     },
     {
-      "id": "bracelet",
-      "name": "手镯",
       "occlusion": [],
-      "effects": [],
+      "effects": [
+        {
+          "target": "Base.intelligence",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.investigation",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "pocket_watch",
+      "name": "怀表",
       "slots": [
-        "accessory3"
+        "accessory1"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "pendant_necklace",
+      "name": "垂坠项链",
+      "slots": [
+        "accessory1"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.willpower",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.luck",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "talisman",
+      "name": "护身符",
+      "slots": [
+        "accessory1"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.intelligence",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 2
+        },
+        {
+          "target": "Base.knowledge",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "round_glasses",
+      "name": "圆框眼镜",
+      "slots": [
+        "accessory1"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.seduction",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.agility",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "anklet",
+      "name": "脚链",
+      "slots": [
+        "accessory1"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.crafting",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "hair_pin",
+      "name": "发簪",
+      "slots": [
+        "accessory1"
+      ]
+    },
+    {
+      "occlusion": [],
+      "effects": [
+        {
+          "target": "Base.endurance",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        },
+        {
+          "target": "Base.charisma",
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "value": 1
+        }
+      ],
+      "id": "scarf",
+      "name": "围巾",
+      "slots": [
+        "accessory1"
       ]
     }
   ]

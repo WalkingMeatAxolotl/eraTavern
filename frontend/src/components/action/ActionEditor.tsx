@@ -8,6 +8,7 @@ import type {
   OutputTemplateEntry,
 } from "../../types/game";
 import { createActionDef, saveActionDef, deleteActionDef, fetchLLMPresets } from "../../api/client";
+import { RawJsonPanel } from "../shared/RawJsonEditor";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { TargetType } from "../../constants";
@@ -116,6 +117,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   }, []);
 
   const isReadOnly = false; // all addon entities are editable
+  const [jsonMode, setJsonMode] = useState(false);
 
   const { template, maps, traitDefs, itemDefs, clothingDefs, characters } = definitions;
   const resourceKeys = template.resources.map((r) => ({ key: r.key, label: r.label }));
@@ -270,6 +272,38 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
     actionList,
     categoryList,
   };
+
+  const buildData = (): Record<string, unknown> => ({
+    id,
+    name,
+    category,
+    targetType,
+    triggerLLM,
+    llmPreset: llmPreset || undefined,
+    timeCost,
+    npcWeight,
+    npcWeightModifiers,
+    conditions,
+    costs: [],
+    outcomes,
+    outputTemplates: outputTemplates.length > 0 ? outputTemplates : undefined,
+  });
+
+  if (jsonMode) {
+    return (
+      <RawJsonPanel
+        data={buildData()}
+        onSave={async (data) => {
+          const result = isNew
+            ? await createActionDef({ ...data, source: action.source } as never)
+            : await saveActionDef(action.id, { ...data, source: action.source } as never);
+          if (result.success && isNew) setTimeout(onBack, 500);
+          return result;
+        }}
+        onToggle={() => setJsonMode(false)}
+      />
+    );
+  }
 
   return (
     <EditorProvider value={editorCtx}>
@@ -582,6 +616,13 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           style={{ ...smallBtnStyle(T.textSub), padding: "5px 16px", fontSize: "13px" }}
         >
           [{t("btn.back")}]
+        </button>
+        <button
+          className="ae-btn"
+          onClick={() => setJsonMode(true)}
+          style={{ ...smallBtnStyle(T.textSub), padding: "5px 16px", fontSize: "13px" }}
+        >
+          [JSON]
         </button>
         {message && (
           <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>

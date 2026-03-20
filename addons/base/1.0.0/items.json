@@ -1,227 +1,63 @@
 {
   "items": [
     {
+      "tags": [
+        "consumable",
+        "food"
+      ],
+      "description": "刚出炉的圆面包，外皮酥脆内里松软，香气扑鼻。最朴素也最让人安心的食物。",
+      "maxStack": 10,
+      "sellable": true,
+      "price": 5,
       "id": "bread",
-      "name": "面包",
+      "name": "面包"
+    },
+    {
       "tags": [
+        "consumable",
         "food"
       ],
-      "description": "普通的面包，可以恢复少量体力",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 10
-    },
-    {
-      "id": "rice-ball",
-      "name": "饭团",
-      "tags": [
-        "food"
-      ],
-      "description": "简单的饭团，携带方便",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 8
-    },
-    {
-      "id": "meat",
-      "name": "烤肉",
-      "tags": [
-        "food"
-      ],
-      "description": "烤好的肉，恢复大量体力",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 30
-    },
-    {
-      "id": "fruit",
-      "name": "果实",
-      "tags": [
-        "food"
-      ],
-      "description": "新鲜的果实",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 15
-    },
-    {
-      "id": "herb",
-      "name": "药草",
-      "tags": [
-        "material",
-        "herb"
-      ],
-      "description": "常见的药草，可用于调药",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 20
-    },
-    {
-      "id": "potion-hp",
-      "name": "体力药水",
-      "tags": [
-        "potion"
-      ],
-      "description": "饮用后恢复体力",
-      "maxStack": 20,
-      "sellable": true,
-      "price": 50
-    },
-    {
-      "id": "potion-mp",
-      "name": "气力药水",
-      "tags": [
-        "potion"
-      ],
-      "description": "饮用后恢复气力",
-      "maxStack": 20,
-      "sellable": true,
-      "price": 50
-    },
-    {
-      "id": "antidote",
-      "name": "解毒药",
-      "tags": [
-        "potion"
-      ],
-      "description": "解除中毒状态",
-      "maxStack": 20,
-      "sellable": true,
-      "price": 40
-    },
-    {
-      "id": "iron-ore",
-      "name": "铁矿石",
-      "tags": [
-        "material",
-        "ore"
-      ],
-      "description": "常见的铁矿石，锻造用素材",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 25
-    },
-    {
-      "id": "wood",
-      "name": "木材",
-      "tags": [
-        "material"
-      ],
-      "description": "加工过的木材",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 12
-    },
-    {
-      "id": "leather",
-      "name": "皮革",
-      "tags": [
-        "material"
-      ],
-      "description": "鞣制好的皮革",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 30
-    },
-    {
-      "id": "magic-stone",
-      "name": "魔石",
-      "tags": [
-        "material",
-        "magic"
-      ],
-      "description": "蕴含魔力的石头",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 100
-    },
-    {
-      "id": "torch",
-      "name": "火把",
-      "tags": [
-        "tool"
-      ],
-      "description": "照明用的火把",
+      "description": "捏成三角形的白米饭团，包着一片海苔。简单却饱腹，便当的经典款。",
       "maxStack": 10,
       "sellable": true,
-      "price": 5
+      "price": 5,
+      "id": "rice_ball",
+      "name": "饭团"
     },
     {
-      "id": "rope",
-      "name": "绳索",
       "tags": [
-        "tool"
+        "gift"
       ],
-      "description": "结实的绳索，探索时有用",
+      "description": "用漂亮的缎带系好的精致盒子。里面装着什么呢？送给喜欢的人一定会很开心。",
       "maxStack": 5,
       "sellable": true,
-      "price": 15
+      "price": 50,
+      "id": "gift_box",
+      "name": "礼物盒"
     },
     {
-      "id": "lockpick",
-      "name": "开锁器",
       "tags": [
-        "tool"
+        "gift"
       ],
-      "description": "用于开锁的工具",
+      "description": "用各色鲜花扎成的花束，芬芳美丽。表达心意的经典之选。",
+      "maxStack": 3,
+      "sellable": true,
+      "price": 30,
+      "id": "bouquet",
+      "name": "花束"
+    },
+    {
+      "tags": [
+        "consumable",
+        "food",
+        "gift"
+      ],
+      "description": "用精美包装纸裹着的手工巧克力。甜蜜的味道能让人心情变好，也是告白的定番道具。",
       "maxStack": 10,
       "sellable": true,
-      "price": 35
-    },
-    {
-      "id": "map-scroll",
-      "name": "地图卷轴",
-      "tags": [
-        "tool"
-      ],
-      "description": "标记了周边地形的卷轴",
-      "maxStack": 5,
-      "sellable": true,
-      "price": 80
-    },
-    {
-      "id": "gold-coin",
-      "name": "金币",
-      "tags": [
-        "currency"
-      ],
-      "description": "通用货币",
-      "maxStack": 9999,
-      "sellable": false,
-      "price": 1
-    },
-    {
-      "id": "monster-fang",
-      "name": "魔物牙",
-      "tags": [
-        "material",
-        "monster"
-      ],
-      "description": "从魔物身上取得的牙齿",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 45
-    },
-    {
-      "id": "crystal-shard",
-      "name": "水晶碎片",
-      "tags": [
-        "material",
-        "magic"
-      ],
-      "description": "散发微光的水晶碎片",
-      "maxStack": 99,
-      "sellable": true,
-      "price": 60
-    },
-    {
-      "id": "test",
-      "name": "test",
-      "tags": [],
-      "description": "",
-      "maxStack": 1,
-      "sellable": true,
-      "price": 0
+      "price": 20,
+      "id": "chocolate",
+      "name": "巧克力"
     }
   ]
 }

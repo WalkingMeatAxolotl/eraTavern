@@ -196,6 +196,7 @@ export default function CharacterManager({
           );
         })}
       </div>
+
     </div>
   );
 }
