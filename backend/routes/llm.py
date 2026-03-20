@@ -526,9 +526,11 @@ async def assist_confirm_tool(request: Request):
 
     session.pending_tool_call = None
 
-    # Execute or reject
+    # Execute or reject (frontend may override arguments if user edited JSON)
+    override_args = data.get("overrideArgs")
+    tool_args = override_args if override_args else pending["arguments"]
     if approved:
-        result = execute_tool(_h.game_state, pending["name"], pending["arguments"])
+        result = execute_tool(_h.game_state, pending["name"], tool_args)
         # Broadcast dirty state to frontend
         if _h.game_state.dirty:
             await _h.manager.broadcast("dirty_update", {"dirty": True})

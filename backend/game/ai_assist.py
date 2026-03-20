@@ -99,6 +99,25 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
             "occlusion": ["upperUnderwear"],
         },
     },
+    "traitGroup": {
+        "description": "特质组 — 将特质分组，可设置互斥（同组只能拥有一个）",
+        "required": {
+            "id": "英文标识符，下划线命名（如 gender）",
+            "name": "显示名称",
+            "category": "所属分类 key（必须与组内特质的 category 一致）",
+        },
+        "optional": {
+            "traits": "特质 ID 数组（完整 ID，如 [\"Base.male\", \"Base.female\"]）",
+            "exclusive": "是否互斥（布尔值，默认 false）— 互斥组中角色只能拥有一个特质",
+        },
+        "example": {
+            "id": "gender",
+            "name": "性别",
+            "category": "race",
+            "traits": ["Base.male", "Base.female"],
+            "exclusive": True,
+        },
+    },
     "variable": {
         "description": "变量定义 — 可被特质/服装的 effects 引用的数值变量（只读，不可通过 AI 创建）",
         "required": {},
@@ -107,7 +126,7 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
 }
 
 # Entity types that AI can create/update (subset of ENTITY_SCHEMAS)
-WRITABLE_ENTITY_TYPES = ["item", "trait", "clothing"]
+WRITABLE_ENTITY_TYPES = ["item", "trait", "clothing", "traitGroup"]
 
 # ---------------------------------------------------------------------------
 # Tool definitions (OpenAI function calling format)
@@ -178,6 +197,29 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
+            "name": "batch_create",
+            "description": "批量创建多个实体。用于一次创建 2 个以上的实体。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entityType": {
+                        "type": "string",
+                        "enum": WRITABLE_ENTITY_TYPES,
+                        "description": "实体类型",
+                    },
+                    "entities": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                        "description": "实体数组，每个至少包含 id 和 name",
+                    },
+                },
+                "required": ["entityType", "entities"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "update_entity",
             "description": "修改已有实体。只传要改的字段。entityId 用完整ID（如 Base.koakuma）",
             "parameters": {
@@ -208,6 +250,7 @@ TOOL_SAFETY: dict[str, str] = {
     "list_entities": "read",
     "get_schema": "read",
     "create_entity": "write",
+    "batch_create": "write",
     "update_entity": "write",
 }
 
@@ -223,6 +266,7 @@ def _get_defs(gs: GameState, entity_type: str) -> dict[str, dict]:
         "item": gs.item_defs,
         "trait": gs.trait_defs,
         "clothing": gs.clothing_defs,
+        "traitGroup": gs.trait_groups,
         "variable": gs.variable_defs,
     }
     return mapping.get(entity_type, {})
@@ -235,6 +279,10 @@ def _summarize_entity(entity_type: str, entity: dict) -> dict[str, Any]:
         summary["category"] = entity.get("category", "")
     elif entity_type == "clothing":
         summary["slots"] = entity.get("slots", [])
+    elif entity_type == "traitGroup":
+        summary["category"] = entity.get("category", "")
+        summary["exclusive"] = entity.get("exclusive", False)
+        summary["traitCount"] = len(entity.get("traits", []))
     elif entity_type == "item":
         tags = entity.get("tags")
         if tags:
@@ -341,6 +389,26 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
     return {"success": True, "entity": _summarize_entity(entity_type, entry)}
 
 
+def execute_tool_batch_create(
+    gs: GameState, entity_type: str, entities_data: list[dict]
+) -> dict[str, Any]:
+    """Execute batch_create tool — create multiple entities at once.
+
+    Returns {created: [...summaries], errors: [...messages]}.
+    Called AFTER user confirmation.
+    """
+    created = []
+    errors = []
+    for i, entity_data in enumerate(entities_data):
+        result = execute_tool_create_entity(gs, entity_type, entity_data)
+        if result.get("success"):
+            created.append(result["entity"])
+        else:
+            label = entity_data.get("id", f"#{i}")
+            errors.append(f"{label}: {result.get('error', 'unknown')}")
+    return {"created": created, "errors": errors, "total": len(created)}
+
+
 def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, fields: dict) -> dict[str, Any]:
     """Execute update_entity tool — validates and updates fields on an existing entity.
 
@@ -381,6 +449,8 @@ _REF_RULES: list[tuple[str, str, Any]] = [
     ("clothing", "occlusion[]", "template.clothingSlots"),
     ("trait", "effects[].target", "effect_targets"),
     ("clothing", "effects[].target", "effect_targets"),
+    ("traitGroup", "category", "template.traits[].key"),
+    ("traitGroup", "traits[]", "trait_defs"),
 ]
 
 
@@ -390,6 +460,8 @@ def _resolve_valid_values(gs: GameState, resolver: str) -> set[str]:
 
     if resolver == "variable_defs":
         return set(gs.variable_defs.keys()) if gs.variable_defs else set()
+    if resolver == "trait_defs":
+        return set(gs.trait_defs.keys()) if gs.trait_defs else set()
     if resolver == "effect_targets":
         # effects.target can reference: variables, ability traits, or basicInfo number fields
         targets: set[str] = set()
@@ -479,6 +551,11 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
         result = execute_tool_create_entity(gs, entity_type, entity_data)
         return json.dumps(result, ensure_ascii=False)
 
+    if tool_name == "batch_create":
+        entities_data = arguments.get("entities", [])
+        result = execute_tool_batch_create(gs, entity_type, entities_data)
+        return json.dumps(result, ensure_ascii=False)
+
     if tool_name == "update_entity":
         entity_id = arguments.get("entityId", "")
         fields = arguments.get("fields", {})
@@ -521,6 +598,7 @@ ENTITY_DEFAULTS: dict[str, dict[str, Any]] = {
     "item": {"tags": [], "description": "", "maxStack": 1, "sellable": False, "price": 0},
     "trait": {"description": "", "effects": []},
     "clothing": {"occlusion": [], "effects": []},
+    "traitGroup": {"traits": [], "exclusive": False},
 }
 
 DEFAULT_ASSIST_PROMPT = """\

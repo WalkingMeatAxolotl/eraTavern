@@ -139,11 +139,14 @@ export async function confirmToolCall(
   sessionId: string,
   callId: string,
   approved: boolean,
+  overrideArgs?: Record<string, unknown>,
 ): Promise<{ success: boolean; result?: string }> {
+  const body: Record<string, unknown> = { sessionId, callId, approved };
+  if (overrideArgs) body.overrideArgs = overrideArgs;
   const resp = await fetch("/api/llm/assist-confirm-tool", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionId, callId, approved }),
+    body: JSON.stringify(body),
   });
   return resp.json();
 }

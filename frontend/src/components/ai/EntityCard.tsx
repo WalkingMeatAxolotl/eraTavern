@@ -6,7 +6,7 @@
  * Displays action buttons based on context (confirm/reject for tool calls,
  * accept for text suggestions).
  */
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
 
@@ -18,6 +18,8 @@ interface Props {
   confirmLabel?: string;
   onConfirm?: () => void;
   onReject?: () => void;
+  /** When provided, JSON is editable. Called with updated entity on valid edit. */
+  onEntityChange?: (updated: Record<string, unknown>) => void;
   disabled?: boolean;
 }
 
@@ -57,8 +59,44 @@ const btnBase: React.CSSProperties = {
   backgroundColor: T.bg1,
 };
 
-export default function EntityCard({ entityType, entity, mode, confirmLabel, onConfirm, onReject, disabled }: Props) {
+export default function EntityCard({ entityType, entity, mode, confirmLabel, onConfirm, onReject, onEntityChange, disabled }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [editText, setEditText] = useState("");
+  const [editError, setEditError] = useState("");
+  const editable = !!onEntityChange;
+
+  // Sync editText when entity changes or expand toggles
+  const handleToggleExpand = useCallback(() => {
+    setExpanded((v) => {
+      if (!v) {
+        setEditText(JSON.stringify(entity, null, 2));
+        setEditError("");
+      }
+      return !v;
+    });
+  }, [entity]);
+
+  const handleEditChange = useCallback(
+    (text: string) => {
+      setEditText(text);
+      try {
+        const parsed = JSON.parse(text);
+        if (typeof parsed !== "object" || Array.isArray(parsed)) {
+          setEditError(t("ai.jsonMustBeObject"));
+          return;
+        }
+        if (!parsed.id || !parsed.name) {
+          setEditError(t("ai.jsonMissingFields"));
+          return;
+        }
+        setEditError("");
+        onEntityChange?.(parsed);
+      } catch {
+        setEditError(t("ai.jsonInvalid"));
+      }
+    },
+    [onEntityChange],
+  );
 
   const id = String(entity.id ?? "");
   const name = String(entity.name ?? "");
@@ -85,7 +123,7 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
           {name && <span style={{ color: T.text, marginLeft: "8px" }}>{name}</span>}
         </span>
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={handleToggleExpand}
           style={{ ...btnBase, color: T.textSub, fontSize: "10px" }}
         >
           [{expanded ? t("ai.collapseJson") : t("ai.expandJson")}]
@@ -107,23 +145,51 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
 
       {/* Expanded JSON */}
       {expanded && (
-        <pre
-          style={{
-            marginTop: "6px",
-            padding: "6px 8px",
-            backgroundColor: T.bg3,
-            borderRadius: "3px",
-            fontSize: "11px",
-            fontFamily: T.fontMono,
-            color: T.text,
-            overflow: "auto",
-            maxHeight: "200px",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-          }}
-        >
-          {JSON.stringify(entity, null, 2)}
-        </pre>
+        editable ? (
+          <>
+            <textarea
+              style={{
+                marginTop: "6px",
+                padding: "6px 8px",
+                backgroundColor: T.bg3,
+                borderRadius: "3px",
+                fontSize: "11px",
+                fontFamily: T.fontMono,
+                color: T.text,
+                border: editError ? `1px solid ${T.danger}` : `1px solid ${T.border}`,
+                width: "100%",
+                boxSizing: "border-box",
+                minHeight: "120px",
+                maxHeight: "300px",
+                resize: "vertical",
+                whiteSpace: "pre",
+              }}
+              value={editText}
+              onChange={(e) => handleEditChange(e.target.value)}
+            />
+            {editError && (
+              <div style={{ color: T.danger, fontSize: "10px", marginTop: "2px" }}>{editError}</div>
+            )}
+          </>
+        ) : (
+          <pre
+            style={{
+              marginTop: "6px",
+              padding: "6px 8px",
+              backgroundColor: T.bg3,
+              borderRadius: "3px",
+              fontSize: "11px",
+              fontFamily: T.fontMono,
+              color: T.text,
+              overflow: "auto",
+              maxHeight: "200px",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}
+          >
+            {JSON.stringify(entity, null, 2)}
+          </pre>
+        )
       )}
 
       {/* Action buttons */}

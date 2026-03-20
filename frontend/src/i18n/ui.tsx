@@ -925,6 +925,9 @@ export const UI: Record<string, string> = {
   "ai.accept": "采用",
   "ai.confirm": "确认创建",
   "ai.confirmUpdate": "确认修改",
+  "ai.confirmBatch": "全部创建 ({count})",
+  "ai.batchCreateResult": "已创建 {count} 个{type}",
+  "ai.batchErrors": "个失败",
   "ai.reject": "拒绝",
   "ai.expandJson": "展开 JSON",
   "ai.collapseJson": "收起",
@@ -935,6 +938,9 @@ export const UI: Record<string, string> = {
   "ai.toolRejected": "已拒绝",
   "ai.noPreset": "未配置 AI 辅助预设，请在 LLM 设置中配置",
   "ai.newSession": "新建会话",
+  "ai.jsonInvalid": "JSON 格式错误",
+  "ai.jsonMustBeObject": "必须是 JSON 对象",
+  "ai.jsonMissingFields": "缺少 id 或 name 字段",
 
   // === Variable manager ===
   "btn.byTagView": "按标签",

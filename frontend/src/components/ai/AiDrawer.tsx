@@ -227,9 +227,9 @@ export default function AiDrawer({ onEntityChanged }: AiDrawerProps) {
 
   // Confirm/reject a tool call
   const handleToolConfirm = useCallback(
-    async (callId: string, approved: boolean) => {
-      // Call backend to execute/reject the tool
-      const resp = await confirmToolCall(sessionId, callId, approved);
+    async (callId: string, approved: boolean, overrideArgs?: Record<string, unknown>) => {
+      // Call backend to execute/reject the tool (with optional user-edited args)
+      const resp = await confirmToolCall(sessionId, callId, approved, overrideArgs);
 
       // Update the tool call status + result in the existing message
       setMessages((prev) =>
@@ -330,7 +330,7 @@ export default function AiDrawer({ onEntityChanged }: AiDrawerProps) {
                 arguments={tc.arguments}
                 status={tc.status}
                 result={tc.result}
-                onConfirm={() => handleToolConfirm(tc.callId, true)}
+                onConfirm={(overrideArgs) => handleToolConfirm(tc.callId, true, overrideArgs)}
                 onReject={() => handleToolConfirm(tc.callId, false)}
                 disabled={isGenerating && tc.status !== "pending"}
               />
