@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import T from "./theme";
 import type { GameState, GameAction, ActionResult, NarrativeEntry } from "./types/game";
 import type { DetailTab } from "./components/character/CharacterPanel";
@@ -84,6 +84,7 @@ export default function App() {
   const [addonListKey] = useState(0);
   const [selectedAddonTab, setSelectedAddonTab] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const addonIds = useMemo(() => stagedAddons.map((a) => a.id), [stagedAddons]);
 
   const esRef = useRef<EventSource | null>(null);
 
@@ -349,63 +350,63 @@ export default function App() {
       return (
         <>
           {addonTab}
-          <CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "traits")
       return (
         <>
           {addonTab}
-          <TraitManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <TraitManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "clothing")
       return (
         <>
           {addonTab}
-          <ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "items")
       return (
         <>
           {addonTab}
-          <ItemManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <ItemManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "actions")
       return (
         <>
           {addonTab}
-          <ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "variables")
       return (
         <>
           {addonTab}
-          <VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "events")
       return (
         <>
           {addonTab}
-          <EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "lorebook")
       return (
         <>
           {addonTab}
-          <LorebookManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <LorebookManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "maps")
       return (
         <>
           {addonTab}
-          <MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} />
+          <MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
         </>
       );
     if (navPage === "llm") return <LLMPresetManager key={sessionKey} debugEntries={debugEntries} />;

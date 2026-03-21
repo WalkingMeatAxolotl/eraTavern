@@ -5,6 +5,7 @@ import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { HelpButton, HelpPanel } from "../shared/HelpToggle";
 import { RawJsonPanel } from "../shared/RawJsonEditor";
+import CloneButton from "../shared/CloneDialog";
 
 interface Props {
   character: RawCharacterData;
@@ -12,6 +13,7 @@ interface Props {
   allCharacters: RawCharacterData[];
   isNew: boolean;
   onBack: () => void;
+  addonIds?: string[];
 }
 
 const GRADES = ["G", "F", "E", "D", "C", "B", "A", "S"];
@@ -30,7 +32,7 @@ const TAB_LABELS: { key: CharTab; label: string }[] = [
   { key: "llm", label: "LLM" },
 ];
 
-export default function CharacterEditor({ character, definitions, allCharacters, isNew, onBack }: Props) {
+export default function CharacterEditor({ character, definitions, allCharacters, isNew, onBack, addonIds }: Props) {
   const [data, setData] = useState<RawCharacterData>(() => structuredClone(character));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -930,6 +932,16 @@ export default function CharacterEditor({ character, definitions, allCharacters,
         <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
           [{saving ? t("status.submitting") : t("btn.confirm")}]
         </button>
+        {!isNew && addonIds && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={data.source || ""}
+            getData={() => { const { id: _, source: _s, ...rest } = data; return rest as unknown as Record<string, unknown>; }}
+            createFn={(d) => createCharacter(d as RawCharacterData)}
+            onSuccess={onBack}
+            buttonStyle={btnStyle(T.accent)}
+          />
+        )}
         {!isNew && (
           <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
             [{t("btn.delete")}]

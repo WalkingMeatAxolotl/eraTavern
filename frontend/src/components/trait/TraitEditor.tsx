@@ -8,6 +8,7 @@ import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import { inputStyle, labelStyle } from "../shared/styles";
 import { RawJsonPanel } from "../shared/RawJsonEditor";
+import CloneButton from "../shared/CloneDialog";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -21,6 +22,7 @@ interface TraitEditorProps {
   isNew: boolean;
   onBack: () => void;
   addonCrud?: AddonCrud;
+  addonIds?: string[];
 }
 
 /** Build effect target options grouped by type. */
@@ -64,7 +66,7 @@ function buildTargetOptions(defs: GameDefinitions) {
   return groups;
 }
 
-export default function TraitEditor({ trait, definitions, isNew, onBack, addonCrud }: TraitEditorProps) {
+export default function TraitEditor({ trait, definitions, isNew, onBack, addonCrud, addonIds }: TraitEditorProps) {
   const addonPrefix = trait.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(trait.id));
   const [name, setName] = useState(trait.name);
@@ -487,6 +489,19 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           >
             [{t("btn.confirm")}]
           </button>
+        )}
+        {!isReadOnly && !isNew && addonIds && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={trait.source || ""}
+            getData={() => {
+              const d: Record<string, unknown> = { name, category, description, effects };
+              if (category === EF.ABILITY) { d.defaultValue = defaultValue; d.decay = decayEnabled ? decay : null; }
+              return d;
+            }}
+            createFn={(d) => createTraitDef(d)}
+            onSuccess={onBack}
+          />
         )}
         {!isReadOnly && !isNew && (
           <button

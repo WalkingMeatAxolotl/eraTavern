@@ -29,9 +29,11 @@ type ViewMode = "byTag" | "byVar";
 export default function VariableManager({
   selectedAddon,
   onEditingChange,
+  addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }) {
   const [variables, setVariables] = useState<VariableDefinition[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -185,6 +187,7 @@ export default function VariableManager({
         allVariables={variables}
         definitions={definitions}
         onBack={handleBack}
+        addonIds={addonIds}
       />
     );
   }

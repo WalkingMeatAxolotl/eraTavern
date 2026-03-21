@@ -16,9 +16,11 @@ const hoverStyles = `
 export default function ActionManager({
   selectedAddon,
   onEditingChange,
+  addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }) {
   const [actions, setActions] = useState<ActionDefinition[]>([]);
   const [defs, setDefs] = useState<GameDefinitions | null>(null);
@@ -104,7 +106,7 @@ export default function ActionManager({
     };
 
     return (
-      <ActionEditor action={isNew ? blank : (existing ?? blank)} isNew={isNew} definitions={defs} onBack={handleBack} />
+      <ActionEditor action={isNew ? blank : (existing ?? blank)} isNew={isNew} definitions={defs} onBack={handleBack} addonIds={addonIds} />
     );
   }
 

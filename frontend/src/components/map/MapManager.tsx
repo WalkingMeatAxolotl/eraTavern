@@ -7,10 +7,13 @@ import MapEditor from "./MapEditor";
 export default function MapManager({
   selectedAddon,
   onEditingChange,
+  addonIds: _addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }) {
+  void _addonIds; // reserved for future map clone support
   const [maps, setMaps] = useState<{ id: string; name: string; source?: string }[]>([]);
   const [editingMapId, setEditingMapId] = useState<string | null>(null);
 

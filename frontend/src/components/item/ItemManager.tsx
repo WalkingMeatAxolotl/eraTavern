@@ -23,9 +23,11 @@ type ViewMode = "byTag" | "byItem";
 export default function ItemManager({
   selectedAddon,
   onEditingChange,
+  addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }) {
   const [items, setItems] = useState<ItemDefinition[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -167,7 +169,7 @@ export default function ItemManager({
       source: selectedAddon ?? "",
     };
     return (
-      <ItemEditor item={isNew ? blank : (existing ?? blank)} isNew={isNew} allTags={allTags} onBack={handleBack} />
+      <ItemEditor item={isNew ? blank : (existing ?? blank)} isNew={isNew} allTags={allTags} onBack={handleBack} addonIds={addonIds} />
     );
   }
 

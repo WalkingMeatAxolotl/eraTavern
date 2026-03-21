@@ -5,6 +5,7 @@ import T from "../../theme";
 import { t } from "../../i18n/ui";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
+import CloneButton from "../shared/CloneDialog";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -18,9 +19,10 @@ interface Props {
   isNew: boolean;
   onBack: () => void;
   addonCrud?: AddonCrud;
+  addonIds?: string[];
 }
 
-export default function TraitGroupEditor({ group, definitions, isNew, onBack, addonCrud }: Props) {
+export default function TraitGroupEditor({ group, definitions, isNew, onBack, addonCrud, addonIds }: Props) {
   const addonPrefix = group.source || "";
   const [data, setData] = useState<TraitGroup>(() => structuredClone(group));
   const [saving, setSaving] = useState(false);
@@ -242,6 +244,16 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
           <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
             [{saving ? t("status.submitting") : t("btn.confirm")}]
           </button>
+        )}
+        {!isReadOnly && !isNew && addonIds && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={group.source || ""}
+            getData={() => ({ name: data.name, category: data.category, traits: data.traits, exclusive: data.exclusive !== false })}
+            createFn={(d) => createTraitGroup(d)}
+            onSuccess={onBack}
+            buttonStyle={btnStyle(T.accent)}
+          />
         )}
         {!isReadOnly && !isNew && (
           <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>

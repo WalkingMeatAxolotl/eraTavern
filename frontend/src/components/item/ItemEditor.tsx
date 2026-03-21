@@ -7,6 +7,7 @@ import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import { inputStyle, labelStyle } from "../shared/styles";
 import { RawJsonPanel } from "../shared/RawJsonEditor";
+import CloneButton from "../shared/CloneDialog";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -20,9 +21,10 @@ interface Props {
   allTags?: string[];
   onBack: () => void;
   addonCrud?: AddonCrud;
+  addonIds?: string[];
 }
 
-export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: Props) {
+export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, addonIds }: Props) {
   const addonPrefix = item.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(item.id));
   const [name, setName] = useState(item.name);
@@ -300,6 +302,15 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud }: 
           >
             [{t("btn.confirm")}]
           </button>
+        )}
+        {!isReadOnly && !isNew && addonIds && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={item.source || ""}
+            getData={() => ({ name, tags, description, maxStack, sellable, price })}
+            createFn={(d) => createItemDef(d as ItemDefinition)}
+            onSuccess={onBack}
+          />
         )}
         {!isReadOnly && !isNew && (
           <button

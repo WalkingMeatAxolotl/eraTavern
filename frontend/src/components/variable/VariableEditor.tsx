@@ -11,6 +11,7 @@ import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { VarStepType, EF, ArithOp } from "../../constants";
 import { inputStyle, labelStyle } from "../shared/styles";
+import CloneButton from "../shared/CloneDialog";
 
 interface Props {
   variable: VariableDefinition;
@@ -19,6 +20,7 @@ interface Props {
   allVariables: VariableDefinition[];
   definitions: GameDefinitions | null;
   onBack: () => void;
+  addonIds?: string[];
 }
 
 const OP_OPTIONS: { value: string; label: string }[] = [
@@ -163,7 +165,7 @@ function stepValueLabel(s: VariableStep, bidirectional?: boolean): string {
   }
 }
 
-export default function VariableEditor({ variable, isNew, allTags, allVariables, definitions, onBack }: Props) {
+export default function VariableEditor({ variable, isNew, allTags, allVariables, definitions, onBack, addonIds }: Props) {
   const [id, setId] = useState(variable.id);
   const [name, setName] = useState(variable.name);
   const [description, setDescription] = useState(variable.description ?? "");
@@ -591,6 +593,16 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
             [{saving ? t("status.submitting") : t("btn.confirm")}]
           </button>
+        )}
+        {!isReadOnly && !isNew && addonIds && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={variable.source || ""}
+            getData={() => ({ name: name.trim(), description: description.trim(), isBidirectional: isBidirectional || undefined, tags, steps })}
+            createFn={(d) => createVariableDef(d)}
+            onSuccess={onBack}
+            buttonStyle={{ ...btnBase, color: T.accent }}
+          />
         )}
         {!isReadOnly && !isNew && (
           <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>

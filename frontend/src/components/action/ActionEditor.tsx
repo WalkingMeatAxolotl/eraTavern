@@ -21,6 +21,7 @@ import { toLocalId } from "../shared/idUtils";
 import { ModifierListEditor } from "./ModifierEditor";
 import { OutcomeEditor } from "./OutcomeEditor";
 import { TemplateListEditor, TemplateVarHelp } from "./TemplateEditor";
+import CloneButton from "../shared/CloneDialog";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -34,6 +35,7 @@ interface Props {
   definitions: GameDefinitions;
   onBack: () => void;
   addonCrud?: AddonCrud;
+  addonIds?: string[];
 }
 
 // Color-coded sections for visual distinction
@@ -87,7 +89,7 @@ if (typeof document !== "undefined" && !document.getElementById(AE_STYLE_ID)) {
   document.head.appendChild(style);
 }
 
-export default function ActionEditor({ action, isNew, definitions, onBack, addonCrud }: Props) {
+export default function ActionEditor({ action, isNew, definitions, onBack, addonCrud, addonIds }: Props) {
   const addonPrefix = action.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(action.id));
   const [name, setName] = useState(action.name);
@@ -594,6 +596,17 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           >
             [{t("btn.confirm")}]
           </button>
+        )}
+        {!isReadOnly && !isNew && addonIds && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={action.source || ""}
+            getData={() => buildData()}
+            createFn={(d) => createActionDef(d)}
+            onSuccess={onBack}
+            className="ae-btn"
+            buttonStyle={{ ...smallBtnStyle(T.accent), padding: "5px 16px", fontSize: "13px" }}
+          />
         )}
         {!isReadOnly && !isNew && (
           <button

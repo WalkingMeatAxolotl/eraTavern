@@ -6,6 +6,7 @@ import type { LorebookEntry } from "../../types/game";
 import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLorebookEntry } from "../../api/client";
 import { RawJsonView } from "../shared/RawJsonEditor";
 import { inputStyle as _inputStyle, labelStyle } from "../shared/styles";
+import CloneButton from "../shared/CloneDialog";
 
 const inputStyle: React.CSSProperties = {
   ..._inputStyle,
@@ -44,9 +45,10 @@ function makeBlankEntry(addonId: string): Omit<LorebookEntry, "source"> {
 interface Props {
   selectedAddon: string;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }
 
-export default function LorebookManager({ selectedAddon, onEditingChange }: Props) {
+export default function LorebookManager({ selectedAddon, onEditingChange, addonIds }: Props) {
   const [entries, setEntries] = useState<LorebookEntry[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [entry, setEntry] = useState<Omit<LorebookEntry, "source">>(makeBlankEntry(selectedAddon));
@@ -373,6 +375,19 @@ export default function LorebookManager({ selectedAddon, onEditingChange }: Prop
         <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
           [{t("btn.save")}]
         </button>
+        {!isNew && addonIds && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={selectedAddon !== "__all__" ? selectedAddon : (addonIds[0] ?? "")}
+            getData={() => ({ name: entry.name, keywords: entry.keywords, content: entry.content, enabled: entry.enabled, priority: entry.priority, insertMode: entry.insertMode })}
+            createFn={(d) => {
+              const fullId = d.source + "." + d.id;
+              return createLorebookEntry({ ...d, id: fullId } as unknown as Omit<LorebookEntry, "source">);
+            }}
+            onSuccess={handleBack}
+            buttonStyle={btnStyle(T.accent)}
+          />
+        )}
         {!isNew && (
           <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
             [{t("btn.delete")}]

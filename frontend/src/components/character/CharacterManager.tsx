@@ -8,9 +8,11 @@ import CharacterEditor from "./CharacterEditor";
 export default function CharacterManager({
   selectedAddon,
   onEditingChange,
+  addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [characters, setCharacters] = useState<RawCharacterData[]>([]);
@@ -100,6 +102,7 @@ export default function CharacterManager({
         allCharacters={characters}
         isNew={isNew}
         onBack={handleBack}
+        addonIds={addonIds}
       />
     );
   }

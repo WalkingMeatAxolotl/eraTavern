@@ -29,6 +29,7 @@ import type { EditorContextValue, KeyLabel } from "../shared/EditorContext";
 import { ConditionItemEditor, SLOT_LABELS } from "../shared/ConditionEditor";
 import { inputStyle, addBtnStyle, delBtnStyle, rowBg } from "../shared/styles";
 import { toLocalId } from "../shared/idUtils";
+import CloneButton from "../shared/CloneDialog";
 
 // ── Styles ──────────────────────────────────────────────
 
@@ -89,9 +90,11 @@ const hoverStyles = `
 export default function EventManager({
   selectedAddon,
   onEditingChange,
+  addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }) {
   const [events, setEvents] = useState<EventDefinition[]>([]);
   const [worldVars, setWorldVars] = useState<WorldVariableDefinition[]>([]);
@@ -169,7 +172,7 @@ export default function EventManager({
         default: 0,
         source: selectedAddon ?? "",
       };
-      return <WorldVarEditor variable={isNew ? blank : (existing ?? blank)} isNew={isNew} onBack={handleBack} />;
+      return <WorldVarEditor variable={isNew ? blank : (existing ?? blank)} isNew={isNew} onBack={handleBack} addonIds={addonIds} />;
     }
     const existing = events.find((e) => e.id === editingId);
     const blank: EventDefinition = {
@@ -190,6 +193,7 @@ export default function EventManager({
         definitions={definitions}
         worldVars={worldVars}
         onBack={handleBack}
+        addonIds={addonIds}
       />
     );
   }
@@ -351,10 +355,12 @@ function WorldVarEditor({
   variable,
   isNew,
   onBack,
+  addonIds,
 }: {
   variable: WorldVariableDefinition;
   isNew: boolean;
   onBack: () => void;
+  addonIds?: string[];
 }) {
   const addonPrefix = variable.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(variable.id));
@@ -410,6 +416,16 @@ function WorldVarEditor({
           <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
             [{t("btn.return")}]
           </button>
+          {!isNew && addonIds && (
+            <CloneButton
+              addonIds={addonIds}
+              defaultAddon={variable.source || ""}
+              getData={() => ({ name, description: description || undefined, type, default: defaultVal })}
+              createFn={(d) => createWorldVariableDef(d)}
+              onSuccess={onBack}
+              buttonStyle={{ ...btnBase, color: T.accent }}
+            />
+          )}
           {!isNew && (
             <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
               [{t("btn.delete")}]
@@ -474,12 +490,14 @@ function EventEditor({
   definitions,
   worldVars,
   onBack,
+  addonIds,
 }: {
   event: EventDefinition;
   isNew: boolean;
   definitions: GameDefinitions | null;
   worldVars: WorldVariableDefinition[];
   onBack: () => void;
+  addonIds?: string[];
 }) {
   const addonPrefix = event.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(event.id));
@@ -645,6 +663,20 @@ function EventEditor({
           <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
             [{t("btn.return")}]
           </button>
+          {!isNew && addonIds && (
+            <CloneButton
+              addonIds={addonIds}
+              defaultAddon={event.source || ""}
+              getData={() => {
+                const d: Record<string, unknown> = { name, description: description || undefined, triggerMode, targetScope, conditions, effects, outputTemplate: outputTemplate || undefined, enabled };
+                if (triggerMode === TriggerMode.WHILE) d.cooldown = cooldown;
+                return d;
+              }}
+              createFn={(d) => createEventDef(d)}
+              onSuccess={onBack}
+              buttonStyle={{ ...btnBase, color: T.accent }}
+            />
+          )}
           {!isNew && (
             <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
               [{t("btn.delete")}]

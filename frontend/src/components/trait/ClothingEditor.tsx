@@ -8,6 +8,7 @@ import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { HelpButton, HelpPanel, helpSub, helpP, helpEm } from "../shared/HelpToggle";
 import { toLocalId } from "../shared/idUtils";
 import { inputStyle, labelStyle } from "../shared/styles";
+import CloneButton from "../shared/CloneDialog";
 
 function buildTargetOptions(defs: GameDefinitions) {
   const groups: { label: string; options: { value: string; label: string }[] }[] = [];
@@ -45,9 +46,10 @@ interface Props {
   isNew: boolean;
   onBack: () => void;
   addonCrud?: AddonCrud;
+  addonIds?: string[];
 }
 
-export default function ClothingEditor({ clothing, definitions, isNew, onBack, addonCrud }: Props) {
+export default function ClothingEditor({ clothing, definitions, isNew, onBack, addonCrud, addonIds }: Props) {
   const addonPrefix = clothing.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(clothing.id));
   const [name, setName] = useState(clothing.name);
@@ -468,6 +470,15 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           >
             [{t("btn.confirm")}]
           </button>
+        )}
+        {!isReadOnly && !isNew && addonIds && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={clothing.source || ""}
+            getData={() => ({ name, slots: selectedSlots, occlusion, effects })}
+            createFn={(d) => createClothingDef(d)}
+            onSuccess={onBack}
+          />
         )}
         {!isReadOnly && !isNew && (
           <button

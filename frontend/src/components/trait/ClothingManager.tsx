@@ -17,9 +17,11 @@ const hoverStyles = `
 export default function ClothingManager({
   selectedAddon,
   onEditingChange,
+  addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [clothing, setClothing] = useState<ClothingDefinition[]>([]);
@@ -97,7 +99,7 @@ export default function ClothingManager({
     };
 
     return (
-      <ClothingEditor clothing={isNew ? blank : (existing ?? blank)} definitions={definitions} isNew={isNew} onBack={handleBack} />
+      <ClothingEditor clothing={isNew ? blank : (existing ?? blank)} definitions={definitions} isNew={isNew} onBack={handleBack} addonIds={addonIds} />
     );
   }
 

@@ -18,9 +18,11 @@ const hoverStyles = `
 export default function TraitManager({
   selectedAddon,
   onEditingChange,
+  addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
+  addonIds?: string[];
 }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [traits, setTraits] = useState<TraitDefinition[]>([]);
@@ -93,6 +95,7 @@ export default function TraitManager({
         definitions={definitions}
         isNew={isNew}
         onBack={handleBack}
+        addonIds={addonIds}
       />
     );
   }
@@ -110,7 +113,7 @@ export default function TraitManager({
     };
 
     return (
-      <TraitEditor trait={isNew ? blank : (existing ?? blank)} definitions={definitions} isNew={isNew} onBack={handleBack} />
+      <TraitEditor trait={isNew ? blank : (existing ?? blank)} definitions={definitions} isNew={isNew} onBack={handleBack} addonIds={addonIds} />
     );
   }
 
