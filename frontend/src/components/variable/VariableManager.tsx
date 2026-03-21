@@ -1,5 +1,5 @@
 import T from "../../theme";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { t } from "../../i18n/ui";
 import type { VariableDefinition, GameDefinitions } from "../../types/game";
 import {
@@ -13,16 +13,19 @@ import VariableEditor from "./VariableEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { Tooltip } from "../shared/Tooltip";
 import { RawJsonView } from "../shared/RawJsonEditor";
+import { SectionDivider } from "../shared/SectionDivider";
+import { useManagerState, isReadOnly } from "../shared/useManagerState";
+import { useTagSystem } from "../shared/useTagSystem";
+import { TagManagerPanel } from "../shared/TagManagerPanel";
+import { createHoverStyles, btn } from "../shared/styles";
 
-const hoverStyles = `
-  .vm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
-  .vm-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .vm-tag-chip:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .vm-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .vm-view-tab:hover { background-color: ${T.bg3} !important; }
-`;
-
-type ViewMode = "byTag" | "byVar";
+const hoverStyles = createHoverStyles("vm", [
+  ["cat-btn", "color"],
+  ["item", "border"],
+  ["tag-chip", "border"],
+  ["action-btn", "border"],
+  ["view-tab", "simple"],
+]);
 
 // ── Main ──────────────────────────────────────────────
 
@@ -38,126 +41,40 @@ export default function VariableManager({
   const [variables, setVariables] = useState<VariableDefinition[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isNew, setIsNew] = useState(false);
 
-  useEffect(() => {
-    onEditingChange?.(editingId !== null);
-  }, [editingId, onEditingChange]);
-  const [viewMode, setViewMode] = useState<ViewMode>("byTag");
-  const [newTagInput, setNewTagInput] = useState("");
-  const [showTagManager, setShowTagManager] = useState(false);
-  const { collapsed, toggle: toggleCollapse } = useCollapsibleGroups();
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadFn = useCallback(async () => {
     const [varList, tagList, defs] = await Promise.all([fetchVariableDefs(), fetchVariableTags(), fetchDefinitions()]);
     setVariables(varList);
     setAllTags(tagList);
     setDefinitions(defs);
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const { editingId, isNew, loading, showJson, setShowJson, handleEdit, handleNew, handleBack } = useManagerState({
+    onEditingChange,
+    loadFn,
+  });
 
-  const handleEdit = (id: string) => {
-    setIsNew(false);
-    setEditingId(id);
-  };
-  const handleNew = () => {
-    setIsNew(true);
-    setEditingId("__new__");
-  };
-  const handleBack = () => {
-    setEditingId(null);
-    setIsNew(false);
-    loadData();
-  };
+  const { collapsed, toggle: toggleCollapse } = useCollapsibleGroups();
 
-  const handleAddTag = async () => {
-    const t = newTagInput.trim();
-    if (!t) return;
-    const result = await createVariableTag(t);
-    if (result.success) {
-      setAllTags((prev) => [...prev, t]);
-      setNewTagInput("");
-    }
-  };
-
-  const handleDeleteTag = async (tag: string) => {
-    const result = await deleteVariableTag(tag);
-    if (result.success) {
-      setAllTags((prev) => prev.filter((t) => t !== tag));
-    }
-  };
-
-  const readOnly = selectedAddon === null;
+  const readOnly = isReadOnly(selectedAddon);
   const addonFiltered = selectedAddon ? variables.filter((v) => v.source === selectedAddon) : variables;
-  const [showJson, setShowJson] = useState(false);
 
   const singleVars = addonFiltered.filter((v) => !v.isBidirectional);
   const biVars = addonFiltered.filter((v) => v.isBidirectional);
   const filteredVars = addonFiltered;
 
-  // Auto-collect tags from variables
-  const visibleTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    for (const v of filteredVars) {
-      for (const t of v.tags ?? []) tagSet.add(t);
-    }
-    const poolSet = new Set(allTags);
-    const fromPool = allTags.filter((t) => tagSet.has(t));
-    const extra = [...tagSet].filter((t) => !poolSet.has(t)).sort();
-    return [...fromPool, ...extra];
-  }, [filteredVars, allTags]);
-
-  // Tag usage count
-  const tagUsage = useMemo(() => {
-    const usage: Record<string, number> = {};
-    for (const v of filteredVars) {
-      for (const t of v.tags ?? []) usage[t] = (usage[t] || 0) + 1;
-    }
-    return usage;
-  }, [filteredVars]);
-
-  // Group: tag → variables (many-to-many)
-  const { tagGrouped, untagged } = useMemo(() => {
-    const g: Record<string, VariableDefinition[]> = {};
-    const noTag: VariableDefinition[] = [];
-    for (const v of filteredVars) {
-      const vTags = v.tags ?? [];
-      if (vTags.length === 0) {
-        noTag.push(v);
-        continue;
-      }
-      for (const t of vTags) {
-        if (!g[t]) g[t] = [];
-        g[t].push(v);
-      }
-    }
-    return { tagGrouped: g, untagged: noTag };
-  }, [filteredVars]);
-
-  // Reverse: var → tags
-  const varTagsMap = useMemo(() => {
-    const m: Record<string, string[]> = {};
-    for (const v of filteredVars) {
-      m[v.id] = v.tags ?? [];
-    }
-    return m;
-  }, [filteredVars]);
-
-  // Reverse: tag → var names
-  const tagVarNames = useMemo(() => {
-    const m: Record<string, string[]> = {};
-    for (const tag of visibleTags) {
-      m[tag] = (tagGrouped[tag] ?? []).map((v) => v.name || v.id);
-    }
-    return m;
-  }, [visibleTags, tagGrouped]);
+  const {
+    newTagInput, setNewTagInput, showTagManager, setShowTagManager,
+    handleAddTag, handleDeleteTag,
+    visibleTags, tagUsage, tagGrouped, untagged, entityTagsMap, tagEntityNames,
+    viewMode, setViewMode, viewTabStyle,
+  } = useTagSystem({
+    filteredItems: filteredVars,
+    allTags,
+    setAllTags,
+    createTagFn: createVariableTag,
+    deleteTagFn: deleteVariableTag,
+  });
 
   if (loading) {
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
@@ -192,17 +109,6 @@ export default function VariableManager({
     );
   }
 
-  const viewTabStyle = (active: boolean): React.CSSProperties => ({
-    padding: "3px 10px",
-    backgroundColor: active ? T.bg3 : T.bg1,
-    color: active ? T.accent : T.textDim,
-    border: `1px solid ${active ? T.accent : T.border}`,
-    borderRadius: "3px",
-    cursor: "pointer",
-    fontSize: "12px",
-    transition: "background-color 0.1s, border-color 0.1s, color 0.1s",
-  });
-
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       <style>{hoverStyles}</style>
@@ -222,8 +128,8 @@ export default function VariableManager({
             </button>
             <button
               className="vm-view-tab"
-              onClick={() => setViewMode("byVar")}
-              style={viewTabStyle(viewMode === "byVar")}
+              onClick={() => setViewMode("byEntity")}
+              style={viewTabStyle(viewMode === "byEntity")}
             >
               {t("btn.byVarView")}
             </button>
@@ -231,20 +137,7 @@ export default function VariableManager({
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
           {!readOnly && (
-            <button
-              className="vm-action-btn"
-              onClick={() => setShowJson(true)}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-                transition: "background-color 0.1s, border-color 0.1s",
-              }}
-            >
+            <button className="vm-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
               [JSON]
             </button>
           )}
@@ -252,34 +145,13 @@ export default function VariableManager({
             <button
               className="vm-action-btn"
               onClick={() => setShowTagManager((v) => !v)}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: showTagManager ? T.accent : T.textSub,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-                transition: "background-color 0.1s, border-color 0.1s",
-              }}
+              style={btn(showTagManager ? "primary" : "neutral", "md")}
             >
               [{t("btn.tagMgmt")}]
             </button>
           )}
           {!readOnly && (
-            <button
-              className="vm-action-btn"
-              onClick={handleNew}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="vm-action-btn" onClick={handleNew} style={btn("create", "md")}>
               [{t("btn.newVar")}]
             </button>
           )}
@@ -288,106 +160,21 @@ export default function VariableManager({
 
       {/* Tag manager */}
       {showTagManager && (
-        <div
-          style={{
-            marginBottom: "12px",
-            padding: "8px",
-            backgroundColor: T.bg1,
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
-          }}
-        >
-          <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "6px" }}>{t("var.tagPool")}</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>
-            {allTags.map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "2px 8px",
-                  backgroundColor: T.bg1,
-                  border: `1px solid ${T.borderLight}`,
-                  borderRadius: "3px",
-                  fontSize: "12px",
-                }}
-              >
-                {tag}
-                <span style={{ color: T.textDim, fontSize: "11px" }}>({tagUsage[tag] || 0})</span>
-                <button
-                  onClick={() => handleDeleteTag(tag)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: T.danger,
-                    cursor: "pointer",
-                    padding: "0 2px",
-                    fontSize: "12px",
-                    lineHeight: 1,
-                  }}
-                >
-                  x
-                </button>
-              </span>
-            ))}
-            {allTags.length === 0 && <span style={{ color: T.textDim }}>{t("empty.noTags")}</span>}
-          </div>
-          <div style={{ display: "flex", gap: "4px" }}>
-            <input
-              style={{
-                flex: 1,
-                padding: "4px 8px",
-                backgroundColor: T.bg1,
-                color: T.text,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                fontSize: "12px",
-              }}
-              value={newTagInput}
-              onChange={(e) => setNewTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddTag();
-                }
-              }}
-              placeholder={t("var.newTagPlaceholder")}
-            />
-            <button
-              className="vm-action-btn"
-              onClick={handleAddTag}
-              style={{
-                padding: "4px 10px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-                transition: "background-color 0.1s, border-color 0.1s",
-              }}
-            >
-              [+]
-            </button>
-          </div>
-        </div>
+        <TagManagerPanel
+          allTags={allTags}
+          tagUsage={tagUsage}
+          newTagInput={newTagInput}
+          setNewTagInput={setNewTagInput}
+          onAddTag={handleAddTag}
+          onDeleteTag={handleDeleteTag}
+          btnClassName="vm-action-btn"
+          poolLabel={t("var.tagPool")}
+          placeholderLabel={t("var.newTagPlaceholder")}
+        />
       )}
 
       {/* Single-direction variables */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          margin: "8px 0 4px",
-          fontSize: "12px",
-          color: T.textDim,
-        }}
-      >
-        <span style={{ color: T.accent, fontWeight: "bold" }}>{t("section.uniVars")}</span>
-        <div style={{ flex: 1, borderBottom: `1px solid ${T.border}` }} />
-      </div>
+      <SectionDivider label={t("section.uniVars")} margin="8px 0 4px" />
       {singleVars.length === 0 ? (
         <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>{t("empty.uniVars")}</div>
       ) : viewMode === "byTag" ? (
@@ -395,30 +182,18 @@ export default function VariableManager({
           visibleTags={visibleTags}
           tagGrouped={tagGrouped}
           untagged={untagged}
-          varTagsMap={varTagsMap}
+          varTagsMap={entityTagsMap}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
           onEditVar={handleEdit}
           filterFn={(v) => !v.isBidirectional}
         />
       ) : (
-        <ByVarView filteredVars={singleVars} varTagsMap={varTagsMap} tagVarNames={tagVarNames} onEditVar={handleEdit} />
+        <ByVarView filteredVars={singleVars} varTagsMap={entityTagsMap} tagVarNames={tagEntityNames} onEditVar={handleEdit} />
       )}
 
       {/* Bidirectional variables */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          margin: "12px 0 4px",
-          fontSize: "12px",
-          color: T.textDim,
-        }}
-      >
-        <span style={{ color: T.accent, fontWeight: "bold" }}>{t("section.biVars")}</span>
-        <div style={{ flex: 1, borderBottom: `1px solid ${T.border}` }} />
-      </div>
+      <SectionDivider label={t("section.biVars")} margin="12px 0 4px" />
       {biVars.length === 0 ? (
         <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>{t("empty.biVars")}</div>
       ) : viewMode === "byTag" ? (
@@ -426,14 +201,14 @@ export default function VariableManager({
           visibleTags={visibleTags}
           tagGrouped={tagGrouped}
           untagged={untagged}
-          varTagsMap={varTagsMap}
+          varTagsMap={entityTagsMap}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
           onEditVar={handleEdit}
           filterFn={(v) => !!v.isBidirectional}
         />
       ) : (
-        <ByVarView filteredVars={biVars} varTagsMap={varTagsMap} tagVarNames={tagVarNames} onEditVar={handleEdit} />
+        <ByVarView filteredVars={biVars} varTagsMap={entityTagsMap} tagVarNames={tagEntityNames} onEditVar={handleEdit} />
       )}
 
     </div>

@@ -7,7 +7,7 @@ import type { OutputTemplateEntry, ConditionItem } from "../../types/game";
 import T from "../../theme";
 import { useEditorContext } from "../shared/EditorContext";
 import { ConditionItemEditor } from "../shared/ConditionEditor";
-import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/styles";
+import { inputStyle, btn, listRowStyle } from "../shared/styles";
 import { t } from "../../i18n/ui";
 
 export function TemplateListEditor({
@@ -33,12 +33,12 @@ export function TemplateListEditor({
       <div>
         <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
           {!disabled && templates.length === 0 && (
-            <button className="ae-add-btn" onClick={add} style={addBtnStyle}>
+            <button className="ae-add-btn" onClick={add} style={btn("add", "sm")}>
               [{t("btn.addTemplate")}]
             </button>
           )}
           {templates.length === 1 && !disabled && (
-            <button className="ae-add-btn" onClick={add} style={addBtnStyle}>
+            <button className="ae-add-btn" onClick={add} style={btn("add", "sm")}>
               [{t("btn.addBranch")}]
             </button>
           )}
@@ -53,7 +53,7 @@ export function TemplateListEditor({
               placeholder="{{player}} ..."
             />
             {!disabled && (
-              <button className="ae-del-btn" onClick={() => remove(0)} style={delBtnStyle}>
+              <button className="ae-del-btn" onClick={() => remove(0)} style={btn("del", "sm")}>
                 x
               </button>
             )}
@@ -68,7 +68,7 @@ export function TemplateListEditor({
     <div>
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
         {!disabled && (
-          <button className="ae-add-btn" onClick={add} style={addBtnStyle}>
+          <button className="ae-add-btn" onClick={add} style={btn("add", "sm")}>
             [{t("btn.addBranch")}]
           </button>
         )}
@@ -96,7 +96,7 @@ export function TemplateListEditor({
               disabled={disabled}
             />
             {!disabled && (
-              <button className="ae-del-btn" onClick={() => remove(idx)} style={{ ...delBtnStyle, marginLeft: "auto" }}>
+              <button className="ae-del-btn" onClick={() => remove(idx)} style={{ ...btn("del", "sm"), marginLeft: "auto" }}>
                 x
               </button>
             )}
@@ -158,7 +158,7 @@ export function TemplateConditionsEditor({
       <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "2px" }}>
         <span style={{ color: T.textSub, fontSize: "11px" }}>{t("outcome.condLabel")}</span>
         {!disabled && (
-          <button className="ae-add-btn" onClick={addCond} style={addBtnStyle}>
+          <button className="ae-add-btn" onClick={addCond} style={btn("add", "sm")}>
             [+]
           </button>
         )}

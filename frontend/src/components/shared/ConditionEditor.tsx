@@ -10,9 +10,7 @@ import { CondType, EF, CondTarget, TargetType, ClothingState, Season, DayOfWeek 
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { useEditorContext } from "./EditorContext";
 import type { MapInfo } from "./EditorContext";
-import { inputStyle, addBtnStyle, delBtnStyle, smallBtnStyle, listRowStyle } from "./styles";
-export { inputStyle, addBtnStyle, delBtnStyle, smallBtnStyle, rowBg, listRowStyle } from "./styles";
-export { SLOT_LABELS } from "../../i18n/ui";
+import { inputStyle, btn, listRowStyle } from "./styles";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -140,7 +138,8 @@ export function ConditionItemEditor({
         <button
           onClick={toggleNot}
           style={{
-            ...smallBtnStyle(isNot ? "#e9a045" : T.textDim),
+            ...btn("default", "sm"),
+            color: isNot ? "#e9a045" : T.textDim,
             minWidth: "28px",
             textAlign: "center",
             padding: "1px 4px",
@@ -168,7 +167,7 @@ export function ConditionItemEditor({
         disabled={disabled}
       />
       {!disabled && (
-        <button className="ae-del-btn" onClick={onRemove} style={delBtnStyle}>
+        <button className="ae-del-btn" onClick={onRemove} style={btn("del", "sm")}>
           x
         </button>
       )}
@@ -229,24 +228,24 @@ function ConditionGroupEditor({
         <div style={{ display: "flex", gap: "4px" }}>
           {!disabled && depth + 1 < MAX_UI_DEPTH && (
             <>
-              <button className="ae-add-btn" onClick={addLeaf} style={addBtnStyle}>
+              <button className="ae-add-btn" onClick={addLeaf} style={btn("add", "sm")}>
                 [{t("cond.addCond")}]
               </button>
-              <button className="ae-add-btn" onClick={addOr} style={addBtnStyle}>
+              <button className="ae-add-btn" onClick={addOr} style={btn("add", "sm")}>
                 [{t("cond.addOr")}]
               </button>
-              <button className="ae-add-btn" onClick={addAnd} style={addBtnStyle}>
+              <button className="ae-add-btn" onClick={addAnd} style={btn("add", "sm")}>
                 [{t("cond.addAnd")}]
               </button>
             </>
           )}
           {!disabled && depth + 1 >= MAX_UI_DEPTH && (
-            <button className="ae-add-btn" onClick={addLeaf} style={addBtnStyle}>
+            <button className="ae-add-btn" onClick={addLeaf} style={btn("add", "sm")}>
               [{t("cond.addCond")}]
             </button>
           )}
           {!disabled && (
-            <button className="ae-del-btn" onClick={onRemove} style={delBtnStyle}>
+            <button className="ae-del-btn" onClick={onRemove} style={btn("del", "sm")}>
               x
             </button>
           )}

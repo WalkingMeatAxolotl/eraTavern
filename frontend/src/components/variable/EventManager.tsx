@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import T from "../../theme";
-import { t } from "../../i18n/ui";
+import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EF, EffType, EffectOp, ClothingState, TriggerMode, EventScope, TargetType } from "../../constants";
-import { HelpButton, HelpPanel, helpSub, helpP, helpEm, helpDim } from "../shared/HelpToggle";
+import { HelpButton, HelpPanel, helpSub, helpP, helpDim } from "../shared/HelpToggle";
 import type {
   EventDefinition,
   WorldVariableDefinition,
@@ -26,22 +26,14 @@ import { RawJsonView } from "../shared/RawJsonEditor";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { EditorProvider, useEditorContext } from "../shared/EditorContext";
 import type { EditorContextValue, KeyLabel } from "../shared/EditorContext";
-import { ConditionItemEditor, SLOT_LABELS } from "../shared/ConditionEditor";
-import { inputStyle, addBtnStyle, delBtnStyle, rowBg } from "../shared/styles";
+import { ConditionItemEditor } from "../shared/ConditionEditor";
+import { inputStyle, rowBg, btn } from "../shared/styles";
 import { toLocalId } from "../shared/idUtils";
 import CloneButton from "../shared/CloneDialog";
 
 // ── Styles ──────────────────────────────────────────────
 
-const btnBase: React.CSSProperties = {
-  padding: "3px 10px",
-  backgroundColor: T.bg2,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "11px",
-  color: T.text,
-};
+// Uses btn() from shared/styles for button styling
 
 const SEC = {
   cond: { color: "#c78dff", bg: "#c78dff0a" },
@@ -80,10 +72,13 @@ const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: EffType.WORLD_VAR, label: t("eff.worldVar") },
 ];
 
-const hoverStyles = `
-  .em-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .em-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-`;
+import { useManagerState, isReadOnly } from "../shared/useManagerState";
+import { createHoverStyles } from "../shared/styles";
+
+const hoverStyles = createHoverStyles("em", [
+  ["item", "border"],
+  ["action-btn", "border"],
+]);
 
 // ── Main ────────────────────────────────────────────────
 
@@ -99,58 +94,40 @@ export default function EventManager({
   const [events, setEvents] = useState<EventDefinition[]>([]);
   const [worldVars, setWorldVars] = useState<WorldVariableDefinition[]>([]);
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingType, setEditingType] = useState<"event" | "worldVar">("event");
-  const [isNew, setIsNew] = useState(false);
 
-  useEffect(() => {
-    onEditingChange?.(editingId !== null);
-  }, [editingId, onEditingChange]);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadFn = useCallback(async () => {
     const [evtList, wvList, defs] = await Promise.all([fetchEventDefs(), fetchWorldVariableDefs(), fetchDefinitions()]);
     setEvents(evtList);
     setWorldVars(wvList);
     setDefinitions(defs);
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const { editingId, isNew, loading, showJson, setShowJson, handleEdit, handleNew, handleBack } = useManagerState({
+    onEditingChange,
+    loadFn,
+  });
 
   const handleEditEvent = (id: string) => {
     setEditingType("event");
-    setIsNew(false);
-    setEditingId(id);
+    handleEdit(id);
   };
   const handleNewEvent = () => {
     setEditingType("event");
-    setIsNew(true);
-    setEditingId("__new__");
+    handleNew();
   };
   const handleEditWV = (id: string) => {
     setEditingType("worldVar");
-    setIsNew(false);
-    setEditingId(id);
+    handleEdit(id);
   };
   const handleNewWV = () => {
     setEditingType("worldVar");
-    setIsNew(true);
-    setEditingId("__new__");
-  };
-  const handleBack = () => {
-    setEditingId(null);
-    setIsNew(false);
-    loadData();
+    handleNew();
   };
 
-  const readOnly = selectedAddon === null;
+  const readOnly = isReadOnly(selectedAddon);
   const filteredEvents = selectedAddon ? events.filter((e) => e.source === selectedAddon) : events;
   const filteredWVs = selectedAddon ? worldVars.filter((v) => v.source === selectedAddon) : worldVars;
-  const [showJson, setShowJson] = useState(false);
 
   if (showJson && selectedAddon) {
     return <RawJsonView addonId={selectedAddon} filename="events.json" onClose={() => setShowJson(false)} />;
@@ -208,34 +185,10 @@ export default function EventManager({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.worldVars")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              className="em-action-btn"
-              onClick={() => setShowJson(true)}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="em-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
               [JSON]
             </button>
-            <button
-              className="em-action-btn"
-              onClick={handleNewWV}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="em-action-btn" onClick={handleNewWV} style={btn("create", "md")}>
               [{t("btn.addVar")}]
             </button>
           </div>
@@ -276,34 +229,10 @@ export default function EventManager({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.globalEvents")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              className="em-action-btn"
-              onClick={() => setShowJson(true)}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="em-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
               [JSON]
             </button>
-            <button
-              className="em-action-btn"
-              onClick={handleNewEvent}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="em-action-btn" onClick={handleNewEvent} style={btn("create", "md")}>
               [{t("btn.newEvent")}]
             </button>
           </div>
@@ -413,7 +342,7 @@ function WorldVarEditor({
           == {isNew ? t("editor.newWorldVar") : t("editor.editNamed", { name: variable.name || variable.id })} ==
         </span>
         <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
+          <button onClick={onBack} style={btn("neutral")}>
             [{t("btn.return")}]
           </button>
           {!isNew && addonIds && (
@@ -427,11 +356,11 @@ function WorldVarEditor({
             />
           )}
           {!isNew && (
-            <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
+            <button onClick={handleDelete} style={btn("danger")}>
               [{t("btn.delete")}]
             </button>
           )}
-          <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
+          <button onClick={handleSave} disabled={saving} style={btn("create")}>
             {saving ? t("status.saving") : `[${t("btn.confirm")}]`}
           </button>
         </div>
@@ -660,7 +589,7 @@ function EventEditor({
           == {isNew ? t("editor.newEvent") : t("editor.editNamed", { name: event.name || event.id })} ==
         </span>
         <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
+          <button onClick={onBack} style={btn("neutral")}>
             [{t("btn.return")}]
           </button>
           {!isNew && addonIds && (
@@ -678,11 +607,11 @@ function EventEditor({
             />
           )}
           {!isNew && (
-            <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
+            <button onClick={handleDelete} style={btn("danger")}>
               [{t("btn.delete")}]
             </button>
           )}
-          <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
+          <button onClick={handleSave} disabled={saving} style={btn("create")}>
             {saving ? t("status.saving") : `[${t("btn.confirm")}]`}
           </button>
         </div>
@@ -792,10 +721,10 @@ function EventEditor({
         <div style={sectionTitleStyle("cond")}>
           <span style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.conditionsAnd")}</span>
           <div style={{ display: "flex", gap: "4px" }}>
-            <button onClick={addCondition} style={addBtnStyle}>
+            <button onClick={addCondition} style={btn("add", "sm")}>
               [{t("btn.addCondition")}]
             </button>
-            <button onClick={addOrGroup} style={addBtnStyle}>
+            <button onClick={addOrGroup} style={btn("add", "sm")}>
               [{t("btn.addOr")}]
             </button>
           </div>
@@ -828,7 +757,7 @@ function EventEditor({
       <div style={sectionStyle("eff")}>
         <div style={sectionTitleStyle("eff")}>
           <span style={{ color: SEC.eff.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.effects")}</span>
-          <button onClick={addEffect} style={addBtnStyle}>
+          <button onClick={addEffect} style={btn("add", "sm")}>
             [{t("btn.addEffect")}]
           </button>
         </div>
@@ -846,7 +775,7 @@ function EventEditor({
             >
               <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
                 <EffectFieldEditor effect={eff} onChange={(e) => updateEffect(idx, e)} />
-                <button onClick={() => removeEffect(idx)} style={delBtnStyle}>
+                <button onClick={() => removeEffect(idx)} style={btn("del", "sm")}>
                   x
                 </button>
               </div>
@@ -862,7 +791,7 @@ function EventEditor({
             <span style={{ color: SEC.tpl.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.outputTpl")}</span>
             <button
               onClick={() => setShowVarHelp((v) => !v)}
-              style={{ ...btnBase, color: showVarHelp ? T.danger : T.textSub, fontSize: "11px" }}
+              style={btn(showVarHelp ? "danger" : "neutral", "sm")}
             >
               [?]
             </button>

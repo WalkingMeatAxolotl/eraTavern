@@ -1,5 +1,5 @@
 import T from "../../theme";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { t } from "../../i18n/ui";
 import type { GameDefinitions, TraitDefinition, TraitGroup } from "../../types/game";
 import { fetchDefinitions, fetchTraitDefs, fetchTraitGroups } from "../../api/client";
@@ -7,13 +7,16 @@ import TraitEditor from "./TraitEditor";
 import TraitGroupEditor from "./TraitGroupEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { RawJsonView } from "../shared/RawJsonEditor";
+import { SectionDivider } from "../shared/SectionDivider";
+import { useManagerState } from "../shared/useManagerState";
+import { createHoverStyles, btn } from "../shared/styles";
 
-const hoverStyles = `
-  .tm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
-  .tm-trait-chip:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .tm-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .tm-accent-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.accent} !important; }
-`;
+const hoverStyles = createHoverStyles("tm", [
+  ["cat-btn", "color"],
+  ["trait-chip", "border"],
+  ["action-btn", "border"],
+  ["accent-btn", "border"],
+]);
 
 export default function TraitManager({
   selectedAddon,
@@ -27,54 +30,36 @@ export default function TraitManager({
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [traits, setTraits] = useState<TraitDefinition[]>([]);
   const [traitGroups, setTraitGroups] = useState<TraitGroup[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
-  const [isNew, setIsNew] = useState(false);
   const { collapsed, toggle: toggleCollapse } = useCollapsibleGroups();
 
-  useEffect(() => {
-    onEditingChange?.(editingId !== null || editingGroupId !== null);
-  }, [editingId, editingGroupId, onEditingChange]);
-
-  const loadData = useCallback(async () => {
+  const loadFn = useCallback(async () => {
     const [defs, traitList, groupList] = await Promise.all([fetchDefinitions(), fetchTraitDefs(), fetchTraitGroups()]);
     setDefinitions(defs);
     setTraits(traitList);
     setTraitGroups(groupList);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const { editingId, isNew, loading, handleEdit, handleNew, handleBack: hookHandleBack } = useManagerState({
+    onEditingChange,
+    loadFn,
+    isEditingExtra: editingGroupId !== null,
+  });
 
-  const handleEdit = (id: string) => {
-    setIsNew(false);
-    setEditingId(id);
-  };
-
-  const handleNew = () => {
-    setIsNew(true);
-    setEditingId("__new__");
-  };
-
-  const handleBack = () => {
-    setEditingId(null);
+  const handleBack = useCallback(() => {
     setEditingGroupId(null);
-    setIsNew(false);
-    loadData();
-  };
+    hookHandleBack();
+  }, [hookHandleBack]);
 
   const handleEditGroup = (id: string) => {
-    setIsNew(false);
     setEditingGroupId(id);
   };
 
   const handleNewGroup = () => {
-    setIsNew(true);
     setEditingGroupId("__new__");
   };
 
-  if (!definitions) {
+  if (loading || !definitions) {
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
@@ -129,7 +114,6 @@ export default function TraitManager({
       onNewTrait={handleNew}
       onEditGroup={handleEditGroup}
       onNewGroup={handleNewGroup}
-      onReload={loadData}
     />
   );
 }
@@ -147,7 +131,6 @@ interface TraitListProps {
   onNewTrait: () => void;
   onEditGroup: (id: string) => void;
   onNewGroup: () => void;
-  onReload: () => void;
 }
 
 function TraitList({
@@ -161,7 +144,6 @@ function TraitList({
   onNewTrait,
   onEditGroup,
   onNewGroup,
-  onReload,
 }: TraitListProps) {
   const readOnly = selectedAddon === null;
   const filteredTraits = selectedAddon ? traits.filter((t) => t.source === selectedAddon) : traits;
@@ -218,15 +200,7 @@ function TraitList({
     );
   };
 
-  const btnBase: React.CSSProperties = {
-    padding: "4px 12px",
-    backgroundColor: T.bg2,
-    color: T.successDim,
-    border: `1px solid ${T.border}`,
-    borderRadius: "3px",
-    cursor: "pointer",
-    fontSize: "13px",
-  };
+  // Button styles via shared btn() factory
 
   if (showJson && selectedAddon) {
     return <RawJsonView addonId={selectedAddon} filename="traits.json" onClose={() => setShowJson(false)} />;
@@ -239,13 +213,13 @@ function TraitList({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.traitList")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
-            <button className="tm-action-btn" onClick={() => setShowJson(true)} style={{ ...btnBase, color: T.textSub }}>
+            <button className="tm-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
               [JSON]
             </button>
-            <button className="tm-action-btn" onClick={onNewGroup} style={btnBase}>
+            <button className="tm-action-btn" onClick={onNewGroup} style={btn("create", "md")}>
               [{t("btn.newTraitGroup")}]
             </button>
-            <button className="tm-action-btn" onClick={onNewTrait} style={btnBase}>
+            <button className="tm-action-btn" onClick={onNewTrait} style={btn("create", "md")}>
               [{t("btn.newTrait")}]
             </button>
           </div>
@@ -602,22 +576,3 @@ function TraitChip({
   );
 }
 
-// ── Section Divider ────────────────────────────────────
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        margin: "4px 0 2px",
-        fontSize: "12px",
-        color: T.textDim,
-      }}
-    >
-      <span style={{ color: T.accent, fontWeight: "bold" }}>{label}</span>
-      <span style={{ flex: 1, height: "1px", backgroundColor: T.borderDim }} />
-    </div>
-  );
-}

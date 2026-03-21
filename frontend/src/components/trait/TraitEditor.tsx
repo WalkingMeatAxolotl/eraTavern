@@ -6,7 +6,7 @@ import { t } from "../../i18n/ui";
 import { EF, EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
-import { inputStyle, labelStyle } from "../shared/styles";
+import { inputStyle, labelStyle, btn } from "../shared/styles";
 import { RawJsonPanel } from "../shared/RawJsonEditor";
 import CloneButton from "../shared/CloneDialog";
 
@@ -477,15 +477,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{
-              padding: "5px 16px",
-              backgroundColor: T.bg2,
-              color: T.successDim,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: saving ? "not-allowed" : "pointer",
-              fontSize: "13px",
-            }}
+            style={{ ...btn("create"), ...(saving && { cursor: "not-allowed" }) }}
           >
             [{t("btn.confirm")}]
           </button>
@@ -507,45 +499,15 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           <button
             onClick={handleDelete}
             disabled={saving}
-            style={{
-              padding: "5px 16px",
-              backgroundColor: T.bg2,
-              color: T.danger,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: saving ? "not-allowed" : "pointer",
-              fontSize: "13px",
-            }}
+            style={{ ...btn("danger"), ...(saving && { cursor: "not-allowed" }) }}
           >
             [{t("btn.delete")}]
           </button>
         )}
-        <button
-          onClick={onBack}
-          style={{
-            padding: "5px 16px",
-            backgroundColor: T.bg2,
-            color: T.textSub,
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontSize: "13px",
-          }}
-        >
+        <button onClick={onBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
-        <button
-          onClick={() => setJsonMode(true)}
-          style={{
-            padding: "5px 16px",
-            backgroundColor: T.bg2,
-            color: T.textSub,
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontSize: "13px",
-          }}
-        >
+        <button onClick={() => setJsonMode(true)} style={btn("neutral")}>
           [JSON]
         </button>
         {message && (

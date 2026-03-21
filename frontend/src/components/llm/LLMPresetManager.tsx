@@ -20,7 +20,7 @@ import {
 } from "../../api/client";
 
 import { HelpButton, HelpPanel, helpP } from "../shared/HelpToggle";
-import { inputStyle as _inputStyle, labelStyle } from "../shared/styles";
+import { btn, inputStyle as _inputStyle, labelStyle } from "../shared/styles";
 
 // --- Styles ---
 
@@ -36,15 +36,6 @@ const sectionStyle: React.CSSProperties = {
   marginBottom: "12px",
 };
 
-const btnStyle = (color: string): React.CSSProperties => ({
-  padding: "5px 16px",
-  backgroundColor: T.bg2,
-  color,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "13px",
-});
 
 // --- Default objects ---
 
@@ -385,7 +376,7 @@ function PromptEntryRow({
               )}
 
               <div style={{ marginTop: "6px" }}>
-                <button style={btnStyle(T.danger)} onClick={onDelete}>
+                <button style={btn("danger")} onClick={onDelete}>
                   [{t("btn.deleteEntry")}]
                 </button>
               </div>
@@ -474,7 +465,7 @@ function ProviderEditor({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? t("editor.newApiService") : t("editor.editApiService")} ==
         </span>
-        <button onClick={onBack} style={btnStyle(T.textSub)}>
+        <button onClick={onBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
@@ -547,10 +538,10 @@ function ProviderEditor({
               />
             )}
           </div>
-          <button onClick={handleFetchModels} disabled={modelLoading} style={btnStyle(T.textSub)}>
+          <button onClick={handleFetchModels} disabled={modelLoading} style={btn("neutral")}>
             {modelLoading ? `[${t("btn.fetchingModels")}]` : `[${t("btn.fetchModels")}]`}
           </button>
-          <button onClick={handleTestConnection} style={btnStyle(T.textSub)}>
+          <button onClick={handleTestConnection} style={btn("neutral")}>
             [{t("btn.testConnection")}]
           </button>
         </div>
@@ -576,15 +567,15 @@ function ProviderEditor({
       </div>
 
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <button onClick={handleSave} style={btnStyle(T.successDim)}>
+        <button onClick={handleSave} style={btn("create")}>
           [{t("btn.save")}]
         </button>
         {!isNew && (
-          <button onClick={onDelete} style={btnStyle(T.danger)}>
+          <button onClick={onDelete} style={btn("danger")}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={btnStyle(T.textSub)}>
+        <button onClick={onBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
         {message && <span style={{ color: T.danger, fontSize: "12px" }}>{message}</span>}
@@ -850,7 +841,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
               style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}
             >
               <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.llmPresets")} ==</span>
-              <button onClick={() => handleNew()} style={btnStyle(T.successDim)}>
+              <button onClick={() => handleNew()} style={btn("create")}>
                 [{t("btn.newPresetFull")}]
               </button>
             </div>
@@ -943,7 +934,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                   }}
                 >
                   <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.apiServices")} ==</span>
-                  <button onClick={handleNewProvider} style={btnStyle(T.successDim)}>
+                  <button onClick={handleNewProvider} style={btn("create")}>
                     [{t("btn.newApiService")}]
                   </button>
                 </div>
@@ -1063,7 +1054,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? t("editor.newPreset") : t("editor.editPreset")} ==
         </span>
-        <button onClick={handleBack} style={btnStyle(T.textSub)}>
+        <button onClick={handleBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
@@ -1223,7 +1214,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       <div style={sectionStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
           <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold" }}>{t("section.promptEntries")}</div>
-          <button onClick={addEntry} style={btnStyle(T.successDim)}>
+          <button onClick={addEntry} style={btn("create")}>
             [{t("btn.newPromptEntry")}]
           </button>
         </div>
@@ -1274,15 +1265,15 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
       {/* Action buttons */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
-        <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
+        <button onClick={handleSave} disabled={saving} style={btn("create")}>
           [{t("btn.savePreset")}]
         </button>
         {!isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
+          <button onClick={handleDelete} disabled={saving} style={btn("danger")}>
             [{t("btn.deletePreset")}]
           </button>
         )}
-        <button onClick={handleBack} style={btnStyle(T.textSub)}>
+        <button onClick={handleBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
         {message && (

@@ -12,6 +12,7 @@ import {
   updateWorldMeta,
   fetchSession,
 } from "../../api/client";
+import { btn } from "../shared/styles";
 
 const MAX_SLOTS = 10;
 
@@ -19,19 +20,10 @@ interface Props {
   worldId: string;
   addonRefs: { id: string; version: string }[];
   onRestart: () => void;
-  onWorldChanged: () => void;
   settingsBtnStyle: React.CSSProperties;
 }
 
-const btnBase: React.CSSProperties = {
-  padding: "3px 10px",
-  backgroundColor: T.bg2,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "11px",
-  color: T.text,
-};
+const saveBtnBase = btn("default", "sm");
 
 const inputStyle: React.CSSProperties = {
   background: T.bg3,
@@ -155,7 +147,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                 onClick={() => setCreating(true)}
                 disabled={loading || saves.length >= MAX_SLOTS}
                 style={{
-                  ...btnBase,
+                  ...saveBtnBase,
                   color: saves.length >= MAX_SLOTS ? T.textFaint : T.successDim,
                   borderColor: saves.length >= MAX_SLOTS ? T.border : `${T.success}66`,
                   opacity: saves.length >= MAX_SLOTS ? 0.5 : 1,
@@ -184,7 +176,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
               <button
                 onClick={handleCreate}
                 disabled={loading || !newName.trim()}
-                style={{ ...btnBase, opacity: !newName.trim() ? 0.5 : 1 }}
+                style={{ ...saveBtnBase, opacity: !newName.trim() ? 0.5 : 1 }}
               >
                 {t("btn.confirm")}
               </button>
@@ -193,7 +185,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                   setCreating(false);
                   setNewName("");
                 }}
-                style={btnBase}
+                style={saveBtnBase}
               >
                 {t("btn.cancel")}
               </button>
@@ -231,10 +223,10 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                           }}
                           style={{ ...inputStyle, flex: 1, maxWidth: 180 }}
                         />
-                        <button onClick={() => handleRename(s.slotId)} style={btnBase}>
+                        <button onClick={() => handleRename(s.slotId)} style={saveBtnBase}>
                           {t("btn.confirm")}
                         </button>
-                        <button onClick={() => setRenamingId(null)} style={btnBase}>
+                        <button onClick={() => setRenamingId(null)} style={saveBtnBase}>
                           {t("btn.cancel")}
                         </button>
                       </div>
@@ -258,7 +250,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                   {/* Right: action buttons */}
                   {!isRenaming && (
                     <div style={{ display: "flex", gap: "4px", marginLeft: "8px", flexShrink: 0 }}>
-                      <button onClick={() => handleLoad(s.slotId)} disabled={loading} style={btnBase}>
+                      <button onClick={() => handleLoad(s.slotId)} disabled={loading} style={saveBtnBase}>
                         [{t("btn.loadSave")}]
                       </button>
                       <button
@@ -266,13 +258,13 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                           setRenamingId(s.slotId);
                           setRenameValue(s.name);
                         }}
-                        style={btnBase}
+                        style={saveBtnBase}
                       >
                         [{t("btn.renameSave")}]
                       </button>
                       <button
                         onClick={() => handleDelete(s.slotId)}
-                        style={{ ...btnBase, color: T.danger, borderColor: `${T.danger}66` }}
+                        style={{ ...saveBtnBase, color: T.danger, borderColor: `${T.danger}66` }}
                       >
                         [{t("btn.delete")}]
                       </button>
@@ -321,7 +313,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
             <button
               onClick={onRestart}
               style={{
-                ...btnBase,
+                ...saveBtnBase,
                 background: T.dangerBg,
                 color: T.danger,
                 borderColor: `${T.danger}66`,

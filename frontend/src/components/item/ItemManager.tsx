@@ -1,5 +1,5 @@
 import T from "../../theme";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { ItemDefinition } from "../../types/game";
 import { fetchItemDefs, fetchItemTags, createItemTag, deleteItemTag } from "../../api/client";
 import { t } from "../../i18n/ui";
@@ -7,16 +7,18 @@ import ItemEditor from "./ItemEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { Tooltip } from "../shared/Tooltip";
 import { RawJsonView } from "../shared/RawJsonEditor";
+import { useManagerState, isReadOnly } from "../shared/useManagerState";
+import { useTagSystem } from "../shared/useTagSystem";
+import { TagManagerPanel } from "../shared/TagManagerPanel";
+import { createHoverStyles, btn } from "../shared/styles";
 
-const hoverStyles = `
-  .im-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .im-tag-chip:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .im-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .im-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
-  .im-view-tab:hover { background-color: ${T.bg3} !important; }
-`;
-
-type ViewMode = "byTag" | "byItem";
+const hoverStyles = createHoverStyles("im", [
+  ["item", "border"],
+  ["tag-chip", "border"],
+  ["action-btn", "border"],
+  ["cat-btn", "color"],
+  ["view-tab", "simple"],
+]);
 
 // ── Main ──────────────────────────────────────────────
 
@@ -31,121 +33,35 @@ export default function ItemManager({
 }) {
   const [items, setItems] = useState<ItemDefinition[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isNew, setIsNew] = useState(false);
 
-  useEffect(() => {
-    onEditingChange?.(editingId !== null);
-  }, [editingId, onEditingChange]);
-  const [viewMode, setViewMode] = useState<ViewMode>("byTag");
-  const [newTagInput, setNewTagInput] = useState("");
-  const [showTagManager, setShowTagManager] = useState(false);
-  const { collapsed, toggle: toggleCollapse } = useCollapsibleGroups();
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadFn = useCallback(async () => {
     const [itemList, tagList] = await Promise.all([fetchItemDefs(), fetchItemTags()]);
     setItems(itemList);
     setAllTags(tagList);
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const { editingId, isNew, loading, showJson, setShowJson, handleEdit, handleNew, handleBack } = useManagerState({
+    onEditingChange,
+    loadFn,
+  });
 
-  const handleEdit = (id: string) => {
-    setIsNew(false);
-    setEditingId(id);
-  };
-  const handleNew = () => {
-    setIsNew(true);
-    setEditingId("__new__");
-  };
-  const handleBack = () => {
-    setEditingId(null);
-    setIsNew(false);
-    loadData();
-  };
+  const { collapsed, toggle: toggleCollapse } = useCollapsibleGroups();
 
-  const handleAddTag = async () => {
-    const t = newTagInput.trim();
-    if (!t) return;
-    const result = await createItemTag(t);
-    if (result.success) {
-      setAllTags((prev) => [...prev, t]);
-      setNewTagInput("");
-    }
-  };
-
-  const handleDeleteTag = async (tag: string) => {
-    const result = await deleteItemTag(tag);
-    if (result.success) {
-      setAllTags((prev) => prev.filter((t) => t !== tag));
-    }
-  };
-
-  const readOnly = selectedAddon === null;
+  const readOnly = isReadOnly(selectedAddon);
   const filteredItems = selectedAddon ? items.filter((i) => i.source === selectedAddon) : items;
-  const [showJson, setShowJson] = useState(false);
 
-  // Auto-collect tags from items
-  const visibleTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    for (const item of filteredItems) {
-      for (const t of item.tags ?? []) tagSet.add(t);
-    }
-    const poolSet = new Set(allTags);
-    const fromPool = allTags.filter((t) => tagSet.has(t));
-    const extra = [...tagSet].filter((t) => !poolSet.has(t)).sort();
-    return [...fromPool, ...extra];
-  }, [filteredItems, allTags]);
-
-  // Tag usage count
-  const tagUsage = useMemo(() => {
-    const usage: Record<string, number> = {};
-    for (const item of filteredItems) {
-      for (const t of item.tags ?? []) usage[t] = (usage[t] || 0) + 1;
-    }
-    return usage;
-  }, [filteredItems]);
-
-  // Group: tag → items (many-to-many)
-  const { tagGrouped, untagged } = useMemo(() => {
-    const g: Record<string, ItemDefinition[]> = {};
-    const noTag: ItemDefinition[] = [];
-    for (const item of filteredItems) {
-      const itemTags = item.tags ?? [];
-      if (itemTags.length === 0) {
-        noTag.push(item);
-        continue;
-      }
-      for (const t of itemTags) {
-        if (!g[t]) g[t] = [];
-        g[t].push(item);
-      }
-    }
-    return { tagGrouped: g, untagged: noTag };
-  }, [filteredItems]);
-
-  // Reverse: item → tags (for byItem view tooltip)
-  const itemTagsMap = useMemo(() => {
-    const m: Record<string, string[]> = {};
-    for (const item of filteredItems) {
-      m[item.id] = item.tags ?? [];
-    }
-    return m;
-  }, [filteredItems]);
-
-  // Reverse: tag → item names (for byItem view tooltip)
-  const tagItemNames = useMemo(() => {
-    const m: Record<string, string[]> = {};
-    for (const tag of visibleTags) {
-      m[tag] = (tagGrouped[tag] ?? []).map((i) => i.name || i.id);
-    }
-    return m;
-  }, [visibleTags, tagGrouped]);
+  const {
+    newTagInput, setNewTagInput, showTagManager, setShowTagManager,
+    handleAddTag, handleDeleteTag,
+    visibleTags, tagUsage, tagGrouped, untagged, entityTagsMap, tagEntityNames,
+    viewMode, setViewMode, viewTabStyle,
+  } = useTagSystem({
+    filteredItems,
+    allTags,
+    setAllTags,
+    createTagFn: createItemTag,
+    deleteTagFn: deleteItemTag,
+  });
 
   if (loading) {
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
@@ -173,17 +89,6 @@ export default function ItemManager({
     );
   }
 
-  const viewTabStyle = (active: boolean): React.CSSProperties => ({
-    padding: "3px 10px",
-    backgroundColor: active ? T.bg3 : T.bg1,
-    color: active ? T.accent : T.textDim,
-    border: `1px solid ${active ? T.accent : T.border}`,
-    borderRadius: "3px",
-    cursor: "pointer",
-    fontSize: "12px",
-    transition: "background-color 0.1s, border-color 0.1s, color 0.1s",
-  });
-
   return (
     <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
       <style>{hoverStyles}</style>
@@ -203,8 +108,8 @@ export default function ItemManager({
             </button>
             <button
               className="im-view-tab"
-              onClick={() => setViewMode("byItem")}
-              style={viewTabStyle(viewMode === "byItem")}
+              onClick={() => setViewMode("byEntity")}
+              style={viewTabStyle(viewMode === "byEntity")}
             >
               {t("btn.byItem")}
             </button>
@@ -212,20 +117,7 @@ export default function ItemManager({
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
           {!readOnly && (
-            <button
-              className="im-action-btn"
-              onClick={() => setShowJson(true)}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-                transition: "background-color 0.1s, border-color 0.1s",
-              }}
-            >
+            <button className="im-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
               [JSON]
             </button>
           )}
@@ -233,35 +125,13 @@ export default function ItemManager({
             <button
               className="im-action-btn"
               onClick={() => setShowTagManager((v) => !v)}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: showTagManager ? T.accent : T.textSub,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-                transition: "background-color 0.1s, border-color 0.1s",
-              }}
+              style={btn(showTagManager ? "primary" : "neutral", "md")}
             >
               [{t("btn.tagMgmt")}]
             </button>
           )}
           {!readOnly && (
-            <button
-              className="im-action-btn"
-              onClick={handleNew}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-                transition: "background-color 0.1s, border-color 0.1s",
-              }}
-            >
+            <button className="im-action-btn" onClick={handleNew} style={btn("create", "md")}>
               [{t("btn.newItem")}]
             </button>
           )}
@@ -270,90 +140,15 @@ export default function ItemManager({
 
       {/* Tag manager (admin) */}
       {showTagManager && (
-        <div
-          style={{
-            marginBottom: "12px",
-            padding: "8px",
-            backgroundColor: T.bg1,
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
-          }}
-        >
-          <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "6px" }}>{t("ui.tagPool")}</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>
-            {allTags.map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "2px 8px",
-                  backgroundColor: T.bg1,
-                  border: `1px solid ${T.borderLight}`,
-                  borderRadius: "3px",
-                  fontSize: "12px",
-                }}
-              >
-                {tag}
-                <span style={{ color: T.textDim, fontSize: "11px" }}>({tagUsage[tag] || 0})</span>
-                <button
-                  onClick={() => handleDeleteTag(tag)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: T.danger,
-                    cursor: "pointer",
-                    padding: "0 2px",
-                    fontSize: "12px",
-                    lineHeight: 1,
-                  }}
-                >
-                  x
-                </button>
-              </span>
-            ))}
-            {allTags.length === 0 && <span style={{ color: T.textDim }}>{t("empty.noTags")}</span>}
-          </div>
-          <div style={{ display: "flex", gap: "4px" }}>
-            <input
-              style={{
-                flex: 1,
-                padding: "4px 8px",
-                backgroundColor: T.bg1,
-                color: T.text,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                fontSize: "12px",
-              }}
-              value={newTagInput}
-              onChange={(e) => setNewTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddTag();
-                }
-              }}
-              placeholder={t("ui.newTagPlaceholder")}
-            />
-            <button
-              className="im-action-btn"
-              onClick={handleAddTag}
-              style={{
-                padding: "4px 10px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-                transition: "background-color 0.1s, border-color 0.1s",
-              }}
-            >
-              [+]
-            </button>
-          </div>
-        </div>
+        <TagManagerPanel
+          allTags={allTags}
+          tagUsage={tagUsage}
+          newTagInput={newTagInput}
+          setNewTagInput={setNewTagInput}
+          onAddTag={handleAddTag}
+          onDeleteTag={handleDeleteTag}
+          btnClassName="im-action-btn"
+        />
       )}
 
       {/* View content */}
@@ -362,7 +157,7 @@ export default function ItemManager({
           visibleTags={visibleTags}
           tagGrouped={tagGrouped}
           untagged={untagged}
-          itemTagsMap={itemTagsMap}
+          itemTagsMap={entityTagsMap}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
           onEditItem={handleEdit}
@@ -370,8 +165,8 @@ export default function ItemManager({
       ) : (
         <ByItemView
           filteredItems={filteredItems}
-          itemTagsMap={itemTagsMap}
-          tagItemNames={tagItemNames}
+          itemTagsMap={entityTagsMap}
+          tagItemNames={tagEntityNames}
           onEditItem={handleEdit}
         />
       )}

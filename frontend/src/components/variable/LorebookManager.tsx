@@ -5,7 +5,7 @@ import { LorebookMode } from "../../constants";
 import type { LorebookEntry } from "../../types/game";
 import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLorebookEntry } from "../../api/client";
 import { RawJsonView } from "../shared/RawJsonEditor";
-import { inputStyle as _inputStyle, labelStyle } from "../shared/styles";
+import { btn, inputStyle as _inputStyle, labelStyle } from "../shared/styles";
 import CloneButton from "../shared/CloneDialog";
 
 const inputStyle: React.CSSProperties = {
@@ -20,15 +20,6 @@ const sectionStyle: React.CSSProperties = {
   marginBottom: "12px",
 };
 
-const btnStyle = (color: string): React.CSSProperties => ({
-  padding: "5px 16px",
-  backgroundColor: T.bg2,
-  color,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "13px",
-});
 
 function makeBlankEntry(addonId: string): Omit<LorebookEntry, "source"> {
   return {
@@ -170,11 +161,11 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
           <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.lorebook")} ==</span>
           <div style={{ display: "flex", gap: "6px" }}>
             {selectedAddon !== "__all__" && (
-              <button onClick={() => setShowJson(true)} style={btnStyle(T.textSub)}>
+              <button onClick={() => setShowJson(true)} style={btn("neutral")}>
                 [JSON]
               </button>
             )}
-            <button onClick={handleNew} style={btnStyle(T.successDim)}>
+            <button onClick={handleNew} style={btn("create")}>
               [{t("btn.newEntry")}]
             </button>
           </div>
@@ -236,7 +227,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? t("editor.newEntry") : t("editor.editEntry")} ==
         </span>
-        <button onClick={handleBack} style={btnStyle(T.textSub)}>
+        <button onClick={handleBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
@@ -349,7 +340,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
               }}
               placeholder={t("lorebook.keywordPlaceholder")}
             />
-            <button onClick={addKeyword} style={btnStyle(T.textSub)}>
+            <button onClick={addKeyword} style={btn("neutral")}>
               [{t("effOp.add")}]
             </button>
           </div>
@@ -372,7 +363,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
 
       {/* Action buttons */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
-        <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
+        <button onClick={handleSave} disabled={saving} style={btn("create")}>
           [{t("btn.save")}]
         </button>
         {!isNew && addonIds && (
@@ -389,11 +380,11 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
           />
         )}
         {!isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
+          <button onClick={handleDelete} disabled={saving} style={btn("danger")}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={handleBack} style={btnStyle(T.textSub)}>
+        <button onClick={handleBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
         {message && (

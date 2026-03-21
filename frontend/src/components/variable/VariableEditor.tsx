@@ -9,8 +9,8 @@ import {
 } from "../../api/client";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
-import { VarStepType, EF, ArithOp } from "../../constants";
-import { inputStyle, labelStyle } from "../shared/styles";
+import { VarStepType, ArithOp } from "../../constants";
+import { inputStyle, labelStyle, btn } from "../shared/styles";
 import CloneButton from "../shared/CloneDialog";
 
 interface Props {
@@ -52,14 +52,7 @@ const selectStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const btnBase: React.CSSProperties = {
-  padding: "5px 16px",
-  backgroundColor: T.bg2,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "12px",
-};
+// Uses btn() from shared/styles for button styling
 
 function makeBlankStep(): VariableStep {
   return { type: VarStepType.CONSTANT, value: 0, op: ArithOp.ADD };
@@ -315,7 +308,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
           == {isNew ? t("editor.newVar") : t("editor.editNamed", { name: variable.name || variable.id })} ==
         </span>
-        <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
+        <button onClick={onBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
@@ -437,8 +430,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             <button
               onClick={addStep}
               style={{
-                ...btnBase,
-                color: T.successDim,
+                ...btn("create"),
                 marginTop: "6px",
                 width: "100%",
                 textAlign: "center",
@@ -514,7 +506,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               )}
               <button
                 onClick={handleTest}
-                style={{ ...btnBase, color: T.accent, padding: "4px 12px" }}
+                style={btn("primary", "md")}
                 disabled={!testCharId || isNew}
               >
                 [{t("btn.compute")}]
@@ -590,7 +582,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         }}
       >
         {!isReadOnly && (
-          <button onClick={handleSave} disabled={saving} style={{ ...btnBase, color: T.successDim }}>
+          <button onClick={handleSave} disabled={saving} style={btn("create")}>
             [{saving ? t("status.submitting") : t("btn.confirm")}]
           </button>
         )}
@@ -605,11 +597,11 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           />
         )}
         {!isReadOnly && !isNew && (
-          <button onClick={handleDelete} style={{ ...btnBase, color: T.danger }}>
+          <button onClick={handleDelete} style={btn("danger")}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={{ ...btnBase, color: T.textSub }}>
+        <button onClick={onBack} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
         {message && (

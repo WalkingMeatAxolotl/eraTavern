@@ -215,13 +215,6 @@ export async function deleteAddonAll(addonId: string): Promise<{ success: boolea
   return handleResponse(res);
 }
 
-/** @deprecated Use fetchWorlds */
-export const fetchGames = fetchWorlds;
-/** @deprecated Use selectWorld */
-export async function selectGame(gameId: string) {
-  return selectWorld(gameId);
-}
-
 export async function restartGame(): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/restart`, { method: "POST" });
   return handleResponse(res);

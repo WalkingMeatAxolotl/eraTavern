@@ -15,7 +15,7 @@ import { TargetType } from "../../constants";
 import { EditorProvider } from "../shared/EditorContext";
 import type { EditorContextValue } from "../shared/EditorContext";
 import { ConditionItemEditor } from "../shared/ConditionEditor";
-import { inputStyle, addBtnStyle, delBtnStyle, smallBtnStyle, listRowStyle, labelStyle } from "../shared/styles";
+import { inputStyle, btn, listRowStyle, labelStyle } from "../shared/styles";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import { ModifierListEditor } from "./ModifierEditor";
@@ -488,13 +488,13 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           </span>
           {!isReadOnly && (
             <div style={{ display: "flex", gap: "4px" }}>
-              <button className="ae-add-btn" onClick={addCondition} style={addBtnStyle}>
+              <button className="ae-add-btn" onClick={addCondition} style={btn("add", "sm")}>
                 [{t("btn.addCondition")}]
               </button>
-              <button className="ae-add-btn" onClick={addOrGroup} style={addBtnStyle}>
+              <button className="ae-add-btn" onClick={addOrGroup} style={btn("add", "sm")}>
                 [{t("btn.addOr")}]
               </button>
-              <button className="ae-add-btn" onClick={addAndGroup} style={addBtnStyle}>
+              <button className="ae-add-btn" onClick={addAndGroup} style={btn("add", "sm")}>
                 [{t("btn.addAnd")}]
               </button>
             </div>
@@ -523,7 +523,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             {t("section.outcomes")}
           </span>
           {!isReadOnly && (
-            <button className="ae-add-btn" onClick={addOutcome} style={addBtnStyle}>
+            <button className="ae-add-btn" onClick={addOutcome} style={btn("add", "sm")}>
               [{t("btn.addOutcome")}]
             </button>
           )}
@@ -552,7 +552,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             <button
               className="ae-btn"
               onClick={() => setShowVarHelp((v) => !v)}
-              style={{ ...smallBtnStyle(showVarHelp ? T.danger : T.textSub), fontSize: "11px" }}
+              style={btn(showVarHelp ? "danger" : "neutral", "sm")}
             >
               [?]
             </button>
@@ -588,9 +588,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             onClick={handleSave}
             disabled={saving}
             style={{
-              ...addBtnStyle,
-              padding: "5px 16px",
-              fontSize: "13px",
+              ...btn("add"),
               cursor: saving ? "not-allowed" : "pointer",
             }}
           >
@@ -614,9 +612,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             onClick={handleDelete}
             disabled={saving}
             style={{
-              ...delBtnStyle,
-              padding: "5px 16px",
-              fontSize: "13px",
+              ...btn("del"),
               cursor: saving ? "not-allowed" : "pointer",
             }}
           >
@@ -626,14 +622,14 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
         <button
           className="ae-btn"
           onClick={onBack}
-          style={{ ...smallBtnStyle(T.textSub), padding: "5px 16px", fontSize: "13px" }}
+          style={btn("neutral")}
         >
           [{t("btn.back")}]
         </button>
         <button
           className="ae-btn"
           onClick={() => setJsonMode(true)}
-          style={{ ...smallBtnStyle(T.textSub), padding: "5px 16px", fontSize: "13px" }}
+          style={btn("neutral")}
         >
           [JSON]
         </button>

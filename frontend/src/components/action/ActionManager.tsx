@@ -1,17 +1,19 @@
 import T from "../../theme";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { ActionDefinition, GameDefinitions } from "../../types/game";
 import { fetchActionDefs, fetchDefinitions } from "../../api/client";
 import { t } from "../../i18n/ui";
 import ActionEditor from "./ActionEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { RawJsonView } from "../shared/RawJsonEditor";
+import { useManagerState, isReadOnly } from "../shared/useManagerState";
+import { createHoverStyles, btn } from "../shared/styles";
 
-const hoverStyles = `
-  .am-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
-  .am-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .am-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-`;
+const hoverStyles = createHoverStyles("am", [
+  ["cat-btn", "color"],
+  ["item", "border"],
+  ["action-btn", "border"],
+]);
 
 export default function ActionManager({
   selectedAddon,
@@ -24,46 +26,22 @@ export default function ActionManager({
 }) {
   const [actions, setActions] = useState<ActionDefinition[]>([]);
   const [defs, setDefs] = useState<GameDefinitions | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isNew, setIsNew] = useState(false);
 
-  useEffect(() => {
-    onEditingChange?.(editingId !== null);
-  }, [editingId, onEditingChange]);
-  const { isCollapsed, toggle } = useCollapsibleGroups();
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadFn = useCallback(async () => {
     const [actionList, definitions] = await Promise.all([fetchActionDefs(), fetchDefinitions()]);
     setActions(actionList);
     setDefs(definitions);
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const { editingId, isNew, loading, showJson, setShowJson, handleEdit, handleNew, handleBack } = useManagerState({
+    onEditingChange,
+    loadFn,
+  });
 
-  const handleEdit = (id: string) => {
-    setIsNew(false);
-    setEditingId(id);
-  };
+  const { isCollapsed, toggle } = useCollapsibleGroups();
 
-  const handleNew = () => {
-    setIsNew(true);
-    setEditingId("__new__");
-  };
-
-  const handleBack = () => {
-    setEditingId(null);
-    setIsNew(false);
-    loadData();
-  };
-
-  const readOnly = selectedAddon === null;
+  const readOnly = isReadOnly(selectedAddon);
   const filteredActions = selectedAddon ? actions.filter((a) => a.source === selectedAddon) : actions;
-  const [showJson, setShowJson] = useState(false);
 
   // Group actions by category
   const { catOrder, grouped } = useMemo(() => {
@@ -123,34 +101,10 @@ export default function ActionManager({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.actionList")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              className="am-action-btn"
-              onClick={() => setShowJson(true)}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="am-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
               [JSON]
             </button>
-            <button
-              className="am-action-btn"
-              onClick={handleNew}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="am-action-btn" onClick={handleNew} style={btn("create", "md")}>
               [{t("btn.newAction")}]
             </button>
           </div>

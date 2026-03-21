@@ -22,10 +22,9 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      // Downgrade to warn — will clean up gradually
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",

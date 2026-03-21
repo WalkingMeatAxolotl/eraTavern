@@ -3,6 +3,7 @@ import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { readRawFile, writeRawFile } from "../../api/client";
 import { ConfirmModal } from "./Modal";
+import { btn } from "./styles";
 
 // ── Strip internal fields for editor-level display ──
 
@@ -216,18 +217,6 @@ function CodeEditor({
   );
 }
 
-// ── Button style helper ──
-
-const btn = (color: string, disabled?: boolean): React.CSSProperties => ({
-  padding: "5px 16px",
-  backgroundColor: T.bg2,
-  color,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-  cursor: disabled ? "not-allowed" : "pointer",
-  fontSize: "13px",
-});
-
 // ── Manager-level: inline full-page JSON view (direct file read/write) ──
 
 export function RawJsonView({
@@ -335,10 +324,10 @@ export function RawJsonView({
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "8px" }}>
-        <button onClick={onClose} style={btn(T.success)}>
+        <button onClick={onClose} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
-        <button onClick={() => setShowConfirm(true)} disabled={saving} style={btn(T.danger, saving)}>
+        <button onClick={() => setShowConfirm(true)} disabled={saving} style={{ ...btn("danger"), ...(saving && { cursor: "not-allowed" }) }}>
           [{t("json.saveAndReload")}]
         </button>
         {message && (
@@ -418,13 +407,13 @@ export function RawJsonPanel({
       <style>{synStyles}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== JSON ==</span>
-        <button onClick={onToggle} style={btn(T.success)}>
+        <button onClick={onToggle} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
       <CodeEditor value={text} onChange={handleChange} error={error} />
       <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "8px" }}>
-        <button onClick={handleSave} disabled={saving} style={btn(T.successDim, saving)}>
+        <button onClick={handleSave} disabled={saving} style={{ ...btn("create"), ...(saving && { cursor: "not-allowed" }) }}>
           [{t("btn.confirm")}]
         </button>
         {message && (

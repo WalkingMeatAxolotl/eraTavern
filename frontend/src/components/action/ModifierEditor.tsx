@@ -8,7 +8,7 @@ import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EF, BonusMode, CondTarget, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/ConditionEditor";
+import { inputStyle, btn, listRowStyle } from "../shared/styles";
 
 export function ModifierListEditor({
   modifiers,
@@ -50,7 +50,7 @@ export function ModifierListEditor({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ color: T.textSub, fontSize: "11px" }}>{label}</span>
         {!disabled && (
-          <button className="ae-add-btn" onClick={add} style={addBtnStyle}>
+          <button className="ae-add-btn" onClick={add} style={btn("add", "sm")}>
             [+]
           </button>
         )}
@@ -425,7 +425,7 @@ export function ModifierListEditor({
             disabled={disabled}
           />
           {!disabled && (
-            <button className="ae-del-btn" onClick={() => remove(idx)} style={delBtnStyle}>
+            <button className="ae-del-btn" onClick={() => remove(idx)} style={btn("del", "sm")}>
               x
             </button>
           )}

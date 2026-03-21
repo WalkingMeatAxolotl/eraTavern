@@ -1,5 +1,5 @@
 import T from "../../theme";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import type { GameDefinitions, ClothingDefinition } from "../../types/game";
 import { fetchDefinitions, fetchClothingDefs } from "../../api/client";
@@ -7,12 +7,15 @@ import ClothingEditor from "./ClothingEditor";
 import OutfitEditor from "./OutfitEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { RawJsonView } from "../shared/RawJsonEditor";
+import { SectionDivider } from "../shared/SectionDivider";
+import { useManagerState, isReadOnly } from "../shared/useManagerState";
+import { createHoverStyles, btn } from "../shared/styles";
 
-const hoverStyles = `
-  .cm-cat-btn:hover { background-color: ${T.bg3} !important; color: ${T.text} !important; }
-  .cm-item:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-  .cm-action-btn:hover { background-color: ${T.bg3} !important; border-color: ${T.borderLight} !important; }
-`;
+const hoverStyles = createHoverStyles("cm", [
+  ["cat-btn", "color"],
+  ["item", "border"],
+  ["action-btn", "border"],
+]);
 
 export default function ClothingManager({
   selectedAddon,
@@ -25,44 +28,20 @@ export default function ClothingManager({
 }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [clothing, setClothing] = useState<ClothingDefinition[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isNew, setIsNew] = useState(false);
   const { isCollapsed, toggle: toggleCollapse } = useCollapsibleGroups();
   const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null);
   const [isNewOutfit, setIsNewOutfit] = useState(false);
-  const [showJson, setShowJson] = useState(false);
 
-  useEffect(() => {
-    onEditingChange?.(editingId !== null);
-  }, [editingId, onEditingChange]);
-
-  const loadData = useCallback(async () => {
+  const loadFn = useCallback(async () => {
     const [defs, clothingList] = await Promise.all([fetchDefinitions(), fetchClothingDefs()]);
     setDefinitions(defs);
     setClothing(clothingList);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const { editingId, isNew, loading, showJson, setShowJson, handleEdit, handleNew, handleBack, loadData } =
+    useManagerState({ onEditingChange, loadFn });
 
-  const handleEdit = (id: string) => {
-    setIsNew(false);
-    setEditingId(id);
-  };
-
-  const handleNew = () => {
-    setIsNew(true);
-    setEditingId("__new__");
-  };
-
-  const handleBack = () => {
-    setEditingId(null);
-    setIsNew(false);
-    loadData();
-  };
-
-  if (!definitions) {
+  if (loading || !definitions) {
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
@@ -103,7 +82,7 @@ export default function ClothingManager({
     );
   }
 
-  const readOnly = selectedAddon === null;
+  const readOnly = isReadOnly(selectedAddon);
   const filteredClothing = selectedAddon ? clothing.filter((c) => c.source === selectedAddon) : clothing;
 
   if (showJson && selectedAddon) {
@@ -143,19 +122,7 @@ export default function ClothingManager({
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.clothingList")} ==</span>
         {!readOnly && (
           <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              className="cm-action-btn"
-              onClick={() => setShowJson(true)}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="cm-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
               [JSON]
             </button>
             <button
@@ -164,31 +131,11 @@ export default function ClothingManager({
                 setIsNewOutfit(true);
                 setEditingOutfitId("__new__");
               }}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
+              style={btn("create", "md")}
             >
               [{t("btn.newPreset")}]
             </button>
-            <button
-              className="cm-action-btn"
-              onClick={handleNew}
-              style={{
-                padding: "4px 12px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
+            <button className="cm-action-btn" onClick={handleNew} style={btn("create", "md")}>
               [{t("btn.newClothing")}]
             </button>
           </div>
@@ -346,20 +293,3 @@ export default function ClothingManager({
   );
 }
 
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        margin: "4px 0 2px",
-        fontSize: "12px",
-        color: T.textDim,
-      }}
-    >
-      <span style={{ color: T.accent, fontWeight: "bold" }}>{label}</span>
-      <span style={{ flex: 1, height: "1px", backgroundColor: T.borderDim }} />
-    </div>
-  );
-}

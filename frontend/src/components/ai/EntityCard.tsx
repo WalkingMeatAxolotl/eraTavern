@@ -8,6 +8,7 @@
  */
 import { useState, useCallback } from "react";
 import T from "../../theme";
+import { btn } from "../shared/styles";
 import { t } from "../../i18n/ui";
 
 interface Props {
@@ -50,14 +51,7 @@ const fieldValue: React.CSSProperties = {
   wordBreak: "break-word",
 };
 
-const btnBase: React.CSSProperties = {
-  padding: "3px 10px",
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-  cursor: "pointer",
-  fontSize: "11px",
-  backgroundColor: T.bg1,
-};
+const cardBtn = { ...btn("default", "sm"), backgroundColor: T.bg1 };
 
 export default function EntityCard({ entityType, entity, mode, confirmLabel, onConfirm, onReject, onEntityChange, disabled }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -124,7 +118,7 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
         </span>
         <button
           onClick={handleToggleExpand}
-          style={{ ...btnBase, color: T.textSub, fontSize: "10px" }}
+          style={{ ...cardBtn, color: T.textSub, fontSize: "10px" }}
         >
           [{expanded ? t("ai.collapseJson") : t("ai.expandJson")}]
         </button>
@@ -199,14 +193,14 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
             <button
               onClick={onConfirm}
               disabled={disabled}
-              style={{ ...btnBase, color: T.success, borderColor: T.success }}
+              style={{ ...cardBtn, color: T.success, borderColor: T.success }}
             >
               [{confirmLabel || t("ai.confirm")}]
             </button>
             <button
               onClick={onReject}
               disabled={disabled}
-              style={{ ...btnBase, color: T.danger, borderColor: T.danger }}
+              style={{ ...cardBtn, color: T.danger, borderColor: T.danger }}
             >
               [{t("ai.reject")}]
             </button>

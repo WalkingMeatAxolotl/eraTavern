@@ -1,9 +1,11 @@
 import T from "../../theme";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { t } from "../../i18n/ui";
 import type { GameDefinitions, RawCharacterData } from "../../types/game";
 import { fetchDefinitions, fetchCharacterConfigs, patchCharacter } from "../../api/client";
 import CharacterEditor from "./CharacterEditor";
+import { useManagerState, isReadOnly } from "../shared/useManagerState";
+import { btn } from "../shared/styles";
 
 export default function CharacterManager({
   selectedAddon,
@@ -16,38 +18,17 @@ export default function CharacterManager({
 }) {
   const [definitions, setDefinitions] = useState<GameDefinitions | null>(null);
   const [characters, setCharacters] = useState<RawCharacterData[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isNew, setIsNew] = useState(false);
 
-  useEffect(() => {
-    onEditingChange?.(editingId !== null);
-  }, [editingId, onEditingChange]);
-
-  const loadData = useCallback(async () => {
+  const loadFn = useCallback(async () => {
     const [defs, chars] = await Promise.all([fetchDefinitions(), fetchCharacterConfigs()]);
     setDefinitions(defs);
     setCharacters(chars);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleEdit = (id: string) => {
-    setIsNew(false);
-    setEditingId(id);
-  };
-
-  const handleNew = () => {
-    setIsNew(true);
-    setEditingId("__new__");
-  };
-
-  const handleBack = () => {
-    setEditingId(null);
-    setIsNew(false);
-    loadData();
-  };
+  const { editingId, isNew, loading, handleEdit, handleNew, handleBack, loadData } = useManagerState({
+    onEditingChange,
+    loadFn,
+  });
 
   const handleTogglePlayer = async (id: string, current: boolean) => {
     try {
@@ -67,7 +48,7 @@ export default function CharacterManager({
     }
   };
 
-  if (!definitions) {
+  if (loading || !definitions) {
     return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
   }
 
@@ -107,7 +88,7 @@ export default function CharacterManager({
     );
   }
 
-  const readOnly = selectedAddon === null;
+  const readOnly = isReadOnly(selectedAddon);
   const filteredCharacters = selectedAddon
     ? characters.filter((c) => (c as Record<string, unknown>)._source === selectedAddon)
     : characters;
@@ -124,18 +105,7 @@ export default function CharacterManager({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.charList")} ==</span>
         {!readOnly && (
-          <button
-            onClick={handleNew}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: T.bg2,
-              color: T.successDim,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "13px",
-            }}
-          >
+          <button onClick={handleNew} style={btn("create", "md")}>
             [{t("btn.newChar")}]
           </button>
         )}

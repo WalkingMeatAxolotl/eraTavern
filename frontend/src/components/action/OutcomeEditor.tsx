@@ -9,7 +9,7 @@ import T from "../../theme";
 import { t as t_ } from "../../i18n/ui";
 import { EF, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import { inputStyle, addBtnStyle, delBtnStyle, listRowStyle } from "../shared/styles";
+import { inputStyle, btn, listRowStyle } from "../shared/styles";
 import { ModifierListEditor } from "./ModifierEditor";
 import { EffectEditor } from "./EffectEditor";
 import { TemplateListEditor } from "./TemplateEditor";
@@ -188,7 +188,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
           disabled={disabled}
         />
         {!disabled && (
-          <button className="ae-del-btn" onClick={onRemove} style={{ ...delBtnStyle, marginLeft: "auto" }}>
+          <button className="ae-del-btn" onClick={onRemove} style={{ ...btn("del", "sm"), marginLeft: "auto" }}>
             x
           </button>
         )}
@@ -221,15 +221,15 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
           outcome.effects.length,
           !disabled && (
             <div style={{ display: "flex", gap: "4px" }}>
-              <button className="ae-add-btn" onClick={() => addTargetGroup("self")} style={addBtnStyle}>
+              <button className="ae-add-btn" onClick={() => addTargetGroup("self")} style={btn("add", "sm")}>
                 [+ {t_("target.self")}]
               </button>
               {targetType === TargetType.NPC && (
-                <button className="ae-add-btn" onClick={() => addTargetGroup("target")} style={addBtnStyle}>
+                <button className="ae-add-btn" onClick={() => addTargetGroup("target")} style={btn("add", "sm")}>
                   [+ {t_("target.target")}]
                 </button>
               )}
-              <button className="ae-add-btn" onClick={() => addTargetGroup("filter")} style={addBtnStyle}>
+              <button className="ae-add-btn" onClick={() => addTargetGroup("filter")} style={btn("add", "sm")}>
                 [+ {t_("target.filtered")}]
               </button>
             </div>
@@ -343,7 +343,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                 <button
                   className="ae-add-btn"
                   onClick={() => addEffectForTarget(group.target)}
-                  style={{ ...addBtnStyle, marginLeft: "auto" }}
+                  style={{ ...btn("add", "sm"), marginLeft: "auto" }}
                 >
                   [+ {t_("btn.addEffect")}]
                 </button>
@@ -365,7 +365,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                       disabled={disabled}
                     />
                     {!disabled && (
-                      <button className="ae-del-btn" onClick={() => removeEffect(effIdx)} style={delBtnStyle}>
+                      <button className="ae-del-btn" onClick={() => removeEffect(effIdx)} style={btn("del", "sm")}>
                         x
                       </button>
                     )}
@@ -420,7 +420,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                   ],
                 })
               }
-              style={addBtnStyle}
+              style={btn("add", "sm")}
             >
               [+]
             </button>
@@ -527,7 +527,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                         const next = (outcome.suggestNext ?? []).filter((_, i) => i !== snIdx);
                         update({ suggestNext: next.length > 0 ? next : undefined });
                       }}
-                      style={delBtnStyle}
+                      style={btn("del", "sm")}
                     >
                       x
                     </button>
