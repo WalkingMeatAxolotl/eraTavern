@@ -13,24 +13,24 @@ import {
   fetchLLMProvider,
   saveLLMProvider,
   deleteLLMProvider,
-  fetchLLMModels,
-  testLLMConnection,
   fetchConfig,
   updateConfig,
 } from "../../api/client";
 
 import { HelpButton, HelpPanel, helpP } from "../shared/HelpToggle";
 import { btn, inputStyle as _inputStyle, labelStyle } from "../shared/styles";
+import PromptEntryRow from "./PromptEntryRow";
+import ProviderEditor from "./ProviderEditor";
 
 // --- Styles ---
 
-const inputStyle: React.CSSProperties = {
+export const inputStyle: React.CSSProperties = {
   ..._inputStyle,
   width: "100%",
   boxSizing: "border-box",
 };
 
-const sectionStyle: React.CSSProperties = {
+export const sectionStyle: React.CSSProperties = {
   borderLeft: `2px solid ${T.borderLight}`,
   paddingLeft: "10px",
   marginBottom: "12px",
@@ -39,7 +39,7 @@ const sectionStyle: React.CSSProperties = {
 
 // --- Default objects ---
 
-const BUILTIN_CONTEXT_ENTRY_ID = "__assist_context__";
+export const BUILTIN_CONTEXT_ENTRY_ID = "__assist_context__";
 
 function makeBlankPreset(type: "narrative" | "assist" = "narrative"): LLMPreset {
   const base: LLMPreset = {
@@ -89,7 +89,7 @@ function makeBlankProvider(): LLMProvider {
 
 // --- Available variables ---
 
-const VARIABLE_GROUPS = [
+export const VARIABLE_GROUPS = [
   {
     label: t("llmVar.action"),
     vars: [
@@ -159,430 +159,6 @@ const VARIABLE_GROUPS = [
   },
 ];
 
-// --- Prompt entry editor ---
-
-function PromptEntryRow({
-  entry,
-  index,
-  total,
-  expanded,
-  onToggle,
-  onChange,
-  onMove,
-  onDelete,
-  contentRef,
-  isAssistPreset,
-}: {
-  entry: LLMPromptEntry;
-  index: number;
-  total: number;
-  expanded: boolean;
-  onToggle: () => void;
-  onChange: (e: LLMPromptEntry) => void;
-  onMove: (dir: -1 | 1) => void;
-  onDelete: () => void;
-  contentRef: React.RefObject<HTMLTextAreaElement | null>;
-  isAssistPreset?: boolean;
-}) {
-  const isBuiltin = entry.id === BUILTIN_CONTEXT_ENTRY_ID;
-  const roleColors: Record<string, string> = {
-    system: T.accent,
-    user: T.success,
-    assistant: "#8888cc",
-  };
-
-  return (
-    <div style={{ marginBottom: "4px" }}>
-      {/* Collapsed row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-          padding: "4px 8px",
-          backgroundColor: expanded ? T.bg2 : T.bg1,
-          border: `1px solid ${expanded ? T.borderLight : T.border}`,
-          borderRadius: "3px",
-          cursor: "pointer",
-        }}
-        onClick={onToggle}
-      >
-        <button
-          style={{
-            background: "none",
-            border: "none",
-            color: T.textDim,
-            cursor: "pointer",
-            fontSize: "11px",
-            padding: "0 2px",
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onMove(-1);
-          }}
-          disabled={index === 0}
-        >
-          ▲
-        </button>
-        <button
-          style={{
-            background: "none",
-            border: "none",
-            color: T.textDim,
-            cursor: "pointer",
-            fontSize: "11px",
-            padding: "0 2px",
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onMove(1);
-          }}
-          disabled={index === total - 1}
-        >
-          ▼
-        </button>
-        <input
-          type="checkbox"
-          checked={entry.enabled}
-          onChange={(e) => {
-            e.stopPropagation();
-            onChange({ ...entry, enabled: e.target.checked });
-          }}
-          onClick={(e) => e.stopPropagation()}
-          style={{ accentColor: T.accent }}
-        />
-        <span
-          style={{ color: roleColors[entry.role] || T.textSub, fontSize: "11px", fontWeight: "bold", minWidth: "50px" }}
-        >
-          {entry.role}
-        </span>
-        <span
-          style={{
-            color: isBuiltin ? T.accent : T.text,
-            fontSize: "12px",
-            flex: 1,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            fontStyle: isBuiltin ? "italic" : "normal",
-          }}
-        >
-          {isBuiltin ? `🔒 ${t("llm.builtinContext")}` : entry.name || entry.id}
-        </span>
-        <span style={{ color: T.textDim, fontSize: "10px" }}>{expanded ? "▼" : "▶"}</span>
-      </div>
-
-      {/* Expanded editor */}
-      {expanded && (
-        <div style={{ ...sectionStyle, marginTop: "4px", marginBottom: "8px" }}>
-          {isBuiltin ? (
-            /* Builtin context entry — only role selector + hint */
-            <>
-              <div style={{ display: "flex", gap: "12px", marginBottom: "6px", alignItems: "center" }}>
-                <div style={{ width: "120px" }}>
-                  <div style={labelStyle}>{t("field.role")}</div>
-                  <select
-                    style={{ ...inputStyle }}
-                    value={entry.role}
-                    onChange={(e) => onChange({ ...entry, role: e.target.value as LLMPromptEntry["role"] })}
-                  >
-                    <option value="system">system</option>
-                    <option value="user">user</option>
-                  </select>
-                </div>
-              </div>
-              <div style={{ color: T.textDim, fontSize: "12px", padding: "8px", backgroundColor: T.bg3, borderRadius: "3px" }}>
-                {t("llm.builtinContextHint")}
-              </div>
-            </>
-          ) : (
-            /* Regular entry — full editor */
-            <>
-              <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={labelStyle}>{t("field.name")}</div>
-                  <input
-                    style={inputStyle}
-                    value={entry.name}
-                    onChange={(e) => onChange({ ...entry, name: e.target.value })}
-                  />
-                </div>
-                <div style={{ width: "120px" }}>
-                  <div style={labelStyle}>{t("field.role")}</div>
-                  <select
-                    style={{ ...inputStyle }}
-                    value={entry.role}
-                    onChange={(e) => onChange({ ...entry, role: e.target.value as LLMPromptEntry["role"] })}
-                  >
-                    <option value="system">system</option>
-                    <option value="user">user</option>
-                    <option value="assistant">assistant</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={labelStyle}>{t("field.content")}</div>
-              <textarea
-                ref={contentRef}
-                style={{ ...inputStyle, minHeight: "100px", resize: "vertical", fontFamily: T.fontMono }}
-                value={entry.content}
-                onChange={(e) => onChange({ ...entry, content: e.target.value })}
-              />
-
-              {/* Variable chips — only for narrative presets */}
-              {!isAssistPreset && (
-                <div style={{ marginTop: "6px", padding: "6px 8px", backgroundColor: T.bg3, borderRadius: "3px" }}>
-                  <div style={{ ...labelStyle, marginBottom: "4px" }}>{t("llm.availableVars")}</div>
-                  {VARIABLE_GROUPS.map((g) => (
-                    <div key={g.label} style={{ marginBottom: "2px" }}>
-                      <span style={{ color: T.textDim, fontSize: "10px", marginRight: "6px" }}>{g.label}:</span>
-                      {g.vars.map((v) => (
-                        <button
-                          key={v.name}
-                          title={v.desc}
-                          style={{
-                            padding: "1px 6px",
-                            margin: "1px 2px",
-                            backgroundColor: T.bg2,
-                            color: T.accent,
-                            border: `1px solid ${T.border}`,
-                            borderRadius: "2px",
-                            cursor: "pointer",
-                            fontSize: "11px",
-                            fontFamily: T.fontMono,
-                          }}
-                          onClick={() => {
-                            const ta = contentRef.current;
-                            if (!ta) return;
-                            const tag = `{{${v.name}}}`;
-                            const start = ta.selectionStart;
-                            const end = ta.selectionEnd;
-                            const val = ta.value;
-                            const newVal = val.substring(0, start) + tag + val.substring(end);
-                            onChange({ ...entry, content: newVal });
-                            // Restore cursor after React re-render
-                            setTimeout(() => {
-                              ta.focus();
-                              ta.setSelectionRange(start + tag.length, start + tag.length);
-                            }, 0);
-                          }}
-                        >
-                          {`{{${v.name}}}`}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div style={{ marginTop: "6px" }}>
-                <button style={btn("danger")} onClick={onDelete}>
-                  [{t("btn.deleteEntry")}]
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// --- Provider editor (inline in global settings) ---
-
-function ProviderEditor({
-  provider,
-  isNew,
-  onSave,
-  onDelete,
-  onBack,
-}: {
-  provider: LLMProvider;
-  isNew: boolean;
-  onSave: (p: LLMProvider) => void;
-  onDelete: () => void;
-  onBack: () => void;
-}) {
-  const [prov, setProv] = useState<LLMProvider>(provider);
-  const [modelList, setModelList] = useState<string[]>([]);
-  const [modelLoading, setModelLoading] = useState(false);
-  const [testResult, setTestResult] = useState("");
-  const [message, setMessage] = useState("");
-
-  const handleFetchModels = async () => {
-    const url = prov.baseUrl.trim();
-    if (!url) {
-      setTestResult(t("msg.fillApiUrl"));
-      return;
-    }
-    setModelLoading(true);
-    setTestResult("");
-    try {
-      const models = await fetchLLMModels(url, prov.apiKey);
-      setModelList(models);
-      if (models.length === 0) setTestResult(t("msg.noModels"));
-    } catch (e) {
-      setTestResult(t("llm.fetchModelsFailed", { error: e instanceof Error ? e.message : String(e) }));
-    } finally {
-      setModelLoading(false);
-    }
-  };
-
-  const handleTestConnection = async () => {
-    const url = prov.baseUrl.trim();
-    if (!url) {
-      setTestResult(t("msg.fillApiUrl"));
-      return;
-    }
-    if (!prov.model) {
-      setTestResult(t("msg.selectModel"));
-      return;
-    }
-    setTestResult(t("llm.testing"));
-    try {
-      const result = await testLLMConnection({ baseUrl: url, apiKey: prov.apiKey, model: prov.model });
-      setTestResult(result.success ? t("llm.connectSuccess") : result.message || t("llm.connectFailed"));
-    } catch (e) {
-      setTestResult(t("llm.connectFailedDetail", { error: e instanceof Error ? e.message : String(e) }));
-    }
-  };
-
-  const handleSave = () => {
-    if (!prov.id.trim()) {
-      setMessage(t("val.idRequired"));
-      return;
-    }
-    if (!prov.name.trim()) {
-      setMessage(t("val.nameRequired"));
-      return;
-    }
-    onSave(prov);
-  };
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
-          == {isNew ? t("editor.newApiService") : t("editor.editApiService")} ==
-        </span>
-        <button onClick={onBack} style={btn("neutral")}>
-          [{t("btn.back")}]
-        </button>
-      </div>
-
-      <div style={sectionStyle}>
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
-            <input
-              style={{ ...inputStyle, ...(isNew ? {} : { color: T.textDim }) }}
-              value={prov.id}
-              onChange={(e) => setProv((p) => ({ ...p, id: e.target.value }))}
-              disabled={!isNew}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.name")}</div>
-            <input
-              style={inputStyle}
-              value={prov.name}
-              onChange={(e) => setProv((p) => ({ ...p, name: e.target.value }))}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div style={{ flex: 2 }}>
-            <div style={labelStyle}>API URL</div>
-            <input
-              style={inputStyle}
-              value={prov.baseUrl}
-              onChange={(e) => setProv((p) => ({ ...p, baseUrl: e.target.value }))}
-              placeholder="http://127.0.0.1:8317/v1"
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>API Key</div>
-            <input
-              style={inputStyle}
-              type="password"
-              value={prov.apiKey}
-              onChange={(e) => setProv((p) => ({ ...p, apiKey: e.target.value }))}
-              placeholder={t("llm.apiPlaceholder")}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "12px", alignItems: "flex-end", marginBottom: "6px" }}>
-          <div style={{ flex: 2 }}>
-            <div style={labelStyle}>{t("llm.model")}</div>
-            {modelList.length > 0 ? (
-              <select
-                style={inputStyle}
-                value={prov.model}
-                onChange={(e) => setProv((p) => ({ ...p, model: e.target.value }))}
-              >
-                <option value="">{t("llm.selectModel")}</option>
-                {modelList.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                style={inputStyle}
-                value={prov.model}
-                onChange={(e) => setProv((p) => ({ ...p, model: e.target.value }))}
-                placeholder={t("llm.modelPlaceholder")}
-              />
-            )}
-          </div>
-          <button onClick={handleFetchModels} disabled={modelLoading} style={btn("neutral")}>
-            {modelLoading ? `[${t("btn.fetchingModels")}]` : `[${t("btn.fetchModels")}]`}
-          </button>
-          <button onClick={handleTestConnection} style={btn("neutral")}>
-            [{t("btn.testConnection")}]
-          </button>
-        </div>
-        {testResult && (
-          <div
-            style={{ color: testResult.includes("✓") ? T.success : T.danger, fontSize: "12px", marginBottom: "6px" }}
-          >
-            {testResult}
-          </div>
-        )}
-
-        <div>
-          <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "4px" }}>
-            <input
-              type="checkbox"
-              checked={prov.streaming}
-              onChange={(e) => setProv((p) => ({ ...p, streaming: e.target.checked }))}
-              style={{ accentColor: T.accent }}
-            />
-            {t("llm.streaming")}
-          </label>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <button onClick={handleSave} style={btn("create")}>
-          [{t("btn.save")}]
-        </button>
-        {!isNew && (
-          <button onClick={onDelete} style={btn("danger")}>
-            [{t("btn.delete")}]
-          </button>
-        )}
-        <button onClick={onBack} style={btn("neutral")}>
-          [{t("btn.back")}]
-        </button>
-        {message && <span style={{ color: T.danger, fontSize: "12px" }}>{message}</span>}
-      </div>
-    </div>
-  );
-}
 
 // --- Main component ---
 

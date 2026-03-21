@@ -6,17 +6,16 @@ import {
   fetchAddonVersions,
   fetchAddonVersionsDetail,
   forkAddon,
-  updateAddonMeta,
-  copyAddonVersion,
-  overwriteAddonVersion,
-  deleteAddon,
-  createAddon,
   deleteAddonAll,
-  uploadAsset,
 } from "../../api/client";
 import type { AddonVersionInfo } from "../../api/client";
 import T from "../../theme";
-import { Overlay, ConfirmModal, modalBtnStyle } from "../shared/Modal";
+import { Overlay, ConfirmModal } from "../shared/Modal";
+import CreateAddonModal from "./CreateAddonModal";
+import DependencyModal from "./DependencyModal";
+import NewVersionModal from "./NewVersionModal";
+import AddonMetaEditor from "./AddonMetaEditor";
+import VersionManagePanel from "./VersionManagePanel";
 
 interface AddonSidebarProps {
   enabledAddons: { id: string; version: string }[];
@@ -27,7 +26,7 @@ interface AddonSidebarProps {
 
 /* ── Helpers ───────────────────────────────────────── */
 
-function getBaseVersion(version: string): string {
+export function getBaseVersion(version: string): string {
   const parts = version.split("-");
   if (parts.length >= 2 && parts[0].includes(".")) return parts[0];
   return version;
@@ -36,6 +35,20 @@ function getBaseVersion(version: string): string {
 function isWorldFork(version: string): boolean {
   return getBaseVersion(version) !== version;
 }
+
+/* ── Shared style ─────────────────────────────────── */
+
+export const fieldInputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "4px 6px",
+  fontSize: "11px",
+  backgroundColor: T.bg1,
+  color: T.text,
+  border: `1px solid ${T.borderDim}`,
+  borderRadius: "3px",
+  outline: "none",
+  boxSizing: "border-box",
+};
 
 /* ── Toggle Switch ─────────────────────────────────── */
 
@@ -172,180 +185,6 @@ function ForkModal({
   );
 }
 
-function CreateAddonModal({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
-  const [id, setId] = useState("");
-  const [name, setName] = useState("");
-  const [version, setVersion] = useState("1.0.0");
-  const [busy, setBusy] = useState(false);
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "6px 8px",
-    fontSize: "12px",
-    boxSizing: "border-box",
-    backgroundColor: T.bg2,
-    color: T.text,
-    border: `1px solid ${T.borderDim}`,
-    borderRadius: "4px",
-    outline: "none",
-  };
-  const labelStyle: React.CSSProperties = {
-    fontSize: "11px",
-    color: T.textSub,
-    marginBottom: "2px",
-  };
-
-  const handleCreate = async () => {
-    if (!id.trim() || !name.trim()) return;
-    setBusy(true);
-    const result = await createAddon({ id: id.trim(), name: name.trim(), version: version.trim() || "1.0.0" });
-    setBusy(false);
-    if (!result.success) {
-      alert(result.message);
-      return;
-    }
-    onCreated();
-  };
-
-  return (
-    <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{t("addon.createTitle")}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <div>
-          <div style={labelStyle}>{t("addon.idLabel")}</div>
-          <input style={inputStyle} value={id} onChange={(e) => setId(e.target.value)} placeholder="my-addon" />
-        </div>
-        <div>
-          <div style={labelStyle}>{t("field.name")}</div>
-          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("addon.myAddon")} />
-        </div>
-        <div>
-          <div style={labelStyle}>{t("addon.initialVersion")}</div>
-          <input style={inputStyle} value={version} onChange={(e) => setVersion(e.target.value)} placeholder="1.0.0" />
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button
-          onClick={onCancel}
-          style={{
-            padding: "6px 14px",
-            fontSize: "12px",
-            borderRadius: "4px",
-            cursor: "pointer",
-            backgroundColor: "transparent",
-            color: T.textSub,
-            border: `1px solid ${T.textFaint}`,
-          }}
-        >
-          {t("btn.cancel")}
-        </button>
-        <button
-          onClick={handleCreate}
-          disabled={busy || !id.trim() || !name.trim()}
-          style={{
-            padding: "6px 14px",
-            fontSize: "12px",
-            borderRadius: "4px",
-            cursor: "pointer",
-            backgroundColor: T.accent,
-            color: T.bg0,
-            border: "none",
-            opacity: busy || !id.trim() || !name.trim() ? 0.5 : 1,
-          }}
-        >
-          {busy ? t("btn.creating") : t("btn.create")}
-        </button>
-      </div>
-    </Overlay>
-  );
-}
-
-function DependencyModal({
-  action,
-  addon,
-  related,
-  onChain,
-  onOnly,
-  onCancel,
-}: {
-  action: "enable" | "disable";
-  addon: AddonInfo;
-  related: AddonInfo[];
-  onChain: () => void;
-  onOnly: () => void;
-  onCancel: () => void;
-}) {
-  const isEnable = action === "enable";
-  return (
-    <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{isEnable ? t("addon.depCheck") : t("addon.depWarning")}</div>
-      <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>
-        {isEnable ? (
-          <>
-            {t("addon.depNeeded", { name: <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> })}
-          </>
-        ) : (
-          <>
-            {t("addon.depBy", { name: <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span> })}
-          </>
-        )}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "4px",
-          padding: "8px",
-          backgroundColor: T.bg1,
-          borderRadius: "4px",
-          maxHeight: "200px",
-          overflowY: "auto",
-        }}
-      >
-        {related.map((r) => (
-          <div key={r.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
-            <span style={{ color: isEnable ? T.accent : T.danger, fontWeight: "bold" }}>{r.name}</span>
-            <span style={{ color: T.textDim, fontSize: "11px" }}>({r.id})</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <button
-          onClick={onChain}
-          style={{
-            ...modalBtnStyle(isEnable ? T.bg2 : T.dangerBg, isEnable ? T.success : T.danger),
-            width: "100%",
-            textAlign: "center",
-          }}
-        >
-          {isEnable ? t("addon.enableAll", { count: related.length + 1 }) : t("addon.disableAll", { count: related.length + 1 })}
-        </button>
-        <button
-          onClick={onOnly}
-          style={{
-            ...modalBtnStyle(T.bg2, T.accent),
-            width: "100%",
-            textAlign: "center",
-          }}
-        >
-          {isEnable ? t("addon.enableOnly", { name: addon.name }) : t("addon.disableOnly", { name: addon.name })}
-        </button>
-        <button
-          onClick={onCancel}
-          style={{
-            ...modalBtnStyle("transparent", T.textSub),
-            width: "100%",
-            textAlign: "center",
-            border: `1px solid ${T.textFaint}`,
-          }}
-        >
-          {t("btn.cancel")}
-        </button>
-      </div>
-    </Overlay>
-  );
-}
-
 /* ── Version Switch List (clean, read-only) ───────── */
 
 function VersionSwitchList({
@@ -391,196 +230,6 @@ function VersionSwitchList({
   );
 }
 
-/* ── Version Management Panel (dangerous ops) ─────── */
-
-function VersionManagePanel({
-  addonId,
-  selectedVersion,
-  onNewVersion,
-  onRefresh,
-}: {
-  addonId: string;
-  selectedVersion: string;
-  onNewVersion: () => void;
-  onRefresh: () => void;
-}) {
-  const [versions, setVersions] = useState<AddonVersionInfo[]>([]);
-  const [copySource, setCopySource] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const loadVersions = useCallback(() => {
-    fetchAddonVersionsDetail(addonId).then(setVersions);
-  }, [addonId]);
-
-  useEffect(() => {
-    loadVersions();
-  }, [loadVersions]);
-
-  const grouped = groupVersions(versions);
-
-  const handleCopy = async (target: string) => {
-    if (!copySource || copySource === target) return;
-    if (!confirm(t("confirm.overwriteAddonVer", { source: copySource, target }))) return;
-    setBusy(true);
-    const result = await overwriteAddonVersion(addonId, copySource, target);
-    setBusy(false);
-    if (!result.success) {
-      alert(result.message);
-      return;
-    }
-    setCopySource(null);
-    loadVersions();
-    onRefresh();
-  };
-
-  const handleDelete = async (ver: string) => {
-    setDeleteConfirm(null);
-    setBusy(true);
-    const result = await deleteAddon(addonId, ver);
-    setBusy(false);
-    if (!result.success) {
-      alert(result.message);
-      return;
-    }
-    loadVersions();
-    onRefresh();
-  };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      {/* Toolbar */}
-      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-        <MiniBtn onClick={onNewVersion}>{t("addon.newVersion")}</MiniBtn>
-        <MiniBtn active={copySource !== null} onClick={() => setCopySource(copySource ? null : selectedVersion)}>
-          {copySource ? t("addon.cancelCopy") : t("addon.copyContent")}
-        </MiniBtn>
-      </div>
-
-      {copySource && (
-        <div
-          style={{
-            padding: "4px 8px",
-            backgroundColor: `${T.accent}15`,
-            borderRadius: "3px",
-            fontSize: "10px",
-            color: T.accent,
-          }}
-        >
-          {t("addon.copySource", { source: copySource })}
-        </div>
-      )}
-
-      {/* Version list */}
-      {grouped.map(({ info: vi, indent }) => {
-        const ver = vi.version;
-        const isCurrent = ver === selectedVersion;
-        const isBase = !vi.forkedFrom;
-        const isCopyTarget = copySource !== null && copySource !== ver;
-
-        return (
-          <div
-            key={ver}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "4px 8px",
-              borderRadius: "4px",
-              marginLeft: indent ? "14px" : 0,
-              backgroundColor: isCopyTarget ? `${T.accent}10` : T.bg1,
-              border: `1px solid ${isCopyTarget ? T.accent + "40" : T.borderDim}`,
-              cursor: isCopyTarget ? "pointer" : "default",
-              fontSize: "11px",
-              opacity: busy ? 0.5 : 1,
-            }}
-            onClick={() => isCopyTarget && handleCopy(ver)}
-          >
-            {indent && <span style={{ color: T.textFaint, fontSize: "10px", marginRight: "-2px" }}>└</span>}
-
-            <span
-              style={{
-                flex: 1,
-                color: T.text,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                fontWeight: isCurrent ? "bold" : "normal",
-              }}
-            >
-              {ver}
-            </span>
-
-            {isCurrent && <Tag color={T.accent}>{t("addon.tagCurrent")}</Tag>}
-            {isBase && <Tag color={T.successDim}>{t("addon.tagBase")}</Tag>}
-            {!isBase && <Tag color="#6ab">{t("addon.tagBranch")}</Tag>}
-
-            {isCopyTarget && <span style={{ color: T.accent, fontSize: "10px", flexShrink: 0 }}>{t("addon.paste")}</span>}
-
-            {/* Copy source selector (when in copy mode, click to change source) */}
-            {copySource && copySource === ver && <Tag color={T.accent}>{t("addon.tagSource")}</Tag>}
-
-            {/* Delete — only non-current */}
-            {!copySource && !isCurrent && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteConfirm(ver);
-                }}
-                style={{
-                  background: "none",
-                  border: `1px solid ${T.danger}30`,
-                  padding: "1px 5px",
-                  color: T.danger,
-                  cursor: "pointer",
-                  fontSize: "10px",
-                  borderRadius: "3px",
-                  flexShrink: 0,
-                  opacity: 0.6,
-                }}
-              >
-                {t("btn.delete")}
-              </button>
-            )}
-          </div>
-        );
-      })}
-
-      {/* Delete confirmation */}
-      {deleteConfirm && (
-        <div
-          style={{
-            padding: "6px 8px",
-            backgroundColor: T.dangerBg,
-            borderRadius: "4px",
-            border: `1px solid ${T.danger}40`,
-            fontSize: "11px",
-            color: T.text,
-          }}
-        >
-          <div>
-            {t("addon.confirmDeleteVer", { version: deleteConfirm })}
-          </div>
-          <div style={{ display: "flex", gap: "6px", marginTop: "6px", justifyContent: "flex-end" }}>
-            <button
-              onClick={() => setDeleteConfirm(null)}
-              style={{ ...modalBtnStyle(T.bg2, T.textSub), padding: "3px 10px", fontSize: "11px" }}
-            >
-              {t("btn.cancel")}
-            </button>
-            <button
-              onClick={() => handleDelete(deleteConfirm)}
-              style={{ ...modalBtnStyle(T.dangerBg, T.danger), padding: "3px 10px", fontSize: "11px" }}
-            >
-              {t("btn.delete")}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ToggleBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
@@ -601,7 +250,7 @@ function ToggleBtn({ label, active, onClick }: { label: string; active: boolean;
   );
 }
 
-function MiniBtn({ onClick, active, children }: { onClick: () => void; active?: boolean; children: React.ReactNode }) {
+export function MiniBtn({ onClick, active, children }: { onClick: () => void; active?: boolean; children: React.ReactNode }) {
   return (
     <button
       onClick={onClick}
@@ -622,7 +271,7 @@ function MiniBtn({ onClick, active, children }: { onClick: () => void; active?: 
 
 /* ── Shared: group versions into tree ─────────────── */
 
-function groupVersions(versions: AddonVersionInfo[]): { info: AddonVersionInfo; indent: boolean }[] {
+export function groupVersions(versions: AddonVersionInfo[]): { info: AddonVersionInfo; indent: boolean }[] {
   const bases = versions.filter((v) => !v.forkedFrom);
   const branches = versions.filter((v) => v.forkedFrom);
   const grouped: { info: AddonVersionInfo; indent: boolean }[] = [];
@@ -701,7 +350,7 @@ function VersionRow({
   );
 }
 
-function Tag({ color, children }: { color: string; children: React.ReactNode }) {
+export function Tag({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span
       style={{
@@ -717,333 +366,6 @@ function Tag({ color, children }: { color: string; children: React.ReactNode }) 
     >
       {children}
     </span>
-  );
-}
-
-/* ── Addon Meta Editor ─────────────────────────────── */
-
-const fieldInputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "4px 6px",
-  fontSize: "11px",
-  backgroundColor: T.bg1,
-  color: T.text,
-  border: `1px solid ${T.borderDim}`,
-  borderRadius: "3px",
-  outline: "none",
-  boxSizing: "border-box",
-};
-
-function AddonMetaEditor({
-  addon,
-  displayVersion,
-  onUpdated,
-  onClose,
-}: {
-  addon: AddonInfo;
-  displayVersion: string;
-  onUpdated: () => void;
-  onClose: () => void;
-}) {
-  const [name, setName] = useState(addon.name);
-  const [author, setAuthor] = useState(addon.author ?? "");
-  const [description, setDescription] = useState(addon.description ?? "");
-  const [categories, setCategories] = useState((addon.categories ?? []).join(", "));
-  const [cover, setCover] = useState(addon.cover ?? "");
-  const [coverBust, setCoverBust] = useState(Date.now());
-  const [saving, setSaving] = useState(false);
-  const coverFileRef = useRef<HTMLInputElement>(null);
-
-  // Reset fields when addon identity changes
-  const keyRef = useRef(`${addon.id}@${addon.version}`);
-  if (`${addon.id}@${addon.version}` !== keyRef.current) {
-    keyRef.current = `${addon.id}@${addon.version}`;
-    setName(addon.name);
-    setAuthor(addon.author ?? "");
-    setDescription(addon.description ?? "");
-    setCategories((addon.categories ?? []).join(", "));
-    setCover(addon.cover ?? "");
-  }
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const cats = categories
-        .split(/[,，]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      await updateAddonMeta(addon.id, displayVersion, {
-        name,
-        author: author || undefined,
-        description: description || undefined,
-        cover: cover,
-        categories: cats.length > 0 ? cats : undefined,
-      });
-      onUpdated();
-      onClose();
-    } catch (e) {
-      console.error("Failed to update addon meta:", e);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const result = await uploadAsset(file, "covers", `addon-${addon.id}`, { addonId: addon.id });
-    if (result.success && result.filename) {
-      setCover(result.filename);
-      setCoverBust(Date.now());
-    }
-    e.target.value = "";
-  };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <MetaField label={t("field.name")} value={name} onChange={setName} />
-      <MetaField label={t("field.author")} value={author} onChange={setAuthor} />
-      <MetaField label={t("field.categories")} value={categories} onChange={setCategories} placeholder={t("addon.commaSep")} />
-      <div style={{ display: "flex", gap: "4px", fontSize: "11px" }}>
-        <span style={{ color: T.textSub, width: "32px", flexShrink: 0, paddingTop: "4px" }}>{t("field.intro")}</span>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={2}
-          style={{ ...fieldInputStyle, resize: "vertical" }}
-        />
-      </div>
-      <div style={{ display: "flex", gap: "4px", alignItems: "center", fontSize: "11px" }}>
-        <span style={{ color: T.textSub, width: "32px", flexShrink: 0 }}>{t("field.cover")}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
-          {cover && (
-            <img
-              src={`/assets/${addon.id}/covers/${cover}?t=${coverBust}`}
-              alt=""
-              style={{
-                width: "28px",
-                height: "28px",
-                objectFit: "cover",
-                borderRadius: "3px",
-                border: `1px solid ${T.borderDim}`,
-              }}
-            />
-          )}
-          <span
-            style={{
-              fontSize: "11px",
-              color: T.textFaint,
-              flex: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {cover || t("ui.none")}
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            ref={coverFileRef}
-            style={{ display: "none" }}
-            onChange={handleCoverUpload}
-          />
-          <button
-            onClick={() => coverFileRef.current?.click()}
-            style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.textSub }}
-          >
-            {t("btn.select")}
-          </button>
-          {cover && (
-            <button
-              onClick={() => setCover("")}
-              style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.danger }}
-            >
-              {t("btn.remove")}
-            </button>
-          )}
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
-        <button
-          onClick={onClose}
-          style={{ ...fieldInputStyle, width: "auto", padding: "3px 10px", cursor: "pointer", color: T.textSub }}
-        >
-          {t("btn.cancel")}
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={saving || !name.trim()}
-          style={{
-            ...fieldInputStyle,
-            width: "auto",
-            padding: "3px 10px",
-            cursor: "pointer",
-            color: T.success,
-            borderColor: T.successDim,
-          }}
-        >
-          {saving ? t("status.saving") : t("btn.save")}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function MetaField({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div style={{ display: "flex", gap: "4px", alignItems: "center", fontSize: "11px" }}>
-      <span style={{ color: T.textSub, width: "32px", flexShrink: 0 }}>{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={fieldInputStyle}
-      />
-    </div>
-  );
-}
-
-/* ── New Version / Branch Modal ───────────────────── */
-
-function NewVersionModal({
-  addonId,
-  sourceVersion,
-  existingVersions,
-  onCreated,
-  onCancel,
-}: {
-  addonId: string;
-  sourceVersion: string;
-  existingVersions: string[];
-  onCreated: (newVersion: string) => void;
-  onCancel: () => void;
-}) {
-  const [mode, setMode] = useState<"bump" | "branch">("bump");
-  const [version, setVersion] = useState(() => {
-    // Auto-suggest next patch version
-    const base = getBaseVersion(sourceVersion);
-    const parts = base.split(".");
-    if (parts.length === 3) {
-      parts[2] = String(Number(parts[2]) + 1);
-      return parts.join(".");
-    }
-    return base + ".1";
-  });
-  const [branchName, setBranchName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const targetVersion = mode === "bump" ? version : `${getBaseVersion(sourceVersion)}-${branchName}`;
-  const valid =
-    mode === "bump"
-      ? version.trim().length > 0 && /^\d+\.\d+\.\d+$/.test(version.trim())
-      : branchName.trim().length > 0 && /^[a-zA-Z0-9_-]+$/.test(branchName.trim());
-  const conflict = existingVersions.includes(targetVersion);
-
-  const handleCreate = async () => {
-    if (!valid || conflict) return;
-    setSaving(true);
-    setError("");
-    try {
-      const forkedFrom = mode === "branch" ? getBaseVersion(sourceVersion) : undefined;
-      const result = await copyAddonVersion(addonId, sourceVersion, targetVersion, forkedFrom);
-      if (result.success) {
-        onCreated(targetVersion);
-      } else {
-        setError(result.message ?? t("addon.createFailed"));
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{t("addon.createNewVersion")}</div>
-      <div style={{ color: T.textSub, fontSize: "11px" }}>
-        {t("addon.basedOn", { source: `${addonId}@${sourceVersion}` })}
-      </div>
-
-      {/* Mode tabs */}
-      <div style={{ display: "flex", gap: "4px" }}>
-        {(["bump", "branch"] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            style={{
-              flex: 1,
-              padding: "6px",
-              fontSize: "12px",
-              cursor: "pointer",
-              backgroundColor: mode === m ? T.bg3 : T.bg1,
-              color: mode === m ? T.text : T.textSub,
-              border: `1px solid ${mode === m ? T.borderLight : T.borderDim}`,
-              borderRadius: "4px",
-            }}
-          >
-            {m === "bump" ? t("addon.modeBump") : t("addon.modeBranch")}
-          </button>
-        ))}
-      </div>
-
-      {mode === "bump" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <div style={{ color: T.textSub, fontSize: "11px" }}>{t("addon.bumpHint")}</div>
-          <input
-            value={version}
-            onChange={(e) => setVersion(e.target.value)}
-            placeholder={t("addon.egVersion")}
-            style={{ ...fieldInputStyle, fontSize: "13px", padding: "6px 8px" }}
-          />
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <div style={{ color: T.textSub, fontSize: "11px" }}>{t("addon.branchHint")}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <span style={{ color: T.textDim, fontSize: "12px" }}>{getBaseVersion(sourceVersion)}-</span>
-            <input
-              value={branchName}
-              onChange={(e) => setBranchName(e.target.value)}
-              placeholder="my-branch"
-              style={{ ...fieldInputStyle, fontSize: "13px", padding: "6px 8px", flex: 1 }}
-            />
-          </div>
-        </div>
-      )}
-
-      {conflict && <div style={{ color: T.danger, fontSize: "11px" }}>{t("addon.versionExists", { version: targetVersion })}</div>}
-      {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
-
-      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>
-          {t("btn.cancel")}
-        </button>
-        <button
-          onClick={handleCreate}
-          disabled={!valid || conflict || saving}
-          style={{
-            ...modalBtnStyle(T.bg2, T.success),
-            opacity: !valid || conflict || saving ? 0.5 : 1,
-            cursor: !valid || conflict || saving ? "default" : "pointer",
-          }}
-        >
-          {saving ? t("btn.creating") : t("btn.create")}
-        </button>
-      </div>
-    </Overlay>
   );
 }
 
