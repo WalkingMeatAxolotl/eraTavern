@@ -603,7 +603,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             createFn={(d) => createActionDef(d)}
             onSuccess={onBack}
             className="ae-btn"
-            buttonStyle={{ ...smallBtnStyle(T.accent), padding: "5px 16px", fontSize: "13px" }}
+            buttonStyle={btn()}
           />
         )}
         {!isReadOnly && !isNew && (

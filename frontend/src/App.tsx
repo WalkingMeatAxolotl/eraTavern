@@ -64,11 +64,27 @@ export default function App() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTab, setDetailTab] = useState<DetailTab>("basic");
   const [navPage, setNavPage] = useState<NavPage | null>(null);
+  const [editorClosing, setEditorClosing] = useState(false);
+  const editorClosingRef = useRef(false);
+  const [editorAnimating, setEditorAnimating] = useState(false);
+  const closeEditor = useCallback(() => {
+    if (editorClosingRef.current) return;
+    editorClosingRef.current = true;
+    setEditorClosing(true);
+    setTimeout(() => {
+      setNavPage(null);
+      setEditorClosing(false);
+      editorClosingRef.current = false;
+    }, 250);
+  }, []);
+  const [mountedPages, setMountedPages] = useState<Set<NavPage>>(new Set());
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
 
   // Sidebar state
   const [leftOpen, setLeftOpen] = useState(false);
+  const [leftClosing, setLeftClosing] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
+  const [rightClosing, setRightClosing] = useState(false);
 
   // AI Assist drawer state
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
@@ -89,12 +105,25 @@ export default function App() {
   const esRef = useRef<EventSource | null>(null);
 
   // AI drawer: mutually exclusive with addon sidebar
-  const toggleAiDrawer = useCallback(() => {
-    setAiDrawerOpen((v) => {
-      if (!v) setRightOpen(false); // close addon sidebar when opening AI
-      return !v;
-    });
+  const closeSidebar = useCallback((side: "left" | "right", cb: () => void) => {
+    if (side === "left") setLeftClosing(true);
+    else setRightClosing(true);
+    setTimeout(() => {
+      cb();
+      if (side === "left") setLeftClosing(false);
+      else setRightClosing(false);
+    }, 200);
   }, []);
+
+  const toggleAiDrawer = useCallback(() => {
+    if (aiDrawerOpen) {
+      closeSidebar("right", () => setAiDrawerOpen(false));
+    } else {
+      setRightClosing(false);
+      setRightOpen(false);
+      setAiDrawerOpen(true);
+    }
+  }, [aiDrawerOpen, closeSidebar]);
 
   const player = gameState ? (Object.values(gameState.characters).find((c) => c.isPlayer) ?? null) : null;
 
@@ -181,6 +210,16 @@ export default function App() {
       setActiveMapId(player.position.mapId);
     }
   }, [gameState?.worldId]);
+
+  useEffect(() => {
+    if (navPage && !mountedPages.has(navPage)) {
+      setMountedPages((prev) => new Set(prev).add(navPage));
+    }
+  }, [navPage, mountedPages]);
+
+  useEffect(() => {
+    setMountedPages(new Set());
+  }, [sessionKey]);
 
   const addResultMessages = useCallback((result: ActionResult, targetId?: string) => {
     const raw: string[] = [];
@@ -340,77 +379,47 @@ export default function App() {
     border: `1px solid ${T.border}`,
   };
 
-  const renderNavPage = () => {
-    const addonTab =
-      currentWorldId && !editorOpen ? (
-        <AddonTabBar addons={stagedAddons} selectedAddon={selectedAddonTab} onSelect={setSelectedAddonTab} />
-      ) : null;
+  const addonTab =
+    currentWorldId && !editorOpen ? (
+      <AddonTabBar addons={stagedAddons} selectedAddon={selectedAddonTab} onSelect={setSelectedAddonTab} />
+    ) : null;
 
-    if (navPage === "characters")
-      return (
-        <>
-          {addonTab}
-          <CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "traits")
-      return (
-        <>
-          {addonTab}
-          <TraitManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "clothing")
-      return (
-        <>
-          {addonTab}
-          <ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "items")
-      return (
-        <>
-          {addonTab}
-          <ItemManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "actions")
-      return (
-        <>
-          {addonTab}
-          <ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "variables")
-      return (
-        <>
-          {addonTab}
-          <VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "events")
-      return (
-        <>
-          {addonTab}
-          <EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "lorebook")
-      return (
-        <>
-          {addonTab}
-          <LorebookManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "maps")
-      return (
-        <>
-          {addonTab}
-          <MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />
-        </>
-      );
-    if (navPage === "llm") return <LLMPresetManager key={sessionKey} debugEntries={debugEntries} />;
-    if (navPage === "settings") {
+  const editorPages: { page: NavPage; hasAddonTab: boolean }[] = [
+    { page: "characters", hasAddonTab: true },
+    { page: "traits", hasAddonTab: true },
+    { page: "clothing", hasAddonTab: true },
+    { page: "items", hasAddonTab: true },
+    { page: "actions", hasAddonTab: true },
+    { page: "variables", hasAddonTab: true },
+    { page: "events", hasAddonTab: true },
+    { page: "lorebook", hasAddonTab: true },
+    { page: "maps", hasAddonTab: true },
+    { page: "llm", hasAddonTab: false },
+    { page: "settings", hasAddonTab: false },
+    { page: "system", hasAddonTab: false },
+  ];
+
+  const renderEditorPage = (page: NavPage) => {
+    if (page === "characters")
+      return <CharacterManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "traits")
+      return <TraitManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "clothing")
+      return <ClothingManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "items")
+      return <ItemManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "actions")
+      return <ActionManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "variables")
+      return <VariableManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "events")
+      return <EventManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "lorebook")
+      return <LorebookManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "maps")
+      return <MapManager key={sessionKey} selectedAddon={selectedAddonTab} onEditingChange={setEditorOpen} addonIds={addonIds} />;
+    if (page === "llm") return <LLMPresetManager key={sessionKey} debugEntries={debugEntries} />;
+    if (page === "settings")
       return (
         <SettingsPage
           worldId={currentWorldId}
@@ -427,21 +436,17 @@ export default function App() {
           settingsBtnStyle={settingsBtnStyle}
         />
       );
-    }
-    if (navPage === "system") {
+    if (page === "system")
       return (
         <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
           <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 系统设置 ==</span>
           <div style={{ color: T.textDim, fontSize: "12px", marginTop: "8px" }}>暂无系统设置项。</div>
         </div>
       );
-    }
     return null;
   };
 
   const renderCenter = () => {
-    // Nav page (editors)
-    if (navPage !== null) return renderNavPage();
 
     // No player
     if (!player) {
@@ -629,34 +634,70 @@ export default function App() {
       <NavBar
         navPage={navPage}
         onNavChange={(p) => {
-          setNavPage(p);
+          if (p === null && navPage !== null) {
+            closeEditor();
+          } else {
+            const isOpening = navPage === null && p !== null;
+            setEditorClosing(false);
+            editorClosingRef.current = false;
+            setEditorAnimating(isOpening);
+            setNavPage(p);
+            if (isOpening) setTimeout(() => setEditorAnimating(false), 300);
+          }
           setEditorOpen(false);
         }}
         worldName={currentWorldId ? currentWorldName || currentWorldId : ""}
         maxWidth={config.maxWidth}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
-        onToggleLeft={() => setLeftOpen((v) => !v)}
+        onToggleLeft={() => {
+          if (leftOpen) {
+            closeSidebar("left", () => setLeftOpen(false));
+          } else {
+            setLeftClosing(false);
+            setLeftOpen(true);
+          }
+        }}
         aiOpen={aiDrawerOpen}
         onToggleAi={toggleAiDrawer}
         onToggleRight={() => {
-          setRightOpen((v) => !v);
-          setAiDrawerOpen(false); // close AI drawer when toggling addon sidebar
+          if (rightOpen) {
+            closeSidebar("right", () => setRightOpen(false));
+          } else {
+            setRightClosing(false);
+            if (aiDrawerOpen) {
+              closeSidebar("right", () => {
+                setAiDrawerOpen(false);
+                setRightOpen(true);
+              });
+            } else {
+              setRightOpen(true);
+            }
+          }
         }}
       />
 
       {/* Left area: sidebar or spacer */}
-      {leftOpen ? (
-        <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{
+          display: leftOpen || leftClosing ? "block" : "none",
+          height: "100%",
+          animation: leftClosing ? "sidebarSlideOut 0.2s ease-in forwards" : leftOpen ? "sidebarSlideIn 0.25s ease-out" : undefined,
+        }}>
           <WorldSidebar
             currentWorldId={currentWorldId}
             currentAddons={currentAddons}
             onWorldChanged={handleWorldChanged}
           />
         </div>
-      ) : (
-        <div style={{ flex: 1 }} />
-      )}
+      </div>
 
       {/* Center content (fixed maxWidth) */}
       <div
@@ -680,26 +721,116 @@ export default function App() {
       </div>
 
       {/* Right area: addon sidebar, AI drawer, or spacer */}
-      {aiDrawerOpen ? (
-        <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>
-          <AiDrawer
-            onEntityChanged={() => setSessionKey((k) => k + 1)}
-            onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e as any])}
-          />
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
+        {(() => {
+          const rightVisible = aiDrawerOpen || rightOpen;
+          const showRight = rightVisible || rightClosing;
+          const anim = rightClosing ? "sidebarSlideOut 0.2s ease-in forwards" : rightVisible ? "sidebarSlideIn 0.25s ease-out" : undefined;
+          return (
+            <div style={{ display: showRight ? "block" : "none", height: "100%", animation: anim }}>
+              <div style={{ display: aiDrawerOpen ? "block" : "none", height: "100%" }}>
+                <AiDrawer
+                  onEntityChanged={() => setSessionKey((k) => k + 1)}
+                  onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e as any])}
+                />
+              </div>
+              <div style={{ display: !aiDrawerOpen && rightOpen ? "block" : "none", height: "100%" }}>
+                <AddonSidebar
+                  key={addonListKey}
+                  enabledAddons={currentAddons}
+                  stagedAddons={stagedAddons}
+                  onStagedChange={setStagedAddons}
+                  worldId={currentWorldId}
+                />
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Editor overlay */}
+      {navPage !== null && (
+        <div
+          style={{
+            position: "fixed",
+            top: 40,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 200,
+            display: "flex",
+            justifyContent: "center",
+            overflow: "hidden",
+            backgroundColor: "rgba(0,0,0,0.3)",
+            animation: editorClosing ? "overlayFadeOut 0.25s ease-in forwards" : editorAnimating ? "overlayFadeIn 0.2s ease-out" : "none",
+          }}
+          onClick={closeEditor}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: config.maxWidth,
+              height: "100%",
+              overflowY: "auto",
+              backgroundColor: "rgba(20, 18, 15, 0.85)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              padding: "8px",
+              boxSizing: "border-box",
+              borderRadius: "8px 8px 0 0",
+              border: `1px solid rgba(255,255,255,0.08)`,
+              borderBottom: "none",
+              boxShadow: "0 -4px 32px rgba(0,0,0,0.5)",
+              animation: editorClosing ? "editorSlideOut 0.25s ease-in forwards" : editorAnimating ? "editorSlideIn 0.3s ease-out" : "none",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {editorPages.map(({ page, hasAddonTab }) => {
+              if (!mountedPages.has(page)) return null;
+              const active = navPage === page;
+              return (
+                <div key={page} style={{ display: active ? "block" : "none" }}>
+                  {hasAddonTab && addonTab}
+                  {renderEditorPage(page)}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      ) : rightOpen ? (
-        <div style={{ flex: 1, minWidth: 0, height: "100vh", overflow: "hidden" }}>
-          <AddonSidebar
-            key={addonListKey}
-            enabledAddons={currentAddons}
-            stagedAddons={stagedAddons}
-            onStagedChange={setStagedAddons}
-            worldId={currentWorldId}
-          />
-        </div>
-      ) : (
-        <div style={{ flex: 1 }} />
       )}
+      <style>{`
+        @keyframes overlayFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes overlayFadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes editorSlideIn {
+          from { transform: translateY(-100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes editorSlideOut {
+          from { transform: translateY(0); }
+          to { transform: translateY(-100%); }
+        }
+        @keyframes sidebarSlideIn {
+          from { transform: translateY(-100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes sidebarSlideOut {
+          from { transform: translateY(0); }
+          to { transform: translateY(-100%); }
+        }
+      `}</style>
 
       {/* Floating apply/save panel */}
       <FloatingActions
