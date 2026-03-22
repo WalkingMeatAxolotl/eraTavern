@@ -172,7 +172,7 @@ export default function ClothingManager({
                 >
                   {ot.name || ot.id}
                   <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "4px" }}>
-                    {ot.copyDefault ? `(${t("clothing.inheritTag")})` : `(${t("clothing.slotCountTag", { count: Object.values(ot.slots).filter((v) => v.length > 0).length })})`}
+                    {ot.copyDefault ? `(${t("clothing.inheritTag")})` : `(${t("clothing.slotCountTag", { count: Object.values(ot.slots || {}).filter((v) => v.length > 0).length })})`}
                   </span>
                 </button>
               ))}

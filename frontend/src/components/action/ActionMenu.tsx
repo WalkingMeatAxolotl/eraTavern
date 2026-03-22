@@ -185,7 +185,7 @@ export default function ActionMenu({
             onClick={() => {
               setSelectedOutfit(ot);
               const init: Record<string, string> = {};
-              for (const [slot, items] of Object.entries(ot.slots)) {
+              for (const [slot, items] of Object.entries(ot.slots || {})) {
                 if (items.length > 0) init[slot] = items[0].id;
               }
               setSlotSelections(init);
