@@ -719,7 +719,6 @@ export const UI: Record<string, string> = {
   "btn.fetchModels": "获取模型",
   "btn.testConnection": "测试连接",
   "btn.newPresetFull": "+ 新建预设",
-  "btn.savePreset": "保存预设",
 
   // === Map editor (additional) ===
   "map.defaultCellName": "区格{id}",
