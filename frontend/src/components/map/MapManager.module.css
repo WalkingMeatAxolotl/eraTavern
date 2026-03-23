@@ -4,11 +4,7 @@
 
 .header { composes: managerHeader from "../shared/shared.module.css"; }
 
-.title {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 14px;
-}
+.title { composes: editorTitle from "../shared/shared.module.css"; }
 
 /* ── Map list ── */
 
@@ -29,10 +25,6 @@
 
 .mapBtn {
   flex: 1;
-  background: none;
-  border: none;
-  color: var(--text);
-  cursor: pointer;
   font-size: 13px;
   text-align: left;
   padding: 0;

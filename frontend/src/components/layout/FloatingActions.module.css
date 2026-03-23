@@ -45,13 +45,13 @@
 }
 
 .msgSuccess {
-  color: var(--success);
+  composes: statusSuccess from "../shared/shared.module.css";
   font-size: 11px;
   white-space: nowrap;
 }
 
 .msgError {
-  color: var(--danger);
+  composes: statusError from "../shared/shared.module.css";
   font-size: 11px;
   white-space: nowrap;
 }

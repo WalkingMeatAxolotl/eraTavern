@@ -6,11 +6,7 @@
 
 .header { composes: editorHeader from "../shared/shared.module.css"; }
 
-.title {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 14px;
-}
+.title { composes: editorTitle from "../shared/shared.module.css"; }
 
 .sourceLabel { composes: editorSourceTag from "../shared/shared.module.css"; }
 
@@ -70,7 +66,6 @@
 
 .textarea {
   width: 100%;
-  box-sizing: border-box;
   min-height: 48px;
   resize: vertical;
 }

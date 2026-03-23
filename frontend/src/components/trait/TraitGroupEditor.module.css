@@ -29,7 +29,6 @@
   border-radius: 3px;
   padding: 3px 6px;
   font-size: 13px;
-  outline: none;
 }
 
 .select {
@@ -102,13 +101,13 @@
 /* ── Message ── */
 
 .msgSuccess {
-  color: var(--success);
+  composes: statusSuccess from "../shared/shared.module.css";
   margin-left: 8px;
   align-self: center;
 }
 
 .msgError {
-  color: var(--danger);
+  composes: statusError from "../shared/shared.module.css";
   margin-left: 8px;
   align-self: center;
 }

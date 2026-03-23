@@ -10,7 +10,6 @@
   border-radius: 2px;
   cursor: pointer;
   padding: 0;
-  box-sizing: border-box;
   flex-shrink: 0;
 }
 .swatchActive {
@@ -26,7 +25,6 @@
   border-radius: 2px;
   cursor: pointer;
   padding: 0;
-  box-sizing: border-box;
   flex-shrink: 0;
   position: relative;
 }

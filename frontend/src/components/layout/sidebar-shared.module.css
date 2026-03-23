@@ -1,5 +1,18 @@
 /* ── Shared sidebar classes (WorldSidebar + AddonSidebar) ── */
 
+/* ── Sidebar container ── */
+
+.sidebar {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  overflow: hidden;
+  padding-top: 40px;
+  background-color: var(--bg0);
+}
+
 /* ── Header ── */
 
 .header {
@@ -26,11 +39,9 @@
 }
 
 .addBtn {
-  background: none;
   border: 1px solid var(--text-faint);
   border-radius: 3px;
   color: var(--text-sub);
-  cursor: pointer;
   padding: 1px 7px;
   font-size: 13px;
   line-height: 1.2;
@@ -139,7 +150,6 @@
 .toggleBtn {
   padding: 4px 10px;
   font-size: 11px;
-  cursor: pointer;
   border-radius: 3px;
   background-color: var(--bg1);
   color: var(--text-sub);
@@ -157,7 +167,6 @@
 .deleteBtn {
   padding: 3px 8px;
   font-size: 11px;
-  cursor: pointer;
   background-color: var(--bg2);
   color: var(--danger);
   border: 1px solid var(--border);

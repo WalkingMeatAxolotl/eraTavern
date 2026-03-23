@@ -78,10 +78,7 @@
 }
 
 .removeBtn {
-  background: none;
-  border: none;
   color: var(--danger);
-  cursor: pointer;
   padding: 0 2px;
   font-size: 11px;
 }

@@ -5,14 +5,9 @@
   flex-direction: column;
   gap: 12px;
   font-size: 13px;
-  color: var(--text);
 }
 
-.sectionTitle {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 14px;
-}
+.sectionTitle { composes: editorTitle from "../shared/shared.module.css"; }
 
 /* ── Create save ── */
 
@@ -37,8 +32,6 @@
   padding: 4px 6px;
   color: var(--text);
   font-size: 12px;
-  outline: none;
-  box-sizing: border-box;
 }
 
 /* ── Save list ── */

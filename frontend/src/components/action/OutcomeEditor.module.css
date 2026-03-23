@@ -91,21 +91,15 @@
 /* ── Modifier panel ── */
 
 .modifierPanel {
+  composes: subPanel from "../shared/shared.module.css";
   margin-left: 8px;
-  padding-left: 8px;
-  border-left: 2px solid #333;
-  background-color: var(--bg1);
-  border-radius: 0 3px 3px 0;
   margin-bottom: 8px;
 }
 
 .valueModPanel {
+  composes: subPanel from "../shared/shared.module.css";
   margin-top: 2px;
   margin-left: 12px;
-  padding-left: 8px;
-  border-left: 2px solid #333;
-  background-color: var(--bg1);
-  border-radius: 0 3px 3px 0;
 }
 
 /* ── Effects section ── */

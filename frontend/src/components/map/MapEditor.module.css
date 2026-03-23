@@ -2,7 +2,6 @@
 
 .wrapper {
   font-size: 13px;
-  color: var(--text);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -22,11 +21,8 @@
 }
 
 .sectionTitle {
-  color: var(--accent);
-  border-bottom: 1px solid var(--border);
+  composes: sectionTitle from "../shared/shared.module.css";
   margin-bottom: 6px;
-  padding-bottom: 2px;
-  font-weight: bold;
 }
 
 /* ── Row ── */
@@ -52,7 +48,6 @@
   color: var(--text);
   padding: 3px 6px;
   font-size: 13px;
-  outline: none;
 }
 
 /* ── Buttons ── */
@@ -113,7 +108,6 @@
   background: var(--bg3);
   border: 1px solid var(--border);
   cursor: pointer;
-  box-sizing: border-box;
 }
 
 .toolBtnActive {

@@ -34,10 +34,7 @@
   font-size: 11px;
 }
 .tagDeleteBtn {
-  background: none;
-  border: none;
   color: var(--danger);
-  cursor: pointer;
   padding: 0 2px;
   font-size: 12px;
   line-height: 1;

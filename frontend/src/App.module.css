@@ -4,17 +4,10 @@
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background-color: var(--bg0);
-  font-family: var(--font-mono);
-  font-size: var(--font-base);
-  color: var(--text);
 }
 
 /* ── Loading screen ── */
 .loading {
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: var(--font-base);
   padding: 20px;
   background-color: var(--bg0);
   min-height: 100vh;
@@ -43,11 +36,9 @@
   overflow-y: scroll;
   display: flex;
   flex-direction: column;
-  color: var(--text);
   padding: 8px;
   padding-top: 48px;
   gap: 8px;
-  box-sizing: border-box;
   min-width: 0;
 }
 
@@ -160,7 +151,6 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: 8px;
-  box-sizing: border-box;
   border-radius: 8px 8px 0 0;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: none;
@@ -182,7 +172,6 @@
 
 .systemPage {
   font-size: 13px;
-  color: var(--text);
   padding: 12px 0;
 }
 

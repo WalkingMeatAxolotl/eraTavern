@@ -91,10 +91,8 @@
 .contentTextarea {
   composes: input from "../shared/shared.module.css";
   width: 100%;
-  box-sizing: border-box;
   min-height: 150px;
   resize: vertical;
-  font-family: var(--font-mono);
 }
 
 /* ── Input full width ── */
@@ -102,7 +100,6 @@
 .inputFull {
   composes: input from "../shared/shared.module.css";
   width: 100%;
-  box-sizing: border-box;
 }
 
 .inputW200 {

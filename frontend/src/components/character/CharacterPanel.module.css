@@ -2,7 +2,6 @@
 
 .wrapper {
   font-size: 13px;
-  color: var(--text);
   background-color: var(--bg1);
   padding: 12px;
   border-radius: 4px;
@@ -36,11 +35,8 @@
 }
 
 .sectionTitle {
-  color: var(--accent);
-  border-bottom: 1px solid var(--border);
+  composes: sectionTitle from "../shared/shared.module.css";
   margin-bottom: 4px;
-  padding-bottom: 2px;
-  font-weight: bold;
 }
 
 /* ── Resources ── */

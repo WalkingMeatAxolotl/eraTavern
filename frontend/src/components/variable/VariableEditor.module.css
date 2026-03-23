@@ -139,10 +139,7 @@
 }
 
 .smallBtn {
-  background: none;
-  border: none;
   color: var(--text-dim);
-  cursor: pointer;
   font-size: 12px;
   padding: 2px 4px;
   line-height: 1;

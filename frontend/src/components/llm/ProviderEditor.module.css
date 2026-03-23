@@ -7,11 +7,7 @@
   margin-bottom: 8px;
 }
 
-.title {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 14px;
-}
+.title { composes: editorTitle from "../shared/shared.module.css"; }
 
 .section {
   border-left: 2px solid var(--border-light);
@@ -41,7 +37,6 @@
   border-radius: 3px;
   font-size: 12px;
   width: 100%;
-  box-sizing: border-box;
 }
 
 .inputDisabled {

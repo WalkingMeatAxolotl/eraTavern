@@ -35,6 +35,7 @@
 .w60 { width: 60px; }
 .w70 { width: 70px; }
 .w80 { width: 80px; }
+.w120 { width: 120px; }
 .wAuto { width: auto; }
 .flex1 { flex: 1; }
 .fs11 { font-size: 11px; }
@@ -60,20 +61,16 @@
   color: var(--text);
   border: 1px solid var(--border-dim);
   border-radius: 3px;
-  outline: none;
-  box-sizing: border-box;
 }
 
 .modalInput {
   width: 100%;
   padding: 6px 8px;
   font-size: 12px;
-  box-sizing: border-box;
   background-color: var(--bg2);
   color: var(--text);
   border: 1px solid var(--border-dim);
   border-radius: 4px;
-  outline: none;
 }
 
 /* ── Panel patterns ── */
@@ -90,7 +87,7 @@
 }
 
 /* ── Manager page patterns ── */
-.managerWrapper { font-size: 13px; color: var(--text); padding: 12px 0; }
+.managerWrapper { font-size: 13px; padding: 12px 0; }
 .managerHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .headerBtnRow { display: flex; gap: 6px; }
 .loadingMsg { color: var(--text-dim); padding: 20px; text-align: center; }
@@ -101,7 +98,7 @@
 .catBtn {
   width: 100%; text-align: left; padding: 6px 12px;
   background-color: var(--bg2); color: var(--text-sub);
-  border: none; cursor: pointer; font-size: 13px;
+  font-size: 13px;
   border-radius: 3px; transition: background-color 0.1s, color 0.1s;
 }
 .catBtn:hover { background-color: var(--bg3); color: var(--text); }
@@ -117,7 +114,7 @@
 .sourceLabel { color: var(--text-dim); font-size: 11px; }
 
 /* ── Editor patterns ── */
-.editorWrapper { font-size: 13px; color: var(--text); padding: 12px 0; }
+.editorWrapper { font-size: 13px; padding: 12px 0; }
 .editorWrapperCard { composes: editorWrapper; background-color: var(--bg2); padding: 12px; border-radius: 4px; }
 .editorHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .editorSourceTag { color: var(--accent); font-size: 12px; }
@@ -129,7 +126,7 @@
 /* ── Form patterns ── */
 .formRow { display: flex; gap: 12px; }
 .formGroup { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-.inputFull { width: 100%; box-sizing: border-box; }
+.inputFull { width: 100%; }
 .checkLabel { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
 .opLabel { color: var(--text-sub); font-size: 11px; }
 
@@ -141,26 +138,26 @@
 }
 .removableChip:hover { background-color: var(--bg3); }
 .chipRemoveBtn {
-  background: none; border: none; color: var(--danger);
-  cursor: pointer; padding: 0 2px; font-size: 12px; line-height: 1;
+  color: var(--danger);
+  padding: 0 2px; font-size: 12px; line-height: 1;
 }
 .chipRemoveBtn:hover { color: #ff6666; }
 
 /* ── Tab patterns ── */
 .tabBarUnderline { display: flex; gap: 2px; margin-bottom: 4px; }
 .tabUnderline {
-  padding: 4px 10px; background: none; border: none;
+  padding: 4px 10px;
   border-bottom: 2px solid transparent;
-  color: var(--text-sub); cursor: pointer; font-size: 12px;
+  color: var(--text-sub); font-size: 12px;
 }
 .tabUnderline:hover { color: var(--text); }
 .tabUnderlineActive { color: var(--accent); border-bottom-color: var(--accent); font-weight: bold; }
 
 .tabBarPill { display: flex; gap: 2px; margin-bottom: 4px; }
 .tabPill {
-  padding: 4px 14px; background: transparent; color: var(--text-sub);
+  padding: 4px 14px; color: var(--text-sub);
   border: 1px solid transparent; border-radius: 3px;
-  cursor: pointer; font-size: 12px;
+  font-size: 12px;
 }
 .tabPill:hover { background-color: var(--bg2); }
 .tabPillActive { background-color: var(--bg3); color: var(--accent); border-color: var(--border); font-weight: bold; }
@@ -168,6 +165,12 @@
 /* ── Section patterns ── */
 .borderSection { border-left: 2px solid var(--border-light); padding-left: 10px; margin-bottom: 12px; }
 .sectionLabel { color: var(--text-sub); font-size: 12px; font-weight: bold; margin-bottom: 6px; }
+.sectionTitle {
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2px;
+  font-weight: bold;
+}
 
 /* ── List row with accent bar (dual-view) ── */
 .listItemRow {

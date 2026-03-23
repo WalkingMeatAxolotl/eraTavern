@@ -28,7 +28,6 @@
 
 .selectW200 {
   width: 200px;
-  box-sizing: border-box;
 }
 
 /* ── Section blocks ── */
@@ -86,10 +85,7 @@
 }
 
 .deleteBtn {
-  background: none;
-  border: none;
   color: var(--danger);
-  cursor: pointer;
   font-size: 14px;
   padding: 0 4px;
 }

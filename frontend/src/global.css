@@ -51,6 +51,24 @@
 body {
   background: var(--bg0);
   overflow: hidden;
+  font-size: var(--font-base);
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  font-size: inherit;
+}
+
+input, select, textarea {
+  outline: none;
+  font-family: inherit;
+  color: inherit;
 }
 
 /* ── Scrollbar ── */

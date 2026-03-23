@@ -11,9 +11,7 @@
   height: 100vh;
   padding-top: 40px;
   background-color: var(--bg1);
-  color: var(--text);
   font-size: 13px;
-  box-sizing: border-box;
 }
 
 .header {
@@ -37,7 +35,6 @@
   color: var(--text-sub);
   border: 1px solid var(--border);
   border-radius: 3px;
-  cursor: pointer;
   font-size: 11px;
 }
 
@@ -83,10 +80,7 @@
 /* ── Think block ── */
 
 .thinkToggle {
-  background: none;
-  border: none;
   color: var(--text-dim);
-  cursor: pointer;
   font-size: 11px;
   padding: 2px 0;
   display: flex;
@@ -103,7 +97,6 @@
   background-color: var(--bg3);
   border-radius: 3px;
   font-size: 11px;
-  font-family: var(--font-mono);
   color: var(--text-dim);
   overflow: auto;
   max-height: 200px;
@@ -160,7 +153,6 @@
   border: 1px solid var(--border);
   border-radius: 3px;
   font-size: 12px;
-  font-family: var(--font-mono);
   resize: none;
   min-height: 36px;
   max-height: 100px;

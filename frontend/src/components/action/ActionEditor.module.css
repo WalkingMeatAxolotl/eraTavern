@@ -6,11 +6,7 @@
 
 .header { composes: editorHeader from "../shared/shared.module.css"; }
 
-.title {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 14px;
-}
+.title { composes: editorTitle from "../shared/shared.module.css"; }
 
 .source { composes: editorSourceTag from "../shared/shared.module.css"; }
 
@@ -92,11 +88,8 @@
 /* ── NPC weight modifier panel ── */
 
 .modifierPanel {
+  composes: subPanel from "../shared/shared.module.css";
   flex: 1;
-  padding-left: 8px;
-  border-left: 2px solid #333;
-  background-color: var(--bg1);
-  border-radius: 0 3px 3px 0;
 }
 
 /* ── Hint text ── */

@@ -23,10 +23,7 @@
 }
 
 .moveBtn {
-  background: none;
-  border: none;
   color: var(--text-dim);
-  cursor: pointer;
   font-size: 11px;
   padding: 0 2px;
 }
@@ -75,7 +72,6 @@
   border-radius: 3px;
   font-size: 12px;
   width: 100%;
-  box-sizing: border-box;
 }
 
 .flexRow {
@@ -102,10 +98,8 @@
   border-radius: 3px;
   font-size: 12px;
   width: 100%;
-  box-sizing: border-box;
   min-height: 100px;
   resize: vertical;
-  font-family: var(--font-mono);
 }
 
 /* ── Variable chips ── */
@@ -136,7 +130,6 @@
   border-radius: 2px;
   cursor: pointer;
   font-size: 11px;
-  font-family: var(--font-mono);
 }
 
 /* ── Delete ── */

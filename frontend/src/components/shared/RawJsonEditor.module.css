@@ -52,12 +52,10 @@
   caret-color: var(--text);
   background-color: transparent;
   border: none;
-  outline: none;
   resize: none;
   overflow: hidden;
   white-space: pre;
   tab-size: 2;
-  box-sizing: border-box;
 }
 
 .codeError { color: var(--danger); font-size: 11px; }

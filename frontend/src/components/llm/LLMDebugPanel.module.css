@@ -5,7 +5,6 @@
   border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 11px;
-  font-family: var(--font-mono);
   overflow: hidden;
 }
 

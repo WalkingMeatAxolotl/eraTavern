@@ -25,7 +25,6 @@
 .textarea {
   composes: input from "../shared/shared.module.css";
   flex: 1;
-  box-sizing: border-box;
   min-height: 32px;
   resize: vertical;
 }
@@ -33,7 +32,6 @@
 .textareaFull {
   composes: input from "../shared/shared.module.css";
   width: 100%;
-  box-sizing: border-box;
   min-height: 32px;
   resize: vertical;
   margin-bottom: 2px;

@@ -9,11 +9,7 @@
   margin-bottom: 8px;
 }
 
-.title {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 14px;
-}
+.title { composes: editorTitle from "../shared/shared.module.css"; }
 
 /* ── Tab bar ── */
 
@@ -39,11 +35,8 @@
 }
 
 .sectionTitle {
-  color: var(--accent);
-  border-bottom: 1px solid var(--border);
+  composes: sectionTitle from "../shared/shared.module.css";
   margin-bottom: 6px;
-  padding-bottom: 2px;
-  font-weight: bold;
 }
 
 .sectionTitleRow {
@@ -75,7 +68,6 @@
   border-radius: 3px;
   padding: 3px 6px;
   font-size: 13px;
-  outline: none;
 }
 
 .inputReadonly {
@@ -89,7 +81,6 @@
   border-radius: 3px;
   padding: 3px 6px;
   font-size: 13px;
-  outline: none;
   cursor: pointer;
 }
 
@@ -100,11 +91,9 @@
   border-radius: 3px;
   padding: 3px 6px;
   font-size: 12px;
-  outline: none;
   width: 100%;
   min-height: 50px;
   resize: vertical;
-  box-sizing: border-box;
 }
 
 /* ── Buttons ── */
@@ -124,10 +113,7 @@
 .btnNeutral { color: var(--text-sub); }
 
 .btnInline {
-  background: none;
-  border: none;
   color: var(--danger);
-  cursor: pointer;
   font-size: 12px;
 }
 
@@ -251,13 +237,13 @@
 .actionBar { composes: actionBarBordered from "../shared/shared.module.css"; }
 
 .msgSuccess {
-  color: var(--success);
+  composes: statusSuccess from "../shared/shared.module.css";
   margin-left: 8px;
   align-self: center;
 }
 
 .msgError {
-  color: var(--danger);
+  composes: statusError from "../shared/shared.module.css";
   margin-left: 8px;
   align-self: center;
 }
@@ -318,9 +304,9 @@
 
 /* ── Misc widths ── */
 
-.w60 { width: 60px; }
-.w70 { width: 70px; }
-.w80 { width: 80px; }
-.w120 { width: 120px; }
-.wAuto { width: auto; }
-.fs11 { font-size: 11px; }
+.w60 { composes: w60 from "../shared/shared.module.css"; }
+.w70 { composes: w70 from "../shared/shared.module.css"; }
+.w80 { composes: w80 from "../shared/shared.module.css"; }
+.w120 { composes: w120 from "../shared/shared.module.css"; }
+.wAuto { composes: wAuto from "../shared/shared.module.css"; }
+.fs11 { composes: fs11 from "../shared/shared.module.css"; }
