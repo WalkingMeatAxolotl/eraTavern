@@ -14,13 +14,9 @@
 }
 
 .listRow {
-  padding: 6px 8px;
+  padding: 7px 8px;
   min-height: 32px;
   border-radius: 2px;
-  border-bottom: 1px solid var(--border-dim);
-}
-.listRow:last-child {
-  border-bottom: none;
 }
 .listRowOdd {
   background-color: var(--bg1);
@@ -205,7 +201,7 @@
 /* ── Variable help panel ── */
 .varHelpPanel {
   margin-top: 6px; padding: 8px;
-  background-color: var(--bg3); border: 1px solid var(--border);
+  background-color: var(--bg3);
   border-radius: 3px; max-height: 300px; overflow-y: auto;
 }
 .varHelpTitle { color: var(--accent); font-size: 12px; font-weight: bold; margin-bottom: 4px; }

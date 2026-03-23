@@ -202,8 +202,7 @@
 /* ── Divider ── */
 
 .divider {
-  height: 1px;
-  background-color: var(--border-dim);
+  height: 8px;
 }
 
 /* ── Loading ── */

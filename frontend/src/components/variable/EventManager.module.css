@@ -177,24 +177,18 @@
 /* ── Condition row bg ── */
 
 .condRow {
-  padding: 3px 4px;
+  padding: 4px 4px;
   border-radius: 2px;
-}
-
-.condRow:last-child {
-  border-bottom: none;
 }
 
 .condRowOdd {
   composes: condRow;
   background-color: var(--bg1);
-  border-bottom: 1px solid var(--border-dim);
 }
 
 .condRowEven {
   composes: condRow;
   background-color: var(--bg2);
-  border-bottom: 1px solid var(--border-dim);
 }
 
 /* ── Event mode label ── */

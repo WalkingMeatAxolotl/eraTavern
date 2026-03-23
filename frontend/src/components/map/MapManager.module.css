@@ -43,12 +43,12 @@
 
 .createForm {
   background: var(--bg2);
-  border: 1px solid var(--border);
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   max-width: 400px;
+  border-radius: 3px;
 }
 
 .createTitle {

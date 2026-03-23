@@ -138,7 +138,6 @@
 .expandedPanel {
   padding: 10px 12px;
   background-color: var(--bg0);
-  border-top: 1px solid var(--border-dim);
   font-size: 11px;
   display: flex;
   flex-direction: column;

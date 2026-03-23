@@ -11,7 +11,7 @@ import { CondType, EF, CondTarget, TargetType, ClothingState, Season, DayOfWeek 
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { useEditorContext } from "./EditorContext";
 import type { MapInfo } from "./EditorContext";
-import { btn, listRowStyle } from "./styles";
+import { btnClass } from "./buttons";
 import s from "./ConditionEditor.module.css";
 import sh from "./shared.module.css";
 
@@ -141,7 +141,7 @@ export function ConditionItemEditor({
         <button
           onClick={toggleNot}
           className={clsx(s.negBtn, isNot && s.negBtnActive)}
-          style={btn("default", "sm")}
+          className={btnClass("default", "sm")}
           title={isNot ? t("cond.negUntoggle") : t("cond.negToggle")}
         >
           {isNot ? t("cond.negFalse") : t("cond.negTrue")}
@@ -157,7 +157,7 @@ export function ConditionItemEditor({
         disabled={disabled}
       />
       {!disabled && (
-        <button className="ae-del-btn" onClick={onRemove} style={btn("del", "sm")}>
+        <button onClick={onRemove} className={btnClass("del", "sm")}>
           x
         </button>
       )}
@@ -217,31 +217,31 @@ function ConditionGroupEditor({
         <div className={s.groupActions}>
           {!disabled && depth + 1 < MAX_UI_DEPTH && (
             <>
-              <button className="ae-add-btn" onClick={addLeaf} style={btn("add", "sm")}>
+              <button onClick={addLeaf} className={btnClass("add", "sm")}>
                 [{t("cond.addCond")}]
               </button>
-              <button className="ae-add-btn" onClick={addOr} style={btn("add", "sm")}>
+              <button onClick={addOr} className={btnClass("add", "sm")}>
                 [{t("cond.addOr")}]
               </button>
-              <button className="ae-add-btn" onClick={addAnd} style={btn("add", "sm")}>
+              <button onClick={addAnd} className={btnClass("add", "sm")}>
                 [{t("cond.addAnd")}]
               </button>
             </>
           )}
           {!disabled && depth + 1 >= MAX_UI_DEPTH && (
-            <button className="ae-add-btn" onClick={addLeaf} style={btn("add", "sm")}>
+            <button onClick={addLeaf} className={btnClass("add", "sm")}>
               [{t("cond.addCond")}]
             </button>
           )}
           {!disabled && (
-            <button className="ae-del-btn" onClick={onRemove} style={btn("del", "sm")}>
+            <button onClick={onRemove} className={btnClass("del", "sm")}>
               x
             </button>
           )}
         </div>
       </div>
       {items.map((child, idx) => (
-        <div key={idx} className={s.groupRow} style={listRowStyle(idx, idx === items.length - 1)}>
+        <div key={idx} className={clsx(s.groupRow, sh.listRow, idx % 2 === 0 ? sh.listRowOdd : sh.listRowEven)}>
           <ConditionItemEditor
             item={child}
             onChange={(c) => updateChild(idx, c)}

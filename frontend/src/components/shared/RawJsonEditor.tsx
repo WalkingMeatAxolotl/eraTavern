@@ -4,7 +4,7 @@ import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { readRawFile, writeRawFile } from "../../api/client";
 import { ConfirmModal } from "./Modal";
-import { btn } from "./styles";
+import { btnClass } from "./buttons";
 import s from "./RawJsonEditor.module.css";
 
 // ── Strip internal fields for editor-level display ──
@@ -250,10 +250,10 @@ export function RawJsonView({
 
       {/* Action bar */}
       <div className={s.jsonActionBar}>
-        <button onClick={onClose} style={btn("neutral")}>
+        <button onClick={onClose} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
-        <button onClick={() => setShowConfirm(true)} disabled={saving} style={{ ...btn("danger"), ...(saving && { cursor: "not-allowed" }) }}>
+        <button onClick={() => setShowConfirm(true)} disabled={saving} className={btnClass("danger")}>
           [{t("json.saveAndReload")}]
         </button>
         {message && (
@@ -332,13 +332,13 @@ export function RawJsonPanel({
     <div className={s.jsonView}>
       <div className={s.jsonPanelHeader}>
         <span className={s.jsonTitle}>== JSON ==</span>
-        <button onClick={onToggle} style={btn("neutral")}>
+        <button onClick={onToggle} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
       <CodeEditor value={text} onChange={handleChange} error={error} />
       <div className={s.jsonActionBar}>
-        <button onClick={handleSave} disabled={saving} style={{ ...btn("create"), ...(saving && { cursor: "not-allowed" }) }}>
+        <button onClick={handleSave} disabled={saving} className={btnClass("create")}>
           [{t("btn.confirm")}]
         </button>
         {message && (
