@@ -1,33 +1,33 @@
 /* ── Theme: CSS Custom Properties ── */
 :root {
-  /* Backgrounds (pure grey, no blue tint) */
+  /* Backgrounds — elevation = brightness (L0 darkest → L3 lightest) */
   --bg0: #0c0c0c;
-  --bg1: #141414;
-  --bg2: #1c1c1c;
-  --bg3: #242424;
-  --bg-float: #111111ee;
+  --bg1: #151515;
+  --bg2: #1e1e1e;
+  --bg3: #272727;
+  --bg-float: #131313ee;
 
   /* Borders */
-  --border: #2a2a2a;
-  --border-light: #383838;
-  --border-dim: #1e1e1e;
+  --border: #2e2e2e;
+  --border-light: #3d3d3d;
+  --border-dim: #222;
 
-  /* Text */
+  /* Text — primary ≥15:1, secondary ≥7:1, tertiary ≥4.5:1 */
   --text: #d8d8d8;
   --text-sub: #999;
-  --text-dim: #666;
-  --text-faint: #444;
+  --text-dim: #808080;
+  --text-faint: #555;
 
   /* Accent (orange) */
   --accent: #e8a040;
   --accent-dim: #b07830;
   --accent-bg: #1a1408;
 
-  /* Semantic */
-  --danger: #c05050;
+  /* Semantic — lightened for dark backgrounds */
+  --danger: #d06060;
   --danger-bg: #1a0808;
-  --success: #5a9a5a;
-  --success-dim: #3a6a3a;
+  --success: #6aaa6a;
+  --success-dim: #4a8a4a;
 
   /* Action type colors (data layer) */
   --action-move: #0ff;
@@ -36,9 +36,19 @@
 
   /* Typography */
   --font-mono: "Consolas", "Menlo", "Monaco", "Courier New", monospace;
+  --font-lg: 18px;
+  --font-md: 15px;
   --font-base: 13px;
   --font-sm: 12px;
   --font-xs: 11px;
+
+  /* Spacing — 4px base grid */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
 }
 
 /* ── Global Reset ── */
@@ -52,6 +62,7 @@ body {
   background: var(--bg0);
   overflow: hidden;
   font-size: var(--font-base);
+  line-height: 20px;
   color: var(--text);
   font-family: var(--font-mono);
 }
@@ -119,4 +130,13 @@ input, select, textarea {
 @keyframes sidebarSlideOut {
   from { transform: translateY(0); }
   to { transform: translateY(-100%); }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.1s !important;
+  }
 }

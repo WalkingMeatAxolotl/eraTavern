@@ -1,7 +1,7 @@
 .input {
-  padding: 4px 8px;
+  padding: 6px 8px;
+  min-height: 32px;
   background-color: var(--bg3);
-  color: var(--text);
   border: 1px solid var(--border-light);
   border-radius: 3px;
   font-size: 12px;
@@ -14,7 +14,8 @@
 }
 
 .listRow {
-  padding: 3px 4px;
+  padding: 6px 8px;
+  min-height: 32px;
   border-radius: 2px;
   border-bottom: 1px solid var(--border-dim);
 }
@@ -46,8 +47,8 @@
 .errorText { color: var(--danger); font-size: 12px; }
 
 /* ── Title patterns ── */
-.editorTitle { color: var(--accent); font-weight: bold; font-size: 14px; }
-.modalTitle { color: var(--text); font-size: 14px; font-weight: bold; }
+.editorTitle { color: var(--accent); font-weight: bold; font-size: var(--font-lg); line-height: 24px; }
+.modalTitle { color: var(--text); font-size: var(--font-md); font-weight: 600; line-height: 20px; }
 
 /* ── Layout utilities ── */
 .actionsRow { display: flex; gap: 8px; justify-content: flex-end; }
@@ -55,10 +56,10 @@
 /* ── Input variants ── */
 .fieldInput {
   width: 100%;
-  padding: 4px 6px;
+  padding: 6px 8px;
+  min-height: 32px;
   font-size: 11px;
   background-color: var(--bg1);
-  color: var(--text);
   border: 1px solid var(--border-dim);
   border-radius: 3px;
 }
@@ -66,9 +67,9 @@
 .modalInput {
   width: 100%;
   padding: 6px 8px;
+  min-height: 32px;
   font-size: 12px;
   background-color: var(--bg2);
-  color: var(--text);
   border: 1px solid var(--border-dim);
   border-radius: 4px;
 }
@@ -105,7 +106,8 @@
 .catArrow { display: inline-block; width: 1.2em; text-align: center; font-size: 11px; }
 .chipGrid { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; }
 .entityChip {
-  padding: 4px 10px; background-color: var(--bg1); color: var(--text);
+  padding: 6px 12px; min-height: 32px;
+  background-color: var(--bg1);
   border: 1px solid var(--border); border-radius: 3px;
   cursor: pointer; font-size: 12px;
   transition: background-color 0.15s, border-color 0.15s;
@@ -139,14 +141,16 @@
 .removableChip:hover { background-color: var(--bg3); }
 .chipRemoveBtn {
   color: var(--danger);
-  padding: 0 2px; font-size: 12px; line-height: 1;
+  padding: 0 4px; font-size: 12px; line-height: 1;
+  min-width: 24px; min-height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 .chipRemoveBtn:hover { color: #ff6666; }
 
 /* ── Tab patterns ── */
 .tabBarUnderline { display: flex; gap: 2px; margin-bottom: 4px; }
 .tabUnderline {
-  padding: 4px 10px;
+  padding: 6px 12px; min-height: 32px;
   border-bottom: 2px solid transparent;
   color: var(--text-sub); font-size: 12px;
 }
@@ -155,7 +159,8 @@
 
 .tabBarPill { display: flex; gap: 2px; margin-bottom: 4px; }
 .tabPill {
-  padding: 4px 14px; color: var(--text-sub);
+  padding: 6px 14px; min-height: 32px;
+  color: var(--text-sub);
   border: 1px solid transparent; border-radius: 3px;
   font-size: 12px;
 }
@@ -164,12 +169,14 @@
 
 /* ── Section patterns ── */
 .borderSection { border-left: 2px solid var(--border-light); padding-left: 10px; margin-bottom: 12px; }
-.sectionLabel { color: var(--text-sub); font-size: 12px; font-weight: bold; margin-bottom: 6px; }
+.sectionLabel { color: var(--text-sub); font-size: var(--font-md); font-weight: 600; line-height: 20px; margin-bottom: 6px; }
 .sectionTitle {
   color: var(--accent);
+  font-size: var(--font-md);
+  font-weight: 600;
+  line-height: 20px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 2px;
-  font-weight: bold;
 }
 
 /* ── List row with accent bar (dual-view) ── */

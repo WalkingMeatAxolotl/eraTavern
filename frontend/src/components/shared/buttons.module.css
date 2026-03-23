@@ -8,16 +8,19 @@
 
 /* Sizes */
 .sm {
-  padding: 2px 8px;
+  padding: 4px 10px;
   font-size: 11px;
+  min-height: 28px;
 }
 .md {
-  padding: 4px 12px;
+  padding: 6px 14px;
   font-size: 13px;
+  min-height: 32px;
 }
 .lg {
-  padding: 5px 16px;
+  padding: 8px 18px;
   font-size: 13px;
+  min-height: 36px;
 }
 
 /* Types */
