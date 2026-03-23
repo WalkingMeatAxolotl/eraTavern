@@ -30,7 +30,4 @@
 .fs11 { composes: fs11 from "../shared/shared.module.css"; }
 
 /* "per" label spans */
-.perSpan {
-  color: var(--text-sub);
-  font-size: 11px;
-}
+.perSpan { composes: opLabel from "../shared/shared.module.css"; }

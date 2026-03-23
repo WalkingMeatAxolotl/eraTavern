@@ -1,19 +1,10 @@
 /* ── ItemEditor ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: editorWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
+.header { composes: editorHeader from "../shared/shared.module.css"; }
 
 .title {
   color: var(--accent);
@@ -21,28 +12,16 @@
   font-size: 14px;
 }
 
-.sourceLabel {
-  color: var(--accent);
-  font-size: 12px;
-}
+.sourceLabel { composes: editorSourceTag from "../shared/shared.module.css"; }
 
 /* ── Form layout ── */
 
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
+.form { composes: formGroup from "../shared/shared.module.css"; }
 
-.row2 {
-  display: flex;
-  gap: 12px;
-}
+.row2 { composes: formRow from "../shared/shared.module.css"; }
 
 .row3 {
-  display: flex;
-  gap: 12px;
+  composes: formRow from "../shared/shared.module.css";
   align-items: flex-end;
 }
 
@@ -61,25 +40,12 @@
 }
 
 .tagBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
+  composes: removableChip from "../shared/shared.module.css";
   padding: 2px 8px;
-  background-color: var(--bg2);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  font-size: 12px;
+  gap: 2px;
 }
 
-.tagRemoveBtn {
-  background: none;
-  border: none;
-  color: var(--danger);
-  cursor: pointer;
-  padding: 0 2px;
-  font-size: 12px;
-  line-height: 1;
-}
+.tagRemoveBtn { composes: chipRemoveBtn from "../shared/shared.module.css"; }
 
 .tagPoolBtn {
   padding: 2px 8px;
@@ -111,12 +77,7 @@
 
 /* ── Checkbox label ── */
 
-.checkLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
+.checkLabel { composes: checkLabel from "../shared/shared.module.css"; }
 
 .checkText {
   font-size: 12px;
@@ -124,11 +85,7 @@
 
 /* ── Action bar ── */
 
-.actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+.actions { composes: actionBar from "../shared/shared.module.css"; }
 
 .message {
   font-size: 12px;

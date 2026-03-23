@@ -6,10 +6,7 @@
 .w70 { composes: w70 from "../shared/shared.module.css"; }
 
 /* Operator / label spans between inputs */
-.opSpan {
-  color: var(--text-sub);
-  font-size: 11px;
-}
+.opSpan { composes: opLabel from "../shared/shared.module.css"; }
 
 /* V/% toggle button — inherits .input look but clickable */
 .toggleBtn {

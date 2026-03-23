@@ -1,17 +1,8 @@
 /* ── CharacterManager ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: managerWrapper from "../shared/shared.module.css"; }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
+.header { composes: managerHeader from "../shared/shared.module.css"; }
 
 .title {
   color: var(--accent);
@@ -80,8 +71,4 @@
 
 /* ── Loading ── */
 
-.loading {
-  color: var(--text-dim);
-  padding: 20px;
-  text-align: center;
-}
+.loading { composes: loadingMsg from "../shared/shared.module.css"; }

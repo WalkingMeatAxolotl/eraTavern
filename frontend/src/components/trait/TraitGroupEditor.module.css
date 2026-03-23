@@ -1,21 +1,10 @@
 /* ── TraitGroupEditor ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  background-color: var(--bg2);
-  padding: 12px;
-  border-radius: 4px;
-}
+.wrapper { composes: editorWrapperCard from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
+.header { composes: editorHeader from "../shared/shared.module.css"; }
 
 /* ── Form row ── */
 
@@ -51,11 +40,7 @@
 /* ── Exclusive checkbox ── */
 
 .checkLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  font-size: 12px;
+  composes: checkLabel from "../shared/shared.module.css";
   color: var(--text-sub);
 }
 
@@ -75,36 +60,13 @@
   margin-bottom: 8px;
 }
 
-.memberChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 1px 6px;
-  background-color: var(--bg2);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  font-size: 12px;
-}
+.memberChip { composes: removableChip from "../shared/shared.module.css"; gap: 2px; }
 
-.removeBtn {
-  background: none;
-  border: none;
-  color: var(--danger);
-  cursor: pointer;
-  padding: 0 2px;
-  font-size: 12px;
-  line-height: 1;
-}
+.removeBtn { composes: chipRemoveBtn from "../shared/shared.module.css"; }
 
 /* ── Action bar ── */
 
-.actionBar {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-}
+.actionBar { composes: actionBarBordered from "../shared/shared.module.css"; }
 
 /* ── Generic button (replaces old btnStyle) ── */
 

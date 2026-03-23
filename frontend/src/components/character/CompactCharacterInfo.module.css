@@ -17,21 +17,10 @@
 }
 
 .tab {
-  padding: 4px 10px;
-  background-color: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: normal;
-  color: var(--text-sub);
+  composes: tabUnderline from "../shared/shared.module.css";
 }
 
-.tabActive {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-  font-weight: bold;
-}
+.tabActive { composes: tabUnderlineActive from "../shared/shared.module.css"; }
 
 .tabDetail {
   margin-left: auto;

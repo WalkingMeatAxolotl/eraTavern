@@ -1,19 +1,11 @@
 /* ── CharacterEditor ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  background-color: var(--bg2);
-  padding: 12px;
-  border-radius: 4px;
-}
+.wrapper { composes: editorWrapperCard from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  composes: editorHeader from "../shared/shared.module.css";
   margin-bottom: 8px;
 }
 
@@ -26,27 +18,18 @@
 /* ── Tab bar ── */
 
 .tabBar {
-  display: flex;
+  composes: tabBarPill from "../shared/shared.module.css";
   gap: 4px;
   margin-bottom: 12px;
 }
 
 .tab {
-  padding: 4px 14px;
-  background-color: transparent;
-  color: var(--text-sub);
-  border: 1px solid transparent;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
+  composes: tabPill from "../shared/shared.module.css";
   font-weight: normal;
 }
 
 .tabActive {
-  background-color: var(--bg3);
-  color: var(--accent);
-  border-color: var(--border);
-  font-weight: bold;
+  composes: tabPillActive from "../shared/shared.module.css";
 }
 
 /* ── Section ── */
@@ -148,15 +131,7 @@
   font-size: 12px;
 }
 
-.btnRemoveChip {
-  background: none;
-  border: none;
-  color: var(--danger);
-  cursor: pointer;
-  padding: 0 2px;
-  font-size: 12px;
-  line-height: 1;
-}
+.btnRemoveChip { composes: chipRemoveBtn from "../shared/shared.module.css"; }
 
 .btnRemoveItem {
   padding: 0 4px;
@@ -230,16 +205,7 @@
 
 /* ── Traits ── */
 
-.traitChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 1px 6px;
-  background-color: var(--bg2);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  font-size: 12px;
-}
+.traitChip { composes: removableChip from "../shared/shared.module.css"; gap: 2px; }
 
 .traitList {
   display: flex;
@@ -282,13 +248,7 @@
 
 /* ── Action bar ── */
 
-.actionBar {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-}
+.actionBar { composes: actionBarBordered from "../shared/shared.module.css"; }
 
 .msgSuccess {
   color: var(--success);

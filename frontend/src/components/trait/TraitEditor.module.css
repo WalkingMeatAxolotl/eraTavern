@@ -1,47 +1,24 @@
 /* ── TraitEditor ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: editorWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
+.header { composes: editorHeader from "../shared/shared.module.css"; }
 
-.sourceTag {
-  color: var(--accent);
-  font-size: 12px;
-}
+.sourceTag { composes: editorSourceTag from "../shared/shared.module.css"; }
 
 /* ── Form layout ── */
 
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
+.formGroup { composes: formGroup from "../shared/shared.module.css"; }
 
-.row2 {
-  display: flex;
-  gap: 12px;
-}
+.row2 { composes: formRow from "../shared/shared.module.css"; }
 
 .col {
   flex: 1;
 }
 
-.fullWidth {
-  width: 100%;
-  box-sizing: border-box;
-}
+.fullWidth { composes: inputFull from "../shared/shared.module.css"; }
 
 .textarea {
   composes: fullWidth;
@@ -60,11 +37,7 @@
   margin-bottom: 16px;
 }
 
-.sectionLabel {
-  color: var(--text-sub);
-  font-size: 12px;
-  margin-bottom: 6px;
-}
+.sectionLabel { composes: sectionLabel from "../shared/shared.module.css"; }
 
 .borderPanel {
   border-left: 2px solid var(--border-light);
@@ -147,18 +120,8 @@
 
 /* ── Action bar ── */
 
-.actionBar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+.actionBar { composes: actionBar from "../shared/shared.module.css"; }
 
-.msgSuccess {
-  color: var(--success);
-  font-size: 12px;
-}
+.msgSuccess { composes: statusSuccess from "../shared/shared.module.css"; }
 
-.msgError {
-  color: var(--danger);
-  font-size: 12px;
-}
+.msgError { composes: statusError from "../shared/shared.module.css"; }

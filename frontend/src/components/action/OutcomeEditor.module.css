@@ -222,10 +222,7 @@
 
 /* ── Weight label ── */
 
-.weightLabel {
-  color: var(--text-sub);
-  font-size: 11px;
-}
+.weightLabel { composes: opLabel from "../shared/shared.module.css"; }
 
 /* ── Template section ── */
 

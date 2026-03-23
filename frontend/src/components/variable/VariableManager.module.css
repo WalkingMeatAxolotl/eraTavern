@@ -1,17 +1,11 @@
 /* ── VariableManager ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: managerWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  composes: managerHeader from "../shared/shared.module.css";
   margin-bottom: 10px;
 }
 
@@ -26,35 +20,15 @@
   gap: 2px;
 }
 
-.btnRow {
-  display: flex;
-  gap: 6px;
-}
+.btnRow { composes: headerBtnRow from "../shared/shared.module.css"; }
 
 /* ── By Tag View ── */
 
-.tagContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.tagContainer { composes: catList from "../shared/shared.module.css"; }
 
 .catBtn {
-  width: 100%;
-  text-align: left;
+  composes: catBtn from "../shared/shared.module.css";
   padding: 5px 12px;
-  background-color: var(--bg2);
-  color: var(--text-sub);
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  border-radius: 3px;
-  transition: background-color 0.1s, color 0.1s;
-}
-
-.catBtn:hover {
-  background-color: var(--bg3);
-  color: var(--text);
 }
 
 .catBtnDim {
@@ -62,12 +36,7 @@
   color: var(--text-dim);
 }
 
-.catArrow {
-  display: inline-block;
-  width: 1.2em;
-  text-align: center;
-  font-size: 11px;
-}
+.catArrow { composes: catArrow from "../shared/shared.module.css"; }
 
 .catCount {
   color: var(--text-dim);
@@ -76,22 +45,11 @@
 }
 
 .itemGrid {
-  display: flex;
-  flex-wrap: wrap;
+  composes: chipGrid from "../shared/shared.module.css";
   gap: 6px;
-  padding: 6px 8px;
 }
 
-.item {
-  padding: 4px 10px;
-  background-color: var(--bg1);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.15s, border-color 0.15s;
-}
+.item { composes: entityChip from "../shared/shared.module.css"; }
 
 .item:hover {
   background-color: var(--bg3);
@@ -199,8 +157,4 @@
   padding: 4px 0;
 }
 
-.loading {
-  color: var(--text-dim);
-  padding: 20px;
-  text-align: center;
-}
+.loading { composes: loadingMsg from "../shared/shared.module.css"; }

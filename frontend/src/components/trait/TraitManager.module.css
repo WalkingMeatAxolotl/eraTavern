@@ -1,19 +1,10 @@
 /* ── TraitManager ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: managerWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
+.header { composes: managerHeader from "../shared/shared.module.css"; }
 
 .title {
   color: var(--accent);
@@ -21,45 +12,17 @@
   font-size: 14px;
 }
 
-.btnRow {
-  display: flex;
-  gap: 6px;
-}
+.btnRow { composes: headerBtnRow from "../shared/shared.module.css"; }
 
 /* ── Category list ── */
 
-.catContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.catContainer { composes: catList from "../shared/shared.module.css"; }
 
 /* ── Category button ── */
 
-.catBtn {
-  width: 100%;
-  text-align: left;
-  padding: 6px 12px;
-  background-color: var(--bg2);
-  color: var(--text-sub);
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  border-radius: 3px;
-  transition: background-color 0.1s, color 0.1s;
-}
+.catBtn { composes: catBtn from "../shared/shared.module.css"; }
 
-.catBtn:hover {
-  background-color: var(--bg3);
-  color: var(--text);
-}
-
-.catArrow {
-  display: inline-block;
-  width: 1.2em;
-  text-align: center;
-  font-size: 11px;
-}
+.catArrow { composes: catArrow from "../shared/shared.module.css"; }
 
 /* ── Category content ── */
 
@@ -249,8 +212,4 @@
 
 /* ── Loading ── */
 
-.loading {
-  color: var(--text-dim);
-  padding: 20px;
-  text-align: center;
-}
+.loading { composes: loadingMsg from "../shared/shared.module.css"; }

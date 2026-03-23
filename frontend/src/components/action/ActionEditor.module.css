@@ -1,19 +1,10 @@
 /* ── ActionEditor ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: editorWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
+.header { composes: editorHeader from "../shared/shared.module.css"; }
 
 .title {
   color: var(--accent);
@@ -21,10 +12,7 @@
   font-size: 14px;
 }
 
-.source {
-  color: var(--accent);
-  font-size: 12px;
-}
+.source { composes: editorSourceTag from "../shared/shared.module.css"; }
 
 /* ── Section (uses CSS vars --sec-color, --sec-bg) ── */
 
@@ -59,10 +47,7 @@
 
 /* ── Field layout ── */
 
-.fieldRow {
-  display: flex;
-  gap: 12px;
-}
+.fieldRow { composes: formRow from "../shared/shared.module.css"; }
 
 .fieldCol {
   flex: 1;
@@ -75,15 +60,11 @@
 }
 
 .fieldRowAlignEnd {
-  display: flex;
-  gap: 12px;
+  composes: formRow from "../shared/shared.module.css";
   align-items: flex-end;
 }
 
-.inputFull {
-  width: 100%;
-  box-sizing: border-box;
-}
+.inputFull { composes: inputFull from "../shared/shared.module.css"; }
 
 .inputTimeCost {
   width: 80px;
@@ -96,10 +77,7 @@
 /* ── Checkbox label ── */
 
 .checkboxLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
+  composes: checkLabel from "../shared/shared.module.css";
   padding-bottom: 4px;
 }
 
@@ -129,10 +107,7 @@
   margin-top: 2px;
 }
 
-.emptyMsg {
-  color: var(--text-dim);
-  font-size: 12px;
-}
+.emptyMsg { composes: emptyMsg from "../shared/shared.module.css"; }
 
 /* ── Button group ── */
 
@@ -152,9 +127,7 @@
 /* ── Action bar ── */
 
 .actionBar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  composes: actionBar from "../shared/shared.module.css";
   padding: 4px 0;
   border-top: 1px solid var(--border);
   margin-top: 4px;

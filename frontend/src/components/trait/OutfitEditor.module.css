@@ -1,42 +1,22 @@
 /* ── OutfitEditor ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: editorWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
+.header { composes: editorHeader from "../shared/shared.module.css"; }
 
 /* ── Form layout ── */
 
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
+.formGroup { composes: formGroup from "../shared/shared.module.css"; }
 
-.row2 {
-  display: flex;
-  gap: 12px;
-}
+.row2 { composes: formRow from "../shared/shared.module.css"; }
 
 .col {
   flex: 1;
 }
 
-.fullWidth {
-  width: 100%;
-  box-sizing: border-box;
-}
+.fullWidth { composes: inputFull from "../shared/shared.module.css"; }
 
 .textarea {
   composes: fullWidth;
@@ -53,12 +33,8 @@
 }
 
 .checkLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
+  composes: checkLabel from "../shared/shared.module.css";
   color: var(--text-sub);
-  font-size: 12px;
 }
 
 /* ── Slots editor ── */
@@ -127,9 +103,7 @@
 /* ── Action bar ── */
 
 .actionBar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  composes: actionBar from "../shared/shared.module.css";
   flex-wrap: wrap;
 }
 
@@ -162,7 +136,4 @@
   font-size: 12px;
 }
 
-.msgError {
-  color: var(--danger);
-  font-size: 12px;
-}
+.msgError { composes: statusError from "../shared/shared.module.css"; }

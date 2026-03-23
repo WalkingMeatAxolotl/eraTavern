@@ -1,25 +1,15 @@
 /* ── VariableEditor ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: editorWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
+.header { composes: editorHeader from "../shared/shared.module.css"; }
 
 /* ── Field rows ── */
 
 .fieldRow {
-  display: flex;
-  gap: 12px;
+  composes: formRow from "../shared/shared.module.css";
   margin-bottom: 12px;
 }
 
@@ -233,22 +223,12 @@
 
 /* ── Action bar ── */
 
-.actionBar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 12px;
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-}
+.actionBar { composes: actionBarBordered from "../shared/shared.module.css"; }
 
 /* ── Checkbox label ── */
 
 .checkLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  composes: checkLabel from "../shared/shared.module.css";
   color: var(--text-sub);
 }
 

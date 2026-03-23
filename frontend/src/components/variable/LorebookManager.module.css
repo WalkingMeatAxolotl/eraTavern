@@ -1,32 +1,19 @@
 /* ── LorebookManager ── */
 
-.wrapper {
-  font-size: 13px;
-  color: var(--text);
-  padding: 12px 0;
-}
+.wrapper { composes: managerWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  composes: managerHeader from "../shared/shared.module.css";
   margin-bottom: 8px;
 }
 
-.btnRow {
-  display: flex;
-  gap: 6px;
-}
+.btnRow { composes: headerBtnRow from "../shared/shared.module.css"; }
 
 /* ── List ── */
 
-.listColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.listColumn { composes: catList from "../shared/shared.module.css"; }
 
 .listItem {
   display: flex;
@@ -66,18 +53,9 @@
 
 /* ── Editor section ── */
 
-.section {
-  border-left: 2px solid var(--border-light);
-  padding-left: 10px;
-  margin-bottom: 12px;
-}
+.section { composes: borderSection from "../shared/shared.module.css"; }
 
-.sectionTitle {
-  color: var(--text-sub);
-  font-size: 12px;
-  font-weight: bold;
-  margin-bottom: 6px;
-}
+.sectionTitle { composes: sectionLabel from "../shared/shared.module.css"; }
 
 /* ── Keywords ── */
 
@@ -89,25 +67,13 @@
 }
 
 .keywordChip {
+  composes: removableChip from "../shared/shared.module.css";
   padding: 2px 8px;
-  background-color: var(--bg2);
   color: var(--accent);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
   gap: 4px;
 }
 
-.keywordRemove {
-  background: none;
-  border: none;
-  color: var(--danger);
-  cursor: pointer;
-  font-size: 11px;
-  padding: 0;
-}
+.keywordRemove { composes: chipRemoveBtn from "../shared/shared.module.css"; font-size: 11px; }
 
 .keywordInputRow {
   display: flex;
@@ -147,16 +113,10 @@
 /* ── Action bar ── */
 
 .actionBar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  composes: actionBar from "../shared/shared.module.css";
   margin-top: 12px;
 }
 
 /* ── Empty / Message ── */
 
-.emptyMsg {
-  color: var(--text-dim);
-  font-size: 12px;
-  padding: 8px 0;
-}
+.emptyMsg { composes: emptyMsg from "../shared/shared.module.css"; }

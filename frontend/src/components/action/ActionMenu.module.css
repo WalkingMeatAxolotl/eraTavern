@@ -67,20 +67,11 @@
 }
 
 .tab {
+  composes: tabUnderline from "../shared/shared.module.css";
   padding: 3px 8px;
-  background-color: transparent;
-  color: var(--text-sub);
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: normal;
 }
-.tabActive {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-  font-weight: bold;
-}
+
+.tabActive { composes: tabUnderlineActive from "../shared/shared.module.css"; }
 
 /* ── Sub-header (detail views) ── */
 .subHeader {
