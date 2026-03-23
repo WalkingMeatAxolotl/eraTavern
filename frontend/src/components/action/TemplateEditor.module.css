@@ -1,0 +1,147 @@
+/* ── TemplateEditor ── */
+
+.addRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.addRowMulti {
+  margin-bottom: 4px;
+}
+
+.randomHelp {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.singleRow {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.textarea {
+  composes: input from "../shared/shared.module.css";
+  flex: 1;
+  box-sizing: border-box;
+  min-height: 32px;
+  resize: vertical;
+}
+
+.textareaFull {
+  composes: input from "../shared/shared.module.css";
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 32px;
+  resize: vertical;
+  margin-bottom: 2px;
+}
+
+/* ── Template entry card ── */
+
+.entryCard {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 6px;
+}
+
+.entryHeader {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.entryIndex {
+  color: #6ec6ff;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.headerMlAuto {
+  margin-left: auto;
+}
+
+.w50 {
+  width: 50px;
+}
+
+/* ── Conditions wrapper ── */
+
+.conditionsWrap {
+  padding-left: 8px;
+  border-left: 2px solid #333;
+  margin-top: 2px;
+}
+
+.condHeader {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.condLabel {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+.condEmpty {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.condItem {
+  margin-bottom: 2px;
+}
+
+/* ── Variable help panel ── */
+
+.helpPanel {
+  margin-top: 6px;
+  padding: 8px;
+  background-color: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.helpTitle {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.helpCatTitle {
+  color: #e9a045;
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+
+.helpRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1px;
+}
+
+.helpVar {
+  color: #0ff;
+  font-size: 11px;
+  min-width: 220px;
+}
+
+.helpDesc {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+.weightLabel {
+  color: var(--text-sub);
+  font-size: 11px;
+}

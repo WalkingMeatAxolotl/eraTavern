@@ -3,12 +3,13 @@
  *
  * Extracted from ActionEditor.tsx. Reads shared definition lists from EditorContext.
  */
+import clsx from "clsx";
 import type { ActionEffect } from "../../types/game";
-import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EffType, EF, EffectOp, ClothingState } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import { inputStyle } from "../shared/styles";
+import sh from "../shared/shared.module.css";
+import s from "./EffectEditor.module.css";
 
 const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: EffType.RESOURCE, label: t("eff.resource") },
@@ -52,7 +53,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
   return (
     <>
       <select
-        style={inputStyle}
+        className={sh.input}
         value={effect.type}
         onChange={(e) => onChange({ type: e.target.value as ActionEffect["type"], op: EffectOp.ADD })}
         disabled={disabled}
@@ -71,7 +72,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
           return (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={effect.key ?? ""}
                 onChange={(e) => update({ key: e.target.value })}
                 disabled={disabled}
@@ -89,7 +90,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 ))}
               </select>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={effect.op}
                 onChange={(e) => update({ op: e.target.value })}
                 disabled={disabled}
@@ -99,13 +100,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
               </select>
               <button
                 type="button"
-                style={{
-                  ...inputStyle,
-                  cursor: "pointer",
-                  color: isVarMode ? T.danger : T.textSub,
-                  minWidth: "28px",
-                  textAlign: "center",
-                }}
+                className={clsx(s.toggleBtn, isVarMode && s.toggleActive)}
                 onClick={() => {
                   if (isVarMode) {
                     update({ value: 0 });
@@ -121,7 +116,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
               {isVarMode ? (
                 <>
                   <select
-                    style={inputStyle}
+                    className={sh.input}
                     value={varVal?.varId ?? ""}
                     onChange={(e) => update({ value: { ...varVal!, varId: e.target.value } as any })}
                     disabled={disabled}
@@ -133,11 +128,11 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                       </option>
                     ))}
                   </select>
-                  <span style={{ color: T.textSub, fontSize: "11px" }}>×</span>
+                  <span className={s.opSpan}>&times;</span>
                   <input
                     type="number"
                     step="0.1"
-                    style={{ ...inputStyle, width: "55px" }}
+                    className={clsx(sh.input, s.w55)}
                     value={varVal?.multiply ?? 1}
                     onChange={(e) => update({ value: { ...varVal!, multiply: Number(e.target.value) } as any })}
                     disabled={disabled}
@@ -147,20 +142,14 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 <>
                   <input
                     type="number"
-                    style={{ ...inputStyle, width: "70px" }}
+                    className={clsx(sh.input, s.w70)}
                     value={(effect.value as number) ?? 0}
                     onChange={(e) => update({ value: Number(e.target.value) })}
                     disabled={disabled}
                   />
                   <button
                     type="button"
-                    style={{
-                      ...inputStyle,
-                      cursor: "pointer",
-                      color: effect.valuePercent ? T.danger : T.textSub,
-                      minWidth: "28px",
-                      textAlign: "center",
-                    }}
+                    className={clsx(s.toggleBtn, effect.valuePercent && s.toggleActive)}
                     onClick={() => update({ valuePercent: !effect.valuePercent })}
                     disabled={disabled}
                   >
@@ -175,7 +164,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
       {effect.type === EF.EXPERIENCE && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
@@ -187,10 +176,10 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
               </option>
             ))}
           </select>
-          <span style={{ color: T.textSub, fontSize: "11px" }}>+</span>
+          <span className={s.opSpan}>+</span>
           <input
             type="number"
-            style={{ ...inputStyle, width: "50px" }}
+            className={clsx(sh.input, s.w50)}
             value={effect.value ?? 1}
             onChange={(e) => update({ value: Number(e.target.value) })}
             disabled={disabled}
@@ -200,9 +189,9 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
 
       {effect.type === EF.FAVORABILITY && (
         <>
-          <span style={{ color: T.textSub, fontSize: "11px" }}>{t("eff.favFrom")}</span>
+          <span className={s.opSpan}>{t("eff.favFrom")}</span>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.favFrom ?? "{{targetId}}"}
             onChange={(e) => update({ favFrom: e.target.value })}
             disabled={disabled}
@@ -211,10 +200,10 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             <option value="{{targetId}}">{t("target.target")}</option>
             <option value="{{player}}">{t("target.player")}</option>
           </select>
-          <span style={{ color: T.textSub, fontSize: "11px" }}>→</span>
-          <span style={{ color: T.textSub, fontSize: "11px" }}>{t("eff.favTo")}</span>
+          <span className={s.opSpan}>&rarr;</span>
+          <span className={s.opSpan}>{t("eff.favTo")}</span>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.favTo ?? "self"}
             onChange={(e) => update({ favTo: e.target.value })}
             disabled={disabled}
@@ -224,7 +213,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             <option value="{{player}}">{t("target.player")}</option>
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -239,13 +228,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
               <>
                 <button
                   type="button"
-                  style={{
-                    ...inputStyle,
-                    cursor: "pointer",
-                    color: isVarMode ? T.danger : T.textSub,
-                    minWidth: "28px",
-                    textAlign: "center",
-                  }}
+                  className={clsx(s.toggleBtn, isVarMode && s.toggleActive)}
                   onClick={() => {
                     if (isVarMode) update({ value: 0 });
                     else update({ value: { varId: variableList[0]?.id ?? "", multiply: 1 } as any });
@@ -258,7 +241,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 {isVarMode ? (
                   <>
                     <select
-                      style={inputStyle}
+                      className={sh.input}
                       value={varVal?.varId ?? ""}
                       onChange={(e) => update({ value: { ...varVal!, varId: e.target.value } as any })}
                       disabled={disabled}
@@ -270,11 +253,11 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                         </option>
                       ))}
                     </select>
-                    <span style={{ color: T.textSub, fontSize: "11px" }}>×</span>
+                    <span className={s.opSpan}>&times;</span>
                     <input
                       type="number"
                       step="0.1"
-                      style={{ ...inputStyle, width: "55px" }}
+                      className={clsx(sh.input, s.w55)}
                       value={varVal?.multiply ?? 1}
                       onChange={(e) => update({ value: { ...varVal!, multiply: Number(e.target.value) } as any })}
                       disabled={disabled}
@@ -284,20 +267,14 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                   <>
                     <input
                       type="number"
-                      style={{ ...inputStyle, width: "70px" }}
+                      className={clsx(sh.input, s.w70)}
                       value={(effect.value as number) ?? 0}
                       onChange={(e) => update({ value: Number(e.target.value) })}
                       disabled={disabled}
                     />
                     <button
                       type="button"
-                      style={{
-                        ...inputStyle,
-                        cursor: "pointer",
-                        color: effect.valuePercent ? T.danger : T.textSub,
-                        minWidth: "28px",
-                        textAlign: "center",
-                      }}
+                      className={clsx(s.toggleBtn, effect.valuePercent && s.toggleActive)}
                       onClick={() => update({ valuePercent: !effect.valuePercent })}
                       disabled={disabled}
                     >
@@ -314,7 +291,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
       {effect.type === EF.TRAIT && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -323,7 +300,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
@@ -336,7 +313,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             ))}
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.traitId ?? ""}
             onChange={(e) => update({ traitId: e.target.value })}
             disabled={disabled}
@@ -356,7 +333,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
       {effect.type === EF.ITEM && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -365,7 +342,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.itemId ?? ""}
             onChange={(e) => update({ itemId: e.target.value })}
             disabled={disabled}
@@ -379,7 +356,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
           </select>
           <input
             type="number"
-            style={{ ...inputStyle, width: "50px" }}
+            className={clsx(sh.input, s.w50)}
             value={effect.amount ?? 1}
             onChange={(e) => update({ amount: Math.max(1, Number(e.target.value)) })}
             disabled={disabled}
@@ -390,7 +367,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
       {effect.type === EF.CLOTHING && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -399,7 +376,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             <option value={EffectOp.REMOVE}>{t("effOp.undress")}</option>
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.slot ?? ""}
             onChange={(e) => update({ slot: e.target.value })}
             disabled={disabled}
@@ -412,7 +389,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             ))}
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.state ?? ClothingState.WORN}
             onChange={(e) => update({ state: e.target.value })}
             disabled={disabled}
@@ -428,7 +405,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
       {effect.type === EF.OUTFIT && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -439,7 +416,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
           </select>
           {effect.op === EffectOp.SWITCH && (
             <select
-              style={inputStyle}
+              className={sh.input}
               value={effect.outfitKey ?? ""}
               onChange={(e) => update({ outfitKey: e.target.value })}
               disabled={disabled}
@@ -455,7 +432,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
           {effect.op === EffectOp.ADD && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={effect.outfitKey ?? ""}
                 onChange={(e) => update({ outfitKey: e.target.value })}
                 disabled={disabled}
@@ -468,7 +445,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 ))}
               </select>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={effect.slot ?? ""}
                 onChange={(e) => update({ slot: e.target.value, itemId: undefined })}
                 disabled={disabled}
@@ -481,7 +458,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 ))}
               </select>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={effect.itemId ?? ""}
                 onChange={(e) => update({ itemId: e.target.value })}
                 disabled={disabled}
@@ -500,7 +477,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
           {effect.op === EffectOp.REMOVE && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={effect.outfitKey ?? ""}
                 onChange={(e) => update({ outfitKey: e.target.value || undefined })}
                 disabled={disabled}
@@ -513,7 +490,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
                 ))}
               </select>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={effect.slot ?? ""}
                 onChange={(e) => update({ slot: e.target.value || undefined })}
                 disabled={disabled}
@@ -536,7 +513,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
           return (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={effect.mapId ?? ""}
                 onChange={(e) => update({ mapId: e.target.value, cellId: undefined })}
                 disabled={disabled}
@@ -550,7 +527,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
               </select>
               {effect.mapId && (
                 <select
-                  style={inputStyle}
+                  className={sh.input}
                   value={effect.cellId != null ? String(effect.cellId) : ""}
                   onChange={(e) => update({ cellId: e.target.value ? Number(e.target.value) : undefined })}
                   disabled={disabled}
@@ -570,7 +547,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
       {effect.type === EF.WORLD_VAR && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
@@ -583,7 +560,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
             ))}
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={effect.op ?? EffectOp.ADD}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -593,7 +570,7 @@ export function EffectEditor({ effect, onChange, disabled }: EffectEditorProps) 
           </select>
           <input
             type="number"
-            style={{ ...inputStyle, width: "70px" }}
+            className={clsx(sh.input, s.w70)}
             value={effect.value ?? 0}
             onChange={(e) => update({ value: Number(e.target.value) })}
             disabled={disabled}

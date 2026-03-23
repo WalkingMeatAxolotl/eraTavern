@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import T from "../../theme";
+import clsx from "clsx";
 import { t } from "../../i18n/ui";
+import s from "./ColorPicker.module.css";
 
 const STORAGE_KEY = "tavern_recent_colors";
 const MAX_RECENT = 10;
@@ -78,66 +79,32 @@ export default function ColorPicker({ value, onChange }: Props) {
   );
 
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+    <div className={s.wrapper}>
       {/* Recent color swatches */}
       {recent.map((color) => (
         <button
           key={color}
           onClick={() => handleSwatchClick(color)}
           title={color}
-          style={{
-            width: "16px",
-            height: "16px",
-            backgroundColor: color,
-            border:
-              color.toLowerCase() === value.toLowerCase() ? `2px solid ${T.accent}` : `1px solid ${T.borderLight}`,
-            borderRadius: "2px",
-            cursor: "pointer",
-            padding: 0,
-            boxSizing: "border-box",
-            flexShrink: 0,
-          }}
+          className={clsx(s.swatch, color.toLowerCase() === value.toLowerCase() && s.swatchActive)}
+          style={{ backgroundColor: color }}
         />
       ))}
       {/* Native color picker */}
       <button
         onClick={() => inputRef.current?.click()}
-        style={{
-          width: "16px",
-          height: "16px",
-          backgroundColor: value,
-          border: `1px solid ${T.borderLight}`,
-          borderRadius: "2px",
-          cursor: "pointer",
-          padding: 0,
-          boxSizing: "border-box",
-          flexShrink: 0,
-          position: "relative",
-        }}
+        className={s.pickerBtn}
+        style={{ backgroundColor: value }}
         title={t("ui.pickColor")}
       >
-        <span
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "10px",
-            color: "#fff",
-            textShadow: "0 0 2px #000, 0 0 2px #000",
-            lineHeight: 1,
-          }}
-        >
-          +
-        </span>
+        <span className={s.pickerIcon}>+</span>
       </button>
       <input
         ref={inputRef}
         type="color"
         value={value}
         onChange={handleLivePreview}
-        style={{ position: "absolute", width: 0, height: 0, opacity: 0, pointerEvents: "none" }}
+        className={s.hiddenInput}
       />
     </div>
   );

@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import T from "../../theme";
 
 /** Any entity with optional tags, id, and name. */
 interface TaggableEntity {
@@ -110,12 +109,12 @@ export function useTagSystem<T extends TaggableEntity>({
   }, [visibleTags, tagGrouped]);
 
   // ── View tab style ──
-
+  // Consumers should use CSS module classes instead. Kept for backward compat.
   const viewTabStyle = (active: boolean): React.CSSProperties => ({
     padding: "3px 10px",
-    backgroundColor: active ? T.bg3 : T.bg1,
-    color: active ? T.accent : T.textDim,
-    border: `1px solid ${active ? T.accent : T.border}`,
+    backgroundColor: active ? "var(--bg3)" : "var(--bg1)",
+    color: active ? "var(--accent)" : "var(--text-dim)",
+    border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
     borderRadius: "3px",
     cursor: "pointer",
     fontSize: "12px",

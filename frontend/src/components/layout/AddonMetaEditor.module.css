@@ -1,0 +1,104 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.fieldLabel {
+  color: var(--text-sub);
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.fieldLabelTop {
+  padding-top: 4px;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.textarea {
+  composes: fieldInput;
+  resize: vertical;
+}
+
+.coverRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.coverImg {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--border-dim);
+}
+
+.coverName {
+  font-size: 11px;
+  color: var(--text-faint);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coverHidden {
+  display: none;
+}
+
+.smallBtn {
+  composes: fieldInput;
+  width: auto;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.smallBtnSub {
+  color: var(--text-sub);
+}
+
+.smallBtnDanger {
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.actionBtn {
+  composes: fieldInput;
+  width: auto;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.actionBtnCancel {
+  color: var(--text-sub);
+}
+
+.actionBtnSave {
+  color: var(--success);
+  border-color: var(--success-dim);
+}

@@ -1,0 +1,421 @@
+/* ── CreateWorldModal ── */
+
+.modalTitle {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modalLabel {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-bottom: 2px;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+  background-color: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  outline: none;
+}
+
+.modalError {
+  color: var(--danger);
+  font-size: 11px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── ToggleBtn ── */
+
+.toggleBtn {
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+  background-color: var(--bg1);
+  color: var(--text-sub);
+  border: 1px solid var(--border-dim);
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.toggleBtn.active {
+  background-color: var(--bg2);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 37%, transparent);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* ── Sidebar container ── */
+
+.sidebar {
+  width: 100%;
+  height: 100vh;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  overflow: hidden;
+  padding-top: 40px;
+  box-sizing: border-box;
+  background-color: var(--bg0);
+}
+
+/* ── Header ── */
+
+.header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.headerTitle {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.headerCount {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.addBtn {
+  background: none;
+  border: 1px solid var(--text-faint);
+  border-radius: 3px;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 1px 7px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+/* ── Card list ── */
+
+.cardList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: scroll;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emptyMsg {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 16px 8px;
+  text-align: center;
+}
+
+/* ── World card ── */
+
+.card {
+  border-radius: 6px;
+  border: 1px solid var(--border-dim);
+}
+
+.card.cardActive {
+  border-color: var(--accent);
+}
+
+/* ── Card header ── */
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: var(--bg1);
+  cursor: pointer;
+}
+
+.cardHeader.cardHeaderActive {
+  background-color: color-mix(in srgb, var(--accent) 3%, transparent);
+}
+
+.coverImg {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+
+.coverPlaceholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+  flex-shrink: 0;
+  background-color: var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-dim);
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardName.cardNameActive {
+  color: var(--accent);
+}
+
+.cardId {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+.cardAddonCount {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.currentBadge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  line-height: 1.4;
+  font-weight: bold;
+}
+
+.chevron {
+  color: var(--text-dim);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ── Expanded panel ── */
+
+.expandedPanel {
+  padding: 10px 12px;
+  background-color: var(--bg0);
+  border-top: 1px solid var(--border-dim);
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.expandedInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.description {
+  color: var(--text-sub);
+}
+
+.addonList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.addonLabel {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.addonTag {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background-color: var(--bg2);
+  color: var(--text-sub);
+  border: 1px solid var(--border-dim);
+}
+
+/* ── Action buttons row ── */
+
+.actionBtns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.unloadBtn {
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  background-color: var(--bg1);
+  color: var(--text-sub);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+}
+
+.deleteBtn {
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  background-color: var(--bg2);
+  color: var(--danger);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+/* ── Edit meta panel ── */
+
+.metaPanel {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metaRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.metaRowTop {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.metaLabel {
+  color: var(--text-dim);
+  min-width: 32px;
+}
+
+.metaLabelTop {
+  color: var(--text-dim);
+  min-width: 32px;
+  padding-top: 4px;
+}
+
+.metaInput {
+  width: 100%;
+  padding: 4px 6px;
+  background-color: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 12px;
+  box-sizing: border-box;
+  outline: none;
+  flex: 1;
+}
+
+.metaTextarea {
+  composes: metaInput;
+  resize: vertical;
+}
+
+.coverRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.coverThumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--border-dim);
+}
+
+.coverName {
+  font-size: 11px;
+  color: var(--text-faint);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smallBtn {
+  padding: 2px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  background-color: var(--bg2);
+  color: var(--text-sub);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+}
+
+.smallBtnDanger {
+  composes: smallBtn;
+  color: var(--danger);
+}
+
+.metaMessage {
+  color: var(--danger);
+  font-size: 11px;
+}
+
+.metaActions {
+  display: flex;
+  gap: 4px;
+}
+
+.saveBtn {
+  padding: 3px 10px;
+  background-color: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--success);
+}
+
+.cancelBtn {
+  padding: 3px 10px;
+  background-color: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-sub);
+}

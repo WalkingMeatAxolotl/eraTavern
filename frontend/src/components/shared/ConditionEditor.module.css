@@ -1,0 +1,82 @@
+/* ── ConditionEditor ── */
+
+/* Item row */
+.itemRow { display: flex; gap: 4px; align-items: center; }
+
+/* NOT toggle button */
+.negBtn { min-width: 28px; text-align: center; padding: 1px 4px; color: var(--text-dim); font-weight: normal; }
+.negBtnActive { color: #e9a045; font-weight: bold; }
+
+/* NOT label (readonly) */
+.negLabel { font-size: 11px; min-width: 28px; color: var(--text-dim); font-weight: normal; }
+.negLabelActive { color: #e9a045; font-weight: bold; }
+
+/* Group container */
+.group { border-radius: 3px; padding: 4px 6px; }
+.groupHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.groupLabelWrap { display: flex; gap: 4px; align-items: center; }
+.groupLabel { font-size: 11px; font-weight: bold; }
+.groupActions { display: flex; gap: 4px; }
+.groupRow { margin-bottom: 2px; }
+
+/* Leaf editor */
+.leafRow { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+
+/* Input width variants */
+.inputAuto { width: auto; }
+.inputAutoSm { width: auto; font-size: 11px; }
+.input50 { width: 50px; }
+.input60 { width: 60px; }
+.input70 { width: 70px; }
+.input80 { width: 80px; }
+
+/* Option group */
+.optgroupBold { font-weight: bold; }
+
+/* Text dim */
+.textDim { color: var(--text-dim); }
+
+/* Location condition */
+.locationWrap { display: flex; flex-direction: column; gap: 4px; }
+.cellGrid { display: flex; flex-wrap: wrap; gap: 2px; }
+
+/* Chip (tag/cell checkbox label) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  font-size: 11px;
+  background-color: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.chip:hover { background-color: var(--bg3); }
+.chipDisabled { cursor: default; }
+
+/* Tag chip selected state */
+.chipTagSelected {
+  background-color: #2a4a2a;
+  border-color: #4a8a4a;
+  color: #8f8;
+}
+
+/* Cell chip states */
+.chipCellActive {
+  background-color: #2a2a4a;
+  border-color: #6a6aaa;
+  color: var(--text);
+}
+.chipCellTagged {
+  background-color: #1a3a4a;
+  border-color: #4a8aaa;
+}
+.chipCellTaggedOnly { opacity: 0.8; }
+
+/* Checkbox */
+.checkbox { margin: 0; width: 12px; height: 12px; }
+
+/* Tag indicator */
+.tagIndicator { font-size: 11px; color: #4a8aaa; }

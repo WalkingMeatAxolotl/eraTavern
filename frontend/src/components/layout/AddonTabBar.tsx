@@ -1,4 +1,5 @@
-import T from "../../theme";
+import clsx from "clsx";
+import s from "./AddonTabBar.module.css";
 import { t } from "../../i18n/ui";
 
 interface AddonTabBarProps {
@@ -7,51 +8,16 @@ interface AddonTabBarProps {
   onSelect: (addonId: string | null) => void;
 }
 
-const tabBase: React.CSSProperties = {
-  padding: "4px 12px",
-  border: `1px solid ${T.border}`,
-  borderBottom: "none",
-  borderRadius: "4px 4px 0 0",
-  cursor: "pointer",
-  fontSize: "12px",
-  background: "none",
-};
-
 export default function AddonTabBar({ addons, selectedAddon, onSelect }: AddonTabBarProps) {
   if (addons.length === 0) return null;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: "2px",
-        borderBottom: `1px solid ${T.border}`,
-        marginBottom: "8px",
-        flexWrap: "wrap",
-      }}
-    >
-      <button
-        onClick={() => onSelect(null)}
-        style={{
-          ...tabBase,
-          backgroundColor: selectedAddon === null ? T.bg2 : "transparent",
-          color: selectedAddon === null ? T.accent : T.textDim,
-          borderColor: selectedAddon === null ? T.border : T.borderDim,
-        }}
-      >
+    <div className={s.container}>
+      <button onClick={() => onSelect(null)} className={clsx(s.tab, selectedAddon === null && s.tabActive)}>
         [{t("addon.allReadOnly")}]
       </button>
       {addons.map((a) => (
-        <button
-          key={a.id}
-          onClick={() => onSelect(a.id)}
-          style={{
-            ...tabBase,
-            backgroundColor: selectedAddon === a.id ? T.bg2 : "transparent",
-            color: selectedAddon === a.id ? T.accent : T.textSub,
-            borderColor: selectedAddon === a.id ? T.border : T.borderDim,
-          }}
-        >
+        <button key={a.id} onClick={() => onSelect(a.id)} className={clsx(s.tab, selectedAddon === a.id && s.tabActive)}>
           {a.id}
         </button>
       ))}

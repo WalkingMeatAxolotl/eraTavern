@@ -1,0 +1,57 @@
+.bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--bg-float);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  z-index: 90;
+  font-size: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.actionBtn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  background-color: var(--bg2);
+  opacity: 1;
+}
+
+.actionBtnDisabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.revertBtn {
+  color: var(--text-sub);
+}
+
+.saveBtn {
+  color: var(--accent);
+}
+
+.msgSuccess {
+  color: var(--success);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.msgError {
+  color: var(--danger);
+  font-size: 11px;
+  white-space: nowrap;
+}

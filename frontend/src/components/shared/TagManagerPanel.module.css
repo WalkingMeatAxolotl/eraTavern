@@ -1,0 +1,76 @@
+.panel {
+  margin-bottom: 12px;
+  padding: 8px;
+  background-color: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.panelLabel {
+  color: var(--text-sub);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background-color: var(--bg1);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+}
+.tag:hover {
+  background-color: var(--bg2);
+}
+.tagCount {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.tagDeleteBtn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1;
+}
+.tagDeleteBtn:hover {
+  color: #ff6666;
+}
+.emptyTags {
+  color: var(--text-dim);
+}
+.addRow {
+  display: flex;
+  gap: 4px;
+}
+.addInput {
+  flex: 1;
+  padding: 4px 8px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 12px;
+}
+.addBtn {
+  padding: 4px 10px;
+  background-color: var(--bg2);
+  color: var(--success-dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.1s, border-color 0.1s;
+}
+.addBtn:hover {
+  background-color: var(--bg3);
+}

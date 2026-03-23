@@ -1,0 +1,81 @@
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background-color: var(--bg0);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  z-index: 100;
+}
+
+.barInner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.navBtn {
+  padding: 4px 12px;
+  background-color: transparent;
+  color: var(--text-sub);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.navBtnActive {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.sideToggle {
+  padding: 4px 10px;
+  background-color: transparent;
+  color: var(--text-dim);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.sideToggleActive {
+  background-color: var(--accent-bg);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent-dim) 27%, transparent);
+  font-weight: bold;
+}
+
+.worldName {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-left: 4px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.separator {
+  color: var(--border-dim);
+  margin: 0 4px;
+}

@@ -1,0 +1,486 @@
+/* ── Shared field input (also exported as JS style) ── */
+
+.fieldInput {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* ── ToggleSwitch ── */
+
+.toggleSwitch {
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+  border: 1.5px solid var(--text-faint);
+  background: var(--bg1);
+}
+
+.toggleSwitch.toggleSwitchEnabled {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 19%, transparent);
+}
+
+.toggleDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: all 0.2s;
+  background: var(--text-faint);
+}
+
+.toggleDot.toggleDotEnabled {
+  background: var(--accent);
+  left: 18px;
+}
+
+/* ── ForkModal ── */
+
+.forkTitle {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.forkIntro {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.forkAddonName {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.forkVersionSelector {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+
+.forkVersionList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.choiceBtn {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  border: none;
+  background-color: var(--bg3);
+}
+
+.choiceBtnFork {
+  composes: choiceBtn;
+  color: var(--success);
+  border: 1px solid var(--success-dim);
+}
+
+.choiceBtnExisting {
+  composes: choiceBtn;
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+}
+
+.choiceBtnCancel {
+  composes: choiceBtn;
+  background-color: transparent;
+  color: var(--text-sub);
+  border: 1px solid var(--text-faint);
+  text-align: center;
+  padding: 8px;
+}
+
+.choiceTitle {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.choiceDescFork {
+  color: var(--success-dim);
+  font-size: 11px;
+}
+
+.choiceDescExisting {
+  color: var(--accent-dim);
+  font-size: 11px;
+}
+
+.choiceHighlightFork {
+  color: var(--success);
+}
+
+.choiceHighlightExisting {
+  color: var(--accent);
+}
+
+/* ── VersionSwitchList ── */
+
+.versionSwitchTitle {
+  color: var(--text-sub);
+  font-size: 11px;
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+
+.versionSwitchEmpty {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 2px 0;
+}
+
+.versionSwitchList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ── ToggleBtn ── */
+
+.toggleBtn {
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+  background-color: var(--bg1);
+  color: var(--text-sub);
+  border: 1px solid var(--border-dim);
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.toggleBtn.toggleBtnActive {
+  background-color: var(--bg2);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 37%, transparent);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* ── MiniBtn ── */
+
+.miniBtn {
+  padding: 3px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  background-color: var(--bg1);
+  color: var(--text-sub);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+}
+
+.miniBtn.miniBtnActive {
+  background-color: var(--bg2);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* ── VersionRow ── */
+
+.versionRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: var(--bg1);
+  border: 1px solid var(--border-dim);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.versionRow.versionRowIndent {
+  margin-left: 14px;
+}
+
+.versionRow.versionRowCurrent {
+  background-color: var(--bg2);
+  border-color: var(--border-light);
+  cursor: default;
+}
+
+.indentArrow {
+  color: var(--text-faint);
+  font-size: 10px;
+  margin-right: -2px;
+}
+
+.versionDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid var(--text-faint);
+  background-color: transparent;
+}
+
+.versionDot.versionDotCurrent {
+  border-color: var(--accent);
+  background-color: var(--accent);
+}
+
+.versionLabel {
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+.versionLabel.versionLabelCurrent {
+  font-weight: bold;
+}
+
+/* ── Tag (inline — color from prop, stays inline) ── */
+
+.tag {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  line-height: 1.4;
+  font-weight: bold;
+}
+
+/* ── Sidebar container ── */
+
+.sidebar {
+  width: 100%;
+  height: 100vh;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  overflow: hidden;
+  padding-top: 40px;
+  box-sizing: border-box;
+  background-color: var(--bg0);
+}
+
+/* ── Header ── */
+
+.header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.headerTitle {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.headerCount {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.addBtn {
+  background: none;
+  border: 1px solid var(--text-faint);
+  border-radius: 3px;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 1px 7px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+/* ── Card list ── */
+
+.cardList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: scroll;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emptyMsg {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 16px 8px;
+  text-align: center;
+}
+
+/* ── Addon card ── */
+
+.card {
+  border-radius: 6px;
+  border: 1px solid var(--border-dim);
+}
+
+.card.cardEnabled {
+  border-color: var(--border-light);
+}
+
+/* ── Card header ── */
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: var(--bg1);
+  cursor: pointer;
+}
+
+.coverImg {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+
+.coverPlaceholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+  flex-shrink: 0;
+  background-color: var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-dim);
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: 13px;
+  color: var(--text-sub);
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardName.cardNameEnabled {
+  color: var(--text);
+}
+
+.cardId {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+.cardVersionRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.cardVersion {
+  font-size: 11px;
+  color: var(--text);
+}
+
+.chevron {
+  color: var(--text-dim);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ── Expanded panel ── */
+
+.expandedPanel {
+  padding: 10px 12px;
+  background-color: var(--bg0);
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.description {
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.infoLabel {
+  color: var(--text-sub);
+  width: 30px;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  color: var(--text);
+}
+
+/* ── Toggle buttons row ── */
+
+.actionBtns {
+  display: flex;
+  gap: 4px;
+}
+
+.deleteBtn {
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  background-color: var(--bg2);
+  color: var(--danger);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+/* ── Sub-panels (meta / version) ── */
+
+.subPanel {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+
+.versionSwitchSection {
+  border-top: 1px solid var(--border-dim);
+  padding-top: 8px;
+}

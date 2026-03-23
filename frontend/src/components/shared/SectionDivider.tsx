@@ -1,20 +1,11 @@
-import T from "../../theme";
+import s from "./SectionDivider.module.css";
 
 /** Horizontal divider with an accent label — used to separate sections in Manager lists. */
 export function SectionDivider({ label, margin }: { label: string; margin?: string }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        margin: margin ?? "4px 0 2px",
-        fontSize: "12px",
-        color: T.textDim,
-      }}
-    >
-      <span style={{ color: T.accent, fontWeight: "bold" }}>{label}</span>
-      <span style={{ flex: 1, height: "1px", backgroundColor: T.borderDim }} />
+    <div className={s.divider} style={margin ? { margin } : undefined}>
+      <span className={s.label}>{label}</span>
+      <span className={s.line} />
     </div>
   );
 }

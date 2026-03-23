@@ -1,9 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import clsx from "clsx";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { readRawFile, writeRawFile } from "../../api/client";
 import { ConfirmModal } from "./Modal";
 import { btn } from "./styles";
+import s from "./RawJsonEditor.module.css";
 
 // ── Strip internal fields for editor-level display ──
 
@@ -18,24 +20,6 @@ function stripInternal(entity: Record<string, unknown>): Record<string, unknown>
 }
 
 // ── Syntax highlighting ──
-
-const SYN = {
-  key: "#6ec6ff", // blue — keys
-  str: "#7ecf7e", // green — string values
-  num: "#e8a040", // orange — numbers
-  bool: "#c78dff", // purple — true/false/null
-  bracket: "#888", // dim — [] {}
-  punct: "#d8d8d8", // white — : ,
-};
-
-const synStyles = `
-  .jsyn-k { color: ${SYN.key}; }
-  .jsyn-s { color: ${SYN.str}; }
-  .jsyn-n { color: ${SYN.num}; }
-  .jsyn-b { color: ${SYN.bool}; }
-  .jsyn-p { color: ${SYN.bracket}; }
-  .jsyn-w { color: ${SYN.punct}; }
-`;
 
 /** Simple JSON syntax highlighter — returns HTML string. */
 function highlightJson(text: string): string {
@@ -108,43 +92,31 @@ function CodeEditor({
   const contentHeight = lineCount * FONT_SIZE * LINE_H + PAD * 2;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+    <div className={s.codeEditor}>
       <div
         ref={scrollContainerRef}
         onScroll={handleContainerScroll}
-        style={{
-          display: "flex",
-          border: `1px solid ${error ? T.danger : T.borderLight}`,
-          borderRadius: "4px",
-          overflow: "auto",
-          maxHeight: "70vh",
-          backgroundColor: T.bg1,
-        }}
+        className={clsx(s.codeScrollContainer, error && s.codeScrollContainerError)}
       >
         {/* Line number gutter */}
         <div
+          className={s.codeGutter}
           style={{
             width: gutterWidth,
             minWidth: gutterWidth,
             height: contentHeight,
-            backgroundColor: T.bg0,
-            borderRight: `1px solid ${T.borderDim}`,
             padding: `${PAD}px 0`,
-            userSelect: "none",
-            flexShrink: 0,
           }}
         >
           {Array.from({ length: lineCount }, (_, i) => (
             <div
               key={i}
+              className={s.lineNumber}
               style={{
                 height: `${FONT_SIZE * LINE_H}px`,
                 lineHeight: `${FONT_SIZE * LINE_H}px`,
                 fontSize: FONT_SIZE,
                 fontFamily: FONT,
-                color: T.textDim,
-                textAlign: "right",
-                paddingRight: "8px",
               }}
             >
               {i + 1}
@@ -153,27 +125,17 @@ function CodeEditor({
         </div>
 
         {/* Code area: pre (highlighted) + textarea (input) stacked */}
-        <div style={{ position: "relative", flex: 1, height: contentHeight }}>
+        <div className={s.codeArea} style={{ height: contentHeight }}>
           {/* Highlighted layer (behind textarea) */}
           <pre
             ref={preRef}
             aria-hidden
+            className={s.highlightLayer}
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              margin: 0,
-              padding: PAD,
               fontFamily: FONT,
               fontSize: FONT_SIZE,
               lineHeight: LINE_H,
-              color: T.text,
-              overflow: "hidden",
-              whiteSpace: "pre",
-              pointerEvents: "none",
-              tabSize: 2,
+              padding: PAD,
             }}
             dangerouslySetInnerHTML={{ __html: highlightJson(value) + "\n" }}
           />
@@ -187,32 +149,17 @@ function CodeEditor({
             spellCheck={false}
             autoComplete="off"
             autoCorrect="off"
+            className={s.textarea}
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              margin: 0,
-              padding: PAD,
               fontFamily: FONT,
               fontSize: FONT_SIZE,
               lineHeight: LINE_H,
-              color: "transparent",
-              caretColor: T.text,
-              backgroundColor: "transparent",
-              border: "none",
-              outline: "none",
-              resize: "none",
-              overflow: "hidden",
-              whiteSpace: "pre",
-              tabSize: 2,
-              boxSizing: "border-box",
+              padding: PAD,
             }}
           />
         </div>
       </div>
-      {error && <div style={{ color: T.danger, fontSize: "11px" }}>{error}</div>}
+      {error && <div className={s.codeError}>{error}</div>}
     </div>
   );
 }
@@ -279,43 +226,22 @@ export function RawJsonView({
   };
 
   if (loading) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+    return <div className={s.jsonLoading}>{t("status.loading")}</div>;
   }
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-      <style>{synStyles}</style>
-
+    <div className={s.jsonView}>
       {/* Header */}
-      <div style={{ marginBottom: "6px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.jsonViewHeader}>
+        <span className={s.jsonTitle}>
           == {filename} ==
         </span>
       </div>
 
       {/* Warning banner with inline back link */}
-      <div
-        style={{
-          padding: "6px 10px",
-          marginBottom: "8px",
-          backgroundColor: "#1a1408",
-          border: `1px solid ${T.accentDim}`,
-          borderRadius: "3px",
-          color: T.accent,
-          fontSize: "11px",
-          lineHeight: 1.5,
-        }}
-      >
+      <div className={s.jsonWarning}>
         {t("json.warning")}{" "}
-        <span
-          onClick={onClose}
-          style={{
-            fontStyle: "italic",
-            textDecoration: "underline",
-            cursor: "pointer",
-            color: T.textSub,
-          }}
-        >
+        <span onClick={onClose} className={s.jsonBackLink}>
           {t("json.backToList")}
         </span>
       </div>
@@ -323,7 +249,7 @@ export function RawJsonView({
       <CodeEditor value={text} onChange={handleChange} error={error} />
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "8px" }}>
+      <div className={s.jsonActionBar}>
         <button onClick={onClose} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
@@ -331,7 +257,7 @@ export function RawJsonView({
           [{t("json.saveAndReload")}]
         </button>
         {message && (
-          <span style={{ color: message.includes(t("json.savedKeyword")) ? T.success : T.danger, fontSize: "12px" }}>
+          <span className={message.includes(t("json.savedKeyword")) ? s.statusSuccess : s.statusError}>
             {message}
           </span>
         )}
@@ -403,21 +329,20 @@ export function RawJsonPanel({
   };
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-      <style>{synStyles}</style>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== JSON ==</span>
+    <div className={s.jsonView}>
+      <div className={s.jsonPanelHeader}>
+        <span className={s.jsonTitle}>== JSON ==</span>
         <button onClick={onToggle} style={btn("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
       <CodeEditor value={text} onChange={handleChange} error={error} />
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "8px" }}>
+      <div className={s.jsonActionBar}>
         <button onClick={handleSave} disabled={saving} style={{ ...btn("create"), ...(saving && { cursor: "not-allowed" }) }}>
           [{t("btn.confirm")}]
         </button>
         {message && (
-          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>
+          <span className={message === t("status.saved") ? s.statusSuccess : s.statusError}>
             {message}
           </span>
         )}

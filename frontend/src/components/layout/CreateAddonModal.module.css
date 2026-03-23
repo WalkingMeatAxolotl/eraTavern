@@ -1,0 +1,59 @@
+.title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-bottom: 2px;
+}
+
+.input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+  background-color: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  outline: none;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cancelBtn {
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: transparent;
+  color: var(--text-sub);
+  border: 1px solid var(--text-faint);
+}
+
+.createBtn {
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--accent);
+  color: var(--bg0);
+  border: none;
+}
+
+.createBtn:disabled {
+  opacity: 0.5;
+}

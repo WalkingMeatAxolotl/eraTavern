@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EF, EffType, EffectOp, ClothingState, TriggerMode, EventScope, TargetType } from "../../constants";
-import { HelpButton, HelpPanel, helpSub, helpP, helpDim } from "../shared/HelpToggle";
+import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import type {
   EventDefinition,
   WorldVariableDefinition,
@@ -663,22 +663,22 @@ function EventEditor({
         </div>
         {showTriggerHelp && (
           <HelpPanel>
-            <div style={{ ...helpP, marginBottom: "2px" }}>{t("help.triggerIntro")}</div>
-            <div style={helpSub}>{t("help.onChangeTitle")}</div>
-            <div style={helpP}>
+            <div className={helpStyles.helpP} style={{ marginBottom: "2px" }}>{t("help.triggerIntro")}</div>
+            <div className={helpStyles.helpSub}>{t("help.onChangeTitle")}</div>
+            <div className={helpStyles.helpP}>
               {t("help.onChangeDesc", { em1: t("help.onChangeEm") })}
             </div>
-            <div style={helpDim}>{t("help.onChangeExample")}</div>
-            <div style={helpSub}>{t("help.whileTitle")}</div>
-            <div style={helpP}>{t("help.whileDesc")}</div>
-            <div style={helpDim}>{t("help.whileExample")}</div>
-            <div style={helpSub}>{t("help.onceTitle")}</div>
-            <div style={helpP}>
+            <div className={helpStyles.helpDim}>{t("help.onChangeExample")}</div>
+            <div className={helpStyles.helpSub}>{t("help.whileTitle")}</div>
+            <div className={helpStyles.helpP}>{t("help.whileDesc")}</div>
+            <div className={helpStyles.helpDim}>{t("help.whileExample")}</div>
+            <div className={helpStyles.helpSub}>{t("help.onceTitle")}</div>
+            <div className={helpStyles.helpP}>
               {t("help.onceDesc", { em1: t("help.onceEm") })}
             </div>
-            <div style={helpDim}>{t("help.onceExample")}</div>
-            <div style={helpSub}>{t("help.onChangeVsOnceTitle")}</div>
-            <div style={helpP}>
+            <div className={helpStyles.helpDim}>{t("help.onceExample")}</div>
+            <div className={helpStyles.helpSub}>{t("help.onChangeVsOnceTitle")}</div>
+            <div className={helpStyles.helpP}>
               {t("help.onChangeVsOnceDesc", { em1: "on_change", em2: "once" })}
             </div>
           </HelpPanel>
@@ -697,17 +697,17 @@ function EventEditor({
         </div>
         {showScopeHelp && (
           <HelpPanel>
-            <div style={{ ...helpP, marginBottom: "2px" }}>{t("help.scopeIntro")}</div>
-            <div style={helpSub}>{t("help.eachCharTitle")}</div>
-            <div style={helpP}>
+            <div className={helpStyles.helpP} style={{ marginBottom: "2px" }}>{t("help.scopeIntro")}</div>
+            <div className={helpStyles.helpSub}>{t("help.eachCharTitle")}</div>
+            <div className={helpStyles.helpP}>
               {t("help.eachCharDesc", { em1: t("help.eachCharEm1"), em2: t("help.eachCharEm2") })}
             </div>
-            <div style={helpDim}>{t("help.eachCharExample")}</div>
-            <div style={helpSub}>{t("help.noneTitle")}</div>
-            <div style={helpP}>
+            <div className={helpStyles.helpDim}>{t("help.eachCharExample")}</div>
+            <div className={helpStyles.helpSub}>{t("help.noneTitle")}</div>
+            <div className={helpStyles.helpP}>
               {t("help.noneDesc", { em1: t("help.noneEm1"), em2: t("help.noneEm2"), em3: t("help.noneEm3") })}
             </div>
-            <div style={helpDim}>{t("help.noneExample")}</div>
+            <div className={helpStyles.helpDim}>{t("help.noneExample")}</div>
           </HelpPanel>
         )}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>

@@ -1,0 +1,16 @@
+.tooltip {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  padding: 4px 10px;
+  background-color: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 11px;
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  z-index: 1000;
+}

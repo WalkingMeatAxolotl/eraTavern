@@ -1,0 +1,183 @@
+/* ActionMenu.module.css */
+
+.container {
+  font-size: 13px;
+  color: var(--text);
+  background-color: var(--bg1);
+  padding: 12px;
+  border-radius: 4px;
+}
+
+/* ── Action button base ── */
+.actionBtn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 4px 8px;
+  margin-bottom: 2px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  background-color: var(--bg2);
+  color: var(--action-configured);
+  cursor: pointer;
+}
+.actionBtn:disabled {
+  background-color: var(--border-dim);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+/* Color variants for action buttons */
+.actionMove {
+  color: var(--action-move);
+}
+.actionMove:disabled {
+  color: var(--text-dim);
+}
+
+.actionLook {
+  color: var(--action-look);
+}
+.actionLook:disabled {
+  color: var(--text-dim);
+}
+
+.actionAccent {
+  color: var(--accent);
+}
+.actionAccent:disabled {
+  color: var(--text-dim);
+}
+
+.actionSuccess {
+  color: var(--success-dim);
+  text-align: center;
+  margin-top: 6px;
+}
+.actionSuccess:disabled {
+  color: var(--text-dim);
+}
+
+/* ── Tabs ── */
+.tabBar {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.tab {
+  padding: 3px 8px;
+  background-color: transparent;
+  color: var(--text-sub);
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: normal;
+}
+.tabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: bold;
+}
+
+/* ── Sub-header (detail views) ── */
+.subHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+  padding-bottom: 2px;
+}
+.subHeaderTitle {
+  color: var(--accent);
+  font-weight: bold;
+}
+.returnBtn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+/* ── Section header (normal view) ── */
+.sectionHeader {
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+  font-weight: bold;
+}
+
+/* ── Category sections ── */
+.categorySection {
+  margin-bottom: 8px;
+}
+.categoryLabel {
+  color: var(--text-sub);
+  margin-bottom: 4px;
+}
+
+/* ── Inline hints ── */
+.hint {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+.hintDim {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-left: 6px;
+}
+.npcTag {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+.disabledReason {
+  color: var(--danger);
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+/* ── Outfit detail ── */
+.slotRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.slotLabel {
+  min-width: 90px;
+  color: var(--text-sub);
+  font-size: 12px;
+}
+.slotText {
+  color: var(--text);
+  font-size: 12px;
+}
+.slotSelect {
+  padding: 2px 6px;
+  background-color: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.emptyOutfit {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.currentTag {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-left: 6px;
+}
+.noActions {
+  color: var(--text-dim);
+}

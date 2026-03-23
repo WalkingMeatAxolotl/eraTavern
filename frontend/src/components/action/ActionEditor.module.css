@@ -1,0 +1,166 @@
+/* ── ActionEditor ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.source {
+  color: var(--accent);
+  font-size: 12px;
+}
+
+/* ── Section (uses CSS vars --sec-color, --sec-bg) ── */
+
+.section {
+  margin-bottom: 16px;
+  padding: 0 0 8px 0;
+  border-left: 3px solid var(--sec-color);
+  background-color: var(--sec-bg);
+  border-radius: 0 4px 4px 0;
+}
+
+.sectionTitle {
+  padding: 5px 10px;
+  margin-bottom: 8px;
+  background-color: color-mix(in srgb, var(--sec-color) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--sec-color) 15%, transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sectionTitleText {
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  color: var(--sec-color);
+}
+
+.sectionContent {
+  padding: 0 10px;
+}
+
+/* ── Field layout ── */
+
+.fieldRow {
+  display: flex;
+  gap: 12px;
+}
+
+.fieldCol {
+  flex: 1;
+}
+
+.fieldColGap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldRowAlignEnd {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.inputFull {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputTimeCost {
+  width: 80px;
+}
+
+.inputLlmPreset {
+  width: 160px;
+}
+
+/* ── Checkbox label ── */
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding-bottom: 4px;
+}
+
+.checkboxLabel.readOnly {
+  cursor: default;
+}
+
+.checkboxText {
+  font-size: 12px;
+}
+
+/* ── NPC weight modifier panel ── */
+
+.modifierPanel {
+  flex: 1;
+  padding-left: 8px;
+  border-left: 2px solid #333;
+  background-color: var(--bg1);
+  border-radius: 0 3px 3px 0;
+}
+
+/* ── Hint text ── */
+
+.hint {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.emptyMsg {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+/* ── Button group ── */
+
+.btnGroup {
+  display: flex;
+  gap: 4px;
+}
+
+/* ── Template help toggle row ── */
+
+.tplTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Action bar ── */
+
+.actionBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.statusMsg {
+  font-size: 12px;
+}

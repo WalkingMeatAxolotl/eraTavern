@@ -1,0 +1,24 @@
+/* EffectEditor.module.css */
+
+/* Width utility classes for inputs */
+.w50 { width: 50px; }
+.w55 { width: 55px; }
+.w70 { width: 70px; }
+
+/* Operator / label spans between inputs */
+.opSpan {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+/* V/% toggle button — inherits .input look but clickable */
+.toggleBtn {
+  composes: input from "../shared/shared.module.css";
+  cursor: pointer;
+  min-width: 28px;
+  text-align: center;
+  color: var(--text-sub);
+}
+.toggleActive {
+  color: var(--danger);
+}

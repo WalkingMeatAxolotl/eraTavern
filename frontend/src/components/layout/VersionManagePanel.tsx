@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
+import clsx from "clsx";
 import { t } from "../../i18n/ui";
 import { fetchAddonVersionsDetail, overwriteAddonVersion, deleteAddon } from "../../api/client";
 import type { AddonVersionInfo } from "../../api/client";
-import T from "../../theme";
 import { modalBtnStyle } from "../shared/Modal";
 import { groupVersions, MiniBtn, Tag } from "./AddonSidebar";
+import T from "../../theme";
+import s from "./VersionManagePanel.module.css";
 
 export default function VersionManagePanel({
   addonId,
@@ -61,9 +63,9 @@ export default function VersionManagePanel({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+    <div className={s.container}>
       {/* Toolbar */}
-      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+      <div className={s.toolbar}>
         <MiniBtn onClick={onNewVersion}>{t("addon.newVersion")}</MiniBtn>
         <MiniBtn active={copySource !== null} onClick={() => setCopySource(copySource ? null : selectedVersion)}>
           {copySource ? t("addon.cancelCopy") : t("addon.copyContent")}
@@ -71,15 +73,7 @@ export default function VersionManagePanel({
       </div>
 
       {copySource && (
-        <div
-          style={{
-            padding: "4px 8px",
-            backgroundColor: `${T.accent}15`,
-            borderRadius: "3px",
-            fontSize: "10px",
-            color: T.accent,
-          }}
-        >
+        <div className={s.copySourceBanner}>
           {t("addon.copySource", { source: copySource })}
         </div>
       )}
@@ -94,33 +88,17 @@ export default function VersionManagePanel({
         return (
           <div
             key={ver}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "4px 8px",
-              borderRadius: "4px",
-              marginLeft: indent ? "14px" : 0,
-              backgroundColor: isCopyTarget ? `${T.accent}10` : T.bg1,
-              border: `1px solid ${isCopyTarget ? T.accent + "40" : T.borderDim}`,
-              cursor: isCopyTarget ? "pointer" : "default",
-              fontSize: "11px",
-              opacity: busy ? 0.5 : 1,
-            }}
+            className={clsx(
+              s.versionItem,
+              indent && s.versionItemIndent,
+              isCopyTarget && s.versionItemCopyTarget,
+            )}
+            style={{ opacity: busy ? 0.5 : 1 }}
             onClick={() => isCopyTarget && handleCopy(ver)}
           >
-            {indent && <span style={{ color: T.textFaint, fontSize: "10px", marginRight: "-2px" }}>└</span>}
+            {indent && <span className={s.indentArrow}>{"\u2514"}</span>}
 
-            <span
-              style={{
-                flex: 1,
-                color: T.text,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                fontWeight: isCurrent ? "bold" : "normal",
-              }}
-            >
+            <span className={clsx(s.versionLabel, isCurrent && s.versionLabelCurrent)}>
               {ver}
             </span>
 
@@ -128,7 +106,7 @@ export default function VersionManagePanel({
             {isBase && <Tag color={T.successDim}>{t("addon.tagBase")}</Tag>}
             {!isBase && <Tag color="#6ab">{t("addon.tagBranch")}</Tag>}
 
-            {isCopyTarget && <span style={{ color: T.accent, fontSize: "10px", flexShrink: 0 }}>{t("addon.paste")}</span>}
+            {isCopyTarget && <span className={s.pasteHint}>{t("addon.paste")}</span>}
 
             {/* Copy source selector (when in copy mode, click to change source) */}
             {copySource && copySource === ver && <Tag color={T.accent}>{t("addon.tagSource")}</Tag>}
@@ -140,17 +118,7 @@ export default function VersionManagePanel({
                   e.stopPropagation();
                   setDeleteConfirm(ver);
                 }}
-                style={{
-                  background: "none",
-                  border: `1px solid ${T.danger}30`,
-                  padding: "1px 5px",
-                  color: T.danger,
-                  cursor: "pointer",
-                  fontSize: "10px",
-                  borderRadius: "3px",
-                  flexShrink: 0,
-                  opacity: 0.6,
-                }}
+                className={s.deleteItemBtn}
               >
                 {t("btn.delete")}
               </button>
@@ -161,29 +129,20 @@ export default function VersionManagePanel({
 
       {/* Delete confirmation */}
       {deleteConfirm && (
-        <div
-          style={{
-            padding: "6px 8px",
-            backgroundColor: T.dangerBg,
-            borderRadius: "4px",
-            border: `1px solid ${T.danger}40`,
-            fontSize: "11px",
-            color: T.text,
-          }}
-        >
+        <div className={s.deleteConfirm}>
           <div>
             {t("addon.confirmDeleteVer", { version: deleteConfirm })}
           </div>
-          <div style={{ display: "flex", gap: "6px", marginTop: "6px", justifyContent: "flex-end" }}>
+          <div className={s.deleteConfirmActions}>
             <button
               onClick={() => setDeleteConfirm(null)}
-              style={{ ...modalBtnStyle(T.bg2, T.textSub), padding: "3px 10px", fontSize: "11px" }}
+              style={{ ...modalBtnStyle("var(--bg2)", "var(--text-sub)"), padding: "3px 10px", fontSize: "11px" }}
             >
               {t("btn.cancel")}
             </button>
             <button
               onClick={() => handleDelete(deleteConfirm)}
-              style={{ ...modalBtnStyle(T.dangerBg, T.danger), padding: "3px 10px", fontSize: "11px" }}
+              style={{ ...modalBtnStyle("var(--danger-bg)", "var(--danger)"), padding: "3px 10px", fontSize: "11px" }}
             >
               {t("btn.delete")}
             </button>

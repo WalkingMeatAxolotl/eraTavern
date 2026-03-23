@@ -1,0 +1,36 @@
+/* ModifierEditor.module.css */
+
+.wrapper {
+  margin-bottom: 4px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.headerLabel {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+/* Modifier row */
+.row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+/* Width utilities */
+.w55 { width: 55px; }
+.w60 { width: 60px; }
+.w80 { width: 80px; }
+.wAuto { width: auto; }
+.fs11 { font-size: 11px; }
+
+/* "per" label spans */
+.perSpan {
+  color: var(--text-sub);
+  font-size: 11px;
+}

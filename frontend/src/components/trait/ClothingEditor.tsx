@@ -5,7 +5,7 @@ import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
-import { HelpButton, HelpPanel, helpSub, helpP, helpEm } from "../shared/HelpToggle";
+import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import { toLocalId } from "../shared/idUtils";
 import { inputStyle, labelStyle, btn } from "../shared/styles";
 import CloneButton from "../shared/CloneDialog";
@@ -176,9 +176,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           </div>
           {showSlotHelp && (
             <HelpPanel>
-              <div style={helpP}>{t("clothing.slotHelp")}</div>
-              <div style={helpSub}>{t("clothing.multiSlot")}</div>
-              <div style={helpP}>{t("clothing.multiSlotHelp")}</div>
+              <div className={helpStyles.helpP}>{t("clothing.slotHelp")}</div>
+              <div className={helpStyles.helpSub}>{t("clothing.multiSlot")}</div>
+              <div className={helpStyles.helpP}>{t("clothing.multiSlotHelp")}</div>
             </HelpPanel>
           )}
           <div
@@ -273,11 +273,11 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         </div>
         {showOcclusionHelp && (
           <HelpPanel>
-            <div style={helpP}>
-              {t("clothing.occlusionHelp1", { highlight: <span style={helpEm}>???</span> })}
+            <div className={helpStyles.helpP}>
+              {t("clothing.occlusionHelp1", { highlight: <span className={helpStyles.helpEm}>???</span> })}
             </div>
-            <div style={helpP}>
-              {t("clothing.occlusionHelp2", { highlight: <span style={helpEm}>worn</span> })}
+            <div className={helpStyles.helpP}>
+              {t("clothing.occlusionHelp2", { highlight: <span className={helpStyles.helpEm}>worn</span> })}
             </div>
           </HelpPanel>
         )}

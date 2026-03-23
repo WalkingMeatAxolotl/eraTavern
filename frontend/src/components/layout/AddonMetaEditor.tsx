@@ -2,8 +2,8 @@ import { useState, useRef } from "react";
 import { t } from "../../i18n/ui";
 import type { AddonInfo } from "../../types/game";
 import { updateAddonMeta, uploadAsset } from "../../api/client";
-import T from "../../theme";
-import { fieldInputStyle } from "./AddonSidebar";
+import clsx from "clsx";
+import s from "./AddonMetaEditor.module.css";
 
 function MetaField({
   label,
@@ -17,14 +17,9 @@ function MetaField({
   placeholder?: string;
 }) {
   return (
-    <div style={{ display: "flex", gap: "4px", alignItems: "center", fontSize: "11px" }}>
-      <span style={{ color: T.textSub, width: "32px", flexShrink: 0 }}>{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={fieldInputStyle}
-      />
+    <div className={s.fieldRow}>
+      <span className={s.fieldLabel}>{label}</span>
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={s.fieldInput} />
     </div>
   );
 }
@@ -95,89 +90,37 @@ export default function AddonMetaEditor({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+    <div className={s.container}>
       <MetaField label={t("field.name")} value={name} onChange={setName} />
       <MetaField label={t("field.author")} value={author} onChange={setAuthor} />
       <MetaField label={t("field.categories")} value={categories} onChange={setCategories} placeholder={t("addon.commaSep")} />
-      <div style={{ display: "flex", gap: "4px", fontSize: "11px" }}>
-        <span style={{ color: T.textSub, width: "32px", flexShrink: 0, paddingTop: "4px" }}>{t("field.intro")}</span>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={2}
-          style={{ ...fieldInputStyle, resize: "vertical" }}
-        />
+      <div className={s.fieldRow}>
+        <span className={clsx(s.fieldLabel, s.fieldLabelTop)}>{t("field.intro")}</span>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className={s.textarea} />
       </div>
-      <div style={{ display: "flex", gap: "4px", alignItems: "center", fontSize: "11px" }}>
-        <span style={{ color: T.textSub, width: "32px", flexShrink: 0 }}>{t("field.cover")}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
+      <div className={s.fieldRow}>
+        <span className={s.fieldLabel}>{t("field.cover")}</span>
+        <div className={s.coverRow}>
           {cover && (
-            <img
-              src={`/assets/${addon.id}/covers/${cover}?t=${coverBust}`}
-              alt=""
-              style={{
-                width: "28px",
-                height: "28px",
-                objectFit: "cover",
-                borderRadius: "3px",
-                border: `1px solid ${T.borderDim}`,
-              }}
-            />
+            <img src={`/assets/${addon.id}/covers/${cover}?t=${coverBust}`} alt="" className={s.coverImg} />
           )}
-          <span
-            style={{
-              fontSize: "11px",
-              color: T.textFaint,
-              flex: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {cover || t("ui.none")}
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            ref={coverFileRef}
-            style={{ display: "none" }}
-            onChange={handleCoverUpload}
-          />
-          <button
-            onClick={() => coverFileRef.current?.click()}
-            style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.textSub }}
-          >
+          <span className={s.coverName}>{cover || t("ui.none")}</span>
+          <input type="file" accept="image/*" ref={coverFileRef} className={s.coverHidden} onChange={handleCoverUpload} />
+          <button onClick={() => coverFileRef.current?.click()} className={clsx(s.smallBtn, s.smallBtnSub)}>
             {t("btn.select")}
           </button>
           {cover && (
-            <button
-              onClick={() => setCover("")}
-              style={{ ...fieldInputStyle, width: "auto", padding: "2px 8px", cursor: "pointer", color: T.danger }}
-            >
+            <button onClick={() => setCover("")} className={clsx(s.smallBtn, s.smallBtnDanger)}>
               {t("btn.remove")}
             </button>
           )}
         </div>
       </div>
-      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
-        <button
-          onClick={onClose}
-          style={{ ...fieldInputStyle, width: "auto", padding: "3px 10px", cursor: "pointer", color: T.textSub }}
-        >
+      <div className={s.actions}>
+        <button onClick={onClose} className={clsx(s.actionBtn, s.actionBtnCancel)}>
           {t("btn.cancel")}
         </button>
-        <button
-          onClick={handleSave}
-          disabled={saving || !name.trim()}
-          style={{
-            ...fieldInputStyle,
-            width: "auto",
-            padding: "3px 10px",
-            cursor: "pointer",
-            color: T.success,
-            borderColor: T.successDim,
-          }}
-        >
+        <button onClick={handleSave} disabled={saving || !name.trim()} className={clsx(s.actionBtn, s.actionBtnSave)}>
           {saving ? t("status.saving") : t("btn.save")}
         </button>
       </div>

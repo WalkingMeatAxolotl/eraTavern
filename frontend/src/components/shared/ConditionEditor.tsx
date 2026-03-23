@@ -4,13 +4,16 @@
  * Used by ActionEditor and EventManager.
  * Reads shared data from EditorContext (no props drilling).
  */
+import clsx from "clsx";
 import type { ActionCondition, ConditionItem } from "../../types/game";
 import T from "../../theme";
 import { CondType, EF, CondTarget, TargetType, ClothingState, Season, DayOfWeek } from "../../constants";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { useEditorContext } from "./EditorContext";
 import type { MapInfo } from "./EditorContext";
-import { inputStyle, btn, listRowStyle } from "./styles";
+import { btn, listRowStyle } from "./styles";
+import s from "./ConditionEditor.module.css";
+import sh from "./shared.module.css";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -133,31 +136,18 @@ export function ConditionItemEditor({
     else onChange({ not: item });
   };
   return (
-    <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+    <div className={s.itemRow}>
       {!disabled ? (
         <button
           onClick={toggleNot}
-          style={{
-            ...btn("default", "sm"),
-            color: isNot ? "#e9a045" : T.textDim,
-            minWidth: "28px",
-            textAlign: "center",
-            padding: "1px 4px",
-            fontWeight: isNot ? "bold" : "normal",
-          }}
+          className={clsx(s.negBtn, isNot && s.negBtnActive)}
+          style={btn("default", "sm")}
           title={isNot ? t("cond.negUntoggle") : t("cond.negToggle")}
         >
           {isNot ? t("cond.negFalse") : t("cond.negTrue")}
         </button>
       ) : (
-        <span
-          style={{
-            color: isNot ? "#e9a045" : T.textDim,
-            fontSize: "11px",
-            minWidth: "28px",
-            fontWeight: isNot ? "bold" : "normal",
-          }}
-        >
+        <span className={clsx(s.negLabel, isNot && s.negLabelActive)}>
           {isNot ? t("cond.negFalse") : t("cond.negTrue")}
         </span>
       )}
@@ -214,18 +204,17 @@ function ConditionGroupEditor({
 
   return (
     <div
+      className={s.group}
       style={{
         border: `1px dashed ${borderColor}`,
-        borderRadius: "3px",
-        padding: "4px 6px",
         marginLeft: depth > 0 ? "16px" : "28px",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-        <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-          <span style={{ color: labelColor, fontSize: "11px", fontWeight: "bold" }}>{label}</span>
+      <div className={s.groupHeader}>
+        <div className={s.groupLabelWrap}>
+          <span className={s.groupLabel} style={{ color: labelColor }}>{label}</span>
         </div>
-        <div style={{ display: "flex", gap: "4px" }}>
+        <div className={s.groupActions}>
           {!disabled && depth + 1 < MAX_UI_DEPTH && (
             <>
               <button className="ae-add-btn" onClick={addLeaf} style={btn("add", "sm")}>
@@ -252,7 +241,7 @@ function ConditionGroupEditor({
         </div>
       </div>
       {items.map((child, idx) => (
-        <div key={idx} style={{ ...listRowStyle(idx, idx === items.length - 1), marginBottom: "2px" }}>
+        <div key={idx} className={s.groupRow} style={listRowStyle(idx, idx === items.length - 1)}>
           <ConditionItemEditor
             item={child}
             onChange={(c) => updateChild(idx, c)}
@@ -313,9 +302,9 @@ function ConditionLeafEditor({
   const showCondTarget = !noCondTarget;
 
   return (
-    <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
+    <div className={s.leafRow}>
       <select
-        style={{ ...inputStyle, width: "auto" }}
+        className={clsx(sh.input, s.inputAuto)}
         value={effectiveType}
         onChange={(e) => onChange({ type: e.target.value as ActionCondition["type"] })}
         disabled={disabled}
@@ -332,7 +321,7 @@ function ConditionLeafEditor({
               if (t.group && t.group !== lastGroup) {
                 lastGroup = t.group;
                 els.push(
-                  <option key={`g-${t.group}`} disabled style={{ fontWeight: "bold" }}>
+                  <option key={`g-${t.group}`} disabled className={s.optgroupBold}>
                     ── {t.group} ──
                   </option>,
                 );
@@ -350,7 +339,7 @@ function ConditionLeafEditor({
 
       {showCondTarget && (
         <select
-          style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+          className={clsx(sh.input, s.inputAutoSm)}
           value={condition.condTarget ?? CondTarget.SELF}
           onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })}
           disabled={disabled || actionTargetType !== TargetType.NPC}
@@ -366,7 +355,7 @@ function ConditionLeafEditor({
 
       {effectiveType === CondType.NPC_PRESENT && (
         <select
-          style={inputStyle}
+          className={sh.input}
           value={condition.npcId ?? ""}
           onChange={(e) => update({ npcId: e.target.value || undefined })}
           disabled={disabled}
@@ -383,7 +372,7 @@ function ConditionLeafEditor({
       {[EF.RESOURCE, EF.ABILITY, EF.EXPERIENCE, EF.BASIC_INFO].includes(effectiveType) && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={condition.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
@@ -403,7 +392,7 @@ function ConditionLeafEditor({
             ))}
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={condition.op ?? ">="}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -416,7 +405,7 @@ function ConditionLeafEditor({
           </select>
           <input
             type="number"
-            style={{ ...inputStyle, width: "70px" }}
+            className={clsx(sh.input, s.input70)}
             value={condition.value ?? 0}
             onChange={(e) => update({ value: Number(e.target.value) })}
             disabled={disabled}
@@ -427,7 +416,7 @@ function ConditionLeafEditor({
       {effectiveType === EF.TRAIT && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={condition.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
@@ -440,7 +429,7 @@ function ConditionLeafEditor({
             ))}
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={condition.traitId ?? ""}
             onChange={(e) => update({ traitId: e.target.value })}
             disabled={disabled}
@@ -460,7 +449,7 @@ function ConditionLeafEditor({
       {effectiveType === EF.FAVORABILITY && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={
               condition.condTarget === CondTarget.TARGET
                 ? "target_to_self"
@@ -481,7 +470,7 @@ function ConditionLeafEditor({
             <option value="target_to_self">{t("target.targetToSelf")}</option>
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={condition.op ?? ">="}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -494,7 +483,7 @@ function ConditionLeafEditor({
           </select>
           <input
             type="number"
-            style={{ ...inputStyle, width: "70px" }}
+            className={clsx(sh.input, s.input70)}
             value={condition.value ?? 0}
             onChange={(e) => update({ value: Number(e.target.value) })}
             disabled={disabled}
@@ -505,7 +494,7 @@ function ConditionLeafEditor({
       {effectiveType === EF.HAS_ITEM && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={condition.itemId ?? ""}
             onChange={(e) => update({ itemId: e.target.value || undefined })}
             disabled={disabled}
@@ -518,14 +507,14 @@ function ConditionLeafEditor({
             ))}
           </select>
           <input
-            style={{ ...inputStyle, width: "80px" }}
+            className={clsx(sh.input, s.input80)}
             value={condition.tag ?? ""}
             onChange={(e) => update({ tag: e.target.value || undefined })}
             disabled={disabled}
             placeholder={t("cond.tagFilter")}
           />
           <select
-            style={{ ...inputStyle, width: "auto" }}
+            className={clsx(sh.input, s.inputAuto)}
             value={condition.op ?? ""}
             onChange={(e) =>
               update({ op: e.target.value || undefined, value: e.target.value ? (condition.value ?? 1) : undefined })
@@ -542,7 +531,7 @@ function ConditionLeafEditor({
           {condition.op && (
             <input
               type="number"
-              style={{ ...inputStyle, width: "60px" }}
+              className={clsx(sh.input, s.input60)}
               value={condition.value ?? 1}
               onChange={(e) => update({ value: Number(e.target.value) })}
               disabled={disabled}
@@ -553,7 +542,7 @@ function ConditionLeafEditor({
 
       {effectiveType === EF.OUTFIT && (
         <select
-          style={inputStyle}
+          className={sh.input}
           value={condition.outfitId ?? ""}
           onChange={(e) => update({ outfitId: e.target.value })}
           disabled={disabled}
@@ -575,20 +564,20 @@ function ConditionLeafEditor({
           return (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={condition.slot ?? ""}
                 onChange={(e) => update({ slot: e.target.value, itemId: undefined })}
                 disabled={disabled}
               >
                 <option value="">{t("opt.selectSlot")}</option>
-                {clothingSlots.map((s) => (
-                  <option key={s} value={s}>
-                    {SLOT_LABELS[s] ?? s}
+                {clothingSlots.map((sl) => (
+                  <option key={sl} value={sl}>
+                    {SLOT_LABELS[sl] ?? sl}
                   </option>
                 ))}
               </select>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={condition.itemId ?? ""}
                 onChange={(e) => update({ itemId: e.target.value || undefined })}
                 disabled={disabled}
@@ -601,7 +590,7 @@ function ConditionLeafEditor({
                 ))}
               </select>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={condition.state ?? ""}
                 onChange={(e) => update({ state: e.target.value || undefined })}
                 disabled={disabled}
@@ -620,7 +609,7 @@ function ConditionLeafEditor({
         <>
           <input
             type="number"
-            style={{ ...inputStyle, width: "50px" }}
+            className={clsx(sh.input, s.input50)}
             value={condition.hourMin ?? ""}
             onChange={(e) =>
               update({ hourMin: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })
@@ -630,10 +619,10 @@ function ConditionLeafEditor({
             min={0}
             max={23}
           />
-          <span style={{ color: T.textDim }}>~</span>
+          <span className={s.textDim}>~</span>
           <input
             type="number"
-            style={{ ...inputStyle, width: "50px" }}
+            className={clsx(sh.input, s.input50)}
             value={condition.hourMax ?? ""}
             onChange={(e) =>
               update({ hourMax: e.target.value ? Math.min(23, Math.max(0, Number(e.target.value))) : undefined })
@@ -644,7 +633,7 @@ function ConditionLeafEditor({
             max={23}
           />
           <select
-            style={{ ...inputStyle, width: "auto" }}
+            className={clsx(sh.input, s.inputAuto)}
             value={condition.season ?? ""}
             onChange={(e) => update({ season: e.target.value || undefined })}
             disabled={disabled}
@@ -662,7 +651,7 @@ function ConditionLeafEditor({
             ))}
           </select>
           <select
-            style={{ ...inputStyle, width: "auto" }}
+            className={clsx(sh.input, s.inputAuto)}
             value={condition.dayOfWeek ?? ""}
             onChange={(e) => update({ dayOfWeek: e.target.value || undefined })}
             disabled={disabled}
@@ -683,7 +672,7 @@ function ConditionLeafEditor({
             ))}
           </select>
           <select
-            style={{ ...inputStyle, width: "auto" }}
+            className={clsx(sh.input, s.inputAuto)}
             value={condition.weather ?? ""}
             onChange={(e) => update({ weather: e.target.value || undefined })}
             disabled={disabled}
@@ -704,7 +693,7 @@ function ConditionLeafEditor({
             <>
               {isBiVar && actionTargetType === TargetType.NPC && (
                 <select
-                  style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                  className={clsx(sh.input, s.inputAutoSm)}
                   value={condition.condTarget ?? CondTarget.SELF}
                   onChange={(e) => update({ condTarget: e.target.value as "self" | "target" })}
                   disabled={disabled}
@@ -714,7 +703,7 @@ function ConditionLeafEditor({
                 </select>
               )}
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={condition.varId ?? ""}
                 onChange={(e) => update({ varId: e.target.value })}
                 disabled={disabled}
@@ -735,7 +724,7 @@ function ConditionLeafEditor({
                   ))}
               </select>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={condition.op ?? ">="}
                 onChange={(e) => update({ op: e.target.value })}
                 disabled={disabled}
@@ -748,7 +737,7 @@ function ConditionLeafEditor({
               </select>
               <input
                 type="number"
-                style={{ ...inputStyle, width: "70px" }}
+                className={clsx(sh.input, s.input70)}
                 value={condition.value ?? 0}
                 onChange={(e) => update({ value: Number(e.target.value) })}
                 disabled={disabled}
@@ -760,7 +749,7 @@ function ConditionLeafEditor({
       {effectiveType === EF.WORLD_VAR && (
         <>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={condition.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
             disabled={disabled}
@@ -773,7 +762,7 @@ function ConditionLeafEditor({
             ))}
           </select>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={condition.op ?? ">="}
             onChange={(e) => update({ op: e.target.value })}
             disabled={disabled}
@@ -786,7 +775,7 @@ function ConditionLeafEditor({
           </select>
           <input
             type="number"
-            style={{ ...inputStyle, width: "70px" }}
+            className={clsx(sh.input, s.input70)}
             value={condition.value ?? 0}
             onChange={(e) => update({ value: Number(e.target.value) })}
             disabled={disabled}
@@ -833,9 +822,9 @@ function LocationCondEditor({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+    <div className={s.locationWrap}>
       <select
-        style={inputStyle}
+        className={sh.input}
         value={condition.mapId ?? ""}
         onChange={(e) => onChange({ mapId: e.target.value, cellIds: [], cellTags: [] })}
         disabled={disabled}
@@ -848,30 +837,19 @@ function LocationCondEditor({
         ))}
       </select>
       {condition.mapId && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "2px" }}>
+        <div className={s.cellGrid}>
           {allTags.length > 0 &&
             allTags.map((tag) => (
               <label
                 key={`tag-${tag}`}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  padding: "2px 6px",
-                  fontSize: "11px",
-                  cursor: disabled ? "default" : "pointer",
-                  backgroundColor: selectedTags.has(tag) ? "#2a4a2a" : T.bg2,
-                  border: `1px solid ${selectedTags.has(tag) ? "#4a8a4a" : T.border}`,
-                  borderRadius: "3px",
-                  color: selectedTags.has(tag) ? "#8f8" : T.textSub,
-                }}
+                className={clsx(s.chip, disabled && s.chipDisabled, selectedTags.has(tag) && s.chipTagSelected)}
               >
                 <input
                   type="checkbox"
                   checked={selectedTags.has(tag)}
                   onChange={() => toggleTag(tag)}
                   disabled={disabled}
-                  style={{ margin: 0, width: "12px", height: "12px" }}
+                  className={s.checkbox}
                 />
                 #{tag}
               </label>
@@ -883,29 +861,22 @@ function LocationCondEditor({
             return (
               <label
                 key={c.id}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  padding: "2px 6px",
-                  fontSize: "11px",
-                  cursor: disabled ? "default" : "pointer",
-                  backgroundColor: isActive ? (isTagged ? "#1a3a4a" : "#2a2a4a") : T.bg2,
-                  border: `1px solid ${isActive ? (isTagged ? "#4a8aaa" : "#6a6aaa") : T.border}`,
-                  borderRadius: "3px",
-                  color: isActive ? T.text : T.textSub,
-                  opacity: isTagged && !isManual ? 0.8 : 1,
-                }}
+                className={clsx(
+                  s.chip,
+                  disabled && s.chipDisabled,
+                  isActive && (isTagged ? s.chipCellTagged : s.chipCellActive),
+                  isTagged && !isManual && s.chipCellTaggedOnly,
+                )}
               >
                 <input
                   type="checkbox"
                   checked={isManual}
                   onChange={() => toggleCell(c.id)}
                   disabled={disabled || isTagged}
-                  style={{ margin: 0, width: "12px", height: "12px" }}
+                  className={s.checkbox}
                 />
                 {c.name ?? `#${c.id}`}
-                {isTagged && <span style={{ fontSize: "11px", color: "#4a8aaa" }}>(tag)</span>}
+                {isTagged && <span className={s.tagIndicator}>(tag)</span>}
               </label>
             );
           })}

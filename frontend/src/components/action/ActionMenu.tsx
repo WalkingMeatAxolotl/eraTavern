@@ -1,8 +1,9 @@
-import T from "../../theme";
 import { useMemo, useState } from "react";
+import clsx from "clsx";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import type { GameAction, OutfitTarget } from "../../types/game";
 import { ActionType, TargetType } from "../../constants";
+import s from "./ActionMenu.module.css";
 
 interface ActionMenuProps {
   actions: GameAction[];
@@ -59,68 +60,19 @@ export default function ActionMenu({
   const showBasic = activeTab === ALL_TAB || activeTab === BASIC_TAB;
   const visibleCats = activeTab === ALL_TAB ? Object.keys(grouped) : grouped[activeTab] ? [activeTab] : [];
 
-  const btnBase: React.CSSProperties = {
-    display: "block",
-    width: "100%",
-    textAlign: "left",
-    padding: "4px 8px",
-    marginBottom: "2px",
-    border: `1px solid ${T.border}`,
-    fontSize: "13px",
-  };
-
-  const tabStyle = (tab: string): React.CSSProperties => ({
-    padding: "3px 8px",
-    backgroundColor: "transparent",
-    color: activeTab === tab ? T.accent : T.textSub,
-    border: "none",
-    borderBottom: activeTab === tab ? `2px solid ${T.accent}` : "2px solid transparent",
-    cursor: "pointer",
-    fontSize: "12px",
-    fontWeight: activeTab === tab ? "bold" : "normal",
-  });
-
   const subHeader = (title: string) => (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        borderBottom: `1px solid ${T.border}`,
-        marginBottom: "8px",
-        paddingBottom: "2px",
-      }}
-    >
-      <span style={{ color: T.accent, fontWeight: "bold" }}>== {title} ==</span>
-      <button
-        onClick={() => setMenuMode("normal")}
-        style={{
-          background: "none",
-          border: `1px solid ${T.border}`,
-          color: T.textSub,
-          cursor: "pointer",
-          padding: "2px 8px",
-          borderRadius: "3px",
-          fontSize: "12px",
-        }}
-      >
+    <div className={s.subHeader}>
+      <span className={s.subHeaderTitle}>== {title} ==</span>
+      <button onClick={() => setMenuMode("normal")} className={s.returnBtn}>
         [{t("btn.return")}]
       </button>
     </div>
   );
 
-  const container: React.CSSProperties = {
-    fontSize: "13px",
-    color: T.text,
-    backgroundColor: T.bg1,
-    padding: "12px",
-    borderRadius: "4px",
-  };
-
   // ─── Move detail ───
   if (menuMode === "moveDetail" && moveAction?.targets) {
     return (
-      <div style={container}>
+      <div className={s.container}>
         {subHeader(t("menu.move"))}
         {moveAction.targets.map((target, idx) => (
           <button
@@ -130,16 +82,11 @@ export default function ActionMenu({
               setMenuMode("normal");
             }}
             disabled={disabled}
-            style={{
-              ...btnBase,
-              backgroundColor: disabled ? T.borderDim : T.bg2,
-              color: disabled ? T.textDim : T.actionMove,
-              cursor: disabled ? "not-allowed" : "pointer",
-            }}
+            className={clsx(s.actionBtn, s.actionMove)}
           >
             [{idx + 1}] {target.targetMapName ? `${target.targetMapName} - ` : ""}
             {target.targetCellName}
-            <span style={{ color: T.textSub, fontSize: "11px" }}> ({target.travelTime ?? 10}{t("ui.minutes")})</span>
+            <span className={s.hint}> ({target.travelTime ?? 10}{t("ui.minutes")})</span>
           </button>
         ))}
       </div>
@@ -149,7 +96,7 @@ export default function ActionMenu({
   // ─── Look detail ───
   if (menuMode === "lookDetail" && lookAction?.targets) {
     return (
-      <div style={container}>
+      <div className={s.container}>
         {subHeader(t("menu.look"))}
         {lookAction.targets.map((target, idx) => (
           <button
@@ -159,12 +106,7 @@ export default function ActionMenu({
               setMenuMode("normal");
             }}
             disabled={disabled}
-            style={{
-              ...btnBase,
-              backgroundColor: disabled ? T.borderDim : T.bg2,
-              color: disabled ? T.textDim : T.actionLook,
-              cursor: disabled ? "not-allowed" : "pointer",
-            }}
+            className={clsx(s.actionBtn, s.actionLook)}
           >
             [{idx + 1}] {target.targetMapName ? `${target.targetMapName} - ` : ""}
             {target.targetCellName}
@@ -177,7 +119,7 @@ export default function ActionMenu({
   // ─── Outfit select (step 1) ───
   if (menuMode === "outfitSelect" && outfitAction?.outfitTargets) {
     return (
-      <div style={container}>
+      <div className={s.container}>
         {subHeader(t("menu.changeOutfit"))}
         {outfitAction.outfitTargets.map((ot) => (
           <button
@@ -192,15 +134,10 @@ export default function ActionMenu({
               setMenuMode("outfitDetail");
             }}
             disabled={disabled}
-            style={{
-              ...btnBase,
-              backgroundColor: disabled ? T.borderDim : T.bg2,
-              color: disabled ? T.textDim : T.accent,
-              cursor: disabled ? "not-allowed" : "pointer",
-            }}
+            className={clsx(s.actionBtn, s.actionAccent)}
           >
             {ot.outfitName}
-            {ot.current && <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "6px" }}>({t("ui.current")})</span>}
+            {ot.current && <span className={s.currentTag}>({t("ui.current")})</span>}
           </button>
         ))}
       </div>
@@ -211,49 +148,21 @@ export default function ActionMenu({
   if (menuMode === "outfitDetail" && selectedOutfit) {
     const slotsWithItems = Object.entries(selectedOutfit.slots).filter(([, items]) => items.length > 0);
     return (
-      <div style={container}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: `1px solid ${T.border}`,
-            marginBottom: "8px",
-            paddingBottom: "2px",
-          }}
-        >
-          <span style={{ color: T.accent, fontWeight: "bold" }}>== {selectedOutfit.outfitName} ==</span>
-          <button
-            onClick={() => setMenuMode("outfitSelect")}
-            style={{
-              background: "none",
-              border: `1px solid ${T.border}`,
-              color: T.textSub,
-              cursor: "pointer",
-              padding: "2px 8px",
-              borderRadius: "3px",
-              fontSize: "12px",
-            }}
-          >
+      <div className={s.container}>
+        <div className={s.subHeader}>
+          <span className={s.subHeaderTitle}>== {selectedOutfit.outfitName} ==</span>
+          <button onClick={() => setMenuMode("outfitSelect")} className={s.returnBtn}>
             [{t("btn.return")}]
           </button>
         </div>
         {slotsWithItems.map(([slot, items]) => (
-          <div key={slot} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-            <span style={{ minWidth: "90px", color: T.textSub, fontSize: "12px" }}>{SLOT_LABELS[slot] ?? slot}:</span>
+          <div key={slot} className={s.slotRow}>
+            <span className={s.slotLabel}>{SLOT_LABELS[slot] ?? slot}:</span>
             {items.length === 1 ? (
-              <span style={{ color: T.text, fontSize: "12px" }}>{items[0].name}</span>
+              <span className={s.slotText}>{items[0].name}</span>
             ) : (
               <select
-                style={{
-                  padding: "2px 6px",
-                  backgroundColor: T.bg3,
-                  color: T.text,
-                  border: `1px solid ${T.borderLight}`,
-                  borderRadius: "3px",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
+                className={s.slotSelect}
                 value={slotSelections[slot] ?? items[0].id}
                 onChange={(e) => setSlotSelections((prev) => ({ ...prev, [slot]: e.target.value }))}
               >
@@ -267,7 +176,7 @@ export default function ActionMenu({
           </div>
         ))}
         {slotsWithItems.length === 0 && (
-          <div style={{ color: T.textDim, fontSize: "12px", marginBottom: "8px" }}>{t("menu.emptyOutfit")}</div>
+          <div className={s.emptyOutfit}>{t("menu.emptyOutfit")}</div>
         )}
         <button
           onClick={() => {
@@ -276,16 +185,9 @@ export default function ActionMenu({
             setSelectedOutfit(null);
           }}
           disabled={disabled || slotsWithItems.length === 0}
-          style={{
-            ...btnBase,
-            backgroundColor: disabled ? T.borderDim : T.bg2,
-            color: disabled ? T.textDim : T.successDim,
-            cursor: disabled ? "not-allowed" : "pointer",
-            textAlign: "center",
-            marginTop: "6px",
-          }}
+          className={clsx(s.actionBtn, s.actionSuccess)}
         >
-          [{t("btn.confirmOutfit")}] <span style={{ color: T.textSub, fontSize: "11px" }}>(5{t("ui.minutes")})</span>
+          [{t("btn.confirmOutfit")}] <span className={s.hint}>(5{t("ui.minutes")})</span>
         </button>
       </div>
     );
@@ -293,27 +195,19 @@ export default function ActionMenu({
 
   // ─── Normal view ───
   return (
-    <div style={container}>
-      <div
-        style={{
-          color: T.accent,
-          borderBottom: `1px solid ${T.border}`,
-          marginBottom: "4px",
-          paddingBottom: "2px",
-          fontWeight: "bold",
-        }}
-      >
+    <div className={s.container}>
+      <div className={s.sectionHeader}>
         == {t("menu.actions")} ==
       </div>
 
       {/* Category tabs */}
       {tabs.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", borderBottom: `1px solid ${T.border}`, marginBottom: "8px" }}>
-          <button style={tabStyle(ALL_TAB)} onClick={() => setActiveTab(ALL_TAB)}>
+        <div className={s.tabBar}>
+          <button className={clsx(s.tab, activeTab === ALL_TAB && s.tabActive)} onClick={() => setActiveTab(ALL_TAB)}>
             [{t("menu.all")}]
           </button>
           {tabs.map((tab) => (
-            <button key={tab} style={tabStyle(tab)} onClick={() => setActiveTab(tab)}>
+            <button key={tab} className={clsx(s.tab, activeTab === tab && s.tabActive)} onClick={() => setActiveTab(tab)}>
               [{tab}]
             </button>
           ))}
@@ -322,48 +216,33 @@ export default function ActionMenu({
 
       {/* Basic: move, look, outfit as entry buttons */}
       {showBasic && (
-        <div style={{ marginBottom: "8px" }}>
-          {activeTab === ALL_TAB && <div style={{ color: T.textSub, marginBottom: "4px" }}>{t("label.basic")}:</div>}
+        <div className={s.categorySection}>
+          {activeTab === ALL_TAB && <div className={s.categoryLabel}>{t("label.basic")}:</div>}
           {moveAction && (
             <button
               onClick={() => setMenuMode("moveDetail")}
               disabled={disabled}
-              style={{
-                ...btnBase,
-                backgroundColor: disabled ? T.borderDim : T.bg2,
-                color: disabled ? T.textDim : T.actionMove,
-                cursor: disabled ? "not-allowed" : "pointer",
-              }}
+              className={clsx(s.actionBtn, s.actionMove)}
             >
               [{t("menu.moveEllipsis")}]
-              <span style={{ color: T.textSub, fontSize: "11px" }}> ({t("menu.moveTargets", { count: moveAction.targets?.length ?? 0 })})</span>
+              <span className={s.hint}> ({t("menu.moveTargets", { count: moveAction.targets?.length ?? 0 })})</span>
             </button>
           )}
           {lookAction && (
             <button
               onClick={() => setMenuMode("lookDetail")}
               disabled={disabled}
-              style={{
-                ...btnBase,
-                backgroundColor: disabled ? T.borderDim : T.bg2,
-                color: disabled ? T.textDim : T.actionLook,
-                cursor: disabled ? "not-allowed" : "pointer",
-              }}
+              className={clsx(s.actionBtn, s.actionLook)}
             >
               [{t("menu.lookEllipsis")}]
-              <span style={{ color: T.textSub, fontSize: "11px" }}> ({t("menu.lookTargets", { count: lookAction.targets?.length ?? 0 })})</span>
+              <span className={s.hint}> ({t("menu.lookTargets", { count: lookAction.targets?.length ?? 0 })})</span>
             </button>
           )}
           {outfitAction && (
             <button
               onClick={() => setMenuMode("outfitSelect")}
               disabled={disabled}
-              style={{
-                ...btnBase,
-                backgroundColor: disabled ? T.borderDim : T.bg2,
-                color: disabled ? T.textDim : T.accent,
-                cursor: disabled ? "not-allowed" : "pointer",
-              }}
+              className={clsx(s.actionBtn, s.actionAccent)}
             >
               [{t("menu.outfitEllipsis")}]
             </button>
@@ -375,8 +254,8 @@ export default function ActionMenu({
       {visibleCats.map((cat) => {
         const catActions = grouped[cat] || [];
         return (
-          <div key={cat} style={{ marginBottom: "8px" }}>
-            {activeTab === ALL_TAB && <div style={{ color: T.textSub, marginBottom: "4px" }}>{cat}:</div>}
+          <div key={cat} className={s.categorySection}>
+            {activeTab === ALL_TAB && <div className={s.categoryLabel}>{cat}:</div>}
             {catActions.map((action) => {
               const needsNpc = action.targetType === TargetType.NPC;
               const isDisabled = disabled || action.enabled === false || (needsNpc && !selectedNpcId);
@@ -392,17 +271,12 @@ export default function ActionMenu({
                   onClick={() => onAction(action.id, needsNpc ? (selectedNpcId ?? undefined) : undefined)}
                   disabled={isDisabled}
                   title={tooltip}
-                  style={{
-                    ...btnBase,
-                    backgroundColor: isDisabled ? T.borderDim : T.bg2,
-                    color: isDisabled ? T.textDim : T.actionConfigured,
-                    cursor: isDisabled ? "not-allowed" : "pointer",
-                  }}
+                  className={s.actionBtn}
                 >
                   {action.name}
-                  {needsNpc && <span style={{ color: T.textSub, fontSize: "11px" }}> [NPC]</span>}
+                  {needsNpc && <span className={s.npcTag}> [NPC]</span>}
                   {action.enabled === false && action.disabledReason && (
-                    <span style={{ color: T.danger, fontSize: "11px", marginLeft: "6px" }}>
+                    <span className={s.disabledReason}>
                       ({action.disabledReason})
                     </span>
                   )}
@@ -413,7 +287,7 @@ export default function ActionMenu({
         );
       })}
 
-      {actions.length === 0 && <div style={{ color: T.textDim }}>{t("empty.noActions")}</div>}
+      {actions.length === 0 && <div className={s.noActions}>{t("empty.noActions")}</div>}
     </div>
   );
 }

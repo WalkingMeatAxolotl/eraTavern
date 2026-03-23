@@ -17,7 +17,7 @@ import {
   updateConfig,
 } from "../../api/client";
 
-import { HelpButton, HelpPanel, helpP } from "../shared/HelpToggle";
+import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import { btn, inputStyle as _inputStyle, labelStyle } from "../shared/styles";
 import PromptEntryRow from "./PromptEntryRow";
 import ProviderEditor from "./ProviderEditor";
@@ -672,10 +672,10 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
           </div>
           {showTypeHelp && (
             <HelpPanel>
-              <p style={helpP}>
+              <p className={helpStyles.helpP}>
                 <b>{t("llm.presetTypeNarrative")}</b>：{t("llm.presetTypeNarrativeDesc")}
               </p>
-              <p style={helpP}>
+              <p className={helpStyles.helpP}>
                 <b>{t("llm.presetTypeAssist")}</b>：{t("llm.presetTypeAssistDesc")}
               </p>
             </HelpPanel>

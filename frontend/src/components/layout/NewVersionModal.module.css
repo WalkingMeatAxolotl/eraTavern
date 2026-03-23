@@ -1,0 +1,85 @@
+.title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.subtitle {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+.modeTabs {
+  display: flex;
+  gap: 4px;
+}
+
+.modeTab {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.modeTabActive {
+  background-color: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+}
+
+.modeTabInactive {
+  background-color: var(--bg1);
+  color: var(--text-sub);
+  border: 1px solid var(--border-dim);
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hint {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+.branchRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.branchPrefix {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.fieldInputLg {
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
+.errorMsg {
+  color: var(--danger);
+  font-size: 11px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

@@ -1,23 +1,9 @@
 import { useState } from "react";
-import T from "../../theme";
+import clsx from "clsx";
+import s from "./HelpToggle.module.css";
 
-// Shared help text styles
-export const helpBox: React.CSSProperties = {
-  padding: "8px 12px",
-  backgroundColor: T.bg3,
-  border: `1px solid ${T.border}`,
-  borderRadius: "3px",
-};
-export const helpSub: React.CSSProperties = {
-  color: "#e9a045",
-  fontSize: "11px",
-  fontWeight: "bold",
-  marginTop: "6px",
-  marginBottom: "2px",
-};
-export const helpP: React.CSSProperties = { color: T.textSub, fontSize: "11px", lineHeight: "1.6", margin: "2px 0" };
-export const helpEm: React.CSSProperties = { color: "#0ff", fontSize: "11px" };
-export const helpDim: React.CSSProperties = { color: T.textDim, fontSize: "11px", fontStyle: "italic" };
+// Re-export CSS module classes for consumers
+export { default as helpStyles } from "./HelpToggle.module.css";
 
 interface Props {
   children: React.ReactNode;
@@ -29,25 +15,14 @@ interface Props {
  */
 export function HelpButton({ show, onToggle }: { show: boolean; onToggle: () => void }) {
   return (
-    <button
-      onClick={onToggle}
-      style={{
-        padding: "3px 10px",
-        backgroundColor: T.bg2,
-        border: `1px solid ${T.border}`,
-        borderRadius: "3px",
-        cursor: "pointer",
-        fontSize: "11px",
-        color: show ? T.danger : T.textSub,
-      }}
-    >
+    <button onClick={onToggle} className={clsx(s.helpBtn, show && s.helpBtnActive)}>
       [?]
     </button>
   );
 }
 
 export function HelpPanel({ children }: Props) {
-  return <div style={{ ...helpBox, marginTop: "4px", marginBottom: "4px" }}>{children}</div>;
+  return <div className={clsx(s.helpBox, s.helpPanel)}>{children}</div>;
 }
 
 /**
@@ -57,7 +32,7 @@ export function HelpPanel({ children }: Props) {
 export default function HelpToggle({ children }: Props) {
   const [show, setShow] = useState(false);
   return (
-    <div style={{ display: "inline-block" }}>
+    <div className={s.wrapper}>
       <HelpButton show={show} onToggle={() => setShow((v) => !v)} />
       {show && <HelpPanel>{children}</HelpPanel>}
     </div>

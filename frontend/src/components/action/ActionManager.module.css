@@ -1,0 +1,108 @@
+/* ── ActionManager ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.btnRow {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Category list ── */
+
+.catContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Category button ── */
+
+.catBtn {
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  background-color: var(--bg2);
+  color: var(--text-sub);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 3px;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.catBtn:hover {
+  background-color: var(--bg3);
+  color: var(--text);
+}
+
+.catArrow {
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+  font-size: 11px;
+}
+
+/* ── Action items (chips) ── */
+
+.itemGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.item {
+  position: relative;
+  padding: 4px 10px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.item:hover {
+  background-color: var(--bg3);
+  border-color: var(--border-light);
+}
+
+.sourceSpan {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+/* ── Empty state ── */
+
+.emptyMsg {
+  color: var(--text-dim);
+  padding: 8px;
+}
+
+/* ── Loading ── */
+
+.loading {
+  color: var(--text-dim);
+  padding: 20px;
+  text-align: center;
+}

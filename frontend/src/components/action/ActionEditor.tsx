@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import clsx from "clsx";
 import type {
   ActionDefinition,
   ConditionItem,
@@ -15,13 +16,15 @@ import { TargetType } from "../../constants";
 import { EditorProvider } from "../shared/EditorContext";
 import type { EditorContextValue } from "../shared/EditorContext";
 import { ConditionItemEditor } from "../shared/ConditionEditor";
-import { inputStyle, btn, listRowStyle, labelStyle } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import { ModifierListEditor } from "./ModifierEditor";
 import { OutcomeEditor } from "./OutcomeEditor";
 import { TemplateListEditor, TemplateVarHelp } from "./TemplateEditor";
 import CloneButton from "../shared/CloneDialog";
+import s from "./ActionEditor.module.css";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -47,47 +50,8 @@ const SEC = {
   template: { color: "#7ecf7e", bg: "#7ecf7e0a" },
 };
 
-// Section wrapper: colored left border + very subtle tinted background
-const sectionStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
-  marginBottom: "16px",
-  padding: "0 0 8px 0",
-  borderLeft: `3px solid ${SEC[sec].color}`,
-  backgroundColor: SEC[sec].bg,
-  borderRadius: "0 4px 4px 0",
-});
-
-// Section title bar — colored background strip that anchors the section
-const sectionTitleStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
-  padding: "5px 10px",
-  marginBottom: "8px",
-  backgroundColor: `${SEC[sec].color}15`,
-  borderBottom: `1px solid ${SEC[sec].color}25`,
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-});
-
-// Section content area with left padding
-const sectionContent: React.CSSProperties = {
-  padding: "0 10px",
-};
-
-
-// Inject hover styles once
-const AE_STYLE_ID = "ae-hover-styles";
-if (typeof document !== "undefined" && !document.getElementById(AE_STYLE_ID)) {
-  const style = document.createElement("style");
-  style.id = AE_STYLE_ID;
-  style.textContent = `
-    .ae-btn:hover { filter: brightness(1.3); }
-    .ae-add-btn:hover { background-color: #1a2a1a !important; border-color: #4a8a4a !important; }
-    .ae-del-btn:hover { background-color: #2a1414 !important; border-color: #c05050 !important; }
-    .ae-input:hover { border-color: #555 !important; }
-    .ae-input:focus { border-color: #888 !important; outline: none; }
-    .ae-sec-title { letter-spacing: 0.5px; }
-  `;
-  document.head.appendChild(style);
-}
+const secVars = (sec: keyof typeof SEC) =>
+  ({ "--sec-color": SEC[sec].color, "--sec-bg": SEC[sec].bg }) as React.CSSProperties;
 
 export default function ActionEditor({ action, isNew, definitions, onBack, addonCrud, addonIds }: Props) {
   const addonPrefix = action.source || "";
@@ -309,43 +273,41 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
 
   return (
     <EditorProvider value={editorCtx}>
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={s.title}>
           == {isNew ? t("editor.newAction") : t("editor.editAction")} ==
         </span>
-        {action.source && <span style={{ color: T.accent, fontSize: "12px" }}>{t("field.source")}: {action.source}</span>}
+        {action.source && <span className={s.source}>{t("field.source")}: {action.source}</span>}
       </div>
 
       {/* Basic info */}
-      <div style={sectionStyle("basic")}>
-        <div style={sectionTitleStyle("basic")}>
-          <span className="ae-sec-title" style={{ color: SEC.basic.color, fontSize: "12px", fontWeight: "bold" }}>
+      <div className={s.section} style={secVars("basic")}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>
             {t("section.basicInfo")}
           </span>
         </div>
-        <div style={{ ...sectionContent, display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <div style={{ flex: 1 }}>
-              <div style={labelStyle}>ID</div>
+        <div className={clsx(s.sectionContent, s.fieldColGap)}>
+          <div className={s.fieldRow}>
+            <div className={s.fieldCol}>
+              <div className={sh.label}>ID</div>
               <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={labelStyle}>{t("field.name")}</div>
+            <div className={s.fieldCol}>
+              <div className={sh.label}>{t("field.name")}</div>
               <input
-                className="ae-input"
-                style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                className={clsx(sh.input, s.inputFull)}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isReadOnly}
               />
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={labelStyle}>{t("field.category")}</div>
+            <div className={s.fieldCol}>
+              <div className={sh.label}>{t("field.category")}</div>
               <select
-                className="ae-input"
-                style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                className={clsx(sh.input, s.inputFull)}
                 value={categoryList.includes(category) ? category : "__custom__"}
                 onChange={(e) => {
                   if (e.target.value !== "__custom__") setCategory(e.target.value);
@@ -361,8 +323,8 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
               </select>
               {!categoryList.includes(category) && (
                 <input
-                  className="ae-input"
-                  style={{ ...inputStyle, width: "100%", boxSizing: "border-box", marginTop: "2px" }}
+                  className={clsx(sh.input, s.inputFull)}
+                  style={{ marginTop: "2px" }}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   disabled={isReadOnly}
@@ -371,12 +333,11 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
               )}
             </div>
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+          <div className={s.fieldRowAlignEnd}>
             <div>
-              <div style={labelStyle}>{t("field.targetType")}</div>
+              <div className={sh.label}>{t("field.targetType")}</div>
               <select
-                className="ae-input"
-                style={inputStyle}
+                className={sh.input}
                 value={targetType}
                 onChange={(e) => setTargetType(e.target.value as ActionDefinition["targetType"])}
                 disabled={isReadOnly}
@@ -386,26 +347,19 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
               </select>
             </div>
             <div>
-              <div style={labelStyle}>{t("field.timeCost")}</div>
+              <div className={sh.label}>{t("field.timeCost")}</div>
               <input
-                className="ae-input"
+                className={clsx(sh.input, s.inputTimeCost)}
                 type="number"
                 step={5}
                 min={0}
-                style={{ ...inputStyle, width: "80px" }}
                 value={timeCost}
                 onChange={(e) => setTimeCost(Math.max(0, Math.round(Number(e.target.value) / 5) * 5))}
                 disabled={isReadOnly}
               />
             </div>
             <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                cursor: isReadOnly ? "default" : "pointer",
-                paddingBottom: "4px",
-              }}
+              className={clsx(s.checkboxLabel, isReadOnly && s.readOnly)}
             >
               <input
                 type="checkbox"
@@ -413,14 +367,13 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
                 onChange={(e) => setTriggerLLM(e.target.checked)}
                 disabled={isReadOnly}
               />
-              <span style={{ fontSize: "12px" }}>{t("field.triggerLlm")}</span>
+              <span className={s.checkboxText}>{t("field.triggerLlm")}</span>
             </label>
             {triggerLLM && (
               <div>
-                <div style={labelStyle}>{t("field.llmPreset")}</div>
+                <div className={sh.label}>{t("field.llmPreset")}</div>
                 <select
-                  className="ae-input"
-                  style={{ ...inputStyle, width: "160px" }}
+                  className={clsx(sh.input, s.inputLlmPreset)}
                   value={llmPreset}
                   onChange={(e) => setLlmPreset(e.target.value)}
                   disabled={isReadOnly}
@@ -439,36 +392,27 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       </div>
 
       {/* NPC Weight */}
-      <div style={sectionStyle("weight")}>
-        <div style={sectionTitleStyle("weight")}>
-          <span className="ae-sec-title" style={{ color: SEC.weight.color, fontSize: "12px", fontWeight: "bold" }}>
+      <div className={s.section} style={secVars("weight")}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>
             {t("field.npcWeight")}
           </span>
         </div>
-        <div style={sectionContent}>
+        <div className={s.sectionContent}>
           <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
             <div>
-              <div style={labelStyle}>{t("field.baseWeight")}</div>
+              <div className={sh.label}>{t("field.baseWeight")}</div>
               <input
-                className="ae-input"
+                className={clsx(sh.input, s.inputTimeCost)}
                 type="number"
                 min={0}
-                style={{ ...inputStyle, width: "80px" }}
                 value={npcWeight}
                 onChange={(e) => setNpcWeight(Math.max(0, Number(e.target.value)))}
                 disabled={isReadOnly}
               />
-              <div style={{ color: T.textDim, fontSize: "11px", marginTop: "2px" }}>{t("npc.zeroWeight")}</div>
+              <div className={s.hint}>{t("npc.zeroWeight")}</div>
             </div>
-            <div
-              style={{
-                flex: 1,
-                paddingLeft: "8px",
-                borderLeft: "2px solid #333",
-                backgroundColor: T.bg1,
-                borderRadius: "0 3px 3px 0",
-              }}
-            >
+            <div className={s.modifierPanel}>
               <ModifierListEditor
                 modifiers={npcWeightModifiers}
                 onChange={setNpcWeightModifiers}
@@ -481,29 +425,29 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       </div>
 
       {/* Conditions */}
-      <div style={sectionStyle("cond")}>
-        <div style={sectionTitleStyle("cond")}>
-          <span className="ae-sec-title" style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>
+      <div className={s.section} style={secVars("cond")}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>
             {t("section.showConditionsAnd")}
           </span>
           {!isReadOnly && (
-            <div style={{ display: "flex", gap: "4px" }}>
-              <button className="ae-add-btn" onClick={addCondition} style={btn("add", "sm")}>
+            <div className={s.btnGroup}>
+              <button className={btnClass("add", "sm")} onClick={addCondition}>
                 [{t("btn.addCondition")}]
               </button>
-              <button className="ae-add-btn" onClick={addOrGroup} style={btn("add", "sm")}>
+              <button className={btnClass("add", "sm")} onClick={addOrGroup}>
                 [{t("btn.addOr")}]
               </button>
-              <button className="ae-add-btn" onClick={addAndGroup} style={btn("add", "sm")}>
+              <button className={btnClass("add", "sm")} onClick={addAndGroup}>
                 [{t("btn.addAnd")}]
               </button>
             </div>
           )}
         </div>
-        <div style={sectionContent}>
-          {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noCondShow")}</div>}
+        <div className={s.sectionContent}>
+          {conditions.length === 0 && <div className={s.emptyMsg}>{t("empty.noCondShow")}</div>}
           {conditions.map((item, idx) => (
-            <div key={idx} style={listRowStyle(idx, idx === conditions.length - 1)}>
+            <div key={idx} className={clsx(sh.listRow, idx % 2 === 0 ? sh.listRowOdd : sh.listRowEven)}>
               <ConditionItemEditor
                 item={item}
                 onChange={(newItem) => updateCondition(idx, newItem)}
@@ -517,19 +461,19 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       </div>
 
       {/* Outcomes */}
-      <div style={sectionStyle("outcome")}>
-        <div style={sectionTitleStyle("outcome")}>
-          <span className="ae-sec-title" style={{ color: SEC.outcome.color, fontSize: "12px", fontWeight: "bold" }}>
+      <div className={s.section} style={secVars("outcome")}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>
             {t("section.outcomes")}
           </span>
           {!isReadOnly && (
-            <button className="ae-add-btn" onClick={addOutcome} style={btn("add", "sm")}>
+            <button className={btnClass("add", "sm")} onClick={addOutcome}>
               [{t("btn.addOutcome")}]
             </button>
           )}
         </div>
-        <div style={sectionContent}>
-          {outcomes.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>{t("outcome.noOutcomes")}</div>}
+        <div className={s.sectionContent}>
+          {outcomes.length === 0 && <div className={s.emptyMsg}>{t("outcome.noOutcomes")}</div>}
           {outcomes.map((outcome, idx) => (
             <OutcomeEditor
               key={idx}
@@ -543,22 +487,21 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       </div>
 
       {/* Output templates */}
-      <div style={sectionStyle("template")}>
-        <div style={sectionTitleStyle("template")}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span className="ae-sec-title" style={{ color: SEC.template.color, fontSize: "12px", fontWeight: "bold" }}>
+      <div className={s.section} style={secVars("template")}>
+        <div className={s.sectionTitle}>
+          <div className={s.tplTitleRow}>
+            <span className={s.sectionTitleText}>
               {t("npc.outputTpl")}
             </span>
             <button
-              className="ae-btn"
+              className={btnClass(showVarHelp ? "danger" : "neutral", "sm")}
               onClick={() => setShowVarHelp((v) => !v)}
-              style={btn(showVarHelp ? "danger" : "neutral", "sm")}
             >
               [?]
             </button>
           </div>
         </div>
-        <div style={sectionContent}>
+        <div className={s.sectionContent}>
           <TemplateListEditor
             templates={outputTemplates}
             onChange={setOutputTemplates}
@@ -571,26 +514,12 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       </div>
 
       {/* Action bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          alignItems: "center",
-          padding: "4px 0",
-          borderTop: `1px solid ${T.border}`,
-          marginTop: "4px",
-          paddingTop: "12px",
-        }}
-      >
+      <div className={s.actionBar}>
         {!isReadOnly && (
           <button
-            className="ae-add-btn"
+            className={btnClass("add")}
             onClick={handleSave}
             disabled={saving}
-            style={{
-              ...btn("add"),
-              cursor: saving ? "not-allowed" : "pointer",
-            }}
           >
             [{t("btn.confirm")}]
           </button>
@@ -602,39 +531,32 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             getData={() => buildData()}
             createFn={(d) => createActionDef(d)}
             onSuccess={onBack}
-            className="ae-btn"
-            buttonStyle={btn()}
+            className={btnClass()}
           />
         )}
         {!isReadOnly && !isNew && (
           <button
-            className="ae-del-btn"
+            className={btnClass("del")}
             onClick={handleDelete}
             disabled={saving}
-            style={{
-              ...btn("del"),
-              cursor: saving ? "not-allowed" : "pointer",
-            }}
           >
             [{t("btn.delete")}]
           </button>
         )}
         <button
-          className="ae-btn"
+          className={btnClass("neutral")}
           onClick={onBack}
-          style={btn("neutral")}
         >
           [{t("btn.back")}]
         </button>
         <button
-          className="ae-btn"
+          className={btnClass("neutral")}
           onClick={() => setJsonMode(true)}
-          style={btn("neutral")}
         >
           [JSON]
         </button>
         {message && (
-          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span className={s.statusMsg} style={{ color: message === t("status.saved") ? T.success : T.danger }}>{message}</span>
         )}
       </div>
     </div>

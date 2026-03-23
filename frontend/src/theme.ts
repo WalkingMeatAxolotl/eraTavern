@@ -1,50 +1,53 @@
 /**
- * Centralized color theme.
+ * Centralized color theme — CSS custom property references.
  *
- * UI chrome: black/grey + accent orange.  Minimal color.
- * Data layer (editor section borders, resource bars, map cells):
- *   uses semantic colors defined where needed, not here.
+ * Values are `var(--xxx)` strings so they work in both:
+ *   - inline style={{ color: T.text }}  (legacy, being migrated)
+ *   - CSS Modules: use var(--text) directly in .module.css
+ *
+ * Actual color values live in global.css :root.
  */
 
 const T = {
-  // ── Backgrounds (pure grey, no blue tint) ──
-  bg0: "#0c0c0c", // deepest: app root
-  bg1: "#141414", // panels, cards
-  bg2: "#1c1c1c", // elevated: selected items, modals, expanded cards
-  bg3: "#242424", // inputs, inset areas
-  bgFloat: "#111111ee", // floating panels (with transparency)
+  // ── Backgrounds ──
+  bg0: "var(--bg0)",
+  bg1: "var(--bg1)",
+  bg2: "var(--bg2)",
+  bg3: "var(--bg3)",
+  bgFloat: "var(--bg-float)",
 
   // ── Borders ──
-  border: "#2a2a2a", // default
-  borderLight: "#383838", // emphasized (selected, hover)
-  borderDim: "#1e1e1e", // subtle dividers
+  border: "var(--border)",
+  borderLight: "var(--border-light)",
+  borderDim: "var(--border-dim)",
 
   // ── Text ──
-  text: "#d8d8d8", // primary
-  textSub: "#999", // secondary (labels, IDs)
-  textDim: "#666", // muted (placeholders, source, empty state)
-  textFaint: "#444", // very muted (disabled)
+  text: "var(--text)",
+  textSub: "var(--text-sub)",
+  textDim: "var(--text-dim)",
+  textFaint: "var(--text-faint)",
 
-  // ── Accent (single theme color — orange) ──
-  accent: "#e8a040", // primary accent: active states, important labels
-  accentDim: "#b07830", // muted accent: borders, less prominent
-  accentBg: "#1a1408", // accent background tint (very subtle)
+  // ── Accent ──
+  accent: "var(--accent)",
+  accentDim: "var(--accent-dim)",
+  accentBg: "var(--accent-bg)",
 
-  // ── Semantic (used sparingly) ──
-  danger: "#c05050", // delete, error, destructive
-  dangerBg: "#1a0808", // danger button background
-  success: "#5a9a5a", // success messages
-  successDim: "#3a6a3a", // success button text / add buttons
+  // ── Semantic ──
+  danger: "var(--danger)",
+  dangerBg: "var(--danger-bg)",
+  success: "var(--success)",
+  successDim: "var(--success-dim)",
 
-  // ── Legacy support: action type colors (data layer) ──
-  actionMove: "#0ff",
-  actionLook: "#6ec6ff",
-  actionConfigured: "#ff0",
+  // ── Action type colors ──
+  actionMove: "var(--action-move)",
+  actionLook: "var(--action-look)",
+  actionConfigured: "var(--action-configured)",
+
   // ── Typography ──
-  fontMono: '"Consolas", "Menlo", "Monaco", "Courier New", monospace',
-  fontBase: 13, // px — default body size
-  fontSm: 12, // px — secondary text, chips, tags
-  fontXs: 11, // px — smallest readable (labels, hints)
+  fontMono: "var(--font-mono)",
+  fontBase: 13, // px — keep as number for inline style calculations
+  fontSm: 12,
+  fontXs: 11,
 } as const;
 
 export default T;

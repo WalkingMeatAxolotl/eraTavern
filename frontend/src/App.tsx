@@ -805,33 +805,6 @@ export default function App() {
           </div>
         </div>
       )}
-      <style>{`
-        @keyframes overlayFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes overlayFadeOut {
-          from { opacity: 1; }
-          to { opacity: 0; }
-        }
-        @keyframes editorSlideIn {
-          from { transform: translateY(-100%); }
-          to { transform: translateY(0); }
-        }
-        @keyframes editorSlideOut {
-          from { transform: translateY(0); }
-          to { transform: translateY(-100%); }
-        }
-        @keyframes sidebarSlideIn {
-          from { transform: translateY(-100%); }
-          to { transform: translateY(0); }
-        }
-        @keyframes sidebarSlideOut {
-          from { transform: translateY(0); }
-          to { transform: translateY(-100%); }
-        }
-      `}</style>
-
       {/* Floating apply/save panel */}
       <FloatingActions
         dirty={sessionDirty}

@@ -4,12 +4,15 @@
  * Extracted from ActionEditor.tsx. Reads shared definition lists from EditorContext.
  */
 import { useState } from "react";
+import clsx from "clsx";
 import type { ActionOutcome, ActionEffect, SuggestNext, EffectFilterDef } from "../../types/game";
-import T from "../../theme";
 import { t as t_ } from "../../i18n/ui";
 import { EF, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import { inputStyle, btn, listRowStyle } from "../shared/styles";
+import { listRowStyle } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
+import s from "./OutcomeEditor.module.css";
 import { ModifierListEditor } from "./ModifierEditor";
 import { EffectEditor } from "./EffectEditor";
 import { TemplateListEditor } from "./TemplateEditor";
@@ -88,20 +91,13 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
 
   // Sub-section header helper
   const subHeader = (label: string, color: string, count: number | null, rightContent?: React.ReactNode) => (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "3px 0",
-        marginBottom: "4px",
-        borderBottom: `1px solid ${color}33`,
-      }}
-    >
-      <span style={{ fontSize: "11px", fontWeight: "bold" }}>
-        <span style={{ color, marginRight: "4px" }}>|</span>
-        <span style={{ color: T.textSub }}>{label}</span>
-        {count !== null && <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "4px" }}>({count})</span>}
+    <div className={s.subHeader} style={{ borderBottom: `1px solid ${color}33` }}>
+      <span className={s.subHeaderLabel}>
+        <span className={s.subHeaderPipe} style={{ color }}>
+          |
+        </span>
+        <span className={s.subHeaderText}>{label}</span>
+        {count !== null && <span className={s.subHeaderCount}>({count})</span>}
       </span>
       {rightContent}
     </div>
@@ -117,23 +113,16 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
     rightContent?: React.ReactNode,
   ) => (
     <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "3px 0",
-        cursor: "pointer",
-        userSelect: "none",
-        borderBottom: isOpen ? `1px solid ${color}33` : "none",
-        marginBottom: isOpen ? "4px" : "0",
-        opacity: isOpen || count > 0 ? 1 : 0.5,
-      }}
+      className={clsx(s.toggleHeader, isOpen && s.toggleHeaderOpen, !isOpen && count === 0 && s.toggleHeaderDim)}
+      style={{ borderBottom: isOpen ? `1px solid ${color}33` : "none" }}
       onClick={toggle}
     >
-      <span style={{ fontSize: "11px", fontWeight: "bold" }}>
-        <span style={{ color, marginRight: "4px" }}>{isOpen ? "\u25BC" : "\u25B6"}</span>
-        <span style={{ color: T.textSub }}>{label}</span>
-        {count > 0 && <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "4px" }}>({count})</span>}
+      <span className={s.toggleHeaderLabel}>
+        <span className={s.toggleHeaderArrow} style={{ color }}>
+          {isOpen ? "\u25BC" : "\u25B6"}
+        </span>
+        <span className={s.toggleHeaderText}>{label}</span>
+        {count > 0 && <span className={s.toggleHeaderCount}>({count})</span>}
       </span>
       <div onClick={(e) => e.stopPropagation()}>{rightContent}</div>
     </div>
@@ -144,67 +133,41 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
     .length;
 
   return (
-    <div
-      style={{
-        border: `1px solid ${T.borderLight}`,
-        borderRadius: "3px",
-        padding: "8px",
-        marginBottom: "8px",
-        backgroundColor: T.bg2,
-      }}
-    >
+    <div className={s.outcome}>
       {/* Outcome header: grade, label, weight */}
-      <div
-        style={{
-          display: "flex",
-          gap: "6px",
-          alignItems: "center",
-          marginBottom: "8px",
-          paddingBottom: "6px",
-          borderBottom: `1px solid ${T.border}`,
-        }}
-      >
+      <div className={s.header}>
         <input
-          style={{ ...inputStyle, width: "80px" }}
+          className={clsx(sh.input, s.w80)}
           value={outcome.grade}
           onChange={(e) => update({ grade: e.target.value })}
           disabled={disabled}
           placeholder="grade"
         />
         <input
-          style={{ ...inputStyle, width: "60px" }}
+          className={clsx(sh.input, s.w60)}
           value={outcome.label}
           onChange={(e) => update({ label: e.target.value })}
           disabled={disabled}
           placeholder={t_("outcome.label")}
         />
-        <span style={{ color: T.textSub, fontSize: "11px" }}>{t_("label.weight")}</span>
+        <span className={s.weightLabel}>{t_("label.weight")}</span>
         <input
           type="number"
           min={0}
-          style={{ ...inputStyle, width: "50px" }}
+          className={clsx(sh.input, s.w50)}
           value={outcome.weight}
           onChange={(e) => update({ weight: Math.max(0, Number(e.target.value)) })}
           disabled={disabled}
         />
         {!disabled && (
-          <button className="ae-del-btn" onClick={onRemove} style={{ ...btn("del", "sm"), marginLeft: "auto" }}>
+          <button className={clsx(btnClass("del", "sm"), s.headerMlAuto)} onClick={onRemove}>
             x
           </button>
         )}
       </div>
 
       {/* Weight modifiers */}
-      <div
-        style={{
-          marginLeft: "8px",
-          paddingLeft: "8px",
-          borderLeft: "2px solid #333",
-          backgroundColor: T.bg1,
-          borderRadius: "0 3px 3px 0",
-          marginBottom: "8px",
-        }}
-      >
+      <div className={s.modifierPanel}>
         <ModifierListEditor
           modifiers={outcome.weightModifiers ?? []}
           onChange={(mods) => update({ weightModifiers: mods.length > 0 ? mods : undefined })}
@@ -214,44 +177,39 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
       </div>
 
       {/* Effects grouped by target */}
-      <div style={{ marginBottom: "8px" }}>
+      <div className={s.effectsSection}>
         {subHeader(
           t_("outcome.effects"),
           "#6ec6ff",
           outcome.effects.length,
           !disabled && (
-            <div style={{ display: "flex", gap: "4px" }}>
-              <button className="ae-add-btn" onClick={() => addTargetGroup("self")} style={btn("add", "sm")}>
+            <div className={s.addBtnRow}>
+              <button className={btnClass("add", "sm")} onClick={() => addTargetGroup("self")}>
                 [+ {t_("target.self")}]
               </button>
               {targetType === TargetType.NPC && (
-                <button className="ae-add-btn" onClick={() => addTargetGroup("target")} style={btn("add", "sm")}>
+                <button className={btnClass("add", "sm")} onClick={() => addTargetGroup("target")}>
                   [+ {t_("target.target")}]
                 </button>
               )}
-              <button className="ae-add-btn" onClick={() => addTargetGroup("filter")} style={btn("add", "sm")}>
+              <button className={btnClass("add", "sm")} onClick={() => addTargetGroup("filter")}>
                 [+ {t_("target.filtered")}]
               </button>
             </div>
           ),
         )}
-        {targetGroups.length === 0 && (
-          <div style={{ color: T.textDim, fontSize: "11px", paddingLeft: "12px" }}>{t_("empty.noEffects")}</div>
-        )}
+        {targetGroups.length === 0 && <div className={s.emptyHint}>{t_("empty.noEffects")}</div>}
         {targetGroups.map((group) => (
           <div
             key={group.key}
+            className={s.targetGroup}
             style={{
               border: `1px solid ${targetColor(group.target)}33`,
               borderLeft: `3px solid ${targetColor(group.target)}`,
-              borderRadius: "3px",
-              padding: "4px 6px",
-              marginBottom: "4px",
-              backgroundColor: T.bg3,
             }}
           >
-            <div style={{ display: "flex", gap: "4px", alignItems: "center", marginBottom: "4px", flexWrap: "wrap" }}>
-              <span style={{ color: targetColor(group.target), fontSize: "11px", fontWeight: "bold" }}>
+            <div className={s.targetGroupHeader}>
+              <span className={s.targetLabel} style={{ color: targetColor(group.target) }}>
                 {group.label}
               </span>
               {typeof group.target === "object" &&
@@ -270,7 +228,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                   return (
                     <>
                       <select
-                        style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                        className={clsx(sh.input, s.wAuto, s.fs11)}
                         value={f.cell === "current" ? "current" : typeof f.cell === "object" ? "specific" : "all"}
                         onChange={(e) => {
                           const v = e.target.value;
@@ -287,7 +245,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                       {typeof f.cell === "object" && f.cell !== null && f.cell !== "current" && (
                         <>
                           <select
-                            style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                            className={clsx(sh.input, s.wAuto, s.fs11)}
                             value={(f.cell as { mapId: string }).mapId ?? ""}
                             onChange={(e) => updateFilter({ cell: { mapId: e.target.value, cellId: 0 } })}
                             disabled={disabled}
@@ -299,7 +257,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                             ))}
                           </select>
                           <select
-                            style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                            className={clsx(sh.input, s.wAuto, s.fs11)}
                             value={(f.cell as { cellId: number }).cellId ?? 0}
                             onChange={(e) =>
                               updateFilter({
@@ -318,21 +276,13 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                           </select>
                         </>
                       )}
-                      <label
-                        style={{
-                          fontSize: "11px",
-                          color: T.textSub,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "2px",
-                        }}
-                      >
+                      <label className={s.filterLabel}>
                         <input
                           type="checkbox"
                           checked={f.excludeSelf ?? false}
                           onChange={(e) => updateFilter({ excludeSelf: e.target.checked || undefined })}
                           disabled={disabled}
-                          style={{ accentColor: T.accent }}
+                          className={s.filterCheckbox}
                         />
                         {t_("ui.excludeSelf")}
                       </label>
@@ -341,9 +291,8 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                 })()}
               {!disabled && (
                 <button
-                  className="ae-add-btn"
+                  className={clsx(btnClass("add", "sm"), s.headerMlAuto)}
                   onClick={() => addEffectForTarget(group.target)}
-                  style={{ ...btn("add", "sm"), marginLeft: "auto" }}
                 >
                   [+ {t_("btn.addEffect")}]
                 </button>
@@ -357,30 +306,21 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                 eff.type === EF.BASIC_INFO ||
                 eff.type === EF.FAVORABILITY;
               return (
-                <div key={effIdx} style={{ ...listRowStyle(gi, gi === group.indices.length - 1), marginTop: "2px" }}>
-                  <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
+                <div key={effIdx} className={s.effRow} style={listRowStyle(gi, gi === group.indices.length - 1)}>
+                  <div className={s.effRowInner}>
                     <EffectEditor
                       effect={eff}
                       onChange={(e) => updateEffect(effIdx, { ...e, target: group.target })}
                       disabled={disabled}
                     />
                     {!disabled && (
-                      <button className="ae-del-btn" onClick={() => removeEffect(effIdx)} style={btn("del", "sm")}>
+                      <button className={btnClass("del", "sm")} onClick={() => removeEffect(effIdx)}>
                         x
                       </button>
                     )}
                   </div>
                   {hasModifiers && (
-                    <div
-                      style={{
-                        marginTop: "2px",
-                        marginLeft: "12px",
-                        paddingLeft: "8px",
-                        borderLeft: "2px solid #333",
-                        backgroundColor: T.bg1,
-                        borderRadius: "0 3px 3px 0",
-                      }}
-                    >
+                    <div className={s.valueModPanel}>
                       <ModifierListEditor
                         modifiers={eff.valueModifiers ?? []}
                         onChange={(mods) =>
@@ -403,7 +343,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
       </div>
 
       {/* Action Chain (suggestNext) — collapsible */}
-      <div style={{ marginBottom: "6px" }}>
+      <div className={s.chainSection}>
         {toggleHeader(
           t_("outcome.actionChain"),
           "#e9a045",
@@ -420,17 +360,15 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                   ],
                 })
               }
-              style={btn("add", "sm")}
+              className={btnClass("add", "sm")}
             >
               [+]
             </button>
           ),
         )}
         {showChain && (
-          <div style={{ paddingLeft: "12px" }}>
-            {chainCount === 0 && (
-              <div style={{ color: T.textDim, fontSize: "11px" }}>{t_("outcome.noChain")}</div>
-            )}
+          <div className={s.chainContent}>
+            {chainCount === 0 && <div className={s.chainEmpty}>{t_("outcome.noChain")}</div>}
             {(outcome.suggestNext ?? []).map((sn, snIdx) => {
               const mode = sn.category ? "category" : "action";
               const updateSn = (patch: Partial<SuggestNext>) => {
@@ -441,22 +379,12 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
               return (
                 <div
                   key={snIdx}
-                  style={{
-                    ...listRowStyle(snIdx, snIdx === (outcome.suggestNext ?? []).length - 1),
-                    display: "flex",
-                    gap: "4px",
-                    alignItems: "center",
-                    borderLeft: "2px solid #e9a04566",
-                    borderRadius: "0 3px 3px 0",
-                  }}
+                  className={s.chainRow}
+                  style={listRowStyle(snIdx, snIdx === (outcome.suggestNext ?? []).length - 1)}
                 >
                   <select
-                    style={{
-                      ...inputStyle,
-                      width: "auto",
-                      fontSize: "11px",
-                      color: mode === "category" ? "#e9a045" : "#6ec6ff",
-                    }}
+                    className={clsx(sh.input, s.wAuto, s.fs11)}
+                    style={{ color: mode === "category" ? "#e9a045" : "#6ec6ff" }}
                     value={mode}
                     onChange={(e) => {
                       if (e.target.value === "category") {
@@ -473,7 +401,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                   </select>
                   {mode === "action" ? (
                     <select
-                      style={{ ...inputStyle, flex: 1, fontSize: "11px" }}
+                      className={clsx(sh.input, s.flex1, s.fs11)}
                       value={sn.actionId ?? ""}
                       onChange={(e) => updateSn({ actionId: e.target.value })}
                       disabled={disabled}
@@ -487,7 +415,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                     </select>
                   ) : (
                     <select
-                      style={{ ...inputStyle, flex: 1, fontSize: "11px" }}
+                      className={clsx(sh.input, s.flex1, s.fs11)}
                       value={sn.category ?? ""}
                       onChange={(e) => updateSn({ category: e.target.value })}
                       disabled={disabled}
@@ -500,34 +428,33 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                       ))}
                     </select>
                   )}
-                  <span style={{ color: "#e9a045", fontSize: "11px", whiteSpace: "nowrap" }}>+</span>
+                  <span className={s.chainAccent}>+</span>
                   <input
                     type="number"
-                    style={{ ...inputStyle, width: "45px" }}
+                    className={clsx(sh.input, s.w45)}
                     value={sn.bonus}
                     onChange={(e) => updateSn({ bonus: Number(e.target.value) })}
                     disabled={disabled}
                     title={t_("outcome.bonusWeight")}
                   />
-                  <span style={{ color: T.textDim, fontSize: "11px", whiteSpace: "nowrap" }}>/</span>
+                  <span className={s.chainSep}>/</span>
                   <input
                     type="number"
-                    style={{ ...inputStyle, width: "45px" }}
+                    className={clsx(sh.input, s.w45)}
                     value={sn.decay}
                     step={5}
                     onChange={(e) => updateSn({ decay: Math.max(5, Math.ceil(Number(e.target.value) / 5) * 5) })}
                     disabled={disabled}
                     title={t_("outcome.decayTime")}
                   />
-                  <span style={{ color: T.textDim, fontSize: "11px" }}>{t_("ui.minutes")}</span>
+                  <span className={s.chainMinutes}>{t_("ui.minutes")}</span>
                   {!disabled && (
                     <button
-                      className="ae-del-btn"
+                      className={btnClass("del", "sm")}
                       onClick={() => {
                         const next = (outcome.suggestNext ?? []).filter((_, i) => i !== snIdx);
                         update({ suggestNext: next.length > 0 ? next : undefined });
                       }}
-                      style={btn("del", "sm")}
                     >
                       x
                     </button>
@@ -543,7 +470,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
       <div>
         {toggleHeader(t_("outcome.outputTpl"), "#7ecf7e", showOutTpl, () => setShowOutTpl(!showOutTpl), tplCount)}
         {showOutTpl && (
-          <div style={{ paddingLeft: "12px" }}>
+          <div className={s.tplContent}>
             <TemplateListEditor
               templates={outcome.outputTemplates ?? (outcome.outputTemplate ? [{ text: outcome.outputTemplate }] : [])}
               onChange={(tpls) =>

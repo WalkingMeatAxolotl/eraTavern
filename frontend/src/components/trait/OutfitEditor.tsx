@@ -3,7 +3,7 @@ import type { GameDefinitions, OutfitType } from "../../types/game";
 import { saveOutfitTypes } from "../../api/client";
 import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
-import { HelpButton, HelpPanel, helpSub, helpP } from "../shared/HelpToggle";
+import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import { inputStyle, labelStyle } from "../shared/styles";
 
 interface Props {
@@ -147,10 +147,10 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
         </div>
         {showHelp && (
           <HelpPanel>
-            <div style={helpSub}>{t("outfit.helpOn")}</div>
-            <div style={helpP}>{t("outfit.helpOnDesc")}</div>
-            <div style={helpSub}>{t("outfit.helpOff")}</div>
-            <div style={helpP}>{t("outfit.helpOffDesc")}</div>
+            <div className={helpStyles.helpSub}>{t("outfit.helpOn")}</div>
+            <div className={helpStyles.helpP}>{t("outfit.helpOnDesc")}</div>
+            <div className={helpStyles.helpSub}>{t("outfit.helpOff")}</div>
+            <div className={helpStyles.helpP}>{t("outfit.helpOffDesc")}</div>
           </HelpPanel>
         )}
       </div>

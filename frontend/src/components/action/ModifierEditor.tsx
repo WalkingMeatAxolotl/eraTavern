@@ -3,12 +3,14 @@
  *
  * Extracted from ActionEditor.tsx. Reads shared definition lists from EditorContext.
  */
+import clsx from "clsx";
 import type { ValueModifier } from "../../types/game";
-import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EF, BonusMode, CondTarget, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import { inputStyle, btn, listRowStyle } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
+import s from "./ModifierEditor.module.css";
 
 export function ModifierListEditor({
   modifiers,
@@ -46,11 +48,11 @@ export function ModifierListEditor({
   };
 
   return (
-    <div style={{ marginBottom: "4px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ color: T.textSub, fontSize: "11px" }}>{label}</span>
+    <div className={s.wrapper}>
+      <div className={s.header}>
+        <span className={s.headerLabel}>{label}</span>
         {!disabled && (
-          <button className="ae-add-btn" onClick={add} style={btn("add", "sm")}>
+          <button className={btnClass("add", "sm")} onClick={add}>
             [+]
           </button>
         )}
@@ -58,17 +60,10 @@ export function ModifierListEditor({
       {modifiers.map((mod, idx) => (
         <div
           key={idx}
-          style={{
-            ...listRowStyle(idx, idx === modifiers.length - 1),
-            display: "flex",
-            gap: "4px",
-            alignItems: "center",
-            marginTop: "2px",
-            flexWrap: "wrap",
-          }}
+          className={clsx(s.row, sh.listRow, idx % 2 === 0 ? sh.listRowOdd : sh.listRowEven)}
         >
           <select
-            style={{ ...inputStyle, width: "80px" }}
+            className={clsx(sh.input, s.w80)}
             value={mod.type}
             onChange={(e) => {
               const t = e.target.value as ValueModifier["type"];
@@ -113,7 +108,7 @@ export function ModifierListEditor({
           {![EF.FAVORABILITY, EF.WORLD_VAR].includes(mod.type) &&
             !(mod.type === EF.VARIABLE && (biVarList ?? []).some((v) => v.id === mod.varId)) && (
               <select
-                style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                className={clsx(sh.input, s.wAuto, s.fs11)}
                 value={mod.modTarget ?? CondTarget.SELF}
                 onChange={(e) => update(idx, { ...mod, modTarget: e.target.value })}
                 disabled={disabled || targetType !== TargetType.NPC}
@@ -126,7 +121,7 @@ export function ModifierListEditor({
           {mod.type === EF.RESOURCE && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={mod.key ?? ""}
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })}
                 disabled={disabled}
@@ -137,10 +132,10 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
+              <span className={s.perSpan}>{t("label.per")}</span>
               <input
                 type="number"
-                style={{ ...inputStyle, width: "55px" }}
+                className={clsx(sh.input, s.w55)}
                 value={mod.per ?? 100}
                 onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })}
                 min={1}
@@ -152,7 +147,7 @@ export function ModifierListEditor({
           {mod.type === EF.BASIC_INFO && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={mod.key ?? ""}
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })}
                 disabled={disabled}
@@ -163,10 +158,10 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
+              <span className={s.perSpan}>{t("label.per")}</span>
               <input
                 type="number"
-                style={{ ...inputStyle, width: "55px" }}
+                className={clsx(sh.input, s.w55)}
                 value={mod.per ?? 100}
                 onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })}
                 min={1}
@@ -178,7 +173,7 @@ export function ModifierListEditor({
           {mod.type === EF.ABILITY && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={mod.key ?? ""}
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })}
                 disabled={disabled}
@@ -189,10 +184,10 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
+              <span className={s.perSpan}>{t("label.per")}</span>
               <input
                 type="number"
-                style={{ ...inputStyle, width: "55px" }}
+                className={clsx(sh.input, s.w55)}
                 value={mod.per ?? 1000}
                 onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })}
                 min={1}
@@ -204,7 +199,7 @@ export function ModifierListEditor({
           {mod.type === EF.EXPERIENCE && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={mod.key ?? ""}
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })}
                 disabled={disabled}
@@ -215,10 +210,10 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
+              <span className={s.perSpan}>{t("label.per")}</span>
               <input
                 type="number"
-                style={{ ...inputStyle, width: "55px" }}
+                className={clsx(sh.input, s.w55)}
                 value={mod.per ?? 1}
                 onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })}
                 min={1}
@@ -230,7 +225,7 @@ export function ModifierListEditor({
           {mod.type === EF.TRAIT && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={mod.key ?? ""}
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })}
                 disabled={disabled}
@@ -244,7 +239,7 @@ export function ModifierListEditor({
                   ))}
               </select>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={mod.value ?? ""}
                 onChange={(e) => update(idx, { ...mod, value: e.target.value })}
                 disabled={disabled}
@@ -263,7 +258,7 @@ export function ModifierListEditor({
 
           {mod.type === EF.HAS_ITEM && (
             <select
-              style={inputStyle}
+              className={sh.input}
               value={mod.itemId ?? ""}
               onChange={(e) => update(idx, { ...mod, itemId: e.target.value })}
               disabled={disabled}
@@ -279,7 +274,7 @@ export function ModifierListEditor({
 
           {mod.type === EF.OUTFIT && (
             <select
-              style={inputStyle}
+              className={sh.input}
               value={mod.outfitId ?? ""}
               onChange={(e) => update(idx, { ...mod, outfitId: e.target.value })}
               disabled={disabled}
@@ -294,7 +289,7 @@ export function ModifierListEditor({
 
           {mod.type === EF.CLOTHING && (
             <select
-              style={inputStyle}
+              className={sh.input}
               value={mod.slot ?? ""}
               onChange={(e) => update(idx, { ...mod, slot: e.target.value })}
               disabled={disabled}
@@ -311,7 +306,7 @@ export function ModifierListEditor({
           {mod.type === EF.FAVORABILITY && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={mod.source ?? CondTarget.TARGET}
                 onChange={(e) => update(idx, { ...mod, source: e.target.value })}
                 disabled={disabled}
@@ -319,10 +314,10 @@ export function ModifierListEditor({
                 <option value={CondTarget.TARGET}>{t("target.targetToSelf")}</option>
                 <option value={CondTarget.SELF}>{t("target.selfToTarget")}</option>
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
+              <span className={s.perSpan}>{t("label.per")}</span>
               <input
                 type="number"
-                style={{ ...inputStyle, width: "55px" }}
+                className={clsx(sh.input, s.w55)}
                 value={mod.per ?? 100}
                 onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })}
                 min={1}
@@ -338,7 +333,7 @@ export function ModifierListEditor({
                 <>
                   {isBiVar && targetType === TargetType.NPC && (
                     <select
-                      style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+                      className={clsx(sh.input, s.wAuto, s.fs11)}
                       value={mod.modTarget ?? CondTarget.SELF}
                       onChange={(e) => update(idx, { ...mod, modTarget: e.target.value })}
                       disabled={disabled}
@@ -348,7 +343,7 @@ export function ModifierListEditor({
                     </select>
                   )}
                   <select
-                    style={inputStyle}
+                    className={sh.input}
                     value={mod.varId ?? ""}
                     onChange={(e) => update(idx, { ...mod, varId: e.target.value })}
                     disabled={disabled}
@@ -368,10 +363,10 @@ export function ModifierListEditor({
                         </option>
                       ))}
                   </select>
-                  <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
+                  <span className={s.perSpan}>{t("label.per")}</span>
                   <input
                     type="number"
-                    style={{ ...inputStyle, width: "55px" }}
+                    className={clsx(sh.input, s.w55)}
                     value={mod.per ?? 1}
                     onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })}
                     min={1}
@@ -384,7 +379,7 @@ export function ModifierListEditor({
           {mod.type === EF.WORLD_VAR && (
             <>
               <select
-                style={inputStyle}
+                className={sh.input}
                 value={mod.key ?? ""}
                 onChange={(e) => update(idx, { ...mod, key: e.target.value })}
                 disabled={disabled}
@@ -396,10 +391,10 @@ export function ModifierListEditor({
                   </option>
                 ))}
               </select>
-              <span style={{ color: T.textSub, fontSize: "11px" }}>{t("label.per")}</span>
+              <span className={s.perSpan}>{t("label.per")}</span>
               <input
                 type="number"
-                style={{ ...inputStyle, width: "55px" }}
+                className={clsx(sh.input, s.w55)}
                 value={mod.per ?? 1}
                 onChange={(e) => update(idx, { ...mod, per: Math.max(1, Number(e.target.value)) })}
                 min={1}
@@ -409,7 +404,7 @@ export function ModifierListEditor({
           )}
 
           <select
-            style={{ ...inputStyle, width: "auto", fontSize: "11px" }}
+            className={clsx(sh.input, s.wAuto, s.fs11)}
             value={mod.bonusMode ?? BonusMode.ADD}
             onChange={(e) => update(idx, { ...mod, bonusMode: e.target.value as "add" | "multiply" })}
             disabled={disabled}
@@ -419,13 +414,13 @@ export function ModifierListEditor({
           </select>
           <input
             type="number"
-            style={{ ...inputStyle, width: "60px" }}
+            className={clsx(sh.input, s.w60)}
             value={mod.bonus}
             onChange={(e) => update(idx, { ...mod, bonus: Number(e.target.value) })}
             disabled={disabled}
           />
           {!disabled && (
-            <button className="ae-del-btn" onClick={() => remove(idx)} style={btn("del", "sm")}>
+            <button className={btnClass("del", "sm")} onClick={() => remove(idx)}>
               x
             </button>
           )}

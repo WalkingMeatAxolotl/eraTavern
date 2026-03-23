@@ -1,0 +1,74 @@
+.btn {
+  border-radius: 3px;
+  cursor: pointer;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Sizes */
+.sm {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+.md {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+.lg {
+  padding: 5px 16px;
+  font-size: 13px;
+}
+
+/* Types */
+.default {
+  background-color: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.neutral {
+  background-color: var(--bg2);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+}
+.create {
+  background-color: var(--bg2);
+  color: var(--success-dim);
+  border: 1px solid var(--border);
+}
+.danger {
+  background-color: var(--bg2);
+  color: var(--danger);
+  border: 1px solid var(--border);
+}
+.primary {
+  background-color: var(--bg2);
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+.add {
+  background-color: #0a1a0a;
+  color: var(--success-dim);
+  border: 1px solid #2a4a2a;
+}
+.del {
+  background-color: #1a0a0a;
+  color: var(--danger);
+  border: 1px solid #4a2a2a;
+}
+
+/* Hover states */
+.default:hover,
+.neutral:hover,
+.create:hover,
+.danger:hover,
+.primary:hover {
+  background-color: var(--bg3);
+}
+.add:hover {
+  background-color: #0f2a0f;
+}
+.del:hover {
+  background-color: #2a0f0f;
+}

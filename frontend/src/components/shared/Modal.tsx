@@ -1,5 +1,6 @@
 import T from "../../theme";
 import { t } from "../../i18n/ui";
+import s from "./Modal.module.css";
 
 export function modalBtnStyle(bg: string, color: string): React.CSSProperties {
   return {
@@ -15,33 +16,8 @@ export function modalBtnStyle(bg: string, color: string): React.CSSProperties {
 
 export function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        backgroundColor: "rgba(0,0,0,0.7)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: T.bg2,
-          border: `1px solid ${T.textFaint}`,
-          borderRadius: "8px",
-          padding: "24px",
-          width: "380px",
-          maxWidth: "90vw",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-        }}
-      >
+    <div onClick={onClose} className={s.backdrop}>
+      <div onClick={(e) => e.stopPropagation()} className={s.modal}>
         {children}
       </div>
     </div>
@@ -65,13 +41,21 @@ export function ConfirmModal({
 }) {
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{title}</div>
-      <div style={{ color: T.text, fontSize: "12px", lineHeight: 1.6 }}>{message}</div>
-      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button onClick={onCancel} style={modalBtnStyle(T.borderDim, T.textSub)}>
+      <div className={s.modalTitle}>{title}</div>
+      <div className={s.modalBody}>{message}</div>
+      <div className={s.modalActions}>
+        <button
+          onClick={onCancel}
+          className={s.modalBtn}
+          style={{ backgroundColor: T.borderDim, color: T.textSub }}
+        >
           {t("btn.modalCancel")}
         </button>
-        <button onClick={onConfirm} style={modalBtnStyle(danger ? T.dangerBg : T.bg2, danger ? T.danger : T.success)}>
+        <button
+          onClick={onConfirm}
+          className={s.modalBtn}
+          style={{ backgroundColor: danger ? T.dangerBg : T.bg2, color: danger ? T.danger : T.success }}
+        >
           {confirmLabel}
         </button>
       </div>

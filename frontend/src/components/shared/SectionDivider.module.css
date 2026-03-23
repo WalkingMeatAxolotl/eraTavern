@@ -1,0 +1,17 @@
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 2px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.label {
+  color: var(--accent);
+  font-weight: bold;
+}
+.line {
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-dim);
+}

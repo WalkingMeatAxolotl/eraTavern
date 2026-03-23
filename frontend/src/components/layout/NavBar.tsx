@@ -1,4 +1,5 @@
-import T from "../../theme";
+import clsx from "clsx";
+import s from "./NavBar.module.css";
 import { t } from "../../i18n/ui";
 
 type NavPage =
@@ -60,78 +61,20 @@ export default function NavBar({
   onToggleRight,
   onToggleAi,
 }: NavBarProps) {
-  const btnStyle = (active: boolean): React.CSSProperties => ({
-    padding: "4px 12px",
-    backgroundColor: "transparent",
-    color: active ? T.accent : T.textSub,
-    border: "none",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: active ? "bold" : "normal",
-  });
-
-  const sideToggleStyle = (active: boolean): React.CSSProperties => ({
-    padding: "4px 10px",
-    backgroundColor: active ? T.accentBg : "transparent",
-    color: active ? T.accent : T.textDim,
-    border: active ? `1px solid ${T.accentDim}44` : "1px solid transparent",
-    borderRadius: "3px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: active ? "bold" : "normal",
-  });
-
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 40,
-        backgroundColor: T.bg0,
-        borderBottom: `1px solid ${T.border}`,
-        display: "flex",
-        justifyContent: "center",
-        zIndex: 100,
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 4px",
-          boxSizing: "border-box",
-        }}
-      >
+    <div className={s.bar}>
+      <div className={s.barInner} style={{ maxWidth }}>
         {/* Left: world toggle + world name + separator + nav tabs */}
-        <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-          <button style={sideToggleStyle(leftOpen)} onClick={onToggleLeft}>
+        <div className={s.leftSection}>
+          <button className={clsx(s.sideToggle, leftOpen && s.sideToggleActive)} onClick={onToggleLeft}>
             [{t("btn.world")}]
           </button>
-          {worldName && (
-            <span
-              style={{
-                color: T.textDim,
-                fontSize: "12px",
-                marginLeft: "4px",
-                maxWidth: "120px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {worldName}
-            </span>
-          )}
-          <span style={{ color: T.borderDim, margin: "0 4px" }}>|</span>
+          {worldName && <span className={s.worldName}>{worldName}</span>}
+          <span className={s.separator}>|</span>
           {worldTabs.map((item) => (
             <button
               key={item.key}
-              style={btnStyle(navPage === item.key)}
+              className={clsx(s.navBtn, navPage === item.key && s.navBtnActive)}
               onClick={() => onNavChange(navPage === item.key ? null : item.key)}
             >
               [{item.label}]
@@ -140,21 +83,21 @@ export default function NavBar({
         </div>
 
         {/* Right: global tabs + addon toggle */}
-        <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+        <div className={s.rightSection}>
           {globalTabs.map((item) => (
             <button
               key={item.key}
-              style={btnStyle(navPage === item.key)}
+              className={clsx(s.navBtn, navPage === item.key && s.navBtnActive)}
               onClick={() => onNavChange(navPage === item.key ? null : item.key)}
             >
               [{item.label}]
             </button>
           ))}
-          <span style={{ color: T.borderDim, margin: "0 4px" }}>|</span>
-          <button style={sideToggleStyle(aiOpen)} onClick={onToggleAi}>
+          <span className={s.separator}>|</span>
+          <button className={clsx(s.sideToggle, aiOpen && s.sideToggleActive)} onClick={onToggleAi}>
             [AI]
           </button>
-          <button style={sideToggleStyle(rightOpen)} onClick={onToggleRight}>
+          <button className={clsx(s.sideToggle, rightOpen && s.sideToggleActive)} onClick={onToggleRight}>
             [{t("btn.addon")}]
           </button>
         </div>

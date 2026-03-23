@@ -1,0 +1,50 @@
+.helpBox {
+  padding: 8px 12px;
+  background-color: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.helpSub {
+  color: #e9a045;
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+.helpP {
+  color: var(--text-sub);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 2px 0;
+}
+.helpEm {
+  color: #0ff;
+  font-size: 11px;
+}
+.helpDim {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-style: italic;
+}
+.helpBtn {
+  padding: 3px 10px;
+  background-color: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+.helpBtn:hover {
+  background-color: var(--bg3);
+}
+.helpBtnActive {
+  color: var(--danger);
+}
+.helpPanel {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.wrapper {
+  display: inline-block;
+}

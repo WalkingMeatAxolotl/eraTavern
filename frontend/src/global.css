@@ -1,0 +1,104 @@
+/* ── Theme: CSS Custom Properties ── */
+:root {
+  /* Backgrounds (pure grey, no blue tint) */
+  --bg0: #0c0c0c;
+  --bg1: #141414;
+  --bg2: #1c1c1c;
+  --bg3: #242424;
+  --bg-float: #111111ee;
+
+  /* Borders */
+  --border: #2a2a2a;
+  --border-light: #383838;
+  --border-dim: #1e1e1e;
+
+  /* Text */
+  --text: #d8d8d8;
+  --text-sub: #999;
+  --text-dim: #666;
+  --text-faint: #444;
+
+  /* Accent (orange) */
+  --accent: #e8a040;
+  --accent-dim: #b07830;
+  --accent-bg: #1a1408;
+
+  /* Semantic */
+  --danger: #c05050;
+  --danger-bg: #1a0808;
+  --success: #5a9a5a;
+  --success-dim: #3a6a3a;
+
+  /* Action type colors (data layer) */
+  --action-move: #0ff;
+  --action-look: #6ec6ff;
+  --action-configured: #ff0;
+
+  /* Typography */
+  --font-mono: "Consolas", "Menlo", "Monaco", "Courier New", monospace;
+  --font-base: 13px;
+  --font-sm: 12px;
+  --font-xs: 11px;
+}
+
+/* ── Global Reset ── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg0);
+  overflow: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #484848;
+}
+::-webkit-scrollbar-thumb:active {
+  background: #585858;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ── Animations ── */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes overlayFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes editorSlideIn {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+@keyframes editorSlideOut {
+  from { transform: translateY(0); }
+  to { transform: translateY(-100%); }
+}
+@keyframes sidebarSlideIn {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+@keyframes sidebarSlideOut {
+  from { transform: translateY(0); }
+  to { transform: translateY(-100%); }
+}

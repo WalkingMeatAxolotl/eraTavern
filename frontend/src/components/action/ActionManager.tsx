@@ -1,4 +1,3 @@
-import T from "../../theme";
 import { useState, useCallback, useMemo } from "react";
 import type { ActionDefinition, GameDefinitions } from "../../types/game";
 import { fetchActionDefs, fetchDefinitions } from "../../api/client";
@@ -7,13 +6,8 @@ import ActionEditor from "./ActionEditor";
 import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { RawJsonView } from "../shared/RawJsonEditor";
 import { useManagerState, isReadOnly } from "../shared/useManagerState";
-import { createHoverStyles, btn } from "../shared/styles";
-
-const hoverStyles = createHoverStyles("am", [
-  ["cat-btn", "color"],
-  ["item", "border"],
-  ["action-btn", "border"],
-]);
+import { btnClass } from "../shared/buttons";
+import s from "./ActionManager.module.css";
 
 export default function ActionManager({
   selectedAddon,
@@ -59,7 +53,7 @@ export default function ActionManager({
   }, [filteredActions]);
 
   if (loading || !defs) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+    return <div className={s.loading}>{t("status.loading")}</div>;
   }
 
   if (showJson && selectedAddon) {
@@ -89,29 +83,22 @@ export default function ActionManager({
   }
 
   return (
-    <div
-      style={{
-        fontSize: "13px",
-        color: T.text,
-        padding: "12px 0",
-      }}
-    >
-      <style>{hoverStyles}</style>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.actionList")} ==</span>
+    <div className={s.wrapper}>
+      <div className={s.header}>
+        <span className={s.title}>== {t("header.actionList")} ==</span>
         {!readOnly && (
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button className="am-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
+          <div className={s.btnRow}>
+            <button className={btnClass("neutral", "md")} onClick={() => setShowJson(true)}>
               [JSON]
             </button>
-            <button className="am-action-btn" onClick={handleNew} style={btn("create", "md")}>
+            <button className={btnClass("create", "md")} onClick={handleNew}>
               [{t("btn.newAction")}]
             </button>
           </div>
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      <div className={s.catContainer}>
         {catOrder.map((cat) => {
           const catActions = grouped[cat] || [];
           const catCollapsed = isCollapsed(cat);
@@ -119,47 +106,24 @@ export default function ActionManager({
           return (
             <div key={cat}>
               <button
-                className="am-cat-btn"
+                className={s.catBtn}
                 onClick={() => toggle(cat)}
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "6px 12px",
-                  backgroundColor: T.bg2,
-                  color: T.textSub,
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  borderRadius: "3px",
-                  transition: "background-color 0.1s, color 0.1s",
-                }}
               >
-                <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+                <span className={s.catArrow}>
                   {catCollapsed ? "\u25B6" : "\u25BC"}
                 </span>{" "}
                 {displayCat} ({catActions.length})
               </button>
               {!catCollapsed && catActions.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
+                <div className={s.itemGrid}>
                   {catActions.map((action) => (
                     <button
-                      className="am-item"
+                      className={s.item}
                       key={action.id}
                       onClick={() => handleEdit(action.id)}
-                      style={{
-                        position: "relative",
-                        padding: "4px 10px",
-                        backgroundColor: T.bg1,
-                        color: T.text,
-                        border: `1px solid ${T.border}`,
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        transition: "background-color 0.15s, border-color 0.15s",
-                      }}
                     >
                       {action.name || action.id}
-                      {action.source && <span style={{ color: T.textSub, fontSize: "11px" }}> [{action.source}]</span>}
+                      {action.source && <span className={s.sourceSpan}> [{action.source}]</span>}
                     </button>
                   ))}
                 </div>
@@ -167,7 +131,7 @@ export default function ActionManager({
             </div>
           );
         })}
-        {actions.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>{t("empty.actions")}</div>}
+        {actions.length === 0 && <div className={s.emptyMsg}>{t("empty.actions")}</div>}
       </div>
 
     </div>

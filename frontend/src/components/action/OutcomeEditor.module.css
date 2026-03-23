@@ -1,0 +1,249 @@
+/* ── OutcomeEditor ── */
+
+.outcome {
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background-color: var(--bg2);
+}
+
+.header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.headerMlAuto {
+  margin-left: auto;
+}
+
+/* ── Sub-section header ── */
+
+.subHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  margin-bottom: 4px;
+}
+
+.subHeaderLabel {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.subHeaderPipe {
+  margin-right: 4px;
+}
+
+.subHeaderText {
+  color: var(--text-sub);
+}
+
+.subHeaderCount {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+/* ── Toggle header ── */
+
+.toggleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggleHeaderOpen {
+  margin-bottom: 4px;
+}
+
+.toggleHeaderDim {
+  opacity: 0.5;
+}
+
+.toggleHeaderLabel {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.toggleHeaderArrow {
+  margin-right: 4px;
+}
+
+.toggleHeaderText {
+  color: var(--text-sub);
+}
+
+.toggleHeaderCount {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+/* ── Modifier panel ── */
+
+.modifierPanel {
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 2px solid #333;
+  background-color: var(--bg1);
+  border-radius: 0 3px 3px 0;
+  margin-bottom: 8px;
+}
+
+.valueModPanel {
+  margin-top: 2px;
+  margin-left: 12px;
+  padding-left: 8px;
+  border-left: 2px solid #333;
+  background-color: var(--bg1);
+  border-radius: 0 3px 3px 0;
+}
+
+/* ── Effects section ── */
+
+.effectsSection {
+  margin-bottom: 8px;
+}
+
+.addBtnRow {
+  display: flex;
+  gap: 4px;
+}
+
+.emptyHint {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding-left: 12px;
+}
+
+/* ── Target group ── */
+
+.targetGroup {
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  background-color: var(--bg3);
+}
+
+.targetGroupHeader {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.targetLabel {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.filterLabel {
+  font-size: 11px;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.filterCheckbox {
+  accent-color: var(--accent);
+}
+
+.effRow {
+  margin-top: 2px;
+}
+
+.effRowInner {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Width overrides for inputs ── */
+
+.w80 {
+  width: 80px;
+}
+.w60 {
+  width: 60px;
+}
+.w50 {
+  width: 50px;
+}
+.w45 {
+  width: 45px;
+}
+.wAuto {
+  width: auto;
+}
+.flex1 {
+  flex: 1;
+}
+
+.fs11 {
+  font-size: 11px;
+}
+
+/* ── Chain section ── */
+
+.chainSection {
+  margin-bottom: 6px;
+}
+
+.chainContent {
+  padding-left: 12px;
+}
+
+.chainEmpty {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.chainRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  border-left: 2px solid #e9a04566;
+  border-radius: 0 3px 3px 0;
+}
+
+.chainAccent {
+  color: #e9a045;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.chainSep {
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.chainMinutes {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* ── Weight label ── */
+
+.weightLabel {
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+/* ── Template section ── */
+
+.tplContent {
+  padding-left: 12px;
+}

@@ -11,7 +11,7 @@ import {
 import T from "../../theme";
 import { t } from "../../i18n/ui";
 import ColorPicker from "../shared/ColorPicker";
-import { HelpButton, HelpPanel, helpP } from "../shared/HelpToggle";
+import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import ConnectionOverlay from "./ConnectionOverlay";
 import PresetEditor from "./PresetEditor";
 import CellEditor from "./CellEditor";
@@ -366,7 +366,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
         </Row>
         {showBgHelp && (
           <HelpPanel>
-            <div style={helpP}>{t("map.bgHelp")}</div>
+            <div className={helpStyles.helpP}>{t("map.bgHelp")}</div>
           </HelpPanel>
         )}
         {mapData.backgroundImage && (

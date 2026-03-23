@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import clsx from "clsx";
 import { t } from "../../i18n/ui";
 import type { AddonInfo } from "../../types/game";
 import {
@@ -16,6 +17,7 @@ import DependencyModal from "./DependencyModal";
 import NewVersionModal from "./NewVersionModal";
 import AddonMetaEditor from "./AddonMetaEditor";
 import VersionManagePanel from "./VersionManagePanel";
+import s from "./AddonSidebar.module.css";
 
 interface AddonSidebarProps {
   enabledAddons: { id: string; version: string }[];
@@ -36,7 +38,7 @@ function isWorldFork(version: string): boolean {
   return getBaseVersion(version) !== version;
 }
 
-/* ── Shared style ─────────────────────────────────── */
+/* ── Shared style (kept for external consumers) ───── */
 
 export const fieldInputStyle: React.CSSProperties = {
   width: "100%",
@@ -59,30 +61,9 @@ function ToggleSwitch({ enabled, onChange }: { enabled: boolean; onChange: () =>
         e.stopPropagation();
         onChange();
       }}
-      style={{
-        width: "34px",
-        height: "18px",
-        borderRadius: "9px",
-        border: `1.5px solid ${enabled ? T.accent : T.textFaint}`,
-        background: enabled ? `${T.accent}30` : T.bg1,
-        position: "relative",
-        cursor: "pointer",
-        padding: 0,
-        transition: "all 0.2s",
-      }}
+      className={clsx(s.toggleSwitch, enabled && s.toggleSwitchEnabled)}
     >
-      <div
-        style={{
-          width: "12px",
-          height: "12px",
-          borderRadius: "50%",
-          background: enabled ? T.accent : T.textFaint,
-          position: "absolute",
-          top: "2px",
-          left: enabled ? "18px" : "2px",
-          transition: "all 0.2s",
-        }}
-      />
+      <div className={clsx(s.toggleDot, enabled && s.toggleDotEnabled)} />
     </button>
   );
 }
@@ -106,33 +87,16 @@ function ForkModal({
   const [selectedVersion, setSelectedVersion] = useState(defaultVer);
 
   const grouped = groupVersions(versions);
-  const choiceBtn: React.CSSProperties = {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "12px",
-    textAlign: "left",
-    border: "none",
-  };
   return (
     <Overlay onClose={onCancel}>
-      <div style={{ color: T.text, fontSize: "14px", fontWeight: "bold" }}>{t("addon.enableTitle")}</div>
-      <div style={{ color: T.text, fontSize: "12px" }}>
-        {t("addon.enableIntroPre")} <span style={{ color: T.accent, fontWeight: "bold" }}>{addon.name}</span>
+      <div className={s.forkTitle}>{t("addon.enableTitle")}</div>
+      <div className={s.forkIntro}>
+        {t("addon.enableIntroPre")} <span className={s.forkAddonName}>{addon.name}</span>
         {t("addon.enableIntroPost")}
       </div>
       {/* Version selector */}
-      <div style={{ borderLeft: `2px solid ${T.accent}`, paddingLeft: "10px" }}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "3px",
-            maxHeight: "200px",
-            overflowY: "auto",
-          }}
-        >
+      <div className={s.forkVersionSelector}>
+        <div className={s.forkVersionList}>
           {grouped.map(({ info, indent }) => (
             <VersionRow
               key={info.version}
@@ -145,40 +109,24 @@ function ForkModal({
           ))}
         </div>
       </div>
-      <button
-        onClick={() => onChoice(true, selectedVersion)}
-        style={{ ...choiceBtn, backgroundColor: T.bg3, color: T.success, border: `1px solid ${T.successDim}` }}
-      >
-        <div style={{ fontWeight: "bold", marginBottom: "4px" }}>{t("addon.createFork")}</div>
-        <div style={{ color: T.successDim, fontSize: "11px" }}>
+      <button onClick={() => onChoice(true, selectedVersion)} className={s.choiceBtnFork}>
+        <div className={s.choiceTitle}>{t("addon.createFork")}</div>
+        <div className={s.choiceDescFork}>
           {t("addon.forkDescPre")}{" "}
-          <span style={{ color: T.success }}>
+          <span className={s.choiceHighlightFork}>
             v{selectedVersion}-{worldId}
           </span>
           {t("addon.forkDescPost")}
         </div>
       </button>
-      <button
-        onClick={() => onChoice(false, selectedVersion)}
-        style={{ ...choiceBtn, backgroundColor: T.bg3, color: T.accent, border: `1px solid ${T.accentDim}` }}
-      >
-        <div style={{ fontWeight: "bold", marginBottom: "4px" }}>{t("addon.useExisting")}</div>
-        <div style={{ color: T.accentDim, fontSize: "11px" }}>
-          {t("addon.useExistingDescPre")} <span style={{ color: T.accent }}>v{selectedVersion}</span>
+      <button onClick={() => onChoice(false, selectedVersion)} className={s.choiceBtnExisting}>
+        <div className={s.choiceTitle}>{t("addon.useExisting")}</div>
+        <div className={s.choiceDescExisting}>
+          {t("addon.useExistingDescPre")} <span className={s.choiceHighlightExisting}>v{selectedVersion}</span>
           {t("addon.useExistingDescPost")}
         </div>
       </button>
-      <button
-        onClick={onCancel}
-        style={{
-          ...choiceBtn,
-          backgroundColor: "transparent",
-          color: T.textSub,
-          border: `1px solid ${T.textFaint}`,
-          textAlign: "center",
-          padding: "8px",
-        }}
-      >
+      <button onClick={onCancel} className={s.choiceBtnCancel}>
         {t("btn.cancel")}
       </button>
     </Overlay>
@@ -205,10 +153,10 @@ function VersionSwitchList({
   const grouped = groupVersions(versions);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-      <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "2px", fontWeight: "bold" }}>{t("addon.switchVersion")}</div>
+    <div className={s.versionSwitchList}>
+      <div className={s.versionSwitchTitle}>{t("addon.switchVersion")}</div>
       {versions.length === 0 ? (
-        <div style={{ fontSize: "11px", color: T.textFaint, padding: "2px 0" }}>{t("addon.noVersions")}</div>
+        <div className={s.versionSwitchEmpty}>{t("addon.noVersions")}</div>
       ) : (
         grouped.map(({ info: vi, indent }) => {
           const ver = vi.version;
@@ -232,19 +180,7 @@ function VersionSwitchList({
 
 function ToggleBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "4px 10px",
-        fontSize: "11px",
-        cursor: "pointer",
-        backgroundColor: active ? T.bg2 : T.bg1,
-        color: active ? T.accent : T.textSub,
-        border: `1px solid ${active ? T.accent + "60" : T.borderDim}`,
-        borderBottom: active ? `2px solid ${T.accent}` : `1px solid ${T.borderDim}`,
-        borderRadius: "3px",
-      }}
-    >
+    <button onClick={onClick} className={clsx(s.toggleBtn, active && s.toggleBtnActive)}>
       {label}
     </button>
   );
@@ -252,18 +188,7 @@ function ToggleBtn({ label, active, onClick }: { label: string; active: boolean;
 
 export function MiniBtn({ onClick, active, children }: { onClick: () => void; active?: boolean; children: React.ReactNode }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "3px 8px",
-        fontSize: "10px",
-        cursor: "pointer",
-        backgroundColor: active ? T.bg2 : T.bg1,
-        color: active ? T.accent : T.textSub,
-        border: `1px solid ${active ? T.accent + "40" : T.borderDim}`,
-        borderRadius: "3px",
-      }}
-    >
+    <button onClick={onClick} className={clsx(s.miniBtn, active && s.miniBtnActive)}>
       {children}
     </button>
   );
@@ -307,40 +232,11 @@ function VersionRow({
   return (
     <div
       onClick={onClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "6px",
-        padding: "4px 8px",
-        borderRadius: "4px",
-        marginLeft: indent ? "14px" : 0,
-        backgroundColor: isCurrent ? T.bg2 : T.bg1,
-        border: `1px solid ${isCurrent ? T.borderLight : T.borderDim}`,
-        cursor: isCurrent ? "default" : "pointer",
-        fontSize: "11px",
-      }}
+      className={clsx(s.versionRow, indent && s.versionRowIndent, isCurrent && s.versionRowCurrent)}
     >
-      {indent && <span style={{ color: T.textFaint, fontSize: "10px", marginRight: "-2px" }}>└</span>}
-      <div
-        style={{
-          width: "8px",
-          height: "8px",
-          borderRadius: "50%",
-          flexShrink: 0,
-          border: `2px solid ${isCurrent ? T.accent : T.textFaint}`,
-          backgroundColor: isCurrent ? T.accent : "transparent",
-        }}
-      />
-      <span
-        style={{
-          color: T.text,
-          fontWeight: isCurrent ? "bold" : "normal",
-          flex: 1,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
+      {indent && <span className={s.indentArrow}>{"\u2514"}</span>}
+      <div className={clsx(s.versionDot, isCurrent && s.versionDotCurrent)} />
+      <span className={clsx(s.versionLabel, isCurrent && s.versionLabelCurrent)}>
         {ver}
       </span>
       {isCurrent && <Tag color={T.accent}>{t("addon.tagCurrent")}</Tag>}
@@ -353,15 +249,11 @@ function VersionRow({
 export function Tag({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span
+      className={s.tag}
       style={{
-        fontSize: "11px",
-        padding: "1px 6px",
-        borderRadius: "3px",
         backgroundColor: `${color}20`,
         color,
         border: `1px solid ${color}40`,
-        lineHeight: 1.4,
-        fontWeight: "bold",
       }}
     >
       {children}
@@ -732,64 +624,21 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
         />
       )}
 
-      <div
-        style={{
-          width: "100%",
-          height: "100vh",
-          borderLeft: `1px solid ${T.border}`,
-          display: "flex",
-          flexDirection: "column",
-          fontSize: "12px",
-          overflow: "hidden",
-          paddingTop: 40,
-          boxSizing: "border-box",
-          backgroundColor: T.bg0,
-        }}
-      >
+      <div className={s.sidebar}>
         {/* Header */}
-        <div
-          style={{
-            padding: "10px 12px",
-            borderBottom: `1px solid ${T.borderDim}`,
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          <span style={{ color: T.accent, fontSize: "13px", fontWeight: "bold" }}>Add-on</span>
-          <span style={{ color: T.textDim, fontSize: "11px" }}>({allAddons.length})</span>
-          <span style={{ flex: 1 }} />
-          <button
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              background: "none",
-              border: `1px solid ${T.textFaint}`,
-              borderRadius: "3px",
-              color: T.textSub,
-              cursor: "pointer",
-              padding: "1px 7px",
-              fontSize: "13px",
-              lineHeight: 1.2,
-            }}
-          >
+        <div className={s.header}>
+          <span className={s.headerTitle}>Add-on</span>
+          <span className={s.headerCount}>({allAddons.length})</span>
+          <span className={s.spacer} />
+          <button onClick={() => setShowCreateModal(true)} className={s.addBtn}>
             +
           </button>
         </div>
 
         {/* Addon cards */}
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: "scroll",
-            padding: "8px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
+        <div className={s.cardList}>
           {allAddons.length === 0 ? (
-            <div style={{ color: T.textDim, fontSize: "11px", padding: "16px 8px", textAlign: "center" }}>
+            <div className={s.emptyMsg}>
               {t("addon.noAddons")}
             </div>
           ) : (
@@ -803,101 +652,50 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
               return (
                 <div
                   key={`${addon.id}@${addon.version}`}
-                  style={{
-                    borderRadius: "6px",
-                    border: `1px solid ${enabled ? T.borderLight : T.borderDim}`,
-                  }}
+                  className={clsx(s.card, enabled && s.cardEnabled)}
                 >
                   {/* Card header */}
                   <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      padding: "8px 10px",
-                      backgroundColor: enabled ? T.bg1 : T.bg1,
-                      cursor: "pointer",
-                    }}
+                    className={s.cardHeader}
                     onClick={() => setExpandedId(expanded ? null : addon.id)}
                   >
                     {addon.cover ? (
                       <img
                         src={`/assets/${addon.id}/covers/${addon.cover}?t=${coverRefresh}`}
                         alt=""
-                        style={{
-                          width: "64px",
-                          height: "64px",
-                          objectFit: "cover",
-                          borderRadius: "4px",
-                          border: `1px solid ${T.borderDim}`,
-                          flexShrink: 0,
-                        }}
+                        className={s.coverImg}
                       />
                     ) : (
-                      <div
-                        style={{
-                          width: "64px",
-                          height: "64px",
-                          borderRadius: "4px",
-                          border: `1px solid ${T.borderDim}`,
-                          flexShrink: 0,
-                          backgroundColor: T.bg2,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "24px",
-                          fontWeight: "bold",
-                          color: T.textDim,
-                        }}
-                      >
+                      <div className={s.coverPlaceholder}>
                         {(addon.name || addon.id || "?")[0]}
                       </div>
                     )}
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: enabled ? T.text : T.textSub,
-                          fontWeight: "bold",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                    <div className={s.cardInfo}>
+                      <div className={clsx(s.cardName, enabled && s.cardNameEnabled)}>
                         {addon.name}
                       </div>
-                      <div style={{ fontSize: "11px", color: T.textSub, marginTop: "2px" }}>{addon.id}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
-                        <span style={{ fontSize: "11px", color: T.text }}>v{displayVersion}</span>
+                      <div className={s.cardId}>{addon.id}</div>
+                      <div className={s.cardVersionRow}>
+                        <span className={s.cardVersion}>v{displayVersion}</span>
                         {isFork && <Tag color="#6ab">{t("addon.tagBranch")}</Tag>}
                       </div>
                     </div>
 
                     <ToggleSwitch enabled={enabled} onChange={() => handleToggle(addon)} />
-                    <span style={{ color: T.textDim, fontSize: "11px", flexShrink: 0 }}>
+                    <span className={s.chevron}>
                       {expanded ? "\u25B2" : "\u25BC"}
                     </span>
                   </div>
 
                   {/* Expanded panel */}
                   {expanded && (
-                    <div
-                      style={{
-                        padding: "10px 12px",
-                        backgroundColor: T.bg0,
-                        borderTop: `1px solid ${T.borderDim}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                        fontSize: "11px",
-                      }}
-                    >
+                    <div className={s.expandedPanel}>
                       {addon.description && (
-                        <div style={{ color: T.textSub, lineHeight: 1.5 }}>{addon.description}</div>
+                        <div className={s.description}>{addon.description}</div>
                       )}
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                      <div className={s.infoList}>
                         {addon.author && <InfoRow label={t("field.author")} value={addon.author} />}
                         {addon.categories && addon.categories.length > 0 && (
                           <InfoRow label={t("field.contents")} value={addon.categories.join(", ")} />
@@ -908,7 +706,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                       </div>
 
                       {/* Toggle buttons */}
-                      <div style={{ display: "flex", gap: "4px" }}>
+                      <div className={s.actionBtns}>
                         <ToggleBtn
                           label={t("btn.editInfo")}
                           active={editingMetaId === addon.id}
@@ -925,20 +723,9 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
                             setEditingMetaId(null);
                           }}
                         />
-                        <span style={{ flex: 1 }} />
+                        <span className={s.spacer} />
                         {!enabled && (
-                          <button
-                            onClick={() => setDeleteAddonConfirm(addon)}
-                            style={{
-                              padding: "3px 8px",
-                              fontSize: "11px",
-                              cursor: "pointer",
-                              backgroundColor: T.bg2,
-                              color: T.danger,
-                              border: `1px solid ${T.border}`,
-                              borderRadius: "3px",
-                            }}
-                          >
+                          <button onClick={() => setDeleteAddonConfirm(addon)} className={s.deleteBtn}>
                             [{t("btn.delete")}]
                           </button>
                         )}
@@ -946,7 +733,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
                       {/* Edit meta panel */}
                       {editingMetaId === addon.id && (
-                        <div style={{ borderLeft: `2px solid ${T.accent}`, paddingLeft: "10px" }}>
+                        <div className={s.subPanel}>
                           <AddonMetaEditor
                             addon={addon}
                             displayVersion={displayVersion}
@@ -958,7 +745,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
                       {/* Version management panel */}
                       {versionManageId === addon.id && (
-                        <div style={{ borderLeft: `2px solid ${T.accent}`, paddingLeft: "10px" }}>
+                        <div className={s.subPanel}>
                           <VersionManagePanel
                             addonId={addon.id}
                             selectedVersion={displayVersion}
@@ -977,7 +764,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
                       {/* Version switch list (when management panel is closed) */}
                       {enabled && versionManageId !== addon.id && (
-                        <div style={{ borderTop: `1px solid ${T.borderDim}`, paddingTop: "8px" }}>
+                        <div className={s.versionSwitchSection}>
                           <VersionSwitchList
                             addonId={addon.id}
                             selectedVersion={displayVersion}
@@ -999,9 +786,9 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "flex", gap: "8px", fontSize: "11px" }}>
-      <span style={{ color: T.textSub, width: "30px", flexShrink: 0 }}>{label}</span>
-      <span style={{ color: T.text }}>{value}</span>
+    <div className={s.infoRow}>
+      <span className={s.infoLabel}>{label}</span>
+      <span className={s.infoValue}>{value}</span>
     </div>
   );
 }

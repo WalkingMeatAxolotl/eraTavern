@@ -1,0 +1,60 @@
+.title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.description {
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.accentName {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.listPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background-color: var(--bg1);
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.rowNameEnable {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.rowNameDisable {
+  color: var(--danger);
+  font-weight: bold;
+}
+
+.rowId {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.btnGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fullBtn {
+  width: 100%;
+  text-align: center;
+}

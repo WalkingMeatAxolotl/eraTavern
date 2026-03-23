@@ -1,0 +1,29 @@
+.input {
+  padding: 4px 8px;
+  background-color: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.label {
+  color: var(--text-sub);
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.listRow {
+  padding: 3px 4px;
+  border-radius: 2px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.listRow:last-child {
+  border-bottom: none;
+}
+.listRowOdd {
+  background-color: var(--bg1);
+}
+.listRowEven {
+  background-color: var(--bg2);
+}
