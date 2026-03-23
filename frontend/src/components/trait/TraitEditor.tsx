@@ -1,14 +1,16 @@
 import { useState } from "react";
+import clsx from "clsx";
 import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from "../../types/game";
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../../api/client";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { EF, EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
-import { inputStyle, labelStyle, btn } from "../shared/styles";
 import { RawJsonPanel } from "../shared/RawJsonEditor";
 import CloneButton from "../shared/CloneDialog";
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
+import s from "./TraitEditor.module.css";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -183,26 +185,26 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
   }
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>
           == {isNew ? t("editor.newTrait") : t("editor.editTrait")} ==
         </span>
-        {trait.source && <span style={{ color: T.accent, fontSize: "12px" }}>{t("field.source")}: {trait.source}</span>}
+        {trait.source && <span className={s.sourceTag}>{t("field.source")}: {trait.source}</span>}
       </div>
 
       {/* Basic info */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
+      <div className={s.formGroup}>
+        <div className={s.row2}>
+          <div className={s.col}>
+            <div className={sh.label}>ID</div>
             <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.name")}</div>
+          <div className={s.col}>
+            <div className={sh.label}>{t("field.name")}</div>
             <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+              className={clsx(sh.input, s.fullWidth)}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isReadOnly}
@@ -210,9 +212,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           </div>
         </div>
         <div>
-          <div style={labelStyle}>{t("field.category")}</div>
+          <div className={sh.label}>{t("field.category")}</div>
           <select
-            style={{ ...inputStyle, width: "200px", boxSizing: "border-box" }}
+            className={clsx(sh.input, s.selectW200)}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             disabled={isReadOnly}
@@ -225,9 +227,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           </select>
         </div>
         <div>
-          <div style={labelStyle}>{t("field.description")}</div>
+          <div className={sh.label}>{t("field.description")}</div>
           <textarea
-            style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
+            className={clsx(sh.input, s.textarea)}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={isReadOnly}
@@ -237,17 +239,9 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
       {/* Experience-specific hint */}
       {category === EF.EXPERIENCE && (
-        <div style={{ marginBottom: "16px" }}>
-          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>{t("trait.expSettings")}</div>
-          <div
-            style={{
-              borderLeft: `2px solid ${T.borderLight}`,
-              paddingLeft: "10px",
-              color: T.textDim,
-              fontSize: "12px",
-              lineHeight: 1.5,
-            }}
-          >
+        <div className={s.sectionBlock}>
+          <div className={s.sectionLabel}>{t("trait.expSettings")}</div>
+          <div className={s.hintBlock}>
             {t("trait.expHint1")}
             <br />
             {t("trait.expHint2")}
@@ -257,32 +251,24 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
       {/* Ability-specific fields */}
       {category === EF.ABILITY && (
-        <div style={{ marginBottom: "16px" }}>
-          <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>{t("trait.abilitySettings")}</div>
-          <div
-            style={{
-              borderLeft: `2px solid ${T.borderLight}`,
-              paddingLeft: "10px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-            }}
-          >
-            <div style={{ display: "flex", gap: "12px" }}>
-              <div style={{ flex: 1 }}>
-                <div style={labelStyle}>{t("trait.defaultExp")}</div>
+        <div className={s.sectionBlock}>
+          <div className={s.sectionLabel}>{t("trait.abilitySettings")}</div>
+          <div className={s.borderPanelCol}>
+            <div className={s.row2}>
+              <div className={s.col}>
+                <div className={sh.label}>{t("trait.defaultExp")}</div>
                 <input
                   type="number"
                   min={0}
-                  style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                  className={clsx(sh.input, s.fullWidth)}
                   value={defaultValue}
                   onChange={(e) => setDefaultValue(Math.max(0, Number(e.target.value)))}
                   disabled={isReadOnly}
                 />
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={labelStyle}>{t("trait.gradePreview")}</div>
-                <div style={{ ...inputStyle, backgroundColor: "transparent", border: "none", paddingTop: "6px" }}>
+              <div className={s.col}>
+                <div className={sh.label}>{t("trait.gradePreview")}</div>
+                <div className={s.gradePreview}>
                   {(() => {
                     const grades = ["G", "F", "E", "D", "C", "B", "A", "S"];
                     const level = Math.min(Math.floor(defaultValue / 1000), grades.length - 1);
@@ -301,26 +287,26 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                   onChange={(e) => setDecayEnabled(e.target.checked)}
                   disabled={isReadOnly}
                 />
-                <span style={{ ...labelStyle, marginBottom: 0 }}>{t("trait.enableDecay")}</span>
+                <span className={sh.label} style={{ marginBottom: 0 }}>{t("trait.enableDecay")}</span>
               </label>
               {decayEnabled && (
-                <div style={{ display: "flex", gap: "12px", marginTop: "6px" }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>{t("trait.decayInterval")}</div>
+                <div className={s.row2} style={{ marginTop: "6px" }}>
+                  <div className={s.col}>
+                    <div className={sh.label}>{t("trait.decayInterval")}</div>
                     <input
                       type="number"
                       min={5}
                       step={5}
-                      style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                      className={clsx(sh.input, s.fullWidth)}
                       value={decay.intervalMinutes}
                       onChange={(e) => setDecay({ ...decay, intervalMinutes: Math.max(5, Number(e.target.value)) })}
                       disabled={isReadOnly}
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>{t("trait.decayType")}</div>
+                  <div className={s.col}>
+                    <div className={sh.label}>{t("trait.decayType")}</div>
                     <select
-                      style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                      className={clsx(sh.input, s.fullWidth)}
                       value={decay.type}
                       onChange={(e) => setDecay({ ...decay, type: e.target.value as "fixed" | "percentage" })}
                       disabled={isReadOnly}
@@ -329,13 +315,13 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
                       <option value={MagnitudeType.PERCENTAGE}>{t("trait.percentage")}</option>
                     </select>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>{decay.type === MagnitudeType.PERCENTAGE ? t("trait.decayAmountPctLabel") : t("trait.decayAmountLabel")}</div>
+                  <div className={s.col}>
+                    <div className={sh.label}>{decay.type === MagnitudeType.PERCENTAGE ? t("trait.decayAmountPctLabel") : t("trait.decayAmountLabel")}</div>
                     <input
                       type="number"
                       min={1}
                       max={decay.type === "percentage" ? 100 : undefined}
-                      style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+                      className={clsx(sh.input, s.fullWidth)}
                       value={decay.amount}
                       onChange={(e) => {
                         let v = Math.max(1, Number(e.target.value));
@@ -353,32 +339,14 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       )}
 
       {/* Effects */}
-      <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>{t("section.effects")}</div>
-        <div
-          style={{
-            borderLeft: `2px solid ${T.borderLight}`,
-            paddingLeft: "10px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "4px",
-          }}
-        >
+      <div className={s.sectionBlock}>
+        <div className={s.sectionLabel}>{t("section.effects")}</div>
+        <div className={s.effectList}>
           {effects.map((eff, idx) => (
-            <div
-              key={idx}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "4px 8px",
-                backgroundColor: T.bg2,
-                borderRadius: "3px",
-              }}
-            >
+            <div key={idx} className={s.effectRow}>
               {/* Target */}
               <select
-                style={{ ...inputStyle, flex: "1 1 0" }}
+                className={clsx(sh.input, sh.flex1)}
                 value={eff.target}
                 onChange={(e) => updateEffect(idx, { target: e.target.value })}
                 disabled={isReadOnly}
@@ -396,7 +364,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
               {/* Direction */}
               <select
-                style={{ ...inputStyle, width: "70px" }}
+                className={clsx(sh.input, sh.w70)}
                 value={eff.effect}
                 onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
                 disabled={isReadOnly}
@@ -407,7 +375,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
               {/* Magnitude type */}
               <select
-                style={{ ...inputStyle, width: "70px" }}
+                className={clsx(sh.input, sh.w70)}
                 value={eff.magnitudeType}
                 onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
                 disabled={isReadOnly}
@@ -419,7 +387,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               {/* Value */}
               <input
                 type="number"
-                style={{ ...inputStyle, width: "60px" }}
+                className={clsx(sh.input, sh.w60)}
                 value={eff.value}
                 onChange={(e) => updateEffect(idx, { value: Number(e.target.value) })}
                 disabled={isReadOnly}
@@ -427,44 +395,21 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
               {/* Multiplier hint for percentage */}
               {eff.magnitudeType === MagnitudeType.PERCENTAGE && (
-                <span style={{ color: T.textDim, fontSize: "11px", width: "50px", flexShrink: 0 }}>
+                <span className={s.pctHint}>
                   {pctHint(eff.value, eff.effect)}
                 </span>
               )}
 
               {/* Delete button */}
               {!isReadOnly && (
-                <button
-                  onClick={() => removeEffect(idx)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: T.danger,
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    padding: "0 4px",
-                  }}
-                >
+                <button className={s.deleteBtn} onClick={() => removeEffect(idx)}>
                   x
                 </button>
               )}
             </div>
           ))}
           {!isReadOnly && (
-            <button
-              onClick={addEffect}
-              style={{
-                marginTop: "2px",
-                padding: "3px 10px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-                alignSelf: "flex-start",
-              }}
-            >
+            <button className={s.addEffectBtn} onClick={addEffect}>
               [{t("btn.addEffect")}]
             </button>
           )}
@@ -472,12 +417,12 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <div className={s.actionBar}>
         {!isReadOnly && (
           <button
+            className={btnClass("create")}
             onClick={handleSave}
             disabled={saving}
-            style={{ ...btn("create"), ...(saving && { cursor: "not-allowed" }) }}
           >
             [{t("btn.confirm")}]
           </button>
@@ -497,21 +442,21 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         )}
         {!isReadOnly && !isNew && (
           <button
+            className={btnClass("danger")}
             onClick={handleDelete}
             disabled={saving}
-            style={{ ...btn("danger"), ...(saving && { cursor: "not-allowed" }) }}
           >
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={btn("neutral")}>
+        <button className={btnClass("neutral")} onClick={onBack}>
           [{t("btn.back")}]
         </button>
-        <button onClick={() => setJsonMode(true)} style={btn("neutral")}>
+        <button className={btnClass("neutral")} onClick={() => setJsonMode(true)}>
           [JSON]
         </button>
         {message && (
-          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span className={message === t("status.saved") ? s.msgSuccess : s.msgError}>{message}</span>
         )}
       </div>
     </div>

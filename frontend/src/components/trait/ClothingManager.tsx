@@ -1,4 +1,3 @@
-import T from "../../theme";
 import { useState, useCallback } from "react";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import type { GameDefinitions, ClothingDefinition } from "../../types/game";
@@ -9,13 +8,9 @@ import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { RawJsonView } from "../shared/RawJsonEditor";
 import { SectionDivider } from "../shared/SectionDivider";
 import { useManagerState, isReadOnly } from "../shared/useManagerState";
-import { createHoverStyles, btn } from "../shared/styles";
-
-const hoverStyles = createHoverStyles("cm", [
-  ["cat-btn", "color"],
-  ["item", "border"],
-  ["action-btn", "border"],
-]);
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
+import s from "./ClothingManager.module.css";
 
 export default function ClothingManager({
   selectedAddon,
@@ -42,7 +37,7 @@ export default function ClothingManager({
     useManagerState({ onEditingChange, loadFn });
 
   if (loading || !definitions) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+    return <div className={s.loading}>{t("status.loading")}</div>;
   }
 
   // Outfit editor view
@@ -93,8 +88,8 @@ export default function ClothingManager({
   const rawSlots = definitions.template.clothingSlots;
   const slots = [...new Set(rawSlots.map((s) => (s.startsWith("accessory") ? "accessory" : s)))];
   const grouped: Record<string, ClothingDefinition[]> = {};
-  for (const s of slots) {
-    grouped[s] = [];
+  for (const sl of slots) {
+    grouped[sl] = [];
   }
   for (const c of filteredClothing) {
     const cslots = c.slots ?? (c.slot ? [c.slot] : []);
@@ -109,69 +104,50 @@ export default function ClothingManager({
   }
 
   return (
-    <div
-      style={{
-        fontSize: "13px",
-        color: T.text,
-        padding: "12px 0",
-      }}
-    >
-      <style>{hoverStyles}</style>
+    <div className={s.wrapper}>
       {/* Header: title + both create buttons */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.clothingList")} ==</span>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>== {t("header.clothingList")} ==</span>
         {!readOnly && (
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button className="cm-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
+          <div className={s.btnRow}>
+            <button className={btnClass("neutral", "md")} onClick={() => setShowJson(true)}>
               [JSON]
             </button>
             <button
-              className="cm-action-btn"
+              className={btnClass("create", "md")}
               onClick={() => {
                 setIsNewOutfit(true);
                 setEditingOutfitId("__new__");
               }}
-              style={btn("create", "md")}
             >
               [{t("btn.newPreset")}]
             </button>
-            <button className="cm-action-btn" onClick={handleNew} style={btn("create", "md")}>
+            <button className={btnClass("create", "md")} onClick={handleNew}>
               [{t("btn.newClothing")}]
             </button>
           </div>
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      <div className={s.catContainer}>
         {/* ── Outfit Presets section ── */}
         <SectionDivider label={t("clothing.presetSection")} />
         {(() => {
           const types = definitions.outfitTypes ?? [];
           return (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
-              {types.length === 0 && <span style={{ color: T.textDim, fontSize: "12px" }}>({t("ui.none")})</span>}
+            <div className={s.itemGrid}>
+              {types.length === 0 && <span className={s.emptyMsg}>({t("ui.none")})</span>}
               {types.map((ot) => (
                 <button
-                  className="cm-item"
+                  className={s.item}
                   key={ot.id}
                   onClick={() => {
                     setIsNewOutfit(false);
                     setEditingOutfitId(ot.id);
                   }}
-                  style={{
-                    position: "relative",
-                    padding: "4px 10px",
-                    backgroundColor: T.bg1,
-                    color: T.text,
-                    border: `1px solid ${T.border}`,
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    transition: "background-color 0.15s, border-color 0.15s",
-                  }}
                 >
                   {ot.name || ot.id}
-                  <span style={{ color: T.textDim, fontSize: "11px", marginLeft: "4px" }}>
+                  <span className={s.presetTag}>
                     {ot.copyDefault ? `(${t("clothing.inheritTag")})` : `(${t("clothing.slotCountTag", { count: Object.values(ot.slots || {}).filter((v) => v.length > 0).length })})`}
                   </span>
                 </button>
@@ -187,48 +163,18 @@ export default function ClothingManager({
           const slotCollapsed = isCollapsed(slotKey);
           return (
             <div key={slotKey}>
-              <button
-                className="cm-cat-btn"
-                onClick={() => toggleCollapse(slotKey)}
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "6px 12px",
-                  backgroundColor: T.bg2,
-                  color: T.textSub,
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  borderRadius: "3px",
-                  transition: "background-color 0.1s, color 0.1s",
-                }}
-              >
-                <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+              <button className={s.catBtn} onClick={() => toggleCollapse(slotKey)}>
+                <span className={s.catArrow}>
                   {slotCollapsed ? "\u25B6" : "\u25BC"}
                 </span>{" "}
                 {SLOT_LABELS[slotKey] ?? slotKey} ({items.length})
               </button>
               {!slotCollapsed && items.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
+                <div className={s.itemGrid}>
                   {items.map((c) => (
-                    <button
-                      className="cm-item"
-                      key={c.id}
-                      onClick={() => handleEdit(c.id)}
-                      style={{
-                        position: "relative",
-                        padding: "4px 10px",
-                        backgroundColor: T.bg1,
-                        color: T.text,
-                        border: `1px solid ${T.border}`,
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        transition: "background-color 0.15s, border-color 0.15s",
-                      }}
-                    >
+                    <button className={s.item} key={c.id} onClick={() => handleEdit(c.id)}>
                       {c.name || c.id}
-                      {c.source && <span style={{ color: T.textSub, fontSize: "11px" }}> [{c.source}]</span>}
+                      {c.source && <span className={s.sourceSpan}> [{c.source}]</span>}
                     </button>
                   ))}
                 </div>
@@ -239,48 +185,18 @@ export default function ClothingManager({
         {/* Uncategorized */}
         {grouped["__other__"] && grouped["__other__"].length > 0 && (
           <div>
-            <button
-              className="cm-cat-btn"
-              onClick={() => toggleCollapse("__other__")}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "6px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: "none",
-                cursor: "pointer",
-                fontSize: "13px",
-                borderRadius: "3px",
-                transition: "background-color 0.1s, color 0.1s",
-              }}
-            >
-              <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+            <button className={s.catBtn} onClick={() => toggleCollapse("__other__")}>
+              <span className={s.catArrow}>
                 {isCollapsed("__other__") ? "\u25B6" : "\u25BC"}
               </span>{" "}
               {t("label.uncategorized")} ({grouped["__other__"].length})
             </button>
             {!isCollapsed("__other__") && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 8px" }}>
+              <div className={s.itemGrid}>
                 {grouped["__other__"].map((c) => (
-                  <button
-                    className="cm-item"
-                    key={c.id}
-                    onClick={() => handleEdit(c.id)}
-                    style={{
-                      position: "relative",
-                      padding: "4px 10px",
-                      backgroundColor: T.bg1,
-                      color: T.text,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      transition: "background-color 0.15s, border-color 0.15s",
-                    }}
-                  >
+                  <button className={s.item} key={c.id} onClick={() => handleEdit(c.id)}>
                     {c.name || c.id}
-                    {c.source && <span style={{ color: T.textSub, fontSize: "11px" }}> [{c.source}]</span>}
+                    {c.source && <span className={s.sourceSpan}> [{c.source}]</span>}
                   </button>
                 ))}
               </div>
@@ -292,4 +208,3 @@ export default function ClothingManager({
     </div>
   );
 }
-

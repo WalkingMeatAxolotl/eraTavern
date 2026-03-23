@@ -1,0 +1,120 @@
+/* ── NarrativePanel ── */
+
+@keyframes llmPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  background-color: var(--bg1);
+  padding: 12px;
+  border-radius: 4px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.emptyText {
+  color: var(--text-dim);
+}
+
+.entryBlock {
+  margin-bottom: 12px;
+}
+
+.rawMsg {
+  margin-bottom: 2px;
+  white-space: pre-wrap;
+}
+
+/* ── Idle button ── */
+
+.idleCenter {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.generateBtn {
+  padding: 4px 16px;
+  background-color: var(--bg2);
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* ── Generating ── */
+
+.llmSection {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.generatingHeader {
+  color: var(--accent);
+  font-size: 11px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulseDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  animation: llmPulse 1s ease-in-out infinite;
+}
+
+.streamText {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.cursor {
+  animation: llmPulse 1s ease-in-out infinite;
+  color: var(--accent);
+}
+
+/* ── Done ── */
+
+.doneHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.narrativeLabel {
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.regenBtn {
+  padding: 2px 10px;
+  background-color: var(--bg2);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.doneText {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* ── Error ── */
+
+.errorText {
+  color: var(--danger);
+  font-size: 12px;
+  margin-bottom: 4px;
+}

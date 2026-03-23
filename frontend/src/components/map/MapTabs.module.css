@@ -1,0 +1,43 @@
+/* ── MapTabs ── */
+
+.wrapper {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.tab {
+  padding: 6px 16px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tab:hover {
+  background-color: var(--bg2);
+}
+
+.tabActive {
+  composes: tab;
+  background-color: var(--bg2);
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+.toggleBtn {
+  margin-left: auto;
+  padding: 4px 10px;
+  background-color: transparent;
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.toggleBtn:hover {
+  background-color: var(--bg2);
+}

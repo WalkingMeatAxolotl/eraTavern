@@ -1,0 +1,210 @@
+/* ── LLMDebugPanel ── */
+
+.wrapper {
+  background-color: var(--bg0);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  overflow: hidden;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px;
+  background-color: var(--bg1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.headerTitle {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.headerArrow {
+  color: var(--text-dim);
+}
+
+/* ── Body ── */
+
+.body {
+  padding: 4px 0;
+}
+
+.emptyText {
+  color: var(--text-dim);
+  padding: 8px 10px;
+}
+
+/* ── Entry ── */
+
+.entry {
+  border-bottom: 1px solid var(--border);
+}
+
+.summaryRow {
+  display: flex;
+  gap: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  color: var(--text-sub);
+  align-items: center;
+}
+
+.timestamp {
+  color: var(--text-dim);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.statusBadge {
+  font-weight: bold;
+  min-width: 40px;
+  flex-shrink: 0;
+}
+
+.modelName {
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.dash {
+  color: var(--text-dim);
+}
+
+.presetName {
+  color: var(--text-sub);
+}
+
+.usage {
+  color: var(--accent);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.expandArrow {
+  color: var(--accent);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Detail ── */
+
+.detail {
+  padding: 6px 10px;
+  background-color: var(--bg1);
+}
+
+.detailSection {
+  margin-bottom: 6px;
+}
+
+.detailLabel {
+  color: var(--accent);
+}
+
+.detailLabelMb {
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.detailUrl {
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+
+.paramLabel {
+  color: var(--text-dim);
+}
+
+.paramValue {
+  color: var(--text);
+}
+
+.varBox {
+  padding: 4px 8px;
+  background-color: var(--bg2);
+  border-radius: 2px;
+}
+
+.varKey {
+  color: var(--accent);
+}
+
+.varEq {
+  color: var(--text-dim);
+}
+
+.varEmpty {
+  color: var(--danger);
+}
+
+.varEntry {
+  margin-bottom: 2px;
+}
+
+/* ── Messages ── */
+
+.msgBlock {
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  background-color: var(--bg2);
+  border-radius: 2px;
+}
+
+.msgBlockSystem {
+  border-left: 2px solid var(--accent-dim);
+}
+
+.msgBlockAssistant {
+  border-left: 2px solid var(--success);
+}
+
+.msgBlockUser {
+  border-left: 2px solid var(--accent);
+}
+
+.msgRole {
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+
+.msgContent {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  font-size: 11px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ── Response ── */
+
+.responseBlock {
+  margin: 0;
+  padding: 4px 8px;
+  background-color: var(--bg2);
+  border-radius: 2px;
+  border-left: 2px solid var(--success);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  font-size: 11px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.errorText {
+  color: var(--danger);
+  margin-bottom: 6px;
+}
+
+.tokenLine {
+  color: var(--text-dim);
+}

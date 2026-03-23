@@ -1,4 +1,3 @@
-import T from "../../theme";
 import { useState, useCallback, useMemo } from "react";
 import type { ItemDefinition } from "../../types/game";
 import { fetchItemDefs, fetchItemTags, createItemTag, deleteItemTag } from "../../api/client";
@@ -10,15 +9,8 @@ import { RawJsonView } from "../shared/RawJsonEditor";
 import { useManagerState, isReadOnly } from "../shared/useManagerState";
 import { useTagSystem } from "../shared/useTagSystem";
 import { TagManagerPanel } from "../shared/TagManagerPanel";
-import { createHoverStyles, btn } from "../shared/styles";
-
-const hoverStyles = createHoverStyles("im", [
-  ["item", "border"],
-  ["tag-chip", "border"],
-  ["action-btn", "border"],
-  ["cat-btn", "color"],
-  ["view-tab", "simple"],
-]);
+import { btnClass } from "../shared/buttons";
+import s from "./ItemManager.module.css";
 
 // ── Main ──────────────────────────────────────────────
 
@@ -64,7 +56,7 @@ export default function ItemManager({
   });
 
   if (loading) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+    return <div className={s.loading}>{t("status.loading")}</div>;
   }
 
   if (showJson && selectedAddon) {
@@ -90,24 +82,20 @@ export default function ItemManager({
   }
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-      <style>{hoverStyles}</style>
-
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.itemList")} ==</span>
+      <div className={s.header}>
+        <div className={s.headerLeft}>
+          <span className={s.title}>== {t("header.itemList")} ==</span>
           {/* View toggle */}
-          <div style={{ display: "flex", gap: "2px" }}>
+          <div className={s.viewTabs}>
             <button
-              className="im-view-tab"
               onClick={() => setViewMode("byTag")}
               style={viewTabStyle(viewMode === "byTag")}
             >
               {t("btn.byTag")}
             </button>
             <button
-              className="im-view-tab"
               onClick={() => setViewMode("byEntity")}
               style={viewTabStyle(viewMode === "byEntity")}
             >
@@ -115,23 +103,22 @@ export default function ItemManager({
             </button>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "6px" }}>
+        <div className={s.btnRow}>
           {!readOnly && (
-            <button className="im-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
+            <button className={btnClass("neutral", "md")} onClick={() => setShowJson(true)}>
               [JSON]
             </button>
           )}
           {!readOnly && (
             <button
-              className="im-action-btn"
+              className={btnClass(showTagManager ? "primary" : "neutral", "md")}
               onClick={() => setShowTagManager((v) => !v)}
-              style={btn(showTagManager ? "primary" : "neutral", "md")}
             >
               [{t("btn.tagMgmt")}]
             </button>
           )}
           {!readOnly && (
-            <button className="im-action-btn" onClick={handleNew} style={btn("create", "md")}>
+            <button className={btnClass("create", "md")} onClick={handleNew}>
               [{t("btn.newItem")}]
             </button>
           )}
@@ -147,7 +134,6 @@ export default function ItemManager({
           setNewTagInput={setNewTagInput}
           onAddTag={handleAddTag}
           onDeleteTag={handleDeleteTag}
-          btnClassName="im-action-btn"
         />
       )}
 
@@ -171,14 +157,13 @@ export default function ItemManager({
         />
       )}
 
-      {filteredItems.length === 0 && <div style={{ color: T.textDim, padding: "8px" }}>{t("empty.items")}</div>}
-
+      {filteredItems.length === 0 && <div className={s.emptyMsg}>{t("empty.items")}</div>}
     </div>
   );
 }
 
 // ── By Tag View ───────────────────────────────────────
-// Tag groups → item chips. Hover item → tooltip shows all its tags.
+// Tag groups -> item chips. Hover item -> tooltip shows all its tags.
 
 function ByTagView({
   visibleTags,
@@ -207,7 +192,7 @@ function ByTagView({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+    <div className={s.tagContainer}>
       {tooltipInfo && <Tooltip text={tooltipInfo.text} anchorRef={tooltipInfo.el} />}
       {visibleTags.map((tag) => {
         const tagItems = tagGrouped[tag] ?? [];
@@ -215,47 +200,20 @@ function ByTagView({
         const isCollapsed = collapsed[`tag:${tag}`] ?? false;
         return (
           <div key={tag}>
-            <button
-              className="im-cat-btn"
-              onClick={() => onToggleCollapse(`tag:${tag}`)}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "5px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: "none",
-                cursor: "pointer",
-                fontSize: "13px",
-                borderRadius: "3px",
-                transition: "background-color 0.1s, color 0.1s",
-              }}
-            >
-              <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
-                {isCollapsed ? "\u25B6" : "\u25BC"}
-              </span>{" "}
+            <button className={s.catBtn} onClick={() => onToggleCollapse(`tag:${tag}`)}>
+              <span className={s.catArrow}>{isCollapsed ? "\u25B6" : "\u25BC"}</span>{" "}
               {tag}
-              <span style={{ color: T.textDim, marginLeft: "4px", fontSize: "11px" }}>({tagItems.length})</span>
+              <span className={s.catCount}>({tagItems.length})</span>
             </button>
             {!isCollapsed && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "6px 8px" }}>
+              <div className={s.itemGrid}>
                 {tagItems.map((item) => (
                   <button
-                    className="im-item"
+                    className={s.item}
                     key={item.id}
                     onClick={() => onEditItem(item.id)}
                     onMouseEnter={(e) => showItemTooltip(item, e.currentTarget)}
                     onMouseLeave={() => setTooltipInfo(null)}
-                    style={{
-                      padding: "4px 10px",
-                      backgroundColor: T.bg1,
-                      color: T.text,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      transition: "background-color 0.15s, border-color 0.15s",
-                    }}
                   >
                     {item.name || item.id}
                   </button>
@@ -269,45 +227,20 @@ function ByTagView({
       {/* Untagged */}
       {untagged.length > 0 && (
         <div>
-          <button
-            className="im-cat-btn"
-            onClick={() => onToggleCollapse("tag:__untagged__")}
-            style={{
-              width: "100%",
-              textAlign: "left",
-              padding: "5px 12px",
-              backgroundColor: T.bg2,
-              color: T.textDim,
-              border: "none",
-              cursor: "pointer",
-              fontSize: "13px",
-              borderRadius: "3px",
-              transition: "background-color 0.1s, color 0.1s",
-            }}
-          >
-            <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+          <button className={s.catBtnDim} onClick={() => onToggleCollapse("tag:__untagged__")}>
+            <span className={s.catArrow}>
               {(collapsed["tag:__untagged__"] ?? false) ? "\u25B6" : "\u25BC"}
             </span>{" "}
             {t("label.uncategorized")}
-            <span style={{ color: T.textDim, marginLeft: "4px", fontSize: "11px" }}>({untagged.length})</span>
+            <span className={s.catCount}>({untagged.length})</span>
           </button>
           {!(collapsed["tag:__untagged__"] ?? false) && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "6px 8px" }}>
+            <div className={s.itemGrid}>
               {untagged.map((item) => (
                 <button
-                  className="im-item"
+                  className={s.item}
                   key={item.id}
                   onClick={() => onEditItem(item.id)}
-                  style={{
-                    padding: "4px 10px",
-                    backgroundColor: T.bg1,
-                    color: T.text,
-                    border: `1px solid ${T.border}`,
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    transition: "background-color 0.15s, border-color 0.15s",
-                  }}
                 >
                   {item.name || item.id}
                 </button>
@@ -321,7 +254,7 @@ function ByTagView({
 }
 
 // ── By Item View ──────────────────────────────────────
-// Item rows → tag chips. Hover tag → tooltip shows items with that tag.
+// Item rows -> tag chips. Hover tag -> tooltip shows items with that tag.
 
 function ByItemView({
   filteredItems,
@@ -356,7 +289,7 @@ function ByItemView({
   }, [filteredItems]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+    <div className={s.itemList}>
       {tooltipInfo && <Tooltip text={tooltipInfo.text} anchorRef={tooltipInfo.el} />}
       {groups.tagged.map((item) => {
         const tags = itemTagsMap[item.id] ?? [];
@@ -375,18 +308,9 @@ function ByItemView({
       {/* Untagged items */}
       {groups.untagged.length > 0 && (
         <>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              margin: "6px 0 2px",
-              fontSize: "11px",
-              color: T.textDim,
-            }}
-          >
+          <div className={s.uncatHeader}>
             <span>{t("label.uncategorized")}</span>
-            <span style={{ flex: 1, height: "1px", backgroundColor: T.borderDim }} />
+            <span className={s.uncatLine} />
           </div>
           {groups.untagged.map((item) => (
             <ItemRow
@@ -405,7 +329,7 @@ function ByItemView({
 }
 
 // ── Item Row (byItem view) ────────────────────────────
-// Left accent bar + item name : tag chips — like TraitManager GroupRow
+// Left accent bar + item name : tag chips
 
 function ItemRow({
   item,
@@ -420,51 +344,19 @@ function ItemRow({
   onTagHover: (tag: string, el: HTMLElement) => void;
   onTagLeave: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
-    <button
-      onClick={onEdit}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        width: "100%",
-        padding: "5px 10px 5px 14px",
-        backgroundColor: hovered ? T.bg2 : T.bg1,
-        border: "none",
-        borderRadius: "2px",
-        cursor: "pointer",
-        fontSize: "12px",
-        textAlign: "left",
-        transition: "background-color 0.1s",
-      }}
-    >
+    <button className={s.itemRow} onClick={onEdit}>
       {/* Left accent bar */}
-      <span
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: "3px",
-          backgroundColor: hovered ? T.accent : T.accentDim,
-          borderRadius: "2px 0 0 2px",
-          transition: "background-color 0.1s",
-        }}
-      />
-      <span style={{ color: T.text, whiteSpace: "nowrap" }}>{item.name || item.id}</span>
+      <span className={s.accentBar} />
+      <span className={s.itemName}>{item.name || item.id}</span>
       {tags.length > 0 && (
         <>
-          <span style={{ color: T.textDim }}>:</span>
-          <span style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+          <span className={s.tagSep}>:</span>
+          <span className={s.tagChips}>
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="im-tag-chip"
+                className={s.tagChip}
                 onMouseEnter={(e) => {
                   e.stopPropagation();
                   onTagHover(tag, e.currentTarget);
@@ -472,15 +364,6 @@ function ItemRow({
                 onMouseLeave={(e) => {
                   e.stopPropagation();
                   onTagLeave();
-                }}
-                style={{
-                  padding: "1px 7px",
-                  backgroundColor: hovered ? T.bg3 : T.bg2,
-                  color: T.textSub,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: "3px",
-                  fontSize: "11px",
-                  transition: "background-color 0.15s, border-color 0.15s",
                 }}
               >
                 {tag}

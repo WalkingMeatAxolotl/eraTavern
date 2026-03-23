@@ -1,0 +1,130 @@
+/* ── EntityCard ── */
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  background-color: var(--bg2);
+  margin-top: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.cardId {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.cardName {
+  color: var(--text);
+  margin-left: 8px;
+}
+
+.fieldRow {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.fieldLabel {
+  color: var(--text-dim);
+  min-width: 50px;
+  flex-shrink: 0;
+}
+
+.fieldValue {
+  color: var(--text);
+  word-break: break-word;
+}
+
+.descText {
+  color: var(--text-sub);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* ── Expanded JSON ── */
+
+.jsonEdit {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background-color: var(--bg3);
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text);
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 120px;
+  max-height: 300px;
+  resize: vertical;
+  white-space: pre;
+}
+
+.jsonEditError {
+  border: 1px solid var(--danger);
+}
+
+.jsonEditNormal {
+  border: 1px solid var(--border);
+}
+
+.jsonPre {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background-color: var(--bg3);
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text);
+  overflow: auto;
+  max-height: 200px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.editError {
+  color: var(--danger);
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+/* ── Action buttons ── */
+
+.actionsRow {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cardBtn {
+  padding: 2px 8px;
+  font-size: 11px;
+  background-color: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.cardBtnExpand {
+  color: var(--text-sub);
+  font-size: 10px;
+}
+
+.cardBtnConfirm {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.cardBtnReject {
+  color: var(--danger);
+  border-color: var(--danger);
+}

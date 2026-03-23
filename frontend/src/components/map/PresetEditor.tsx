@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import type { DecorPreset } from "../../types/game";
 import { saveDecorPresets } from "../../api/client";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import ColorPicker from "../shared/ColorPicker";
+import s from "./PresetEditor.module.css";
+import me from "./MapEditor.module.css";
 
 interface PresetEditorProps {
   presets: DecorPreset[];
@@ -44,44 +45,11 @@ export default function PresetEditor({
   };
 
   return (
-    <div
-      style={{
-        background: T.bg2,
-        border: `1px solid ${T.border}`,
-        borderRadius: "3px",
-        padding: "8px 10px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "6px",
-      }}
-    >
-      <div style={{ color: T.textSub, fontWeight: "bold", fontSize: "12px" }}>{t("section.decorPreset")}</div>
+    <div className={s.wrapper}>
+      <div className={s.heading}>{t("section.decorPreset")}</div>
       {editing.map((p, i) => (
-        <div
-          key={i}
-          style={{
-            display: "flex",
-            gap: "6px",
-            alignItems: "center",
-            paddingLeft: "4px",
-            borderLeft: `2px solid ${T.border}`,
-          }}
-        >
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "2.2em",
-              height: "2.2em",
-              fontSize: "13px",
-              color: p.color,
-              background: T.bg3,
-              border: `1px solid ${T.border}`,
-              borderRadius: "2px",
-              flexShrink: 0,
-            }}
-          >
+        <div key={i} className={s.presetRow}>
+          <span className={s.presetPreview} style={{ color: p.color }}>
             {p.text}
           </span>
           <input
@@ -104,22 +72,15 @@ export default function PresetEditor({
           />
           <button
             onClick={() => setEditing(editing.filter((_, j) => j !== i))}
-            style={{ ...btnStyle, color: T.danger, borderColor: `${T.danger}66`, padding: "2px 6px" }}
+            className={me.editorBtnSm}
+            style={{ color: "var(--danger)", borderColor: "var(--danger)" }}
           >
             x
           </button>
         </div>
       ))}
 
-      <div
-        style={{
-          display: "flex",
-          gap: "6px",
-          alignItems: "center",
-          paddingTop: "4px",
-          borderTop: `1px solid ${T.borderDim}`,
-        }}
-      >
+      <div className={s.addRow}>
         <input
           value={newText}
           onChange={(e) => setNewText(e.target.value)}
@@ -130,14 +91,16 @@ export default function PresetEditor({
         <ColorPicker value={newColor} onChange={(c) => setNewColor(c)} />
         <button
           onClick={handleAdd}
-          style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
+          className={me.editorBtnSm}
+          style={{ color: "var(--success-dim)", borderColor: "var(--success-dim)" }}
         >
           [+]
         </button>
         <span style={{ flex: 1 }} />
         <button
           onClick={handleSave}
-          style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
+          className={me.editorBtnSm}
+          style={{ color: "var(--success-dim)", borderColor: "var(--success-dim)" }}
         >
           [{t("btn.savePreset")}]
         </button>

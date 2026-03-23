@@ -1,0 +1,162 @@
+/* ── LorebookManager ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.btnRow {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── List ── */
+
+.listColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.listItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.listItem:hover {
+  border-color: var(--border-light);
+}
+
+.listItemDisabled {
+  composes: listItem;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.itemMeta {
+  color: var(--text-dim);
+  margin-left: 8px;
+  font-size: 11px;
+}
+
+.itemStatus {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* ── Editor section ── */
+
+.section {
+  border-left: 2px solid var(--border-light);
+  padding-left: 10px;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+/* ── Keywords ── */
+
+.keywordChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.keywordChip {
+  padding: 2px 8px;
+  background-color: var(--bg2);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.keywordRemove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+}
+
+.keywordInputRow {
+  display: flex;
+  gap: 6px;
+}
+
+.keywordHelp {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+/* ── Content textarea ── */
+
+.contentTextarea {
+  composes: input from "../shared/shared.module.css";
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 150px;
+  resize: vertical;
+  font-family: var(--font-mono);
+}
+
+/* ── Input full width ── */
+
+.inputFull {
+  composes: input from "../shared/shared.module.css";
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputW200 {
+  composes: input from "../shared/shared.module.css";
+  width: 200px;
+}
+
+/* ── Action bar ── */
+
+.actionBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+/* ── Empty / Message ── */
+
+.emptyMsg {
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 8px 0;
+}

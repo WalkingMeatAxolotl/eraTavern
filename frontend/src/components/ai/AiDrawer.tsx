@@ -10,7 +10,6 @@
  * Manages a session lifecycle: created on mount, deleted on unmount.
  */
 import { useEffect, useRef, useState, useCallback } from "react";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import {
   streamAssistChat,
@@ -20,6 +19,8 @@ import {
 import type { ToolCallInfo, ToolCallResult } from "../../api/aiAssist";
 import ToolCallMessage from "./ToolCallMessage";
 import type { ToolCallStatus } from "./ToolCallMessage";
+import clsx from "clsx";
+import s from "./AiDrawer.module.css";
 
 // --- Types ---
 
@@ -41,55 +42,6 @@ export interface AiDrawerProps {
   onEntityChanged?: () => void;
   onDebugEntry?: (entry: Record<string, unknown>) => void;
 }
-
-// --- Styles ---
-
-const drawerStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  height: "100vh",
-  paddingTop: 40,
-  backgroundColor: T.bg1,
-  color: T.text,
-  fontSize: "13px",
-  boxSizing: "border-box",
-};
-
-const headerStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "8px 12px",
-  borderBottom: `1px solid ${T.border}`,
-  flexShrink: 0,
-};
-
-const messagesStyle: React.CSSProperties = {
-  flex: 1,
-  overflowY: "auto",
-  padding: "8px 12px",
-};
-
-const inputAreaStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "6px",
-  padding: "8px 12px",
-  borderTop: `1px solid ${T.border}`,
-  flexShrink: 0,
-};
-
-const msgBubble = (role: string): React.CSSProperties => ({
-  marginBottom: "8px",
-  padding: "6px 10px",
-  borderRadius: "4px",
-  fontSize: "12px",
-  lineHeight: "1.5",
-  backgroundColor: role === "user" ? T.bg3 : "transparent",
-  borderLeft: role === "assistant" ? `2px solid ${T.accent}` : undefined,
-  color: T.text,
-  whiteSpace: "pre-wrap",
-  wordBreak: "break-word",
-});
 
 // --- Think block helpers ---
 
@@ -113,43 +65,13 @@ function ThinkBlock({ content, defaultOpen }: { content: string; defaultOpen: bo
   const [open, setOpen] = useState(defaultOpen);
   if (!content) return null;
   return (
-    <div style={{ marginBottom: "6px" }}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          background: "none",
-          border: "none",
-          color: T.textDim,
-          cursor: "pointer",
-          fontSize: "11px",
-          padding: "2px 0",
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-        }}
-      >
-        <span style={{ fontSize: "10px" }}>{open ? "▼" : "▶"}</span>
+    <div className={s.thinkBlock}>
+      <button onClick={() => setOpen((v) => !v)} className={s.thinkToggle}>
+        <span className={s.thinkArrow}>{open ? "▼" : "▶"}</span>
         {t("ai.thinkingBlock")}
       </button>
       {open && (
-        <pre
-          style={{
-            padding: "6px 8px",
-            backgroundColor: T.bg3,
-            borderRadius: "3px",
-            fontSize: "11px",
-            fontFamily: T.fontMono,
-            color: T.textDim,
-            overflow: "auto",
-            maxHeight: "200px",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            margin: "2px 0 0 0",
-            borderLeft: `2px solid ${T.border}`,
-          }}
-        >
-          {content}
-        </pre>
+        <pre className={s.thinkContent}>{content}</pre>
       )}
     </div>
   );
@@ -359,10 +281,10 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
   const hasPending = messages.some((m) => m.toolCalls?.some((tc) => tc.status === "pending"));
 
   return (
-    <div style={drawerStyle}>
+    <div className={s.drawer}>
       {/* Header */}
-      <div style={headerStyle}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "13px" }}>{t("ai.drawerTitle")}</span>
+      <div className={s.header}>
+        <span className={s.headerTitle}>{t("ai.drawerTitle")}</span>
         <button
           onClick={() => {
             abortRef.current?.abort();
@@ -374,28 +296,20 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
             setInputText("");
           }}
           title={t("ai.newSession")}
-          style={{
-            padding: "3px 10px",
-            backgroundColor: T.bg2,
-            color: T.textSub,
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontSize: "11px",
-          }}
+          className={s.newSessionBtn}
         >
           [+]
         </button>
       </div>
 
       {/* Messages */}
-      <div style={messagesStyle}>
+      <div className={s.messages}>
 
         {messages.map((msg, i) => (
           <div key={i}>
             {/* Role label — skip for empty assistant placeholders */}
             {(msg.content || msg.toolCalls?.length) && (
-              <div style={{ fontSize: "10px", color: T.textDim, marginBottom: "2px" }}>
+              <div className={s.roleLabel}>
                 {msg.role === "user" ? "You" : "AI"}
               </div>
             )}
@@ -407,11 +321,11 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
                 return (
                   <>
                     {think && <ThinkBlock content={think} defaultOpen={false} />}
-                    {visible && <div style={msgBubble("assistant")}>{visible}</div>}
+                    {visible && <div className={s.bubbleAssistant}>{visible}</div>}
                   </>
                 );
               }
-              return <div style={msgBubble(msg.role)}>{msg.content}</div>;
+              return <div className={s.bubbleUser}>{msg.content}</div>;
             })()}
 
             {/* Tool calls */}
@@ -431,14 +345,12 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
           </div>
         ))}
 
-        <style>{`@keyframes ai-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
-
         {/* Thinking indicator — waiting for first token */}
         {isGenerating && !streamingText && (
-          <div style={{ padding: "8px 0" }}>
-            <div style={{ fontSize: "10px", color: T.textDim, marginBottom: "2px" }}>AI</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: T.textDim, fontSize: "12px" }}>
-              <span style={{ display: "inline-block", animation: "ai-pulse 1.5s ease-in-out infinite", color: T.accent }}>●</span>
+          <div className={s.thinkingWrap}>
+            <div className={s.roleLabel}>AI</div>
+            <div className={s.thinkingRow}>
+              <span className={s.pulseDot}>●</span>
               {t("ai.thinking")}
             </div>
           </div>
@@ -449,11 +361,11 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
           const { think, visible } = splitThinkContent(streamingText);
           return (
             <div>
-              <div style={{ fontSize: "10px", color: T.textDim, marginBottom: "2px" }}>AI</div>
+              <div className={s.roleLabel}>AI</div>
               {think && <ThinkBlock content={think} defaultOpen={true} />}
-              <div style={{ ...msgBubble("assistant"), color: T.text }}>
+              <div className={s.bubbleAssistant}>
                 {visible || (!think ? streamingText : "")}
-                <span style={{ color: T.accent, animation: "ai-pulse 1s ease-in-out infinite" }}>▌</span>
+                <span className={s.cursor}>▌</span>
               </div>
             </div>
           );
@@ -463,22 +375,10 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
       </div>
 
       {/* Input area */}
-      <div style={inputAreaStyle}>
+      <div className={s.inputArea}>
         <textarea
           ref={inputRef}
-          style={{
-            flex: 1,
-            padding: "6px 8px",
-            backgroundColor: T.bg2,
-            color: T.text,
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
-            fontSize: "12px",
-            fontFamily: T.fontMono,
-            resize: "none",
-            minHeight: "36px",
-            maxHeight: "100px",
-          }}
+          className={s.inputTextarea}
           placeholder={t("ai.inputPlaceholder")}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -486,35 +386,14 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
           disabled={hasPending}
         />
         {isGenerating ? (
-          <button
-            onClick={handleStop}
-            style={{
-              padding: "6px 12px",
-              backgroundColor: T.bg2,
-              color: T.danger,
-              border: `1px solid ${T.danger}`,
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "12px",
-              flexShrink: 0,
-            }}
-          >
+          <button onClick={handleStop} className={s.stopBtn}>
             [{t("ai.stop")}]
           </button>
         ) : (
           <button
             onClick={handleSend}
             disabled={!inputText.trim() || hasPending}
-            style={{
-              padding: "6px 12px",
-              backgroundColor: T.bg2,
-              color: inputText.trim() ? T.accent : T.textDim,
-              border: `1px solid ${inputText.trim() ? T.accent : T.border}`,
-              borderRadius: "3px",
-              cursor: inputText.trim() ? "pointer" : "default",
-              fontSize: "12px",
-              flexShrink: 0,
-            }}
+            className={clsx(s.sendBtn, inputText.trim() ? s.sendBtnActive : s.sendBtnDisabled)}
           >
             [{t("ai.send")}]
           </button>
@@ -523,4 +402,3 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
     </div>
   );
 }
-

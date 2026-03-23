@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import clsx from "clsx";
 import type { VariableDefinition, VariableStep, GameDefinitions } from "../../types/game";
 import {
   createVariableDef,
@@ -10,8 +11,10 @@ import {
 import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { VarStepType, ArithOp } from "../../constants";
-import { inputStyle, labelStyle, btn } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
 import CloneButton from "../shared/CloneDialog";
+import sh from "../shared/shared.module.css";
+import s from "./VariableEditor.module.css";
 
 interface Props {
   variable: VariableDefinition;
@@ -47,13 +50,6 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: VarStepType.VARIABLE, label: t("varStep.variable") },
 ];
 
-const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  cursor: "pointer",
-};
-
-// Uses btn() from shared/styles for button styling
-
 function makeBlankStep(): VariableStep {
   return { type: VarStepType.CONSTANT, value: 0, op: ArithOp.ADD };
 }
@@ -73,9 +69,9 @@ function formulaPreview(steps: VariableStep[], bidirectional?: boolean): string 
   let i = 0;
 
   while (i < steps.length) {
-    const s = steps[i];
-    const val = stepValueLabel(s, bidirectional);
-    const op = s.op ?? "";
+    const step = steps[i];
+    const val = stepValueLabel(step, bidirectional);
+    const op = step.op ?? "";
 
     if (i === 0) {
       // Look ahead: if next ops are additive followed by multiplicative, need parens
@@ -130,29 +126,29 @@ function opSymbol(op: string): string {
   }
 }
 
-function stepValueLabel(s: VariableStep, bidirectional?: boolean): string {
-  const src = bidirectional ? (s.source === "target" ? "T:" : "S:") : "";
-  switch (s.type) {
+function stepValueLabel(step: VariableStep, bidirectional?: boolean): string {
+  const src = bidirectional ? (step.source === "target" ? "T:" : "S:") : "";
+  switch (step.type) {
     case VarStepType.ABILITY:
-      return `${src}${s.key ?? "?"}`;
+      return `${src}${step.key ?? "?"}`;
     case VarStepType.RESOURCE:
-      return `${src}${s.key ?? "?"}${s.field === "max" ? ".max" : ""}`;
+      return `${src}${step.key ?? "?"}${step.field === "max" ? ".max" : ""}`;
     case VarStepType.BASIC_INFO:
-      return `${src}${s.key ?? "?"}`;
+      return `${src}${step.key ?? "?"}`;
     case VarStepType.TRAIT_COUNT:
-      return `${src}count(${s.traitGroup ?? "?"})`;
+      return `${src}count(${step.traitGroup ?? "?"})`;
     case VarStepType.HAS_TRAIT:
-      return `${src}has(${s.traitId ?? "?"})`;
+      return `${src}has(${step.traitId ?? "?"})`;
     case VarStepType.EXPERIENCE:
-      return `${src}exp(${s.key ?? "?"})`;
+      return `${src}exp(${step.key ?? "?"})`;
     case VarStepType.ITEM_COUNT:
-      return `${src}item(${s.key ?? "?"})`;
+      return `${src}item(${step.key ?? "?"})`;
     case VarStepType.FAVORABILITY:
-      return bidirectional && s.source === "target" ? "fav(T→S)" : "fav(S→T)";
+      return bidirectional && step.source === "target" ? "fav(T→S)" : "fav(S→T)";
     case VarStepType.CONSTANT:
-      return String(s.value ?? 0);
+      return String(step.value ?? 0);
     case VarStepType.VARIABLE:
-      return `$${s.varId ?? "?"}`;
+      return `$${step.varId ?? "?"}`;
     default:
       return "?";
   }
@@ -257,7 +253,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
 
   // Step management
   const updateStep = (index: number, patch: Partial<VariableStep>) => {
-    setSteps((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+    setSteps((prev) => prev.map((step, i) => (i === index ? { ...step, ...patch } : step)));
   };
 
   const removeStep = (index: number) => {
@@ -287,12 +283,12 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       const [moved] = next.splice(from, 1);
       next.splice(to, 0, moved);
       // Fix ops: first step has no op, others need op
-      return next.map((s, i) => {
+      return next.map((step, i) => {
         if (i === 0) {
-          const { op: _, ...rest } = s;
+          const { op: _, ...rest } = step;
           return rest;
         }
-        return s.op ? s : { ...s, op: ArithOp.ADD as const };
+        return step.op ? step : { ...step, op: ArithOp.ADD as const };
       });
     });
   };
@@ -302,23 +298,24 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
   };
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>
           == {isNew ? t("editor.newVar") : t("editor.editNamed", { name: variable.name || variable.id })} ==
         </span>
-        <button onClick={onBack} style={btn("neutral")}>
+        <button onClick={onBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
 
       {/* Basic fields */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
+      <div className={s.fieldRow}>
         <div style={{ flex: 1 }}>
-          <div style={labelStyle}>ID</div>
+          <div className={sh.label}>ID</div>
           <input
-            style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+            className={clsx(sh.input, sh.flex1)}
+            style={{ width: "100%", boxSizing: "border-box" }}
             value={id}
             onChange={(e) => setId(e.target.value)}
             disabled={!isNew || isReadOnly}
@@ -326,9 +323,10 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           />
         </div>
         <div style={{ flex: 2 }}>
-          <div style={labelStyle}>{t("field.name")}</div>
+          <div className={sh.label}>{t("field.name")}</div>
           <input
-            style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+            className={sh.input}
+            style={{ width: "100%", boxSizing: "border-box" }}
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={isReadOnly}
@@ -337,10 +335,11 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
         </div>
       </div>
 
-      <div style={{ marginBottom: "12px" }}>
-        <div style={labelStyle}>{t("field.description")}</div>
+      <div className={s.fieldBlock}>
+        <div className={sh.label}>{t("field.description")}</div>
         <textarea
-          style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
+          className={sh.input}
+          style={{ width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           disabled={isReadOnly}
@@ -349,8 +348,8 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {/* Bidirectional */}
-      <div style={{ marginBottom: "12px" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: T.textSub }}>
+      <div className={s.fieldBlock}>
+        <label className={s.checkLabel}>
           <input
             type="checkbox"
             checked={isBidirectional}
@@ -363,51 +362,38 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {/* Tags */}
-      <div style={{ marginBottom: "12px" }}>
-        <div style={labelStyle}>{t("field.tags")}</div>
+      <div className={s.fieldBlock}>
+        <div className={sh.label}>{t("field.tags")}</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
           {allTags.map((tag) => (
             <button
               key={tag}
               onClick={() => !isReadOnly && toggleTag(tag)}
-              style={{
-                padding: "2px 8px",
-                backgroundColor: tags.includes(tag) ? T.accentBg : T.bg2,
-                color: tags.includes(tag) ? T.accent : T.textDim,
-                border: `1px solid ${tags.includes(tag) ? T.accentDim : T.border}`,
-                borderRadius: "3px",
-                cursor: isReadOnly ? "default" : "pointer",
-                fontSize: "11px",
-              }}
+              className={clsx(
+                tags.includes(tag) ? s.tagBtnActive : s.tagBtnInactive,
+                isReadOnly && s.tagBtnReadonly,
+              )}
             >
               {tag}
             </button>
           ))}
-          {allTags.length === 0 && <span style={{ color: T.textDim, fontSize: "11px" }}>{t("empty.noAvailTags")}</span>}
+          {allTags.length === 0 && <span className={sh.textDim}>{t("empty.noAvailTags")}</span>}
         </div>
       </div>
 
       {/* Formula preview */}
-      <div
-        style={{
-          marginBottom: "12px",
-          padding: "8px 12px",
-          backgroundColor: T.bg3,
-          border: `1px solid ${T.border}`,
-          borderRadius: "3px",
-        }}
-      >
-        <div style={{ color: T.textSub, fontSize: "11px", marginBottom: "4px" }}>{t("section.formulaPreview")}</div>
-        <div style={{ color: T.accent, fontSize: "13px", wordBreak: "break-all" }}>
+      <div className={s.formulaBox}>
+        <div className={s.formulaLabel}>{t("section.formulaPreview")}</div>
+        <div className={s.formulaText}>
           {formulaPreview(steps, isBidirectional)}
         </div>
       </div>
 
       {/* Steps editor */}
-      <div style={{ marginBottom: "12px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px" }}>{t("section.computeSteps")}</div>
-        <div style={{ borderLeft: `2px solid ${T.borderLight}`, paddingLeft: "10px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      <div className={s.fieldBlock}>
+        <div className={sh.label} style={{ marginBottom: "6px" }}>{t("section.computeSteps")}</div>
+        <div className={s.stepsSection}>
+          <div className={s.stepsColumn}>
             {steps.map((step, i) => (
               <StepRow
                 key={i}
@@ -429,12 +415,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           {!isReadOnly && (
             <button
               onClick={addStep}
-              style={{
-                ...btn("create"),
-                marginTop: "6px",
-                width: "100%",
-                textAlign: "center",
-              }}
+              className={clsx(btnClass("create"), s.addStepBtn)}
             >
               [{t("btn.addStep")}]
             </button>
@@ -443,38 +424,24 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {/* Test panel */}
-      <div
-        style={{
-          border: `1px solid ${T.border}`,
-          borderRadius: "3px",
-          overflow: "hidden",
-        }}
-      >
+      <div className={s.testPanel}>
         <button
           onClick={() => {
             const next = !testOpen;
             setTestOpen(next);
             if (next && testCharacters.length === 0) loadTestCharacters();
           }}
-          style={{
-            width: "100%",
-            textAlign: "left",
-            padding: "8px 12px",
-            backgroundColor: T.bg2,
-            color: testOpen ? T.accent : T.textSub,
-            border: "none",
-            cursor: "pointer",
-            fontSize: "13px",
-          }}
+          className={testOpen ? s.testToggleOpen : s.testToggle}
         >
           {testOpen ? "\u25BC" : "\u25B6"} {t("ui.testCompute")}
         </button>
         {testOpen && (
-          <div style={{ padding: "8px 12px", backgroundColor: T.bg3 }}>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px", flexWrap: "wrap" }}>
-              <span style={{ color: T.textSub, fontSize: "12px" }}>{t("target.self")}:</span>
+          <div className={s.testContent}>
+            <div className={s.testRow}>
+              <span className={sh.textSub}>{t("target.self")}:</span>
               <select
-                style={{ ...selectStyle, flex: 1, minWidth: "120px" }}
+                className={clsx(s.selectInput, sh.flex1)}
+                style={{ minWidth: "120px" }}
                 value={testCharId}
                 onChange={(e) => setTestCharId(e.target.value)}
               >
@@ -487,9 +454,10 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               </select>
               {isBidirectional && (
                 <>
-                  <span style={{ color: T.textSub, fontSize: "12px" }}>{t("target.target")}:</span>
+                  <span className={sh.textSub}>{t("target.target")}:</span>
                   <select
-                    style={{ ...selectStyle, flex: 1, minWidth: "120px" }}
+                    className={clsx(s.selectInput, sh.flex1)}
+                    style={{ minWidth: "120px" }}
                     value={testTargetId}
                     onChange={(e) => setTestTargetId(e.target.value)}
                   >
@@ -506,83 +474,48 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
               )}
               <button
                 onClick={handleTest}
-                style={btn("primary", "md")}
+                className={btnClass("primary", "md")}
                 disabled={!testCharId || isNew}
               >
                 [{t("btn.compute")}]
               </button>
             </div>
 
-            {testError && <div style={{ color: T.danger, fontSize: "12px", marginBottom: "6px" }}>{testError}</div>}
+            {testError && <div className={sh.errorText} style={{ marginBottom: "6px" }}>{testError}</div>}
 
             {testResult && (
               <div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                    marginBottom: "6px",
-                    fontSize: "12px",
-                  }}
-                >
-                  {testResult.steps.map((s) => (
-                    <div
-                      key={s.index}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        padding: "2px 8px",
-                        backgroundColor: T.bg2,
-                        borderRadius: "2px",
-                      }}
-                    >
+                <div className={s.testStepList}>
+                  {testResult.steps.map((step) => (
+                    <div key={step.index} className={s.testStepRow}>
                       <span style={{ color: T.textSub }}>
-                        {s.index === 0 ? t("var.initial") : opSymbol(s.op)} <span style={{ color: T.textSub }}>{s.type}</span>
-                        {s.label && <span style={{ color: T.textDim }}> ({s.label})</span>} ={" "}
-                        <span style={{ color: T.text }}>{s.stepValue}</span>
+                        {step.index === 0 ? t("var.initial") : opSymbol(step.op)} <span style={{ color: T.textSub }}>{step.type}</span>
+                        {step.label && <span style={{ color: T.textDim }}> ({step.label})</span>} ={" "}
+                        <span style={{ color: T.text }}>{step.stepValue}</span>
                       </span>
                       <span style={{ color: T.accent }}>
-                        {"\u2192"} {s.accumulated}
+                        {"\u2192"} {step.accumulated}
                       </span>
                     </div>
                   ))}
                 </div>
-                <div
-                  style={{
-                    padding: "4px 8px",
-                    backgroundColor: T.bg2,
-                    borderRadius: "3px",
-                    color: T.success,
-                    fontSize: "13px",
-                    fontWeight: "bold",
-                  }}
-                >
+                <div className={s.testResult}>
                   {t("var.result")}: {testResult.result}
                 </div>
               </div>
             )}
 
             {isNew && (
-              <div style={{ color: T.textSub, fontSize: "11px", marginTop: "4px" }}>{t("msg.saveFirstTestNote")}</div>
+              <div className={sh.textSub} style={{ marginTop: "4px" }}>{t("msg.saveFirstTestNote")}</div>
             )}
           </div>
         )}
       </div>
 
       {/* Action bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          alignItems: "center",
-          marginTop: "12px",
-          borderTop: `1px solid ${T.border}`,
-          paddingTop: "12px",
-        }}
-      >
+      <div className={s.actionBar}>
         {!isReadOnly && (
-          <button onClick={handleSave} disabled={saving} style={btn("create")}>
+          <button onClick={handleSave} disabled={saving} className={btnClass("create")}>
             [{saving ? t("status.submitting") : t("btn.confirm")}]
           </button>
         )}
@@ -593,15 +526,15 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
             getData={() => ({ name: name.trim(), description: description.trim(), isBidirectional: isBidirectional || undefined, tags, steps })}
             createFn={(d) => createVariableDef(d)}
             onSuccess={onBack}
-            buttonStyle={{ ...btnBase, color: T.accent }}
+            className={btnClass("neutral")}
           />
         )}
         {!isReadOnly && !isNew && (
-          <button onClick={handleDelete} style={btn("danger")}>
+          <button onClick={handleDelete} className={btnClass("danger")}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={btn("neutral")}>
+        <button onClick={onBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
         {message && (
@@ -646,27 +579,6 @@ function StepRow({
 }: StepRowProps) {
   const [dragOver, setDragOver] = useState(false);
 
-  const rowStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    padding: "4px 6px",
-    backgroundColor: dragOver ? T.bg2 : T.bg1,
-    borderRadius: "3px",
-    border: dragOver ? `1px solid ${T.accentDim}` : `1px solid ${T.borderDim}`,
-    transition: "background-color 0.1s, border-color 0.1s",
-  };
-
-  const smallBtn: React.CSSProperties = {
-    background: "none",
-    border: "none",
-    color: T.textDim,
-    cursor: readOnly ? "default" : "pointer",
-    fontSize: "12px",
-    padding: "2px 4px",
-    lineHeight: 1,
-  };
-
   // Available variables for dropdown (exclude self, single vars can't reference bidirectional)
   const varOptions = allVariables.filter((v) => {
     if (v.id === currentVarId) return false;
@@ -677,7 +589,7 @@ function StepRow({
 
   return (
     <div
-      style={rowStyle}
+      className={clsx(s.stepRow, dragOver && s.stepRowDragOver)}
       draggable={!readOnly}
       onDragStart={(e) => {
         e.dataTransfer.setData("text/plain", String(index));
@@ -700,23 +612,20 @@ function StepRow({
     >
       {/* Drag handle */}
       {!readOnly && (
-        <span
-          style={{ cursor: "grab", color: T.textDim, fontSize: "14px", userSelect: "none", padding: "0 2px" }}
-          title={t("ui.dragSort")}
-        >
+        <span className={s.dragHandle} title={t("ui.dragSort")}>
           {"\u2807"}
         </span>
       )}
 
       {/* Step number */}
-      <span style={{ color: T.textDim, fontSize: "11px", minWidth: "18px", textAlign: "center" }}>{index + 1}</span>
+      <span className={s.stepNum}>{index + 1}</span>
 
       {/* Operator */}
       {isFirst ? (
-        <span style={{ color: T.textSub, fontSize: "11px", minWidth: "60px", textAlign: "center" }}>{t("var.initialValue")}</span>
+        <span className={s.stepInitLabel}>{t("var.initialValue")}</span>
       ) : (
         <select
-          style={{ ...selectStyle, minWidth: "60px" }}
+          className={clsx(s.selectInput, sh.w60)}
           value={step.op ?? ArithOp.ADD}
           onChange={(e) => onChange({ op: e.target.value as VariableStep["op"] })}
           disabled={readOnly}
@@ -731,7 +640,7 @@ function StepRow({
 
       {/* Type */}
       <select
-        style={{ ...selectStyle, minWidth: "80px" }}
+        className={clsx(s.selectInput, sh.w80)}
         value={step.type}
         onChange={(e) => {
           const newType = e.target.value as VariableStep["type"];
@@ -767,9 +676,9 @@ function StepRow({
         }}
         disabled={readOnly}
       >
-        {TYPE_OPTIONS.map((t) => (
-          <option key={t.value} value={t.value}>
-            {t.label}
+        {TYPE_OPTIONS.map((typeOpt) => (
+          <option key={typeOpt.value} value={typeOpt.value}>
+            {typeOpt.label}
           </option>
         ))}
       </select>
@@ -777,7 +686,7 @@ function StepRow({
       {/* Source (self/target) — only for bidirectional variables, not for constant/variable */}
       {isBidirectional && ![VarStepType.CONSTANT, VarStepType.VARIABLE].includes(step.type) && (
         <select
-          style={{ ...selectStyle, minWidth: "60px" }}
+          className={clsx(s.selectInput, sh.w60)}
           value={step.source ?? "self"}
           onChange={(e) => onChange({ source: e.target.value as "self" | "target" })}
           disabled={readOnly}
@@ -788,11 +697,11 @@ function StepRow({
       )}
 
       {/* Type-specific fields */}
-      <div style={{ flex: 1, display: "flex", gap: "4px", alignItems: "center" }}>
+      <div className={s.stepFields}>
         {step.type === VarStepType.CONSTANT && (
           <input
             type="number"
-            style={{ ...inputStyle, flex: 1 }}
+            className={clsx(sh.input, sh.flex1)}
             value={step.value ?? 0}
             onChange={(e) => onChange({ value: parseFloat(e.target.value) || 0 })}
             disabled={readOnly}
@@ -801,7 +710,7 @@ function StepRow({
 
         {step.type === VarStepType.ABILITY && (
           <select
-            style={{ ...selectStyle, flex: 1 }}
+            className={clsx(s.selectInput, sh.flex1)}
             value={step.key ?? ""}
             onChange={(e) => onChange({ key: e.target.value })}
             disabled={readOnly}
@@ -817,7 +726,7 @@ function StepRow({
 
         {step.type === VarStepType.BASIC_INFO && (
           <select
-            style={{ ...selectStyle, flex: 1 }}
+            className={clsx(s.selectInput, sh.flex1)}
             value={step.key ?? ""}
             onChange={(e) => onChange({ key: e.target.value })}
             disabled={readOnly}
@@ -836,7 +745,7 @@ function StepRow({
         {step.type === VarStepType.RESOURCE && (
           <>
             <select
-              style={{ ...selectStyle, flex: 1 }}
+              className={clsx(s.selectInput, sh.flex1)}
               value={step.key ?? ""}
               onChange={(e) => onChange({ key: e.target.value })}
               disabled={readOnly}
@@ -849,7 +758,7 @@ function StepRow({
               ))}
             </select>
             <select
-              style={{ ...selectStyle, minWidth: "60px" }}
+              className={clsx(s.selectInput, sh.w60)}
               value={step.field ?? "value"}
               onChange={(e) => onChange({ field: e.target.value as "value" | "max" })}
               disabled={readOnly}
@@ -862,15 +771,15 @@ function StepRow({
 
         {step.type === VarStepType.TRAIT_COUNT && (
           <select
-            style={{ ...selectStyle, flex: 1 }}
+            className={clsx(s.selectInput, sh.flex1)}
             value={step.traitGroup ?? ""}
             onChange={(e) => onChange({ traitGroup: e.target.value })}
             disabled={readOnly}
           >
             <option value="">{t("opt.selectTraitCat")}</option>
-            {(definitions?.template.traits ?? []).map((t) => (
-              <option key={t.key} value={t.key}>
-                {t.label} ({t.key})
+            {(definitions?.template.traits ?? []).map((tr) => (
+              <option key={tr.key} value={tr.key}>
+                {tr.label} ({tr.key})
               </option>
             ))}
           </select>
@@ -887,20 +796,20 @@ function StepRow({
             return (
               <>
                 <select
-                  style={{ ...selectStyle, flex: 1 }}
+                  className={clsx(s.selectInput, sh.flex1)}
                   value={step.traitGroup ?? ""}
                   onChange={(e) => onChange({ traitGroup: e.target.value, traitId: "" })}
                   disabled={readOnly}
                 >
                   <option value="">{t("opt.selectCategory")}</option>
-                  {templateTraits.map((t) => (
-                    <option key={t.key} value={t.key}>
-                      {t.label} ({t.key})
+                  {templateTraits.map((tr) => (
+                    <option key={tr.key} value={tr.key}>
+                      {tr.label} ({tr.key})
                     </option>
                   ))}
                 </select>
                 <select
-                  style={{ ...selectStyle, flex: 1 }}
+                  className={clsx(s.selectInput, sh.flex1)}
                   value={step.traitId ?? ""}
                   onChange={(e) => onChange({ traitId: e.target.value })}
                   disabled={readOnly}
@@ -912,7 +821,7 @@ function StepRow({
                     </option>
                   ))}
                 </select>
-                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }} title={t("ph.hasTraitNote")}>
+                <span className={s.hintText} title={t("ph.hasTraitNote")}>
                   1/0
                 </span>
               </>
@@ -921,7 +830,7 @@ function StepRow({
 
         {step.type === VarStepType.EXPERIENCE && (
           <select
-            style={{ ...selectStyle, flex: 1 }}
+            className={clsx(s.selectInput, sh.flex1)}
             value={step.key ?? ""}
             onChange={(e) => onChange({ key: e.target.value })}
             disabled={readOnly}
@@ -937,29 +846,29 @@ function StepRow({
 
         {step.type === VarStepType.ITEM_COUNT && (
           <select
-            style={{ ...selectStyle, flex: 1 }}
+            className={clsx(s.selectInput, sh.flex1)}
             value={step.key ?? ""}
             onChange={(e) => onChange({ key: e.target.value })}
             disabled={readOnly}
           >
             <option value="">{t("opt.selectItem")}</option>
-            {Object.entries(definitions?.itemDefs ?? {}).map(([id, def]) => (
-              <option key={id} value={id}>
-                {(def as any).name} ({id})
+            {Object.entries(definitions?.itemDefs ?? {}).map(([itemId, def]) => (
+              <option key={itemId} value={itemId}>
+                {(def as any).name} ({itemId})
               </option>
             ))}
           </select>
         )}
 
         {step.type === VarStepType.FAVORABILITY && (
-          <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>
+          <span className={s.hintText}>
             {step.source === "target" ? t("target.targetToSelf") : t("target.selfToTarget")}
           </span>
         )}
 
         {step.type === VarStepType.VARIABLE && (
           <select
-            style={{ ...selectStyle, flex: 1 }}
+            className={clsx(s.selectInput, sh.flex1)}
             value={step.varId ?? ""}
             onChange={(e) => onChange({ varId: e.target.value })}
             disabled={readOnly}
@@ -976,7 +885,7 @@ function StepRow({
 
       {/* Label */}
       <input
-        style={{ ...inputStyle, width: "80px" }}
+        className={s.labelInput}
         value={step.label ?? ""}
         onChange={(e) => onChange({ label: e.target.value })}
         disabled={readOnly}
@@ -988,11 +897,7 @@ function StepRow({
       {!readOnly && (
         <button
           onClick={onRemove}
-          style={{
-            ...smallBtn,
-            color: T.danger,
-            fontSize: "14px",
-          }}
+          className={s.removeBtn}
         >
           x
         </button>

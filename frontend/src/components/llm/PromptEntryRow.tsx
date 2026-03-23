@@ -1,8 +1,10 @@
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import type { LLMPromptEntry } from "../../types/game";
-import { BUILTIN_CONTEXT_ENTRY_ID, VARIABLE_GROUPS, inputStyle, sectionStyle } from "./LLMPresetManager";
-import { btn, labelStyle } from "../shared/styles";
+import { BUILTIN_CONTEXT_ENTRY_ID, VARIABLE_GROUPS } from "./LLMPresetManager";
+import { btnClass } from "../shared/buttons";
+import clsx from "clsx";
+import s from "./PromptEntryRow.module.css";
+import sh from "../shared/shared.module.css";
 
 export default function PromptEntryRow({
   entry,
@@ -29,57 +31,28 @@ export default function PromptEntryRow({
 }) {
   const isBuiltin = entry.id === BUILTIN_CONTEXT_ENTRY_ID;
   const roleColors: Record<string, string> = {
-    system: T.accent,
-    user: T.success,
+    system: "var(--accent)",
+    user: "var(--success)",
     assistant: "#8888cc",
   };
 
   return (
-    <div style={{ marginBottom: "4px" }}>
+    <div className={s.wrapper}>
       {/* Collapsed row */}
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-          padding: "4px 8px",
-          backgroundColor: expanded ? T.bg2 : T.bg1,
-          border: `1px solid ${expanded ? T.borderLight : T.border}`,
-          borderRadius: "3px",
-          cursor: "pointer",
-        }}
+        className={clsx(s.row, expanded && s.rowExpanded)}
         onClick={onToggle}
       >
         <button
-          style={{
-            background: "none",
-            border: "none",
-            color: T.textDim,
-            cursor: "pointer",
-            fontSize: "11px",
-            padding: "0 2px",
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onMove(-1);
-          }}
+          className={s.moveBtn}
+          onClick={(e) => { e.stopPropagation(); onMove(-1); }}
           disabled={index === 0}
         >
           ▲
         </button>
         <button
-          style={{
-            background: "none",
-            border: "none",
-            color: T.textDim,
-            cursor: "pointer",
-            fontSize: "11px",
-            padding: "0 2px",
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onMove(1);
-          }}
+          className={s.moveBtn}
+          onClick={(e) => { e.stopPropagation(); onMove(1); }}
           disabled={index === total - 1}
         >
           ▼
@@ -87,45 +60,30 @@ export default function PromptEntryRow({
         <input
           type="checkbox"
           checked={entry.enabled}
-          onChange={(e) => {
-            e.stopPropagation();
-            onChange({ ...entry, enabled: e.target.checked });
-          }}
+          onChange={(e) => { e.stopPropagation(); onChange({ ...entry, enabled: e.target.checked }); }}
           onClick={(e) => e.stopPropagation()}
-          style={{ accentColor: T.accent }}
+          style={{ accentColor: "var(--accent)" }}
         />
-        <span
-          style={{ color: roleColors[entry.role] || T.textSub, fontSize: "11px", fontWeight: "bold", minWidth: "50px" }}
-        >
+        <span className={s.roleName} style={{ color: roleColors[entry.role] || "var(--text-sub)" }}>
           {entry.role}
         </span>
-        <span
-          style={{
-            color: isBuiltin ? T.accent : T.text,
-            fontSize: "12px",
-            flex: 1,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            fontStyle: isBuiltin ? "italic" : "normal",
-          }}
-        >
+        <span className={clsx(s.entryName, isBuiltin && s.entryNameBuiltin)}>
           {isBuiltin ? `🔒 ${t("llm.builtinContext")}` : entry.name || entry.id}
         </span>
-        <span style={{ color: T.textDim, fontSize: "10px" }}>{expanded ? "▼" : "▶"}</span>
+        <span className={s.expandArrow}>{expanded ? "▼" : "▶"}</span>
       </div>
 
       {/* Expanded editor */}
       {expanded && (
-        <div style={{ ...sectionStyle, marginTop: "4px", marginBottom: "8px" }}>
+        <div className={s.section}>
           {isBuiltin ? (
             /* Builtin context entry — only role selector + hint */
             <>
-              <div style={{ display: "flex", gap: "12px", marginBottom: "6px", alignItems: "center" }}>
-                <div style={{ width: "120px" }}>
-                  <div style={labelStyle}>{t("field.role")}</div>
+              <div className={s.builtinRow}>
+                <div className={s.w120}>
+                  <div className={sh.label}>{t("field.role")}</div>
                   <select
-                    style={{ ...inputStyle }}
+                    className={s.inputFull}
                     value={entry.role}
                     onChange={(e) => onChange({ ...entry, role: e.target.value as LLMPromptEntry["role"] })}
                   >
@@ -134,26 +92,26 @@ export default function PromptEntryRow({
                   </select>
                 </div>
               </div>
-              <div style={{ color: T.textDim, fontSize: "12px", padding: "8px", backgroundColor: T.bg3, borderRadius: "3px" }}>
+              <div className={s.builtinHint}>
                 {t("llm.builtinContextHint")}
               </div>
             </>
           ) : (
             /* Regular entry — full editor */
             <>
-              <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={labelStyle}>{t("field.name")}</div>
+              <div className={s.flexRow}>
+                <div className={s.flex1}>
+                  <div className={sh.label}>{t("field.name")}</div>
                   <input
-                    style={inputStyle}
+                    className={s.inputFull}
                     value={entry.name}
                     onChange={(e) => onChange({ ...entry, name: e.target.value })}
                   />
                 </div>
-                <div style={{ width: "120px" }}>
-                  <div style={labelStyle}>{t("field.role")}</div>
+                <div className={s.w120}>
+                  <div className={sh.label}>{t("field.role")}</div>
                   <select
-                    style={{ ...inputStyle }}
+                    className={s.inputFull}
                     value={entry.role}
                     onChange={(e) => onChange({ ...entry, role: e.target.value as LLMPromptEntry["role"] })}
                   >
@@ -164,36 +122,26 @@ export default function PromptEntryRow({
                 </div>
               </div>
 
-              <div style={labelStyle}>{t("field.content")}</div>
+              <div className={sh.label}>{t("field.content")}</div>
               <textarea
                 ref={contentRef}
-                style={{ ...inputStyle, minHeight: "100px", resize: "vertical", fontFamily: T.fontMono }}
+                className={s.contentArea}
                 value={entry.content}
                 onChange={(e) => onChange({ ...entry, content: e.target.value })}
               />
 
               {/* Variable chips — only for narrative presets */}
               {!isAssistPreset && (
-                <div style={{ marginTop: "6px", padding: "6px 8px", backgroundColor: T.bg3, borderRadius: "3px" }}>
-                  <div style={{ ...labelStyle, marginBottom: "4px" }}>{t("llm.availableVars")}</div>
+                <div className={s.varPanel}>
+                  <div className={sh.label} style={{ marginBottom: "4px" }}>{t("llm.availableVars")}</div>
                   {VARIABLE_GROUPS.map((g) => (
-                    <div key={g.label} style={{ marginBottom: "2px" }}>
-                      <span style={{ color: T.textDim, fontSize: "10px", marginRight: "6px" }}>{g.label}:</span>
+                    <div key={g.label} className={s.varGroup}>
+                      <span className={s.varGroupLabel}>{g.label}:</span>
                       {g.vars.map((v) => (
                         <button
                           key={v.name}
                           title={v.desc}
-                          style={{
-                            padding: "1px 6px",
-                            margin: "1px 2px",
-                            backgroundColor: T.bg2,
-                            color: T.accent,
-                            border: `1px solid ${T.border}`,
-                            borderRadius: "2px",
-                            cursor: "pointer",
-                            fontSize: "11px",
-                            fontFamily: T.fontMono,
-                          }}
+                          className={s.varChip}
                           onClick={() => {
                             const ta = contentRef.current;
                             if (!ta) return;
@@ -218,8 +166,8 @@ export default function PromptEntryRow({
                 </div>
               )}
 
-              <div style={{ marginTop: "6px" }}>
-                <button style={btn("danger")} onClick={onDelete}>
+              <div className={s.deleteRow}>
+                <button className={btnClass("danger")} onClick={onDelete}>
                   [{t("btn.deleteEntry")}]
                 </button>
               </div>

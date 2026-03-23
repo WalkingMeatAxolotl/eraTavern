@@ -1,0 +1,211 @@
+/* ── ItemManager ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.viewTabs {
+  display: flex;
+  gap: 2px;
+}
+
+.btnRow {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── By Tag View ── */
+
+.tagContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catBtn {
+  width: 100%;
+  text-align: left;
+  padding: 5px 12px;
+  background-color: var(--bg2);
+  color: var(--text-sub);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 3px;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.catBtn:hover {
+  background-color: var(--bg3);
+  color: var(--text);
+}
+
+.catBtnDim {
+  composes: catBtn;
+  color: var(--text-dim);
+}
+
+.catArrow {
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+  font-size: 11px;
+}
+
+.catCount {
+  color: var(--text-dim);
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+.itemGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.item {
+  padding: 4px 10px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.item:hover {
+  background-color: var(--bg3);
+  border-color: var(--border-light);
+}
+
+/* ── By Item View ── */
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.itemRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px 5px 14px;
+  background-color: var(--bg1);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: background-color 0.1s;
+}
+
+.itemRow:hover {
+  background-color: var(--bg2);
+}
+
+.itemRow:hover .accentBar {
+  background-color: var(--accent);
+}
+
+.accentBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--accent-dim);
+  border-radius: 2px 0 0 2px;
+  transition: background-color 0.1s;
+}
+
+.itemName {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.tagSep {
+  color: var(--text-dim);
+}
+
+.tagChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tagChip {
+  padding: 1px 7px;
+  background-color: var(--bg2);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 11px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.itemRow:hover .tagChip {
+  background-color: var(--bg3);
+}
+
+.tagChip:hover {
+  border-color: var(--border-light);
+}
+
+/* ── Uncategorized separator ── */
+
+.uncatHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 2px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.uncatLine {
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-dim);
+}
+
+/* ── Empty / Loading ── */
+
+.emptyMsg {
+  color: var(--text-dim);
+  padding: 8px;
+}
+
+.loading {
+  color: var(--text-dim);
+  padding: 20px;
+  text-align: center;
+}

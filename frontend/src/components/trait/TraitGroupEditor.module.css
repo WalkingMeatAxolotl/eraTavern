@@ -1,0 +1,152 @@
+/* ── TraitGroupEditor ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  background-color: var(--bg2);
+  padding: 12px;
+  border-radius: 4px;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* ── Form row ── */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.rowLabel {
+  min-width: 60px;
+  color: var(--text-sub);
+}
+
+/* ── Inputs ── */
+
+.input {
+  background-color: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 13px;
+  outline: none;
+}
+
+.select {
+  composes: input;
+  cursor: pointer;
+}
+
+/* ── Exclusive checkbox ── */
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+/* ── Member traits ── */
+
+.memberLabel {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  color: var(--text-sub);
+}
+
+.memberWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.memberChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  background-color: var(--bg2);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* ── Action bar ── */
+
+.actionBar {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+/* ── Generic button (replaces old btnStyle) ── */
+
+.genBtn {
+  padding: 4px 12px;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.genBtnSub {
+  composes: genBtn;
+  color: var(--text-sub);
+}
+
+.genBtnSuccess {
+  composes: genBtn;
+  color: var(--success-dim);
+}
+
+.genBtnAccent {
+  composes: genBtn;
+  color: var(--accent);
+}
+
+.genBtnDanger {
+  composes: genBtn;
+  color: var(--danger);
+}
+
+/* ── Message ── */
+
+.msgSuccess {
+  color: var(--success);
+  margin-left: 8px;
+  align-self: center;
+}
+
+.msgError {
+  color: var(--danger);
+  margin-left: 8px;
+  align-self: center;
+}

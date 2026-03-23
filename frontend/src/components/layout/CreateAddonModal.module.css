@@ -1,7 +1,5 @@
 .title {
-  color: var(--text);
-  font-size: 14px;
-  font-weight: bold;
+  composes: modalTitle from "../shared/shared.module.css";
 }
 
 .form {
@@ -17,21 +15,11 @@
 }
 
 .input {
-  width: 100%;
-  padding: 6px 8px;
-  font-size: 12px;
-  box-sizing: border-box;
-  background-color: var(--bg2);
-  color: var(--text);
-  border: 1px solid var(--border-dim);
-  border-radius: 4px;
-  outline: none;
+  composes: modalInput from "../shared/shared.module.css";
 }
 
 .actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
+  composes: actionsRow from "../shared/shared.module.css";
 }
 
 .cancelBtn {

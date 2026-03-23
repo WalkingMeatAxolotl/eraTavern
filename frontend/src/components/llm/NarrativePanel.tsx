@@ -1,8 +1,8 @@
-import T from "../../theme";
 import { useEffect, useRef, useCallback } from "react";
 import { t } from "../../i18n/ui";
 import type { NarrativeEntry } from "../../types/game";
 import type { LLMDebugEntry } from "./LLMDebugPanel";
+import s from "./NarrativePanel.module.css";
 
 /** Per-entry LLM state, keyed by entry index */
 export interface LLMState {
@@ -193,152 +193,80 @@ export default function NarrativePanel({ entries, llmStates, onLlmStatesChange, 
   const lastIdx = entries.length - 1;
 
   return (
-    <>
-      <style>{`@keyframes llm-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
-      <div
-        style={{
-          fontSize: "13px",
-          color: T.text,
-          backgroundColor: T.bg1,
-          padding: "12px",
-          borderRadius: "4px",
-          flex: 1,
-          overflowY: "auto",
-          minHeight: 0,
-        }}
-      >
-        {entries.length === 0 ? (
-          <div style={{ color: T.textDim }}>{t("empty.messages")}</div>
-        ) : (
-          entries.map((entry, idx) => {
-            const llm = llmStates[idx] || { text: "", status: "idle", error: "" };
-            const hasRawOutput = !!entry.llmRawOutput;
-            const isLatest = idx === lastIdx;
+    <div className={s.wrapper}>
+      {entries.length === 0 ? (
+        <div className={s.emptyText}>{t("empty.messages")}</div>
+      ) : (
+        entries.map((entry, idx) => {
+          const llm = llmStates[idx] || { text: "", status: "idle", error: "" };
+          const hasRawOutput = !!entry.llmRawOutput;
+          const isLatest = idx === lastIdx;
 
-            return (
-              <div key={idx} style={{ marginBottom: "12px" }}>
-                {/* Raw output messages */}
-                {entry.raw.map((msg, mi) => (
-                  <div key={mi} style={{ marginBottom: "2px", whiteSpace: "pre-wrap" }}>
-                    &gt; {msg}
+          return (
+            <div key={idx} className={s.entryBlock}>
+              {/* Raw output messages */}
+              {entry.raw.map((msg, mi) => (
+                <div key={mi} className={s.rawMsg}>
+                  &gt; {msg}
+                </div>
+              ))}
+
+              {/* LLM section */}
+              {hasRawOutput && llm.status === "idle" && isLatest && (
+                <div className={s.idleCenter}>
+                  <button onClick={() => startGeneration(idx)} className={s.generateBtn}>
+                    [{t("llm.btnGenerate")}]
+                  </button>
+                </div>
+              )}
+
+              {llm.status === "generating" && (
+                <div className={s.llmSection}>
+                  <div className={s.generatingHeader}>
+                    <span className={s.pulseDot} />
+                    [{t("llm.generating")}]
                   </div>
-                ))}
-
-                {/* LLM section */}
-                {hasRawOutput && llm.status === "idle" && isLatest && (
-                  <div style={{ textAlign: "center", marginTop: "8px" }}>
-                    <button
-                      onClick={() => startGeneration(idx)}
-                      style={{
-                        padding: "4px 16px",
-                        backgroundColor: T.bg2,
-                        color: T.accent,
-                        border: `1px solid ${T.accentDim}`,
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                      }}
-                    >
-                      [{t("llm.btnGenerate")}]
-                    </button>
-                  </div>
-                )}
-
-                {llm.status === "generating" && (
-                  <div style={{ marginTop: "8px", borderTop: `1px solid ${T.border}`, paddingTop: "8px" }}>
-                    <div
-                      style={{
-                        color: T.accent,
-                        fontSize: "11px",
-                        marginBottom: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "inline-block",
-                          width: "6px",
-                          height: "6px",
-                          borderRadius: "50%",
-                          backgroundColor: T.accent,
-                          animation: "llm-pulse 1s ease-in-out infinite",
-                        }}
-                      />
-                      [{t("llm.generating")}]
+                  {llm.text && (
+                    <div className={s.streamText}>
+                      {llm.text}
+                      <span className={s.cursor}>▌</span>
                     </div>
-                    {llm.text && (
-                      <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
-                        {llm.text}
-                        <span style={{ animation: "llm-pulse 1s ease-in-out infinite", color: T.accent }}>▌</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {llm.status === "done" && llm.text && (
-                  <div style={{ marginTop: "8px", borderTop: `1px solid ${T.border}`, paddingTop: "8px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      <span style={{ color: T.accent, fontSize: "11px" }}>[{t("llm.narrative")}]</span>
-                      {isLatest && (
-                        <button
-                          onClick={() => startGeneration(idx)}
-                          style={{
-                            padding: "2px 10px",
-                            backgroundColor: T.bg2,
-                            color: T.textSub,
-                            border: `1px solid ${T.border}`,
-                            borderRadius: "3px",
-                            cursor: "pointer",
-                            fontSize: "11px",
-                          }}
-                        >
-                          [{t("llm.btnRegenerate")}]
-                        </button>
-                      )}
-                    </div>
-                    <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>{llm.text}</div>
-                  </div>
-                )}
-
-                {llm.status === "error" && (
-                  <div style={{ marginTop: "8px", borderTop: `1px solid ${T.border}`, paddingTop: "8px" }}>
-                    <div style={{ color: T.danger, fontSize: "12px", marginBottom: "4px" }}>
-                      {llm.error || t("llm.generateError")}
-                    </div>
+              {llm.status === "done" && llm.text && (
+                <div className={s.llmSection}>
+                  <div className={s.doneHeader}>
+                    <span className={s.narrativeLabel}>[{t("llm.narrative")}]</span>
                     {isLatest && (
-                      <button
-                        onClick={() => startGeneration(idx)}
-                        style={{
-                          padding: "2px 10px",
-                          backgroundColor: T.bg2,
-                          color: T.textSub,
-                          border: `1px solid ${T.border}`,
-                          borderRadius: "3px",
-                          cursor: "pointer",
-                          fontSize: "11px",
-                        }}
-                      >
-                        [{t("llm.btnRetry")}]
+                      <button onClick={() => startGeneration(idx)} className={s.regenBtn}>
+                        [{t("llm.btnRegenerate")}]
                       </button>
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })
-        )}
+                  <div className={s.doneText}>{llm.text}</div>
+                </div>
+              )}
 
-        <div ref={bottomRef} />
-      </div>
-    </>
+              {llm.status === "error" && (
+                <div className={s.llmSection}>
+                  <div className={s.errorText}>
+                    {llm.error || t("llm.generateError")}
+                  </div>
+                  {isLatest && (
+                    <button onClick={() => startGeneration(idx)} className={s.regenBtn}>
+                      [{t("llm.btnRetry")}]
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
+
+      <div ref={bottomRef} />
+    </div>
   );
 }

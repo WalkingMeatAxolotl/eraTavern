@@ -1,0 +1,168 @@
+/* ── OutfitEditor ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* ── Form layout ── */
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.row2 {
+  display: flex;
+  gap: 12px;
+}
+
+.col {
+  flex: 1;
+}
+
+.fullWidth {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.textarea {
+  composes: fullWidth;
+  min-height: 60px;
+  resize: vertical;
+}
+
+/* ── Checkbox row ── */
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-sub);
+  font-size: 12px;
+}
+
+/* ── Slots editor ── */
+
+.slotsHeader {
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  padding-bottom: 2px;
+  font-weight: bold;
+}
+
+.slotsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slotRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.slotLabel {
+  min-width: 100px;
+  color: var(--text-sub);
+}
+
+.slotEmpty {
+  color: var(--text-dim);
+}
+
+.slotItem {
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 11px;
+}
+
+/* ── Inherit hint ── */
+
+.inheritHint {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+/* ── Section block ── */
+
+.sectionBlock {
+  margin-bottom: 16px;
+}
+
+/* ── Action bar ── */
+
+.actionBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.genBtn {
+  padding: 4px 12px;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.genBtnSub {
+  composes: genBtn;
+  color: var(--text-sub);
+}
+
+.genBtnSuccess {
+  composes: genBtn;
+  color: var(--success-dim);
+}
+
+.genBtnDanger {
+  composes: genBtn;
+  color: var(--danger);
+}
+
+.msgSuccess {
+  color: var(--success-dim);
+  font-size: 12px;
+}
+
+.msgError {
+  color: var(--danger);
+  font-size: 12px;
+}

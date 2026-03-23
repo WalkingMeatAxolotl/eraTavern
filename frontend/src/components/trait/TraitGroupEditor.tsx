@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import type { GameDefinitions, TraitGroup } from "../../types/game";
 import { createTraitGroup, saveTraitGroup, deleteTraitGroup } from "../../api/client";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import CloneButton from "../shared/CloneDialog";
+import sh from "../shared/shared.module.css";
+import s from "./TraitGroupEditor.module.css";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -92,52 +93,47 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
   };
 
   return (
-    <div
-      style={{
-        fontSize: "13px",
-        color: T.text,
-        backgroundColor: T.bg2,
-        padding: "12px",
-        borderRadius: "4px",
-      }}
-    >
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>
           == {isNew ? t("editor.newTraitGroup") : t("editor.editTraitGroup", { name: data.name })} ==
         </span>
-        <button onClick={onBack} style={btnStyle(T.textSub)}>
+        <button className={s.genBtnSub} onClick={onBack}>
           [{t("btn.return")}]
         </button>
       </div>
 
       {/* ID */}
-      <Row label="ID">
+      <div className={s.row}>
+        <span className={s.rowLabel}>ID:</span>
         <PrefixedIdInput
           prefix={addonPrefix}
           value={isNew ? data.id : toLocalId(data.id)}
           onChange={(v) => setData((prev) => ({ ...prev, id: v }))}
           disabled={!isNew || isReadOnly}
         />
-      </Row>
+      </div>
 
       {/* Name */}
-      <Row label={t("field.name")}>
+      <div className={s.row}>
+        <span className={s.rowLabel}>{t("field.name")}:</span>
         <input
+          className={s.input}
           value={data.name}
           onChange={(e) => setData((prev) => ({ ...prev, name: e.target.value }))}
           readOnly={isReadOnly}
-          style={inputStyle(isReadOnly ? T.textDim : undefined)}
         />
-      </Row>
+      </div>
 
       {/* Category */}
-      <Row label={t("field.category")}>
+      <div className={s.row}>
+        <span className={s.rowLabel}>{t("field.category")}:</span>
         <select
+          className={s.select}
           value={data.category}
           onChange={(e) => setData((prev) => ({ ...prev, category: e.target.value, traits: [] }))}
           disabled={isReadOnly}
-          style={selectStyle()}
         >
           {categories.map((cat) => (
             <option key={cat.key} value={cat.key}>
@@ -145,20 +141,12 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
             </option>
           ))}
         </select>
-      </Row>
+      </div>
 
       {/* Exclusive */}
-      <Row label={t("field.exclusive")}>
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            cursor: "pointer",
-            fontSize: "12px",
-            color: T.textSub,
-          }}
-        >
+      <div className={s.row}>
+        <span className={s.rowLabel}>{t("field.exclusive")}:</span>
+        <label className={s.checkLabel}>
           <input
             type="checkbox"
             checked={data.exclusive !== false}
@@ -168,40 +156,20 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
           />
           {t("trait.exclusiveHint")}
         </label>
-      </Row>
+      </div>
 
       {/* Member traits */}
-      <div style={{ marginTop: "8px", marginBottom: "4px", color: T.textSub }}>{t("trait.memberTraits")}</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center", marginBottom: "8px" }}>
+      <div className={s.memberLabel}>{t("trait.memberTraits")}</div>
+      <div className={s.memberWrap}>
         {data.traits.map((tid) => {
           const def = definitions.traitDefs[tid];
           return (
-            <span
-              key={tid}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "2px",
-                padding: "1px 6px",
-                backgroundColor: T.bg2,
-                border: `1px solid ${T.borderLight}`,
-                borderRadius: "3px",
-                fontSize: "12px",
-              }}
-            >
+            <span key={tid} className={s.memberChip}>
               {def?.name ?? tid}
               {!isReadOnly && (
                 <button
+                  className={s.removeBtn}
                   onClick={() => setData((prev) => ({ ...prev, traits: prev.traits.filter((x) => x !== tid) }))}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: T.danger,
-                    cursor: "pointer",
-                    padding: "0 2px",
-                    fontSize: "12px",
-                    lineHeight: 1,
-                  }}
                 >
                   x
                 </button>
@@ -211,12 +179,12 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
         })}
         {!isReadOnly && (
           <select
+            className={s.select}
             value=""
             onChange={(e) => {
               if (!e.target.value) return;
               setData((prev) => ({ ...prev, traits: [...prev.traits, e.target.value] }));
             }}
-            style={selectStyle()}
           >
             <option value="">+</option>
             {availableTraits
@@ -231,17 +199,9 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       </div>
 
       {/* Action bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          marginTop: "12px",
-          borderTop: `1px solid ${T.border}`,
-          paddingTop: "12px",
-        }}
-      >
+      <div className={s.actionBar}>
         {!isReadOnly && (
-          <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
+          <button className={s.genBtnSuccess} onClick={handleSave} disabled={saving}>
             [{saving ? t("status.submitting") : t("btn.confirm")}]
           </button>
         )}
@@ -252,24 +212,20 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
             getData={() => ({ name: data.name, category: data.category, traits: data.traits, exclusive: data.exclusive !== false })}
             createFn={(d) => createTraitGroup(d)}
             onSuccess={onBack}
-            buttonStyle={btnStyle(T.accent)}
+            className={s.genBtnAccent}
           />
         )}
         {!isReadOnly && !isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
+          <button className={s.genBtnDanger} onClick={handleDelete} disabled={saving}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={btnStyle(T.textSub)}>
+        <button className={s.genBtnSub} onClick={onBack}>
           [{t("btn.return")}]
         </button>
         {message && (
           <span
-            style={{
-              color: message.includes("fail") || message.includes("not found") ? T.danger : T.success,
-              marginLeft: "8px",
-              alignSelf: "center",
-            }}
+            className={message.includes("fail") || message.includes("not found") ? s.msgError : s.msgSuccess}
           >
             {message}
           </span>
@@ -277,50 +233,4 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
       </div>
     </div>
   );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-      <span style={{ minWidth: "60px", color: T.textSub }}>{label}:</span>
-      {children}
-    </div>
-  );
-}
-
-function inputStyle(color?: string): React.CSSProperties {
-  return {
-    backgroundColor: T.bg2,
-    color: color ?? T.text,
-    border: `1px solid ${T.borderLight}`,
-    borderRadius: "3px",
-    padding: "3px 6px",
-    fontSize: "13px",
-    outline: "none",
-  };
-}
-
-function selectStyle(): React.CSSProperties {
-  return {
-    backgroundColor: T.bg2,
-    color: T.text,
-    border: `1px solid ${T.borderLight}`,
-    borderRadius: "3px",
-    padding: "3px 6px",
-    fontSize: "13px",
-    outline: "none",
-    cursor: "pointer",
-  };
-}
-
-function btnStyle(color: string): React.CSSProperties {
-  return {
-    padding: "4px 12px",
-    backgroundColor: "transparent",
-    color,
-    border: `1px solid ${T.border}`,
-    borderRadius: "3px",
-    cursor: "pointer",
-    fontSize: "13px",
-  };
 }

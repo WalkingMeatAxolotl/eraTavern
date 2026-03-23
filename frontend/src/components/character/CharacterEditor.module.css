@@ -1,0 +1,366 @@
+/* ── CharacterEditor ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  background-color: var(--bg2);
+  padding: 12px;
+  border-radius: 4px;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* ── Tab bar ── */
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  padding: 4px 14px;
+  background-color: transparent;
+  color: var(--text-sub);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.tabActive {
+  background-color: var(--bg3);
+  color: var(--accent);
+  border-color: var(--border);
+  font-weight: bold;
+}
+
+/* ── Section ── */
+
+.section {
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  padding-bottom: 2px;
+  font-weight: bold;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Row ── */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.rowLabel {
+  min-width: 100px;
+  color: var(--text-sub);
+}
+
+/* ── Inputs ── */
+
+.input {
+  background-color: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 13px;
+  outline: none;
+}
+
+.inputReadonly {
+  color: var(--text-dim);
+}
+
+.select {
+  background-color: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+.textarea {
+  background-color: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+  min-height: 50px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+/* ── Buttons ── */
+
+.btn {
+  padding: 4px 12px;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btnAccent { color: var(--accent); }
+.btnSuccess { color: var(--success-dim); }
+.btnDanger { color: var(--danger); }
+.btnNeutral { color: var(--text-sub); }
+
+.btnInline {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btnRemoveChip {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btnRemoveItem {
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* ── Outfit tab ── */
+
+.outfitBtnRow {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.outfitBtn {
+  composes: btn;
+  min-width: 60px;
+  text-align: center;
+}
+
+.outfitBtnActive {
+  color: var(--accent);
+  font-weight: bold;
+  border-color: var(--accent);
+}
+
+.outfitStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.outfitStatusLabel {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.outfitStatusBtn {
+  composes: btn;
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.slotRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 26px;
+}
+
+.slotLabel {
+  min-width: 100px;
+  color: var(--text-sub);
+}
+
+.slotEmpty {
+  color: var(--text-dim);
+}
+
+.slotItem {
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Traits ── */
+
+.traitChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  background-color: var(--bg2);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.traitList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+/* ── Abilities / Experience grid ── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 4px 12px;
+}
+
+.gridItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gridLabel {
+  min-width: 80px;
+}
+
+/* ── Inventory / Favorability ── */
+
+.inlineRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.inlineLabel {
+  min-width: 80px;
+  color: var(--text-sub);
+}
+
+/* ── Action bar ── */
+
+.actionBar {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.msgSuccess {
+  color: var(--success);
+  margin-left: 8px;
+  align-self: center;
+}
+
+.msgError {
+  color: var(--danger);
+  margin-left: 8px;
+  align-self: center;
+}
+
+/* ── Portrait ── */
+
+.portraitRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.portraitImg {
+  height: 40px;
+  width: 40px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+.portraitName {
+  font-size: 12px;
+  color: var(--text-sub);
+  min-width: 60px;
+}
+
+/* ── Resource row ── */
+
+.resInputRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ── Empty / dim text ── */
+
+.dimText {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.subText {
+  color: var(--text-sub);
+}
+
+/* ── LLM field ── */
+
+.llmFieldRow {
+  margin-bottom: 6px;
+}
+
+.llmKeyRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+/* ── Misc widths ── */
+
+.w60 { width: 60px; }
+.w70 { width: 70px; }
+.w80 { width: 80px; }
+.w120 { width: 120px; }
+.wAuto { width: auto; }
+.fs11 { font-size: 11px; }

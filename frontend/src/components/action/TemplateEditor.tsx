@@ -7,7 +7,6 @@ import clsx from "clsx";
 import type { OutputTemplateEntry, ConditionItem } from "../../types/game";
 import { useEditorContext } from "../shared/EditorContext";
 import { ConditionItemEditor } from "../shared/ConditionEditor";
-import { listRowStyle } from "../shared/styles";
 import { btnClass } from "../shared/buttons";
 import sh from "../shared/shared.module.css";
 import s from "./TemplateEditor.module.css";
@@ -78,7 +77,7 @@ export function TemplateListEditor({
         <span className={s.randomHelp}>{t("tpl.randomHelp")}</span>
       </div>
       {templates.map((entry, idx) => (
-        <div key={idx} className={s.entryCard} style={listRowStyle(idx, idx === templates.length - 1)}>
+        <div key={idx} className={clsx(s.entryCard, sh.listRow, idx % 2 === 0 ? sh.listRowOdd : sh.listRowEven)}>
           <div className={s.entryHeader}>
             <span className={s.entryIndex}>#{idx + 1}</span>
             <span className={s.weightLabel}>{t("label.weight")}</span>

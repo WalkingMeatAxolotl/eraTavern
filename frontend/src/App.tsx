@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import T from "./theme";
+import clsx from "clsx";
+import s from "./App.module.css";
 import type { GameState, GameAction, ActionResult, NarrativeEntry } from "./types/game";
 import type { DetailTab } from "./components/character/CharacterPanel";
 import {
@@ -351,33 +352,13 @@ export default function App() {
   // --- Render ---
 
   if (!gameState) {
-    return (
-      <div
-        style={{
-          color: T.text,
-          fontFamily: T.fontMono,
-          fontSize: `${T.fontBase}px`,
-          padding: "20px",
-          backgroundColor: T.bg0,
-          minHeight: "100vh",
-        }}
-      >
-        加载中...
-      </div>
-    );
+    return <div className={s.loading}>加载中...</div>;
   }
 
   const activeMap = gameState.maps[activeMapId];
   const playerMap = player ? gameState.maps[player.position.mapId] : undefined;
   const playerCell = playerMap?.cells.find((c) => c.id === player?.position.cellId);
   const playerCellName = playerCell?.name ?? (player ? `${player.position.cellId}号` : "");
-
-  const settingsBtnStyle: React.CSSProperties = {
-    padding: "8px 16px",
-    fontSize: "13px",
-    cursor: "pointer",
-    border: `1px solid ${T.border}`,
-  };
 
   const addonTab =
     currentWorldId && !editorOpen ? (
@@ -432,15 +413,13 @@ export default function App() {
               setNavPage(null);
             }
           }}
-          onWorldChanged={handleWorldChanged}
-          settingsBtnStyle={settingsBtnStyle}
         />
       );
     if (page === "system")
       return (
-        <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== 系统设置 ==</span>
-          <div style={{ color: T.textDim, fontSize: "12px", marginTop: "8px" }}>暂无系统设置项。</div>
+        <div className={s.systemPage}>
+          <span className={s.systemTitle}>== 系统设置 ==</span>
+          <div className={s.systemEmpty}>暂无系统设置项。</div>
         </div>
       );
     return null;
@@ -451,16 +430,7 @@ export default function App() {
     // No player
     if (!player) {
       return (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "60vh",
-            color: T.textDim,
-            fontSize: "14px",
-          }}
-        >
+        <div className={s.noPlayer}>
           没有活跃的玩家角色。请在 [人物] 页面中设置一个 Player。
         </div>
       );
@@ -469,17 +439,7 @@ export default function App() {
     // Game view
     return (
       <>
-        <div
-          style={{
-            position: "relative",
-            height: "50vh",
-            overflow: "hidden",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "4px",
-          }}
-        >
+        <div className={s.topView}>
           {topView === "location"
             ? playerMap && (
                 <LocationHeader
@@ -505,12 +465,12 @@ export default function App() {
                         <img
                           src={`/assets/${mapViewBg}`}
                           alt=""
-                          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                          className={s.mapBgImage}
                         />
-                        <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" }} />
+                        <div className={s.mapBgOverlay} />
                       </>
                     )}
-                    <div style={{ position: "relative" }}>
+                    <div className={s.mapViewRelative}>
                       <MapView
                         map={activeMap}
                         playerCellId={player.position.mapId === activeMapId ? player.position.cellId : null}
@@ -522,21 +482,13 @@ export default function App() {
               })()}
         </div>
 
-        <div style={{ display: "flex", gap: "8px", minHeight: "50vh" }}>
-          <div style={{ flex: "1 1 60%", display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <div className={s.bottomHalf}>
+          <div className={s.leftColumn}>
             {/* Map/location tabs */}
-            <div style={{ display: "flex", gap: "2px", marginBottom: "4px" }}>
+            <div className={s.tabBar}>
               <button
                 onClick={() => setTopView("location")}
-                style={{
-                  padding: "4px 12px",
-                  backgroundColor: topView === "location" ? T.bg2 : T.bg1,
-                  color: topView === "location" ? T.accent : T.textSub,
-                  border: `1px solid ${T.border}`,
-                  borderBottom: topView === "location" ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
-                  cursor: "pointer",
-                  fontSize: "12px",
-                }}
+                className={clsx(s.tabBtn, topView === "location" ? s.tabBtnActive : s.tabBtnInactive)}
               >
                 [{playerMap?.name ?? ""} - {playerCellName}]
               </button>
@@ -547,15 +499,7 @@ export default function App() {
                     setTopView(m.id);
                     setActiveMapId(m.id);
                   }}
-                  style={{
-                    padding: "4px 12px",
-                    backgroundColor: topView === m.id ? T.bg2 : T.bg1,
-                    color: topView === m.id ? T.accent : T.textSub,
-                    border: `1px solid ${T.border}`,
-                    borderBottom: topView === m.id ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
-                    cursor: "pointer",
-                    fontSize: "12px",
-                  }}
+                  className={clsx(s.tabBtn, topView === m.id ? s.tabBtnActive : s.tabBtnInactive)}
                 >
                   [{m.name}]
                 </button>
@@ -582,16 +526,7 @@ export default function App() {
             )}
           </div>
 
-          <div
-            style={{
-              flex: "1 1 40%",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              minWidth: 0,
-              overflowY: "auto",
-            }}
-          >
+          <div className={s.rightColumn}>
             <CompactCharacterInfo
               character={
                 selectedCharacterId && gameState.characters[selectedCharacterId]
@@ -619,18 +554,18 @@ export default function App() {
     );
   };
 
+  // Sidebar animation helpers
+  const leftAnim = leftClosing ? "sidebarSlideOut 0.2s ease-in forwards" : leftOpen ? "sidebarSlideIn 0.25s ease-out" : undefined;
+  const rightVisible = aiDrawerOpen || rightOpen;
+  const showRight = rightVisible || rightClosing;
+  const rightAnim = rightClosing ? "sidebarSlideOut 0.2s ease-in forwards" : rightVisible ? "sidebarSlideIn 0.25s ease-out" : undefined;
+
+  // Editor overlay animation
+  const overlayAnim = editorClosing ? "overlayFadeOut 0.25s ease-in forwards" : editorAnimating ? "overlayFadeIn 0.2s ease-out" : "none";
+  const panelAnim = editorClosing ? "editorSlideOut 0.25s ease-in forwards" : editorAnimating ? "editorSlideIn 0.3s ease-out" : "none";
+
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        overflow: "hidden",
-        backgroundColor: T.bg0,
-        fontFamily: T.fontMono,
-        fontSize: `${T.fontBase}px`,
-        color: T.text,
-      }}
-    >
+    <div className={s.root}>
       <NavBar
         navPage={navPage}
         onNavChange={(p) => {
@@ -678,19 +613,11 @@ export default function App() {
       />
 
       {/* Left area: sidebar or spacer */}
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-          height: "100vh",
-          overflow: "hidden",
-        }}
-      >
-        <div style={{
-          display: leftOpen || leftClosing ? "block" : "none",
-          height: "100%",
-          animation: leftClosing ? "sidebarSlideOut 0.2s ease-in forwards" : leftOpen ? "sidebarSlideIn 0.25s ease-out" : undefined,
-        }}>
+      <div className={s.sidebarArea}>
+        <div
+          className={clsx(s.sidebarInner, !(leftOpen || leftClosing) && s.sidebarHidden)}
+          style={{ animation: leftAnim }}
+        >
           <WorldSidebar
             currentWorldId={currentWorldId}
             currentAddons={currentAddons}
@@ -701,95 +628,46 @@ export default function App() {
 
       {/* Center content (fixed maxWidth) */}
       <div
-        style={{
-          flex: `0 1 ${config.maxWidth}px`,
-          maxWidth: config.maxWidth,
-          width: "100%",
-          height: "100vh",
-          overflowY: "scroll",
-          display: "flex",
-          flexDirection: "column",
-          color: T.text,
-          padding: "8px",
-          paddingTop: 48,
-          gap: "8px",
-          boxSizing: "border-box",
-          minWidth: 0,
-        }}
+        className={s.center}
+        style={{ flex: `0 1 ${config.maxWidth}px`, maxWidth: config.maxWidth }}
       >
         {renderCenter()}
       </div>
 
       {/* Right area: addon sidebar, AI drawer, or spacer */}
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-          height: "100vh",
-          overflow: "hidden",
-        }}
-      >
-        {(() => {
-          const rightVisible = aiDrawerOpen || rightOpen;
-          const showRight = rightVisible || rightClosing;
-          const anim = rightClosing ? "sidebarSlideOut 0.2s ease-in forwards" : rightVisible ? "sidebarSlideIn 0.25s ease-out" : undefined;
-          return (
-            <div style={{ display: showRight ? "block" : "none", height: "100%", animation: anim }}>
-              <div style={{ display: aiDrawerOpen ? "block" : "none", height: "100%" }}>
-                <AiDrawer
-                  onEntityChanged={() => setSessionKey((k) => k + 1)}
-                  onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e as any])}
-                />
-              </div>
-              <div style={{ display: !aiDrawerOpen && rightOpen ? "block" : "none", height: "100%" }}>
-                <AddonSidebar
-                  key={addonListKey}
-                  enabledAddons={currentAddons}
-                  stagedAddons={stagedAddons}
-                  onStagedChange={setStagedAddons}
-                  worldId={currentWorldId}
-                />
-              </div>
-            </div>
-          );
-        })()}
+      <div className={s.sidebarArea}>
+        <div
+          className={clsx(s.sidebarInner, !showRight && s.sidebarHidden)}
+          style={{ animation: rightAnim }}
+        >
+          <div className={s.fullHeight} style={{ display: aiDrawerOpen ? "block" : "none" }}>
+            <AiDrawer
+              onEntityChanged={() => setSessionKey((k) => k + 1)}
+              onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e as any])}
+            />
+          </div>
+          <div className={s.fullHeight} style={{ display: !aiDrawerOpen && rightOpen ? "block" : "none" }}>
+            <AddonSidebar
+              key={addonListKey}
+              enabledAddons={currentAddons}
+              stagedAddons={stagedAddons}
+              onStagedChange={setStagedAddons}
+              worldId={currentWorldId}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Editor overlay */}
       {navPage !== null && (
         <div
-          style={{
-            position: "fixed",
-            top: 40,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 200,
-            display: "flex",
-            justifyContent: "center",
-            overflow: "hidden",
-            backgroundColor: "rgba(0,0,0,0.3)",
-            animation: editorClosing ? "overlayFadeOut 0.25s ease-in forwards" : editorAnimating ? "overlayFadeIn 0.2s ease-out" : "none",
-          }}
+          className={s.editorOverlay}
+          style={{ animation: overlayAnim }}
           onClick={closeEditor}
         >
           <div
-            style={{
-              width: "100%",
-              maxWidth: config.maxWidth,
-              height: "100%",
-              overflowY: "auto",
-              backgroundColor: "rgba(20, 18, 15, 0.85)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              padding: "8px",
-              boxSizing: "border-box",
-              borderRadius: "8px 8px 0 0",
-              border: `1px solid rgba(255,255,255,0.08)`,
-              borderBottom: "none",
-              boxShadow: "0 -4px 32px rgba(0,0,0,0.5)",
-              animation: editorClosing ? "editorSlideOut 0.25s ease-in forwards" : editorAnimating ? "editorSlideIn 0.3s ease-out" : "none",
-            }}
+            className={s.editorPanel}
+            style={{ maxWidth: config.maxWidth, animation: panelAnim }}
             onClick={(e) => e.stopPropagation()}
           >
             {editorPages.map(({ page, hasAddonTab }) => {

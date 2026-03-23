@@ -5,9 +5,10 @@
  * Write tools (create_entity): EntityCard preview + confirm/reject buttons.
  */
 import { useState } from "react";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import EntityCard from "./EntityCard";
+import clsx from "clsx";
+import s from "./ToolCallMessage.module.css";
 
 export type ToolCallStatus = "pending" | "confirmed" | "rejected" | "auto";
 
@@ -27,21 +28,6 @@ const ENTITY_LABELS: Record<string, string> = {
   clothing: "服装",
   variable: "变量",
   traitGroup: "特质组",
-};
-
-const wrapStyle: React.CSSProperties = {
-  margin: "4px 0",
-  fontSize: "11px",
-};
-
-const autoStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: T.bg3,
-  borderRadius: "3px",
-  color: T.textDim,
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
 };
 
 export default function ToolCallMessage({ name, arguments: args, status, result, onConfirm, onReject, disabled }: Props) {
@@ -66,9 +52,9 @@ export default function ToolCallMessage({ name, arguments: args, status, result,
     }
 
     return (
-      <div style={wrapStyle}>
-        <div style={autoStyle}>
-          <span style={{ color: T.success }}>⚡</span>
+      <div className={s.wrap}>
+        <div className={s.autoRow}>
+          <span style={{ color: "var(--success)" }}>⚡</span>
           <span>{summary}</span>
         </div>
       </div>
@@ -92,8 +78,8 @@ export default function ToolCallMessage({ name, arguments: args, status, result,
 
   // --- Unknown tool ---
   return (
-    <div style={wrapStyle}>
-      <div style={autoStyle}>
+    <div className={s.wrap}>
+      <div className={s.autoRow}>
         <span>🔧 {name}({JSON.stringify(args)})</span>
       </div>
     </div>
@@ -129,18 +115,18 @@ function SingleEntityToolCall({ name, args, entityLabel, entityType, status, res
             resultSummary = "✓";
           }
         }
-        return <div style={{ color: T.success, fontSize: "11px", marginTop: "4px" }}>✓ {resultSummary}</div>;
+        return <div className={s.statusOk}>✓ {resultSummary}</div>;
       }
       if (status === "rejected") {
-        return <div style={{ color: T.danger, fontSize: "11px", marginTop: "4px" }}>✗ {t("ai.toolRejected")}</div>;
+        return <div className={s.statusFail}>✗ {t("ai.toolRejected")}</div>;
       }
       return null;
     };
 
     return (
-      <div style={wrapStyle}>
+      <div className={s.wrap}>
         {isUpdate && (
-          <div style={{ ...autoStyle, marginBottom: "2px" }}>
+          <div className={s.autoRowMb}>
             <span>✏️ {t("ai.toolUpdateTarget", { id: String(args.entityId || "") })}: {updateFieldNames.join(", ")}</span>
           </div>
         )}
@@ -189,27 +175,27 @@ function BatchUpdateToolCall({ args, entityLabel, entityType, status, result, on
         try {
           const r = JSON.parse(result);
           return (
-            <div style={{ color: T.success, fontSize: "11px", marginTop: "4px" }}>
+            <div className={s.statusOk}>
               ✓ {t("ai.batchUpdateResult", { count: r.total || 0, type: entityLabel })}
               {r.errors?.length > 0 && (
-                <span style={{ color: T.danger, marginLeft: "8px" }}>
+                <span className={s.statusFail} style={{ marginLeft: "8px" }}>
                   ({r.errors.length} {t("ai.batchErrors")})
                 </span>
               )}
             </div>
           );
         } catch {
-          return <div style={{ color: T.success, fontSize: "11px", marginTop: "4px" }}>✓</div>;
+          return <div className={s.statusOk}>✓</div>;
         }
       }
       if (status === "rejected") {
-        return <div style={{ color: T.danger, fontSize: "11px", marginTop: "4px" }}>✗ {t("ai.toolRejected")}</div>;
+        return <div className={s.statusFail}>✗ {t("ai.toolRejected")}</div>;
       }
       return null;
     };
 
     return (
-      <div style={wrapStyle}>
+      <div className={s.wrap}>
         {editedUpdates.map((item, i) => {
           const entityId = String(item.entityId || "");
           const displayName = (item._displayName as string) || "";
@@ -219,17 +205,17 @@ function BatchUpdateToolCall({ args, entityLabel, entityType, status, result, on
           const pseudoEntity = { id: entityId, name: displayName, ...fields };
 
           return (
-            <div key={i} style={{ display: "flex", gap: "6px", alignItems: "flex-start" }}>
+            <div key={i} className={s.checkRow}>
               {status === "pending" && (
                 <input
                   type="checkbox"
                   checked={selected.has(i)}
                   onChange={() => toggleSelect(i)}
-                  style={{ marginTop: "10px", accentColor: T.accent }}
+                  className={s.checkbox}
                 />
               )}
               <div style={{ flex: 1 }}>
-                <div style={{ ...autoStyle, marginBottom: "2px" }}>
+                <div className={s.autoRowMb}>
                   <span>✏️ {t("ai.toolUpdateTarget", { id: entityId })}: {fieldNames.join(", ")}</span>
                 </div>
                 <EntityCard
@@ -249,37 +235,21 @@ function BatchUpdateToolCall({ args, entityLabel, entityType, status, result, on
           );
         })}
         {status === "pending" && (
-          <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+          <div className={s.batchRow}>
             <button
               onClick={() => {
                 const selectedUpdates = editedUpdates.filter((_, i) => selected.has(i));
                 onConfirm?.({ ...args, updates: selectedUpdates });
               }}
               disabled={disabled || selected.size === 0}
-              style={{
-                padding: "3px 10px",
-                border: `1px solid ${T.success}`,
-                borderRadius: "3px",
-                cursor: selected.size > 0 ? "pointer" : "default",
-                fontSize: "11px",
-                backgroundColor: T.bg1,
-                color: T.success,
-              }}
+              className={clsx(s.batchConfirmBtn, (disabled || selected.size === 0) && s.batchConfirmBtnDisabled)}
             >
               [{t("ai.confirmBatchUpdate", { count: selected.size })}]
             </button>
             <button
               onClick={onReject}
               disabled={disabled}
-              style={{
-                padding: "3px 10px",
-                border: `1px solid ${T.danger}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "11px",
-                backgroundColor: T.bg1,
-                color: T.danger,
-              }}
+              className={s.batchRejectBtn}
             >
               [{t("ai.reject")}]
             </button>
@@ -312,35 +282,35 @@ function BatchCreateToolCall({ args, entityLabel, entityType, status, result, on
         try {
           const r = JSON.parse(result);
           return (
-            <div style={{ color: T.success, fontSize: "11px", marginTop: "4px" }}>
+            <div className={s.statusOk}>
               ✓ {t("ai.batchCreateResult", { count: r.total || 0, type: entityLabel })}
               {r.errors?.length > 0 && (
-                <span style={{ color: T.danger, marginLeft: "8px" }}>
+                <span className={s.statusFail} style={{ marginLeft: "8px" }}>
                   ({r.errors.length} {t("ai.batchErrors")})
                 </span>
               )}
             </div>
           );
         } catch {
-          return <div style={{ color: T.success, fontSize: "11px", marginTop: "4px" }}>✓</div>;
+          return <div className={s.statusOk}>✓</div>;
         }
       }
       if (status === "rejected") {
-        return <div style={{ color: T.danger, fontSize: "11px", marginTop: "4px" }}>✗ {t("ai.toolRejected")}</div>;
+        return <div className={s.statusFail}>✗ {t("ai.toolRejected")}</div>;
       }
       return null;
     };
 
     return (
-      <div style={wrapStyle}>
+      <div className={s.wrap}>
         {editedEntities.map((entity, i) => (
-          <div key={i} style={{ display: "flex", gap: "6px", alignItems: "flex-start" }}>
+          <div key={i} className={s.checkRow}>
             {status === "pending" && (
               <input
                 type="checkbox"
                 checked={selected.has(i)}
                 onChange={() => toggleSelect(i)}
-                style={{ marginTop: "10px", accentColor: T.accent }}
+                className={s.checkbox}
               />
             )}
             <div style={{ flex: 1 }}>
@@ -359,37 +329,21 @@ function BatchCreateToolCall({ args, entityLabel, entityType, status, result, on
           </div>
         ))}
         {status === "pending" && (
-          <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+          <div className={s.batchRow}>
             <button
               onClick={() => {
                 const selectedEntities = editedEntities.filter((_, i) => selected.has(i));
                 onConfirm?.({ ...args, entities: selectedEntities });
               }}
               disabled={disabled || selected.size === 0}
-              style={{
-                padding: "3px 10px",
-                border: `1px solid ${T.success}`,
-                borderRadius: "3px",
-                cursor: selected.size > 0 ? "pointer" : "default",
-                fontSize: "11px",
-                backgroundColor: T.bg1,
-                color: T.success,
-              }}
+              className={clsx(s.batchConfirmBtn, (disabled || selected.size === 0) && s.batchConfirmBtnDisabled)}
             >
               [{t("ai.confirmBatch", { count: selected.size })}]
             </button>
             <button
               onClick={onReject}
               disabled={disabled}
-              style={{
-                padding: "3px 10px",
-                border: `1px solid ${T.danger}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "11px",
-                backgroundColor: T.bg1,
-                color: T.danger,
-              }}
+              className={s.batchRejectBtn}
             >
               [{t("ai.reject")}]
             </button>

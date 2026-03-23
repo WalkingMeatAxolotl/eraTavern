@@ -5,9 +5,11 @@ import T from "../../theme";
 import { t } from "../../i18n/ui";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
-import { inputStyle, labelStyle, btn } from "../shared/styles";
 import { RawJsonPanel } from "../shared/RawJsonEditor";
 import CloneButton from "../shared/CloneDialog";
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
+import s from "./ItemEditor.module.css";
 
 interface AddonCrud {
   save: (id: string, data: unknown) => Promise<void>;
@@ -119,26 +121,27 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
   }
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={s.title}>
           == {isNew ? t("editor.newItem") : t("editor.editItem")} ==
         </span>
-        {item.source && <span style={{ color: T.accent, fontSize: "12px" }}>{t("field.source")}: {item.source}</span>}
+        {item.source && <span className={s.sourceLabel}>{t("field.source")}: {item.source}</span>}
       </div>
 
       {/* Basic info */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
+      <div className={s.form}>
+        <div className={s.row2}>
+          <div className={s.field}>
+            <div className={sh.label}>ID</div>
             <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.name")}</div>
+          <div className={s.field}>
+            <div className={sh.label}>{t("field.name")}</div>
             <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+              className={sh.input}
+              style={{ width: "100%", boxSizing: "border-box" }}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isReadOnly}
@@ -148,61 +151,26 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
 
         {/* Tags */}
         <div>
-          <div style={labelStyle}>{t("field.tags")}</div>
+          <div className={sh.label}>{t("field.tags")}</div>
           {/* Selected tags */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
+          <div className={s.tagList}>
             {tags.map((t) => (
-              <span
-                key={t}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "2px",
-                  padding: "2px 8px",
-                  backgroundColor: T.bg2,
-                  border: `1px solid ${T.borderLight}`,
-                  borderRadius: "3px",
-                  fontSize: "12px",
-                }}
-              >
+              <span key={t} className={s.tagBadge}>
                 {t}
                 {!isReadOnly && (
-                  <button
-                    onClick={() => setTags(tags.filter((x) => x !== t))}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: T.danger,
-                      cursor: "pointer",
-                      padding: "0 2px",
-                      fontSize: "12px",
-                      lineHeight: 1,
-                    }}
-                  >
+                  <button onClick={() => setTags(tags.filter((x) => x !== t))} className={s.tagRemoveBtn}>
                     x
                   </button>
                 )}
               </span>
             ))}
-            {tags.length === 0 && <span style={{ color: T.textDim }}>{t("ui.none")}</span>}
+            {tags.length === 0 && <span className={s.tagNone}>{t("ui.none")}</span>}
           </div>
           {/* Available tags from pool (clickable) */}
           {!isReadOnly && availableTags.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center", marginBottom: "4px" }}>
+            <div className={s.tagList}>
               {availableTags.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => addTag(t)}
-                  style={{
-                    padding: "2px 8px",
-                    backgroundColor: T.bg3,
-                    color: T.textDim,
-                    border: `1px dashed ${T.border}`,
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                  }}
-                >
+                <button key={t} onClick={() => addTag(t)} className={s.tagPoolBtn}>
                   + {t}
                 </button>
               ))}
@@ -211,7 +179,8 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
           {/* Free-form input for new tags */}
           {!isReadOnly && (
             <input
-              style={{ ...inputStyle, width: "120px" }}
+              className={sh.input}
+              style={{ width: "120px" }}
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => {
@@ -229,27 +198,22 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
         </div>
 
         <div>
-          <div style={labelStyle}>{t("field.description")}</div>
+          <div className={sh.label}>{t("field.description")}</div>
           <textarea
-            style={{
-              ...inputStyle,
-              width: "100%",
-              boxSizing: "border-box",
-              minHeight: "48px",
-              resize: "vertical",
-            }}
+            className={`${sh.input} ${s.textarea}`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={isReadOnly}
           />
         </div>
 
-        <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.maxStack")}</div>
+        <div className={s.row3}>
+          <div className={s.field}>
+            <div className={sh.label}>{t("field.maxStack")}</div>
             <input
               type="number"
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+              className={sh.input}
+              style={{ width: "100%", boxSizing: "border-box" }}
               value={maxStack}
               onChange={(e) => setMaxStack(Math.max(1, Number(e.target.value)))}
               min={1}
@@ -257,24 +221,23 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
             />
           </div>
           <div>
-            <div style={labelStyle}>{t("field.sellable")}</div>
-            <label
-              style={{ display: "flex", alignItems: "center", gap: "6px", cursor: isReadOnly ? "default" : "pointer" }}
-            >
+            <div className={sh.label}>{t("field.sellable")}</div>
+            <label className={s.checkLabel} style={{ cursor: isReadOnly ? "default" : "pointer" }}>
               <input
                 type="checkbox"
                 checked={sellable}
                 onChange={(e) => setSellable(e.target.checked)}
                 disabled={isReadOnly}
               />
-              <span style={{ fontSize: "12px" }}>{sellable ? t("ui.yes") : t("ui.no")}</span>
+              <span className={s.checkText}>{sellable ? t("ui.yes") : t("ui.no")}</span>
             </label>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.price")}</div>
+          <div className={s.field}>
+            <div className={sh.label}>{t("field.price")}</div>
             <input
               type="number"
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+              className={sh.input}
+              style={{ width: "100%", boxSizing: "border-box" }}
               value={price}
               onChange={(e) => setPrice(Math.max(0, Number(e.target.value)))}
               min={0}
@@ -285,13 +248,9 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <div className={s.actions}>
         {!isReadOnly && (
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{ ...btn("create"), ...(saving && { cursor: "not-allowed" }) }}
-          >
+          <button onClick={handleSave} disabled={saving} className={btnClass("create")}>
             [{t("btn.confirm")}]
           </button>
         )}
@@ -305,22 +264,18 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
           />
         )}
         {!isReadOnly && !isNew && (
-          <button
-            onClick={handleDelete}
-            disabled={saving}
-            style={{ ...btn("danger"), ...(saving && { cursor: "not-allowed" }) }}
-          >
+          <button onClick={handleDelete} disabled={saving} className={btnClass("danger")}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={btn("neutral")}>
+        <button onClick={onBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
-        <button onClick={() => setJsonMode(true)} style={btn("neutral")}>
+        <button onClick={() => setJsonMode(true)} className={btnClass("neutral")}>
           [JSON]
         </button>
         {message && (
-          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span className={message === t("status.saved") ? s.messageOk : s.messageErr}>{message}</span>
         )}
       </div>
     </div>

@@ -1,9 +1,9 @@
 /* EffectEditor.module.css */
 
 /* Width utility classes for inputs */
-.w50 { width: 50px; }
-.w55 { width: 55px; }
-.w70 { width: 70px; }
+.w50 { composes: w50 from "../shared/shared.module.css"; }
+.w55 { composes: w55 from "../shared/shared.module.css"; }
+.w70 { composes: w70 from "../shared/shared.module.css"; }
 
 /* Operator / label spans between inputs */
 .opSpan {

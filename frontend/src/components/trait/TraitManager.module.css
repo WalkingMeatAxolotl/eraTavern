@@ -1,0 +1,256 @@
+/* ── TraitManager ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.btnRow {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Category list ── */
+
+.catContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Category button ── */
+
+.catBtn {
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  background-color: var(--bg2);
+  color: var(--text-sub);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 3px;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.catBtn:hover {
+  background-color: var(--bg3);
+  color: var(--text);
+}
+
+.catArrow {
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+  font-size: 11px;
+}
+
+/* ── Category content ── */
+
+.catContent {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Group rows (expanded mode) ── */
+
+.groupColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.groupRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 10px 5px 13px;
+  background-color: var(--bg1);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: background-color 0.1s;
+}
+
+.groupRow:hover {
+  background-color: var(--bg2);
+}
+
+.groupRowBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--accent-dim);
+  border-radius: 2px 0 0 2px;
+  transition: background-color 0.1s;
+}
+
+.groupRow:hover .groupRowBar {
+  background-color: var(--accent);
+}
+
+.groupRowName {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.groupRowSep {
+  color: var(--text-dim);
+}
+
+.groupRowMembers {
+  color: var(--text-sub);
+  flex: 1;
+}
+
+.groupRow:hover .groupRowMembers {
+  color: var(--text);
+}
+
+/* ── Group chips (compact mode) ── */
+
+.groupChipWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.groupChip {
+  position: relative;
+  padding: 4px 10px 4px 12px;
+  background-color: var(--bg1);
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.groupChip:hover {
+  background-color: var(--bg2);
+  border-color: var(--accent);
+}
+
+.groupChipBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--accent-dim);
+  border-radius: 3px 0 0 3px;
+  transition: background-color 0.15s;
+}
+
+.groupChip:hover .groupChipBar {
+  background-color: var(--accent);
+}
+
+.groupChipCount {
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+/* ── Accent button (collapse/expand groups) ── */
+
+.accentBtn {
+  padding: 4px 10px;
+  background-color: var(--bg2);
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.1s, border-color 0.1s;
+}
+
+.accentBtn:hover {
+  background-color: var(--bg3);
+  border-color: var(--accent);
+}
+
+.collapseBtn {
+  composes: accentBtn;
+  align-self: flex-end;
+}
+
+/* ── Trait chips ── */
+
+.traitGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.traitChip {
+  position: relative;
+  padding: 4px 10px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.15s, border-color 0.15s, opacity 0.15s, color 0.15s;
+}
+
+.traitChip:hover {
+  background-color: var(--bg3);
+  border-color: var(--border-light);
+}
+
+.traitChipHighlighted {
+  background-color: var(--bg3);
+  border-color: var(--accent-dim);
+}
+
+.traitChipDimmed {
+  color: var(--text-dim);
+  opacity: 0.45;
+}
+
+.traitChipSource {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* ── Divider ── */
+
+.divider {
+  height: 1px;
+  background-color: var(--border-dim);
+}
+
+/* ── Loading ── */
+
+.loading {
+  color: var(--text-dim);
+  padding: 20px;
+  text-align: center;
+}

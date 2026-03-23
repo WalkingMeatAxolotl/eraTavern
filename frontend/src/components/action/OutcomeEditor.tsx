@@ -9,7 +9,6 @@ import type { ActionOutcome, ActionEffect, SuggestNext, EffectFilterDef } from "
 import { t as t_ } from "../../i18n/ui";
 import { EF, TargetType } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
-import { listRowStyle } from "../shared/styles";
 import { btnClass } from "../shared/buttons";
 import sh from "../shared/shared.module.css";
 import s from "./OutcomeEditor.module.css";
@@ -306,7 +305,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
                 eff.type === EF.BASIC_INFO ||
                 eff.type === EF.FAVORABILITY;
               return (
-                <div key={effIdx} className={s.effRow} style={listRowStyle(gi, gi === group.indices.length - 1)}>
+                <div key={effIdx} className={s.effRow} className={clsx(sh.listRow, gi % 2 === 0 ? sh.listRowOdd : sh.listRowEven)}>
                   <div className={s.effRowInner}>
                     <EffectEditor
                       effect={eff}
@@ -379,8 +378,7 @@ export function OutcomeEditor({ outcome, onChange, onRemove, disabled }: Outcome
               return (
                 <div
                   key={snIdx}
-                  className={s.chainRow}
-                  style={listRowStyle(snIdx, snIdx === (outcome.suggestNext ?? []).length - 1)}
+                  className={clsx(s.chainRow, sh.listRow, snIdx % 2 === 0 ? sh.listRowOdd : sh.listRowEven)}
                 >
                   <select
                     className={clsx(sh.input, s.wAuto, s.fs11)}

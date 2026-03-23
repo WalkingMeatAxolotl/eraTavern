@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import clsx from "clsx";
 import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EF, EffType, EffectOp, ClothingState, TriggerMode, EventScope, TargetType } from "../../constants";
@@ -27,37 +28,14 @@ import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { EditorProvider, useEditorContext } from "../shared/EditorContext";
 import type { EditorContextValue, KeyLabel } from "../shared/EditorContext";
 import { ConditionItemEditor } from "../shared/ConditionEditor";
-import { inputStyle, rowBg, btn } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
 import { toLocalId } from "../shared/idUtils";
 import CloneButton from "../shared/CloneDialog";
+import { useManagerState, isReadOnly } from "../shared/useManagerState";
+import sh from "../shared/shared.module.css";
+import s from "./EventManager.module.css";
 
 // ── Styles ──────────────────────────────────────────────
-
-// Uses btn() from shared/styles for button styling
-
-const SEC = {
-  cond: { color: "#c78dff", bg: "#c78dff0a" },
-  eff: { color: "#e94560", bg: "#e945600a" },
-  tpl: { color: "#7ecf7e", bg: "#7ecf7e0a" },
-};
-
-const sectionStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
-  marginBottom: "12px",
-  padding: "0 0 8px 0",
-  borderLeft: `3px solid ${SEC[sec].color}`,
-  backgroundColor: SEC[sec].bg,
-  borderRadius: "0 4px 4px 0",
-});
-
-const sectionTitleStyle = (sec: keyof typeof SEC): React.CSSProperties => ({
-  padding: "5px 10px",
-  marginBottom: "8px",
-  backgroundColor: `${SEC[sec].color}15`,
-  borderBottom: `1px solid ${SEC[sec].color}25`,
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-});
 
 const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: EffType.RESOURCE, label: t("eff.resource") },
@@ -71,14 +49,6 @@ const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: EffType.POSITION, label: t("eff.position") },
   { value: EffType.WORLD_VAR, label: t("eff.worldVar") },
 ];
-
-import { useManagerState, isReadOnly } from "../shared/useManagerState";
-import { createHoverStyles } from "../shared/styles";
-
-const hoverStyles = createHoverStyles("em", [
-  ["item", "border"],
-  ["action-btn", "border"],
-]);
 
 // ── Main ────────────────────────────────────────────────
 
@@ -134,7 +104,7 @@ export default function EventManager({
   }
 
   if (loading) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+    return <div className={s.loading}>{t("status.loading")}</div>;
   }
 
   // ── Editor view ──
@@ -177,68 +147,54 @@ export default function EventManager({
 
   // ── List view ──
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-      <style>{hoverStyles}</style>
+    <div className={s.wrapper}>
 
       {/* == 世界变量 == */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.worldVars")} ==</span>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>== {t("header.worldVars")} ==</span>
         {!readOnly && (
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button className="em-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
+          <div className={s.btnRow}>
+            <button onClick={() => setShowJson(true)} className={btnClass("neutral", "md")}>
               [JSON]
             </button>
-            <button className="em-action-btn" onClick={handleNewWV} style={btn("create", "md")}>
+            <button onClick={handleNewWV} className={btnClass("create", "md")}>
               [{t("btn.addVar")}]
             </button>
           </div>
         )}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "16px" }}>
+      <div className={clsx(s.listColumn, s.worldVarSection)}>
         {filteredWVs.map((v) => (
           <button
             key={v.id}
-            className="em-item"
+            className={s.listItem}
             onClick={() => handleEditWV(v.id)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              width: "100%",
-              padding: "5px 12px",
-              backgroundColor: T.bg1,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "12px",
-              textAlign: "left",
-            }}
           >
             <span style={{ color: T.text }}>{v.name || v.id}</span>
-            <span style={{ color: T.textDim, fontSize: "11px" }}>{v.type}</span>
-            <span style={{ color: T.textDim, fontSize: "11px" }}>{t("event.default", { value: String(v.default) })}</span>
+            <span className={sh.textDim}>{v.type}</span>
+            <span className={sh.textDim}>{t("event.default", { value: String(v.default) })}</span>
           </button>
         ))}
         {filteredWVs.length === 0 && (
-          <div style={{ color: T.textDim, padding: "4px 0", fontSize: "11px" }}>{t("empty.worldVars")}</div>
+          <div className={s.emptyMsg}>{t("empty.worldVars")}</div>
         )}
       </div>
 
       {/* == 全局事件 == */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.globalEvents")} ==</span>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>== {t("header.globalEvents")} ==</span>
         {!readOnly && (
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button className="em-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
+          <div className={s.btnRow}>
+            <button onClick={() => setShowJson(true)} className={btnClass("neutral", "md")}>
               [JSON]
             </button>
-            <button className="em-action-btn" onClick={handleNewEvent} style={btn("create", "md")}>
+            <button onClick={handleNewEvent} className={btnClass("create", "md")}>
               [{t("btn.newEvent")}]
             </button>
           </div>
         )}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+      <div className={s.listColumn}>
         {filteredEvents.map((evt) => {
           const modeLabel =
             evt.triggerMode === TriggerMode.ON_CHANGE ? t("event.onChangeShort") : evt.triggerMode === TriggerMode.WHILE ? t("event.whileShort") : t("event.onceShort");
@@ -246,31 +202,18 @@ export default function EventManager({
           return (
             <button
               key={evt.id}
-              className="em-item"
+              className={s.listItem}
               onClick={() => handleEditEvent(evt.id)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                width: "100%",
-                padding: "5px 12px",
-                backgroundColor: T.bg1,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-                textAlign: "left",
-              }}
             >
               <span style={{ color: T.text }}>{evt.name || evt.id}</span>
-              <span style={{ color: "#c78dff", fontSize: "11px" }}>{modeLabel}</span>
-              <span style={{ color: T.textDim, fontSize: "11px" }}>{scopeLabel}</span>
+              <span className={s.modeLabel}>{modeLabel}</span>
+              <span className={sh.textDim}>{scopeLabel}</span>
               {evt.enabled === false && <span style={{ color: T.danger, fontSize: "11px" }}>[{t("event.disabled")}]</span>}
             </button>
           );
         })}
         {filteredEvents.length === 0 && (
-          <div style={{ color: T.textDim, padding: "4px 0", fontSize: "11px" }}>{t("empty.globalEvents")}</div>
+          <div className={s.emptyMsg}>{t("empty.globalEvents")}</div>
         )}
       </div>
 
@@ -335,14 +278,14 @@ function WorldVarEditor({
   };
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header} style={{ marginBottom: "12px" }}>
+        <span className={sh.editorTitle}>
           == {isNew ? t("editor.newWorldVar") : t("editor.editNamed", { name: variable.name || variable.id })} ==
         </span>
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={onBack} style={btn("neutral")}>
+        <div className={s.btnRow}>
+          <button onClick={onBack} className={btnClass("neutral")}>
             [{t("btn.return")}]
           </button>
           {!isNew && addonIds && (
@@ -352,15 +295,15 @@ function WorldVarEditor({
               getData={() => ({ name, description: description || undefined, type, default: defaultVal })}
               createFn={(d) => createWorldVariableDef(d)}
               onSuccess={onBack}
-              buttonStyle={{ ...btnBase, color: T.accent }}
+              className={btnClass("neutral")}
             />
           )}
           {!isNew && (
-            <button onClick={handleDelete} style={btn("danger")}>
+            <button onClick={handleDelete} className={btnClass("danger")}>
               [{t("btn.delete")}]
             </button>
           )}
-          <button onClick={handleSave} disabled={saving} style={btn("create")}>
+          <button onClick={handleSave} disabled={saving} className={btnClass("create")}>
             {saving ? t("status.saving") : `[${t("btn.confirm")}]`}
           </button>
         </div>
@@ -368,27 +311,27 @@ function WorldVarEditor({
 
       {/* Fields */}
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>ID</label>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel50}>ID</label>
           <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>{t("field.name")}</label>
-          <input style={{ ...inputStyle, flex: 1 }} value={name} onChange={(e) => setName(e.target.value)} />
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel50}>{t("field.name")}</label>
+          <input className={clsx(sh.input, sh.flex1)} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>{t("field.note")}</label>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel50}>{t("field.note")}</label>
           <input
-            style={{ ...inputStyle, flex: 1 }}
+            className={clsx(sh.input, sh.flex1)}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t("ui.optional")}
           />
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>{t("field.type")}</label>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel50}>{t("field.type")}</label>
           <select
-            style={{ ...inputStyle }}
+            className={sh.input}
             value={type}
             onChange={(e) => setType(e.target.value as "number" | "boolean")}
           >
@@ -396,15 +339,15 @@ function WorldVarEditor({
             <option value="boolean">boolean</option>
           </select>
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "50px" }}>{t("field.defaultValue")}</label>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel50}>{t("field.defaultValue")}</label>
           <input
-            style={{ ...inputStyle, width: "80px" }}
+            className={clsx(sh.input, sh.w80)}
             type="number"
             value={defaultVal}
             onChange={(e) => setDefaultVal(Number(e.target.value))}
           />
-          {type === "boolean" && <span style={{ color: T.textDim, fontSize: "11px" }}>{t("event.boolHelp")}</span>}
+          {type === "boolean" && <span className={sh.textDim}>{t("event.boolHelp")}</span>}
         </div>
       </div>
     </div>
@@ -454,7 +397,7 @@ function EventEditor({
   const basicInfoNumKeys =
     definitions?.template.basicInfo.filter((f) => f.type === "number").map((f) => ({ key: f.key, label: f.label })) ??
     [];
-  const traitCategories = definitions?.template.traits?.map((t) => ({ key: t.key, label: t.label })) ?? [];
+  const traitCategories = definitions?.template.traits?.map((tc) => ({ key: tc.key, label: tc.label })) ?? [];
   const clothingSlots = definitions?.template.clothingSlots ?? [];
   const mapList = definitions ? Object.values(definitions.maps) : [];
   const traitList = definitions ? Object.values(definitions.traitDefs) : [];
@@ -539,7 +482,7 @@ function EventEditor({
 
   const outfitTypes = [
     { id: "default", name: t("label.defaultOutfit") },
-    ...(definitions?.outfitTypes ?? []).map((t) => ({ id: t.id, name: t.name })),
+    ...(definitions?.outfitTypes ?? []).map((ot) => ({ id: ot.id, name: ot.name })),
   ];
 
   const emptyDefs: GameDefinitions = {
@@ -582,14 +525,14 @@ function EventEditor({
 
   return (
     <EditorProvider value={editorCtx}>
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header} style={{ marginBottom: "12px" }}>
+        <span className={sh.editorTitle}>
           == {isNew ? t("editor.newEvent") : t("editor.editNamed", { name: event.name || event.id })} ==
         </span>
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={onBack} style={btn("neutral")}>
+        <div className={s.btnRow}>
+          <button onClick={onBack} className={btnClass("neutral")}>
             [{t("btn.return")}]
           </button>
           {!isNew && addonIds && (
@@ -603,43 +546,43 @@ function EventEditor({
               }}
               createFn={(d) => createEventDef(d)}
               onSuccess={onBack}
-              buttonStyle={{ ...btnBase, color: T.accent }}
+              className={btnClass("neutral")}
             />
           )}
           {!isNew && (
-            <button onClick={handleDelete} style={btn("danger")}>
+            <button onClick={handleDelete} className={btnClass("danger")}>
               [{t("btn.delete")}]
             </button>
           )}
-          <button onClick={handleSave} disabled={saving} style={btn("create")}>
+          <button onClick={handleSave} disabled={saving} className={btnClass("create")}>
             {saving ? t("status.saving") : `[${t("btn.confirm")}]`}
           </button>
         </div>
       </div>
 
       {/* Basic fields */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>ID</label>
+      <div className={s.fieldsColumn}>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel}>ID</label>
           <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.name")}</label>
-          <input style={{ ...inputStyle, flex: 1 }} value={name} onChange={(e) => setName(e.target.value)} />
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel}>{t("field.name")}</label>
+          <input className={clsx(sh.input, sh.flex1)} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.note")}</label>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel}>{t("field.note")}</label>
           <input
-            style={{ ...inputStyle, flex: 1 }}
+            className={clsx(sh.input, sh.flex1)}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t("ui.optional")}
           />
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.triggerMode")}</label>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel}>{t("field.triggerMode")}</label>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={triggerMode}
             onChange={(e) => setTriggerMode(e.target.value as EventDefinition["triggerMode"])}
           >
@@ -649,9 +592,9 @@ function EventEditor({
           </select>
           {triggerMode === TriggerMode.WHILE && (
             <>
-              <label style={{ color: T.textSub, fontSize: "11px" }}>{t("field.cooldown")}</label>
+              <label className={sh.textSub}>{t("field.cooldown")}</label>
               <input
-                style={{ ...inputStyle, width: "60px" }}
+                className={clsx(sh.input, sh.w60)}
                 type="number"
                 step={5}
                 value={cooldown}
@@ -683,10 +626,10 @@ function EventEditor({
             </div>
           </HelpPanel>
         )}
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.targetScope")}</label>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel}>{t("field.targetScope")}</label>
           <select
-            style={inputStyle}
+            className={sh.input}
             value={targetScope}
             onChange={(e) => setTargetScope(e.target.value as EventDefinition["targetScope"])}
           >
@@ -710,36 +653,31 @@ function EventEditor({
             <div className={helpStyles.helpDim}>{t("help.noneExample")}</div>
           </HelpPanel>
         )}
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <label style={{ color: T.textSub, fontSize: "11px", width: "60px" }}>{t("field.enabled")}</label>
+        <div className={s.fieldRow}>
+          <label className={s.fieldLabel}>{t("field.enabled")}</label>
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
         </div>
       </div>
 
       {/* Conditions */}
-      <div style={sectionStyle("cond")}>
-        <div style={sectionTitleStyle("cond")}>
-          <span style={{ color: SEC.cond.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.conditionsAnd")}</span>
+      <div className={s.sectionCond}>
+        <div className={s.sectionTitleCond}>
+          <span className={s.sectionLabelCond}>{t("section.conditionsAnd")}</span>
           <div style={{ display: "flex", gap: "4px" }}>
-            <button onClick={addCondition} style={btn("add", "sm")}>
+            <button onClick={addCondition} className={btnClass("add", "sm")}>
               [{t("btn.addCondition")}]
             </button>
-            <button onClick={addOrGroup} style={btn("add", "sm")}>
+            <button onClick={addOrGroup} className={btnClass("add", "sm")}>
               [{t("btn.addOr")}]
             </button>
           </div>
         </div>
-        <div style={{ padding: "0 8px" }}>
-          {conditions.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noCondMatch")}</div>}
+        <div className={s.sectionContent}>
+          {conditions.length === 0 && <div className={sh.textDim} style={{ fontSize: "12px" }}>{t("empty.noCondMatch")}</div>}
           {conditions.map((item, idx) => (
             <div
               key={idx}
-              style={{
-                backgroundColor: rowBg(idx),
-                padding: "3px 4px",
-                borderRadius: "2px",
-                borderBottom: idx < conditions.length - 1 ? `1px solid ${T.borderDim}` : "none",
-              }}
+              className={idx % 2 === 0 ? s.condRowOdd : s.condRowEven}
             >
               <ConditionItemEditor
                 item={item}
@@ -754,28 +692,23 @@ function EventEditor({
       </div>
 
       {/* Effects */}
-      <div style={sectionStyle("eff")}>
-        <div style={sectionTitleStyle("eff")}>
-          <span style={{ color: SEC.eff.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.effects")}</span>
-          <button onClick={addEffect} style={btn("add", "sm")}>
+      <div className={s.sectionEff}>
+        <div className={s.sectionTitleEff}>
+          <span className={s.sectionLabelEff}>{t("section.effects")}</span>
+          <button onClick={addEffect} className={btnClass("add", "sm")}>
             [{t("btn.addEffect")}]
           </button>
         </div>
-        <div style={{ padding: "0 8px" }}>
-          {effects.length === 0 && <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noEffects")}</div>}
+        <div className={s.sectionContent}>
+          {effects.length === 0 && <div className={sh.textDim} style={{ fontSize: "12px" }}>{t("empty.noEffects")}</div>}
           {effects.map((eff, idx) => (
             <div
               key={idx}
-              style={{
-                backgroundColor: rowBg(idx),
-                padding: "3px 4px",
-                borderRadius: "2px",
-                borderBottom: idx < effects.length - 1 ? `1px solid ${T.borderDim}` : "none",
-              }}
+              className={idx % 2 === 0 ? s.condRowOdd : s.condRowEven}
             >
-              <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
+              <div className={s.effectRow}>
                 <EffectFieldEditor effect={eff} onChange={(e) => updateEffect(idx, e)} />
-                <button onClick={() => removeEffect(idx)} style={btn("del", "sm")}>
+                <button onClick={() => removeEffect(idx)} className={btnClass("del", "sm")}>
                   x
                 </button>
               </div>
@@ -785,21 +718,22 @@ function EventEditor({
       </div>
 
       {/* Output template */}
-      <div style={sectionStyle("tpl")}>
-        <div style={sectionTitleStyle("tpl")}>
+      <div className={s.sectionTpl}>
+        <div className={s.sectionTitleTpl}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ color: SEC.tpl.color, fontSize: "12px", fontWeight: "bold" }}>{t("section.outputTpl")}</span>
+            <span className={s.sectionLabelTpl}>{t("section.outputTpl")}</span>
             <button
               onClick={() => setShowVarHelp((v) => !v)}
-              style={btn(showVarHelp ? "danger" : "neutral", "sm")}
+              className={btnClass(showVarHelp ? "danger" : "neutral", "sm")}
             >
               [?]
             </button>
           </div>
         </div>
-        <div style={{ padding: "0 8px" }}>
+        <div className={s.sectionContent}>
           <input
-            style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+            className={sh.input}
+            style={{ width: "100%", boxSizing: "border-box" }}
             value={outputTemplate}
             onChange={(e) => setOutputTemplate(e.target.value)}
             placeholder={t("ph.outputExample")}
@@ -834,13 +768,13 @@ function EffectFieldEditor({
   return (
     <>
       <select
-        style={{ ...inputStyle, fontSize: "11px" }}
+        className={clsx(sh.input, sh.fs11)}
         value={effect.type}
         onChange={(e) => onChange({ type: e.target.value as ActionEffect["type"], op: EffectOp.ADD })}
       >
-        {EFFECT_TYPES.map((t) => (
-          <option key={t.value} value={t.value}>
-            {t.label}
+        {EFFECT_TYPES.map((et) => (
+          <option key={et.value} value={et.value}>
+            {et.label}
           </option>
         ))}
       </select>
@@ -849,7 +783,7 @@ function EffectFieldEditor({
       {(effect.type === EF.RESOURCE || effect.type === EF.ABILITY || effect.type === EF.BASIC_INFO) && (
         <>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
           >
@@ -866,7 +800,7 @@ function EffectFieldEditor({
             ))}
           </select>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
@@ -874,7 +808,7 @@ function EffectFieldEditor({
             <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
           </select>
           <input
-            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            className={clsx(sh.input, sh.w60, sh.fs11)}
             type="number"
             value={typeof effect.value === "number" ? effect.value : 0}
             onChange={(e) => update({ value: Number(e.target.value) })}
@@ -886,7 +820,7 @@ function EffectFieldEditor({
       {effect.type === EF.FAVORABILITY && (
         <>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
@@ -894,7 +828,7 @@ function EffectFieldEditor({
             <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
           </select>
           <input
-            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            className={clsx(sh.input, sh.w60, sh.fs11)}
             type="number"
             value={typeof effect.value === "number" ? effect.value : 0}
             onChange={(e) => update({ value: Number(e.target.value) })}
@@ -906,7 +840,7 @@ function EffectFieldEditor({
       {effect.type === EF.TRAIT && (
         <>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
@@ -914,7 +848,7 @@ function EffectFieldEditor({
             <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
           </select>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
           >
@@ -926,16 +860,16 @@ function EffectFieldEditor({
             ))}
           </select>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.traitId ?? ""}
             onChange={(e) => update({ traitId: e.target.value })}
           >
             <option value="">{t("opt.selectTrait")}</option>
             {ctx.traitList
-              .filter((t) => !effect.key || t.category === effect.key)
-              .map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              .filter((tr) => !effect.key || tr.category === effect.key)
+              .map((tr) => (
+                <option key={tr.id} value={tr.id}>
+                  {tr.name}
                 </option>
               ))}
           </select>
@@ -946,7 +880,7 @@ function EffectFieldEditor({
       {effect.type === EF.ITEM && (
         <>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
@@ -954,7 +888,7 @@ function EffectFieldEditor({
             <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
           </select>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.itemId ?? ""}
             onChange={(e) => update({ itemId: e.target.value })}
           >
@@ -966,7 +900,8 @@ function EffectFieldEditor({
             ))}
           </select>
           <input
-            style={{ ...inputStyle, width: "40px", fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
+            style={{ width: "40px" }}
             type="number"
             value={effect.amount ?? 1}
             onChange={(e) => update({ amount: Number(e.target.value) })}
@@ -978,19 +913,19 @@ function EffectFieldEditor({
       {effect.type === EF.CLOTHING && (
         <>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.slot ?? ""}
             onChange={(e) => update({ slot: e.target.value })}
           >
             <option value="">{t("opt.slot")}</option>
-            {ctx.clothingSlots.map((s) => (
-              <option key={s} value={s}>
-                {SLOT_LABELS[s] ?? s}
+            {ctx.clothingSlots.map((sl) => (
+              <option key={sl} value={sl}>
+                {SLOT_LABELS[sl] ?? sl}
               </option>
             ))}
           </select>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.state ?? ClothingState.WORN}
             onChange={(e) => update({ state: e.target.value })}
           >
@@ -1006,7 +941,7 @@ function EffectFieldEditor({
       {effect.type === EffType.POSITION && (
         <>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.mapId ?? ""}
             onChange={(e) => update({ mapId: e.target.value })}
           >
@@ -1019,7 +954,7 @@ function EffectFieldEditor({
           </select>
           {effect.mapId && (
             <select
-              style={{ ...inputStyle, fontSize: "11px" }}
+              className={clsx(sh.input, sh.fs11)}
               value={effect.cellId ?? ""}
               onChange={(e) => update({ cellId: Number(e.target.value) })}
             >
@@ -1038,13 +973,14 @@ function EffectFieldEditor({
       {effect.type === EF.EXPERIENCE && (
         <>
           <input
-            style={{ ...inputStyle, width: "80px", fontSize: "11px" }}
+            className={clsx(sh.input, sh.w80, sh.fs11)}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
             placeholder={t("ph.expKey")}
           />
           <input
-            style={{ ...inputStyle, width: "40px", fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
+            style={{ width: "40px" }}
             type="number"
             value={typeof effect.value === "number" ? effect.value : 1}
             onChange={(e) => update({ value: Number(e.target.value) })}
@@ -1056,7 +992,7 @@ function EffectFieldEditor({
       {effect.type === EF.WORLD_VAR && (
         <>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.key ?? ""}
             onChange={(e) => update({ key: e.target.value })}
           >
@@ -1068,7 +1004,7 @@ function EffectFieldEditor({
             ))}
           </select>
           <select
-            style={{ ...inputStyle, fontSize: "11px" }}
+            className={clsx(sh.input, sh.fs11)}
             value={effect.op}
             onChange={(e) => update({ op: e.target.value })}
           >
@@ -1076,7 +1012,7 @@ function EffectFieldEditor({
             <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
           </select>
           <input
-            style={{ ...inputStyle, width: "60px", fontSize: "11px" }}
+            className={clsx(sh.input, sh.w60, sh.fs11)}
             type="number"
             value={typeof effect.value === "number" ? effect.value : 0}
             onChange={(e) => update({ value: Number(e.target.value) })}
@@ -1106,37 +1042,18 @@ function EventTemplateVarHelp({
   clothingSlots: string[];
   targetScope: string;
 }) {
-  const s: React.CSSProperties = { color: "#0ff", fontSize: "11px" };
-  const d: React.CSSProperties = { color: T.textSub, fontSize: "11px" };
-  const cat: React.CSSProperties = {
-    color: "#e9a045",
-    fontSize: "11px",
-    fontWeight: "bold",
-    marginTop: "6px",
-    marginBottom: "2px",
-  };
   const row = (v: string, desc: string) => (
-    <div key={v} style={{ display: "flex", gap: "8px", marginBottom: "1px" }}>
-      <span style={{ ...s, minWidth: "220px" }}>{`{{${v}}}`}</span>
-      <span style={d}>{desc}</span>
+    <div key={v} className={s.tplVarRow}>
+      <span className={s.tplVarName}>{`{{${v}}}`}</span>
+      <span className={s.tplVarDesc}>{desc}</span>
     </div>
   );
 
   const isNone = targetScope === EventScope.NONE;
 
   return (
-    <div
-      style={{
-        marginTop: "6px",
-        padding: "8px",
-        backgroundColor: T.bg3,
-        border: `1px solid ${T.border}`,
-        borderRadius: "3px",
-        maxHeight: "300px",
-        overflowY: "auto",
-      }}
-    >
-      <div style={{ color: T.accent, fontSize: "11px", fontWeight: "bold", marginBottom: "4px" }}>
+    <div className={s.tplHelpBox}>
+      <div className={s.tplHelpTitle}>
         {isNone ? t("help.availVarsNone") : t("help.availVarsSelf")}
       </div>
 
@@ -1149,19 +1066,19 @@ function EventTemplateVarHelp({
           {row("self", t("help.varSelf"))}
           {row("location", t("help.varLocation"))}
 
-          <div style={cat}>{t("help.catResource")}</div>
+          <div className={s.tplCategory}>{t("help.catResource")}</div>
           {resourceKeys.map((r) => row(`self.resource.${r.key}`, r.label))}
 
-          <div style={cat}>{t("help.catAbility")}</div>
+          <div className={s.tplCategory}>{t("help.catAbility")}</div>
           {abilityKeys.map((a) => row(`self.ability.${a.key}`, t("help.abilityLevel", { label: a.label })))}
 
-          <div style={cat}>{t("help.catBasicInfo")}</div>
+          <div className={s.tplCategory}>{t("help.catBasicInfo")}</div>
           {basicInfoNumKeys.map((b) => row(`self.basicInfo.${b.key}`, b.label))}
 
-          <div style={cat}>{t("help.catClothing")}</div>
+          <div className={s.tplCategory}>{t("help.catClothing")}</div>
           {clothingSlots.map((sl) => row(`self.clothing.${sl}`, t("help.slotClothing", { slot: sl })))}
 
-          <div style={cat}>{t("help.catTrait")}</div>
+          <div className={s.tplCategory}>{t("help.catTrait")}</div>
           {traitCategories.map((tc) => row(`self.trait.${tc.key}`, t("help.traitValue", { label: tc.label })))}
         </>
       )}

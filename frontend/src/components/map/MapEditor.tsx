@@ -15,6 +15,7 @@ import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import ConnectionOverlay from "./ConnectionOverlay";
 import PresetEditor from "./PresetEditor";
 import CellEditor from "./CellEditor";
+import s from "./MapEditor.module.css";
 
 type Tool = "none" | "blank" | "cell" | { preset: DecorPreset };
 
@@ -26,20 +27,7 @@ export function HelpTip({ text }: { text: string }) {
       ref={ref}
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "14px",
-        height: "14px",
-        borderRadius: "50%",
-        backgroundColor: T.bg3,
-        color: T.textDim,
-        fontSize: "10px",
-        cursor: "help",
-        userSelect: "none",
-        flexShrink: 0,
-      }}
+      className={s.helpTip}
     >
       ?
       {show &&
@@ -48,21 +36,12 @@ export function HelpTip({ text }: { text: string }) {
           const rect = ref.current!.getBoundingClientRect();
           return (
             <span
+              className={s.helpTipPopup}
               style={{
                 position: "fixed",
                 left: rect.left + rect.width / 2,
                 top: rect.top - 4,
                 transform: "translate(-50%, -100%)",
-                padding: "4px 10px",
-                backgroundColor: T.bg3,
-                color: T.text,
-                border: `1px solid ${T.borderLight}`,
-                borderRadius: "3px",
-                fontSize: "11px",
-                whiteSpace: "nowrap",
-                maxWidth: "350px",
-                pointerEvents: "none",
-                zIndex: 1000,
               }}
             >
               {text}
@@ -90,6 +69,26 @@ export default function MapEditor({ mapId, onBack }: Props) {
   const [showConnections, setShowConnections] = useState(true);
   const [showBgHelp, setShowBgHelp] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
+
+  const inputStyle: React.CSSProperties = {
+    background: T.bg3,
+    border: `1px solid ${T.borderLight}`,
+    borderRadius: "3px",
+    color: T.text,
+    padding: "3px 6px",
+    fontSize: "13px",
+    outline: "none",
+  };
+
+  const btnStyle: React.CSSProperties = {
+    background: "transparent",
+    border: `1px solid ${T.border}`,
+    borderRadius: "3px",
+    color: T.text,
+    padding: "4px 12px",
+    fontSize: "13px",
+    cursor: "pointer",
+  };
 
   const reloadPresets = () => fetchDecorPresets().then(setPresets);
 
@@ -303,38 +302,16 @@ export default function MapEditor({ mapId, onBack }: Props) {
     cellPositions.set(`${c.row},${c.col}`, c.id);
   }
 
-  const btnStyle: React.CSSProperties = {
-    background: "transparent",
-    border: `1px solid ${T.border}`,
-    borderRadius: "3px",
-    color: T.text,
-    padding: "4px 12px",
-    fontSize: "13px",
-    cursor: "pointer",
-  };
-
-  const inputStyle: React.CSSProperties = {
-    background: T.bg3,
-    border: `1px solid ${T.borderLight}`,
-    borderRadius: "3px",
-    color: T.text,
-    padding: "3px 6px",
-    fontSize: "13px",
-    outline: "none",
-  };
-
   return (
     <div
-      style={{ fontSize: "13px", color: T.text, display: "flex", flexDirection: "column", gap: "6px" }}
+      className={s.wrapper}
       onMouseUp={() => setMouseDown(false)}
       onMouseLeave={() => setMouseDown(false)}
     >
-      {/* ── Header ── */}
-      <div style={{ marginBottom: "2px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("editor.editMap", { name: mapData.name })} ==</span>
-      </div>
+      {/* -- Header -- */}
+      <div className={s.headerTitle}>== {t("editor.editMap", { name: mapData.name })} ==</div>
 
-      {/* ── Section: 地图属性 ── */}
+      {/* -- Section: map properties -- */}
       <Section title={t("map.mapProps")}>
         <Row label={t("field.name")}>
           <input
@@ -390,46 +367,29 @@ export default function MapEditor({ mapId, onBack }: Props) {
         )}
       </Section>
 
-      {/* ── Section: 网格编辑 ── */}
+      {/* -- Section: grid editing -- */}
       <Section title={t("map.gridEdit")}>
         {/* Grid size + view controls */}
-        <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap", marginBottom: "6px" }}>
+        <div className={s.gridControls}>
           <span style={{ color: T.textSub, minWidth: "46px" }}>{t("map.size")}</span>
           <span style={{ color: T.textDim }}>{t("map.rows")}</span>
-          <button onClick={addRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>
-            [↑+]
-          </button>
-          <button onClick={removeRowTop} style={{ ...btnStyle, padding: "2px 8px" }}>
-            [↑-]
-          </button>
-          <button onClick={addRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>
-            [↓+]
-          </button>
-          <button onClick={removeRowBottom} style={{ ...btnStyle, padding: "2px 8px" }}>
-            [↓-]
-          </button>
+          <button onClick={addRowTop} className={s.editorBtnSm}>[{"\u2191"}+]</button>
+          <button onClick={removeRowTop} className={s.editorBtnSm}>[{"\u2191"}-]</button>
+          <button onClick={addRowBottom} className={s.editorBtnSm}>[{"\u2193"}+]</button>
+          <button onClick={removeRowBottom} className={s.editorBtnSm}>[{"\u2193"}-]</button>
           <span style={{ color: T.textDim }}>{t("map.cols")}</span>
-          <button onClick={addColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>
-            [←+]
-          </button>
-          <button onClick={removeColLeft} style={{ ...btnStyle, padding: "2px 8px" }}>
-            [←-]
-          </button>
-          <button onClick={addColRight} style={{ ...btnStyle, padding: "2px 8px" }}>
-            [→+]
-          </button>
-          <button onClick={removeColRight} style={{ ...btnStyle, padding: "2px 8px" }}>
-            [→-]
-          </button>
+          <button onClick={addColLeft} className={s.editorBtnSm}>[{"\u2190"}+]</button>
+          <button onClick={removeColLeft} className={s.editorBtnSm}>[{"\u2190"}-]</button>
+          <button onClick={addColRight} className={s.editorBtnSm}>[{"\u2192"}+]</button>
+          <button onClick={removeColRight} className={s.editorBtnSm}>[{"\u2192"}-]</button>
           <span style={{ color: T.textDim }}>
             {rows} × {cols}
           </span>
           <span style={{ flex: 1 }} />
           <button
             onClick={() => setShowConnections((v) => !v)}
+            className={s.editorBtnSm}
             style={{
-              ...btnStyle,
-              padding: "2px 8px",
               color: showConnections ? T.accent : T.textDim,
               borderColor: showConnections ? T.accentDim : T.border,
             }}
@@ -437,7 +397,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
             {showConnections ? `[${t("btn.hideConn")}]` : `[${t("btn.showConn")}]`}
           </button>
           {showConnections && (
-            <span style={{ display: "inline-flex", gap: "8px", fontSize: "11px" }}>
+            <span className={s.legend}>
               <span style={{ color: "#4CAF50" }}>{t("map.legendAll")}</span>
               <span style={{ color: "#e9a045" }}>{t("map.legendSenseBlock")}</span>
               <span style={{ color: "#5b9bd5" }}>{t("map.legendSenseOnly")}</span>
@@ -446,14 +406,14 @@ export default function MapEditor({ mapId, onBack }: Props) {
         </div>
 
         {/* Toolbar */}
-        <div style={{ display: "flex", gap: "3px", flexWrap: "wrap", alignItems: "center", marginBottom: "6px" }}>
+        <div className={s.toolbar}>
           <span style={{ color: T.textSub, marginRight: "4px" }}>{t("map.tool")}</span>
           <ToolButton label={t("map.toolSelect")} active={tool === "none"} onClick={() => setTool("none")} color={T.textSub} />
           <ToolButton label={t("map.toolEmpty")} active={tool === "blank"} onClick={() => setTool("blank")} color={T.textDim} />
           <ToolButton label={t("map.toolCell")} active={tool === "cell"} onClick={() => setTool("cell")} color="#4CAF50" />
           {presets.length > 0 && (
             <>
-              <span style={{ width: "1px", height: "18px", background: T.border, margin: "0 4px" }} />
+              <span className={s.toolbarSep} />
               {presets.map((p, i) => (
                 <ToolButton
                   key={i}
@@ -470,12 +430,11 @@ export default function MapEditor({ mapId, onBack }: Props) {
               ))}
             </>
           )}
-          <span style={{ width: "1px", height: "18px", background: T.border, margin: "0 4px" }} />
+          <span className={s.toolbarSep} />
           <button
             onClick={() => setShowPresetEditor((v) => !v)}
+            className={s.editorBtnSm}
             style={{
-              ...btnStyle,
-              padding: "2px 8px",
               color: showPresetEditor ? T.accent : T.textSub,
               borderColor: showPresetEditor ? T.accentDim : T.border,
             }}
@@ -492,37 +451,27 @@ export default function MapEditor({ mapId, onBack }: Props) {
 
         {/* Grid canvas */}
         <div
+          className={s.gridCanvas}
           style={{
-            overflowX: "auto",
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
             background: mapData.defaultColor,
             backgroundImage: mapData.backgroundImage
               ? `url(/assets/backgrounds/${mapData.backgroundImage})`
               : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            padding: "4px",
-            userSelect: "none",
-            position: "relative",
           }}
         >
           {/* Overlay: defaultColor with mapOverlayOpacity on top of background image */}
           {mapData.backgroundImage && (
             <div
+              className={s.gridOverlay}
               style={{
-                position: "absolute",
-                inset: 0,
                 backgroundColor: mapData.defaultColor,
                 opacity: mapData.mapOverlayOpacity ?? 0.7,
-                pointerEvents: "none",
-                borderRadius: "3px",
               }}
             />
           )}
-          <div ref={gridRef} style={{ display: "inline-block", position: "relative" }}>
+          <div ref={gridRef} className={s.gridInner}>
             {mapData.grid.map((row, ri) => (
-              <div key={ri} style={{ display: "flex" }}>
+              <div key={ri} className={s.gridRow}>
                 {row.map((cell, ci) => {
                   const cellId = cellPositions.get(`${ri},${ci}`);
                   const isCell = cellId !== undefined;
@@ -587,7 +536,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
         </div>
       </Section>
 
-      {/* ── Section: 区格编辑 ── */}
+      {/* -- Section: cell editing -- */}
       {selectedCell && (
         <CellEditor
           cell={selectedCell}
@@ -627,24 +576,15 @@ export default function MapEditor({ mapId, onBack }: Props) {
         />
       )}
 
-      {/* ── Footer actions ── */}
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          alignItems: "center",
-          paddingTop: "8px",
-          borderTop: `1px solid ${T.border}`,
-          marginTop: "4px",
-        }}
-      >
-        <button onClick={handleSave} disabled={saving} style={{ ...btnStyle, color: T.successDim }}>
+      {/* -- Footer actions -- */}
+      <div className={s.footer}>
+        <button onClick={handleSave} disabled={saving} className={s.editorBtn} style={{ color: T.successDim }}>
           {saving ? `[${t("status.submitting")}]` : `[${t("btn.confirm")}]`}
         </button>
-        <button onClick={handleDelete} style={{ ...btnStyle, color: T.danger }}>
+        <button onClick={handleDelete} className={s.editorBtn} style={{ color: T.danger }}>
           [{t("btn.delete")}]
         </button>
-        <button onClick={onBack} style={{ ...btnStyle, color: T.textSub }}>
+        <button onClick={onBack} className={s.editorBtn} style={{ color: T.textSub }}>
           [{t("btn.back")}]
         </button>
       </div>
@@ -656,18 +596,8 @@ export default function MapEditor({ mapId, onBack }: Props) {
 
 export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: "4px" }}>
-      <div
-        style={{
-          color: T.accent,
-          borderBottom: `1px solid ${T.border}`,
-          marginBottom: "6px",
-          paddingBottom: "2px",
-          fontWeight: "bold",
-        }}
-      >
-        == {title} ==
-      </div>
+    <div className={s.section}>
+      <div className={s.sectionTitle}>== {title} ==</div>
       {children}
     </div>
   );
@@ -675,8 +605,8 @@ export function Section({ title, children }: { title: string; children: React.Re
 
 export function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-      <span style={{ minWidth: "90px", color: T.textSub }}>{label}:</span>
+    <div className={s.row}>
+      <span className={s.rowLabel}>{label}:</span>
       {children}
     </div>
   );
@@ -698,19 +628,8 @@ function ToolButton({
   return (
     <button
       onClick={onClick}
-      style={{
-        width: "2.2em",
-        height: "2.2em",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "13px",
-        color,
-        background: active ? T.bg2 : T.bg3,
-        border: active ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
-        cursor: "pointer",
-        boxSizing: "border-box",
-      }}
+      className={active ? s.toolBtnActive : s.toolBtn}
+      style={{ color }}
       title={label}
     >
       {label}
@@ -748,33 +667,16 @@ export function BgImagePicker({
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+    <div className={s.bgPickerWrap}>
       {label && <span style={{ fontSize: "13px", color: T.textSub }}>{label}</span>}
       {image && (
         <img
           src={`/assets/backgrounds/${image}?t=${Date.now()}`}
           alt=""
-          style={{
-            height: "24px",
-            width: "42px",
-            objectFit: "cover",
-            borderRadius: "2px",
-            border: `1px solid ${T.border}`,
-          }}
+          className={s.bgThumb}
         />
       )}
-      <span
-        style={{
-          fontSize: "11px",
-          color: T.textDim,
-          maxWidth: "120px",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {image ?? t("ui.none")}
-      </span>
+      <span className={s.bgFilename}>{image ?? t("ui.none")}</span>
       <button onClick={() => fileRef.current?.click()} style={{ ...btn, padding: "2px 8px", color: T.accent }}>
         [{t("btn.select")}]
       </button>

@@ -23,12 +23,12 @@
 .leafRow { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 
 /* Input width variants */
-.inputAuto { width: auto; }
+.inputAuto { composes: wAuto from "./shared.module.css"; }
 .inputAutoSm { width: auto; font-size: 11px; }
-.input50 { width: 50px; }
-.input60 { width: 60px; }
-.input70 { width: 70px; }
-.input80 { width: 80px; }
+.input50 { composes: w50 from "./shared.module.css"; }
+.input60 { composes: w60 from "./shared.module.css"; }
+.input70 { composes: w70 from "./shared.module.css"; }
+.input80 { composes: w80 from "./shared.module.css"; }
 
 /* Option group */
 .optgroupBold { font-weight: bold; }

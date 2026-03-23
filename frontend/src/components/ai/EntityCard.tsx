@@ -7,9 +7,9 @@
  * accept for text suggestions).
  */
 import { useState, useCallback } from "react";
-import T from "../../theme";
-import { btn } from "../shared/styles";
 import { t } from "../../i18n/ui";
+import clsx from "clsx";
+import s from "./EntityCard.module.css";
 
 interface Props {
   entityType: string;
@@ -23,35 +23,6 @@ interface Props {
   onEntityChange?: (updated: Record<string, unknown>) => void;
   disabled?: boolean;
 }
-
-const cardStyle: React.CSSProperties = {
-  border: `1px solid ${T.border}`,
-  borderRadius: "4px",
-  padding: "8px 10px",
-  backgroundColor: T.bg2,
-  marginTop: "6px",
-  marginBottom: "4px",
-  fontSize: "12px",
-};
-
-const fieldRow: React.CSSProperties = {
-  display: "flex",
-  gap: "6px",
-  marginBottom: "2px",
-};
-
-const fieldLabel: React.CSSProperties = {
-  color: T.textDim,
-  minWidth: "50px",
-  flexShrink: 0,
-};
-
-const fieldValue: React.CSSProperties = {
-  color: T.text,
-  wordBreak: "break-word",
-};
-
-const cardBtn = { ...btn("default", "sm"), backgroundColor: T.bg1 };
 
 export default function EntityCard({ entityType, entity, mode, confirmLabel, onConfirm, onReject, onEntityChange, disabled }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -109,16 +80,16 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
   const desc = entity.description ? String(entity.description) : "";
 
   return (
-    <div style={cardStyle}>
+    <div className={s.card}>
       {/* Header: id + name */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+      <div className={s.cardHeader}>
         <span>
-          <span style={{ color: T.accent, fontWeight: "bold" }}>{id}</span>
-          {name && <span style={{ color: T.text, marginLeft: "8px" }}>{name}</span>}
+          <span className={s.cardId}>{id}</span>
+          {name && <span className={s.cardName}>{name}</span>}
         </span>
         <button
           onClick={handleToggleExpand}
-          style={{ ...cardBtn, color: T.textSub, fontSize: "10px" }}
+          className={clsx(s.cardBtn, s.cardBtnExpand)}
         >
           [{expanded ? t("ai.collapseJson") : t("ai.expandJson")}]
         </button>
@@ -126,13 +97,13 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
 
       {/* Key fields */}
       {keyFields.map((f) => (
-        <div key={f.label} style={fieldRow}>
-          <span style={fieldLabel}>{f.label}:</span>
-          <span style={fieldValue}>{f.value}</span>
+        <div key={f.label} className={s.fieldRow}>
+          <span className={s.fieldLabel}>{f.label}:</span>
+          <span className={s.fieldValue}>{f.value}</span>
         </div>
       ))}
       {desc && (
-        <div style={{ color: T.textSub, fontSize: "11px", marginTop: "2px" }}>
+        <div className={s.descText}>
           {desc.length > 80 ? desc.slice(0, 80) + "..." : desc}
         </div>
       )}
@@ -142,65 +113,36 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
         editable ? (
           <>
             <textarea
-              style={{
-                marginTop: "6px",
-                padding: "6px 8px",
-                backgroundColor: T.bg3,
-                borderRadius: "3px",
-                fontSize: "11px",
-                fontFamily: T.fontMono,
-                color: T.text,
-                border: editError ? `1px solid ${T.danger}` : `1px solid ${T.border}`,
-                width: "100%",
-                boxSizing: "border-box",
-                minHeight: "120px",
-                maxHeight: "300px",
-                resize: "vertical",
-                whiteSpace: "pre",
-              }}
+              className={clsx(s.jsonEdit, editError ? s.jsonEditError : s.jsonEditNormal)}
               value={editText}
               onChange={(e) => handleEditChange(e.target.value)}
             />
             {editError && (
-              <div style={{ color: T.danger, fontSize: "10px", marginTop: "2px" }}>{editError}</div>
+              <div className={s.editError}>{editError}</div>
             )}
           </>
         ) : (
-          <pre
-            style={{
-              marginTop: "6px",
-              padding: "6px 8px",
-              backgroundColor: T.bg3,
-              borderRadius: "3px",
-              fontSize: "11px",
-              fontFamily: T.fontMono,
-              color: T.text,
-              overflow: "auto",
-              maxHeight: "200px",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            }}
-          >
+          <pre className={s.jsonPre}>
             {JSON.stringify(entity, null, 2)}
           </pre>
         )
       )}
 
       {/* Action buttons */}
-      <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+      <div className={s.actionsRow}>
         {mode === "confirm" && (
           <>
             <button
               onClick={onConfirm}
               disabled={disabled}
-              style={{ ...cardBtn, color: T.success, borderColor: T.success }}
+              className={clsx(s.cardBtn, s.cardBtnConfirm)}
             >
               [{confirmLabel || t("ai.confirm")}]
             </button>
             <button
               onClick={onReject}
               disabled={disabled}
-              style={{ ...cardBtn, color: T.danger, borderColor: T.danger }}
+              className={clsx(s.cardBtn, s.cardBtnReject)}
             >
               [{t("ai.reject")}]
             </button>

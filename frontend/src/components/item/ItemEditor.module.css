@@ -1,0 +1,145 @@
+/* ── ItemEditor ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.sourceLabel {
+  color: var(--accent);
+  font-size: 12px;
+}
+
+/* ── Form layout ── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.row2 {
+  display: flex;
+  gap: 12px;
+}
+
+.row3 {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.field {
+  flex: 1;
+}
+
+/* ── Tags ── */
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.tagBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  background-color: var(--bg2);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.tagRemoveBtn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.tagPoolBtn {
+  padding: 2px 8px;
+  background-color: var(--bg3);
+  color: var(--text-dim);
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.tagPoolBtn:hover {
+  border-color: var(--border-light);
+  color: var(--text-sub);
+}
+
+.tagNone {
+  color: var(--text-dim);
+}
+
+/* ── Textarea ── */
+
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 48px;
+  resize: vertical;
+}
+
+/* ── Checkbox label ── */
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.checkText {
+  font-size: 12px;
+}
+
+/* ── Action bar ── */
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.message {
+  font-size: 12px;
+}
+
+.messageOk {
+  composes: message;
+  color: var(--success);
+}
+
+.messageErr {
+  composes: message;
+  color: var(--danger);
+}

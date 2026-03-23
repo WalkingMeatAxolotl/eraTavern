@@ -1,0 +1,80 @@
+/* ── ToolCallMessage ── */
+
+.wrap {
+  margin: 4px 0;
+  font-size: 11px;
+}
+
+.autoRow {
+  padding: 4px 8px;
+  background-color: var(--bg3);
+  border-radius: 3px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.autoRowMb {
+  composes: autoRow;
+  margin-bottom: 2px;
+}
+
+/* ── Status badges ── */
+
+.statusOk {
+  color: var(--success);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.statusFail {
+  color: var(--danger);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+/* ── Batch buttons ── */
+
+.batchRow {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.batchConfirmBtn {
+  padding: 3px 10px;
+  border: 1px solid var(--success);
+  border-radius: 3px;
+  font-size: 11px;
+  background-color: var(--bg1);
+  color: var(--success);
+  cursor: pointer;
+}
+
+.batchConfirmBtnDisabled {
+  cursor: default;
+}
+
+.batchRejectBtn {
+  padding: 3px 10px;
+  border: 1px solid var(--danger);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  background-color: var(--bg1);
+  color: var(--danger);
+}
+
+/* ── Checkbox row ── */
+
+.checkRow {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.checkbox {
+  margin-top: 10px;
+  accent-color: var(--accent);
+}

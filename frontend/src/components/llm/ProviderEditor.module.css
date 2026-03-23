@@ -1,0 +1,78 @@
+/* ── ProviderEditor ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.section {
+  border-left: 2px solid var(--border-light);
+  padding-left: 10px;
+  margin-bottom: 12px;
+}
+
+.flexRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.flex1 {
+  flex: 1;
+}
+
+.flex2 {
+  flex: 2;
+}
+
+.inputFull {
+  padding: 4px 8px;
+  background-color: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputDisabled {
+  color: var(--text-dim);
+}
+
+.modelRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 6px;
+}
+
+.testResult {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actionsRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inlineError {
+  color: var(--danger);
+  font-size: 12px;
+}

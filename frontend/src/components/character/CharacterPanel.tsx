@@ -1,6 +1,7 @@
-import T from "../../theme";
+import clsx from "clsx";
 import { t } from "../../i18n/ui";
 import type { CharacterState } from "../../types/game";
+import s from "./CharacterPanel.module.css";
 
 export type DetailTab = "basic" | "ability" | "experience" | "inventory" | "social";
 
@@ -22,42 +23,21 @@ const TAB_ITEMS: { key: DetailTab; label: string }[] = [
 export default function CharacterPanel({ character, activeTab, onTabChange, onClose }: CharacterPanelProps) {
   const { basicInfo, resources, clothing, traits, abilities, experiences, inventory, favorability } = character;
 
-  const tabStyle = (tab: DetailTab): React.CSSProperties => ({
-    padding: "4px 10px",
-    backgroundColor: "transparent",
-    color: activeTab === tab ? T.accent : T.textSub,
-    border: "none",
-    borderBottom: activeTab === tab ? `2px solid ${T.accent}` : "2px solid transparent",
-    cursor: "pointer",
-    fontSize: "12px",
-    fontWeight: activeTab === tab ? "bold" : "normal",
-  });
-
   return (
-    <div
-      style={{
-        fontSize: "13px",
-        color: T.text,
-        backgroundColor: T.bg1,
-        padding: "12px",
-        borderRadius: "4px",
-        overflowY: "auto",
-      }}
-    >
+    <div className={s.wrapper}>
       {/* Tab bar */}
-      <div style={{ borderBottom: `1px solid ${T.border}`, marginBottom: "8px", display: "flex" }}>
+      <div className={s.tabBar}>
         {TAB_ITEMS.map((item) => (
-          <button key={item.key} style={tabStyle(item.key)} onClick={() => onTabChange(item.key)}>
+          <button
+            key={item.key}
+            className={clsx(s.tab, activeTab === item.key && s.tabActive)}
+            onClick={() => onTabChange(item.key)}
+          >
             [{item.label}]
           </button>
         ))}
         <button
-          style={{
-            ...tabStyle("basic" as DetailTab),
-            marginLeft: "auto",
-            color: T.textSub,
-            borderBottom: "2px solid transparent",
-          }}
+          className={clsx(s.tab, s.closeBtn)}
           onClick={onClose}
         >
           [{t("btn.closeDetail")}]
@@ -76,25 +56,16 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
 
           <Section title={t("section.resources")}>
             {Object.entries(resources).map(([key, res]) => (
-              <div key={key} style={{ marginBottom: "4px" }}>
+              <div key={key} className={s.resRow}>
                 <div>
                   {res.label}: {res.value}/{res.max}
                 </div>
-                <div
-                  style={{
-                    width: "100%",
-                    height: "12px",
-                    backgroundColor: T.border,
-                    borderRadius: "2px",
-                    overflow: "hidden",
-                  }}
-                >
+                <div className={s.resTrack}>
                   <div
+                    className={s.resFill}
                     style={{
                       width: `${(res.value / res.max) * 100}%`,
-                      height: "100%",
                       backgroundColor: res.color,
-                      transition: "width 0.3s",
                     }}
                   />
                 </div>
@@ -104,14 +75,19 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
 
           <Section title={t("section.clothing")}>
             {clothing.map((slot) => (
-              <div key={slot.slot} style={{ color: slot.occluded ? T.textFaint : slot.itemId ? T.text : T.textDim }}>
+              <div
+                key={slot.slot}
+                className={clsx(
+                  slot.occluded ? s.clothingOccluded : slot.itemId ? s.clothingEquipped : s.clothingEmpty,
+                )}
+              >
                 {slot.slotLabel}:{" "}
                 {slot.occluded ? (
                   t("ui.occluded")
                 ) : slot.itemId ? (
                   <>
-                    [{slot.itemName}]{slot.state === "halfWorn" && <span style={{ color: T.danger }}> {t("ui.halfWorn")}</span>}
-                    {slot.state === "off" && <span style={{ color: T.danger }}> {t("ui.off")}</span>}
+                    [{slot.itemName}]{slot.state === "halfWorn" && <span className={s.stateDanger}> {t("ui.halfWorn")}</span>}
+                    {slot.state === "off" && <span className={s.stateDanger}> {t("ui.off")}</span>}
                   </>
                 ) : (
                   t("ui.none")
@@ -133,16 +109,10 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
           </Section>
 
           <Section title={t("section.abilities")}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "2px 12px",
-              }}
-            >
+            <div className={s.abilityGrid}>
               {abilities.map((ab) => (
                 <div key={ab.key}>
-                  {ab.label}: {ab.grade} <span style={{ color: T.textSub }}>{ab.exp}</span>
+                  {ab.label}: {ab.grade} <span className={s.abilityExp}>{ab.exp}</span>
                 </div>
               ))}
             </div>
@@ -157,12 +127,12 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
               experiences
                 .filter((exp) => exp.count > 0)
                 .map((exp) => (
-                  <div key={exp.key} style={{ marginBottom: "6px" }}>
+                  <div key={exp.key} className={s.expEntry}>
                     <div>
-                      {exp.label}: <span style={{ color: T.accent }}>{exp.count}</span>{t("ui.times")}
+                      {exp.label}: <span className={s.expCount}>{exp.count}</span>{t("ui.times")}
                     </div>
                     {exp.first && (
-                      <div style={{ color: T.textSub, fontSize: "11px", paddingLeft: "12px" }}>
+                      <div className={s.expDetail}>
                         {t("charPanel.firstTime", { time: exp.first.time ?? "" })}
                         {exp.first.location && t("charPanel.atLocation", { location: exp.first.location })}
                         {exp.first.target && t("charPanel.withTarget", { target: exp.first.target })}
@@ -171,10 +141,10 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
                   </div>
                 ))
             ) : (
-              <div style={{ color: T.textDim }}>{t("empty.noExpRecord")}</div>
+              <div className={s.emptyText}>{t("empty.noExpRecord")}</div>
             )
           ) : (
-            <div style={{ color: T.textDim }}>{t("empty.noExpDefShort")}</div>
+            <div className={s.emptyText}>{t("empty.noExpDefShort")}</div>
           )}
         </Section>
       )}
@@ -189,7 +159,7 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
               </div>
             ))
           ) : (
-            <div style={{ color: T.textDim }}>{t("ui.none")}</div>
+            <div className={s.emptyText}>{t("ui.none")}</div>
           )}
         </Section>
       )}
@@ -198,34 +168,23 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
         <Section title={t("section.socialRel")}>
           {favorability && favorability.length > 0 ? (
             favorability.map((fav) => (
-              <div key={fav.id} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                <span style={{ minWidth: "60px" }}>{fav.name}:</span>
-                <div
-                  style={{
-                    flex: 1,
-                    height: "12px",
-                    backgroundColor: T.border,
-                    borderRadius: "2px",
-                    overflow: "hidden",
-                    position: "relative",
-                  }}
-                >
+              <div key={fav.id} className={s.favRow}>
+                <span className={s.favName}>{fav.name}:</span>
+                <div className={s.favTrack}>
                   <div
+                    className={s.favFill}
                     style={{
                       width: `${Math.min(100, Math.max(0, (fav.value / 1000) * 100))}%`,
-                      height: "100%",
-                      backgroundColor: T.textSub,
-                      transition: "width 0.3s",
                     }}
                   />
                 </div>
-                <span style={{ color: T.textSub, fontSize: "12px", minWidth: "30px", textAlign: "right" }}>
+                <span className={s.favValue}>
                   {fav.value}
                 </span>
               </div>
             ))
           ) : (
-            <div style={{ color: T.textDim }}>{t("empty.social")}</div>
+            <div className={s.emptyText}>{t("empty.social")}</div>
           )}
         </Section>
       )}
@@ -235,16 +194,8 @@ export default function CharacterPanel({ character, activeTab, onTabChange, onCl
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: "12px" }}>
-      <div
-        style={{
-          color: T.accent,
-          borderBottom: `1px solid ${T.border}`,
-          marginBottom: "4px",
-          paddingBottom: "2px",
-          fontWeight: "bold",
-        }}
-      >
+    <div className={s.section}>
+      <div className={s.sectionTitle}>
         == {title} ==
       </div>
       {children}

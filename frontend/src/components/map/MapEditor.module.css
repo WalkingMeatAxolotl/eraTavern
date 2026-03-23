@@ -1,0 +1,226 @@
+/* ── MapEditor ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.headerTitle {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+/* ── Section ── */
+
+.section {
+  margin-bottom: 4px;
+}
+
+.sectionTitle {
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  padding-bottom: 2px;
+  font-weight: bold;
+}
+
+/* ── Row ── */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.rowLabel {
+  min-width: 90px;
+  color: var(--text-sub);
+}
+
+/* ── Inputs ── */
+
+.input {
+  background: var(--bg3);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  color: var(--text);
+  padding: 3px 6px;
+  font-size: 13px;
+  outline: none;
+}
+
+/* ── Buttons ── */
+
+.editorBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  padding: 4px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.editorBtn:hover {
+  background-color: var(--bg2);
+}
+
+.editorBtnSm {
+  composes: editorBtn;
+  padding: 2px 8px;
+}
+
+/* ── Grid controls ── */
+
+.gridControls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.toolbarSep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+/* ── Tool button ── */
+
+.toolBtn {
+  width: 2.2em;
+  height: 2.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.toolBtnActive {
+  composes: toolBtn;
+  background: var(--bg2);
+  border: 2px solid var(--accent);
+}
+
+/* ── Grid canvas ── */
+
+.gridCanvas {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background-size: cover;
+  background-position: center;
+  padding: 4px;
+  user-select: none;
+  position: relative;
+}
+
+.gridOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 3px;
+}
+
+.gridInner {
+  display: inline-block;
+  position: relative;
+}
+
+.gridRow {
+  display: flex;
+}
+
+/* ── Footer ── */
+
+.footer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+/* ── HelpTip ── */
+
+.helpTip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--bg3);
+  color: var(--text-dim);
+  font-size: 10px;
+  cursor: help;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.helpTipPopup {
+  padding: 4px 10px;
+  background-color: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 11px;
+  white-space: nowrap;
+  max-width: 350px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── BgImagePicker ── */
+
+.bgPickerWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bgThumb {
+  height: 24px;
+  width: 42px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
+
+.bgFilename {
+  font-size: 11px;
+  color: var(--text-dim);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Legend ── */
+
+.legend {
+  display: inline-flex;
+  gap: 8px;
+  font-size: 11px;
+}

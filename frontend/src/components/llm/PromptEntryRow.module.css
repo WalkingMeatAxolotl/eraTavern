@@ -1,0 +1,163 @@
+/* ── PromptEntryRow ── */
+
+.wrapper {
+  margin-bottom: 4px;
+}
+
+/* ── Collapsed row ── */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.rowExpanded {
+  background-color: var(--bg2);
+  border-color: var(--border-light);
+}
+
+.moveBtn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 2px;
+}
+
+.roleName {
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 50px;
+}
+
+.entryName {
+  color: var(--text);
+  font-size: 12px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entryNameBuiltin {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.expandArrow {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+/* ── Section (expanded editor) ── */
+
+.section {
+  border-left: 2px solid var(--border-light);
+  padding-left: 10px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+/* ── Input styles ── */
+
+.inputFull {
+  padding: 4px 8px;
+  background-color: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.flexRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.flex1 {
+  flex: 1;
+}
+
+.w120 {
+  width: 120px;
+}
+
+/* ── Content textarea ── */
+
+.contentArea {
+  padding: 4px 8px;
+  background-color: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 100px;
+  resize: vertical;
+  font-family: var(--font-mono);
+}
+
+/* ── Variable chips ── */
+
+.varPanel {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background-color: var(--bg3);
+  border-radius: 3px;
+}
+
+.varGroup {
+  margin-bottom: 2px;
+}
+
+.varGroupLabel {
+  color: var(--text-dim);
+  font-size: 10px;
+  margin-right: 6px;
+}
+
+.varChip {
+  padding: 1px 6px;
+  margin: 1px 2px;
+  background-color: var(--bg2);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+/* ── Delete ── */
+
+.deleteRow {
+  margin-top: 6px;
+}
+
+/* ── Builtin hint ── */
+
+.builtinHint {
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 8px;
+  background-color: var(--bg3);
+  border-radius: 3px;
+}
+
+.builtinRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+  align-items: center;
+}

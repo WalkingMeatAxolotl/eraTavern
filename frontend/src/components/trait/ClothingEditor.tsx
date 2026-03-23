@@ -1,14 +1,16 @@
 import { useState } from "react";
+import clsx from "clsx";
 import type { GameDefinitions, ClothingDefinition, TraitEffect } from "../../types/game";
 import { createClothingDef, saveClothingDef, deleteClothingDef } from "../../api/client";
-import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import { toLocalId } from "../shared/idUtils";
-import { inputStyle, labelStyle, btn } from "../shared/styles";
 import CloneButton from "../shared/CloneDialog";
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
+import s from "./ClothingEditor.module.css";
 
 function buildTargetOptions(defs: GameDefinitions) {
   const groups: { label: string; options: { value: string; label: string }[] }[] = [];
@@ -143,26 +145,26 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
   const occlusionOptions = slots.filter((s) => !selectedSlots.includes(s) && !occlusion.includes(s));
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>
           == {isNew ? t("editor.newClothing") : t("editor.editClothing")} ==
         </span>
-        {clothing.source && <span style={{ color: T.accent, fontSize: "12px" }}>{t("field.source")}: {clothing.source}</span>}
+        {clothing.source && <span className={s.sourceTag}>{t("field.source")}: {clothing.source}</span>}
       </div>
 
       {/* Basic info */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
+      <div className={s.formGroup}>
+        <div className={s.row2}>
+          <div className={s.col}>
+            <div className={sh.label}>ID</div>
             <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.name")}</div>
+          <div className={s.col}>
+            <div className={sh.label}>{t("field.name")}</div>
             <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+              className={clsx(sh.input, s.fullWidth)}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isReadOnly}
@@ -170,8 +172,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           </div>
         </div>
         <div>
-          <div style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "6px" }}>
-            {t("clothing.equipSlot")} {selectedSlots.length > 1 && <span style={{ color: T.accent }}>({t("clothing.multiSlot")})</span>}
+          <div className={s.sectionLabelFlex}>
+            {t("clothing.equipSlot")} {selectedSlots.length > 1 && <span className={s.multiSlotTag}>({t("clothing.multiSlot")})</span>}
             <HelpButton show={showSlotHelp} onToggle={() => setShowSlotHelp((v) => !v)} />
           </div>
           {showSlotHelp && (
@@ -181,46 +183,17 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               <div className={helpStyles.helpP}>{t("clothing.multiSlotHelp")}</div>
             </HelpPanel>
           )}
-          <div
-            style={{
-              borderLeft: `2px solid ${T.borderLight}`,
-              paddingLeft: "10px",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "4px",
-              alignItems: "center",
-            }}
-          >
-            {selectedSlots.map((s, i) => (
-              <span
-                key={s}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "2px",
-                  padding: "2px 8px",
-                  backgroundColor: T.bg2,
-                  border: `1px solid ${T.borderLight}`,
-                  borderRadius: "3px",
-                  fontSize: "12px",
-                }}
-              >
-                {SLOT_LABELS[s] ?? s}
+          <div className={s.chipList}>
+            {selectedSlots.map((sl, i) => (
+              <span key={sl} className={s.chip}>
+                {SLOT_LABELS[sl] ?? sl}
                 {!isReadOnly && i > 0 && (
                   <button
+                    className={s.removeBtn}
                     onClick={() => {
-                      const next = selectedSlots.filter((x) => x !== s);
+                      const next = selectedSlots.filter((x) => x !== sl);
                       setSelectedSlots(next);
                       setOcclusion((prev) => prev.filter((o) => !next.includes(o)));
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: T.danger,
-                      cursor: "pointer",
-                      padding: "0 2px",
-                      fontSize: "12px",
-                      lineHeight: 1,
                     }}
                   >
                     x
@@ -230,9 +203,10 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             ))}
             {!isReadOnly &&
               (() => {
-                const available = slots.filter((s) => !selectedSlots.includes(s));
+                const available = slots.filter((sl) => !selectedSlots.includes(sl));
                 return available.length > 0 ? (
                   <select
+                    className={sh.input}
                     value=""
                     onChange={(e) => {
                       if (!e.target.value) return;
@@ -240,12 +214,11 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                       setSelectedSlots(next);
                       setOcclusion((prev) => prev.filter((o) => !next.includes(o)));
                     }}
-                    style={inputStyle}
                   >
                     <option value="">+</option>
-                    {available.map((s) => (
-                      <option key={s} value={s}>
-                        {SLOT_LABELS[s] ?? s}
+                    {available.map((sl) => (
+                      <option key={sl} value={sl}>
+                        {SLOT_LABELS[sl] ?? sl}
                       </option>
                     ))}
                   </select>
@@ -256,18 +229,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
       </div>
 
       {/* Occlusion */}
-      <div style={{ marginBottom: "16px" }}>
-        <div
-          style={{
-            ...labelStyle,
-            marginBottom: "6px",
-            fontSize: "12px",
-            color: T.textSub,
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
+      <div className={s.sectionBlock}>
+        <div className={s.sectionLabelFlex}>
           {t("clothing.occlusionSlot")}
           <HelpButton show={showOcclusionHelp} onToggle={() => setShowOcclusionHelp((v) => !v)} />
         </div>
@@ -281,43 +244,14 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             </div>
           </HelpPanel>
         )}
-        <div
-          style={{
-            borderLeft: `2px solid ${T.borderLight}`,
-            paddingLeft: "10px",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "4px",
-            alignItems: "center",
-          }}
-        >
-          {occlusion.map((s) => (
-            <span
-              key={s}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "2px",
-                padding: "2px 8px",
-                backgroundColor: T.bg2,
-                border: `1px solid ${T.borderLight}`,
-                borderRadius: "3px",
-                fontSize: "12px",
-              }}
-            >
-              {SLOT_LABELS[s] ?? s}
+        <div className={s.chipList}>
+          {occlusion.map((sl) => (
+            <span key={sl} className={s.chip}>
+              {SLOT_LABELS[sl] ?? sl}
               {!isReadOnly && (
                 <button
-                  onClick={() => setOcclusion((prev) => prev.filter((x) => x !== s))}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: T.danger,
-                    cursor: "pointer",
-                    padding: "0 2px",
-                    fontSize: "12px",
-                    lineHeight: 1,
-                  }}
+                  className={s.removeBtn}
+                  onClick={() => setOcclusion((prev) => prev.filter((x) => x !== sl))}
                 >
                   x
                 </button>
@@ -326,51 +260,33 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           ))}
           {!isReadOnly && occlusionOptions.length > 0 && (
             <select
+              className={sh.input}
               value=""
               onChange={(e) => {
                 if (!e.target.value) return;
                 setOcclusion((prev) => [...prev, e.target.value]);
               }}
-              style={inputStyle}
             >
               <option value="">+</option>
-              {occlusionOptions.map((s) => (
-                <option key={s} value={s}>
-                  {SLOT_LABELS[s] ?? s}
+              {occlusionOptions.map((sl) => (
+                <option key={sl} value={sl}>
+                  {SLOT_LABELS[sl] ?? sl}
                 </option>
               ))}
             </select>
           )}
-          {occlusion.length === 0 && <span style={{ color: T.textDim }}>{t("ui.none")}</span>}
+          {occlusion.length === 0 && <span className={s.noneText}>{t("ui.none")}</span>}
         </div>
       </div>
 
       {/* Effects */}
-      <div style={{ marginBottom: "16px" }}>
-        <div style={{ ...labelStyle, marginBottom: "6px", fontSize: "12px", color: T.textSub }}>{t("section.effects")}</div>
-        <div
-          style={{
-            borderLeft: `2px solid ${T.borderLight}`,
-            paddingLeft: "10px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "4px",
-          }}
-        >
+      <div className={s.sectionBlock}>
+        <div className={s.sectionLabel}>{t("section.effects")}</div>
+        <div className={s.effectList}>
           {effects.map((eff, idx) => (
-            <div
-              key={idx}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "4px 8px",
-                backgroundColor: T.bg2,
-                borderRadius: "3px",
-              }}
-            >
+            <div key={idx} className={s.effectRow}>
               <select
-                style={{ ...inputStyle, flex: "1 1 0" }}
+                className={clsx(sh.input, sh.flex1)}
                 value={eff.target}
                 onChange={(e) => updateEffect(idx, { target: e.target.value })}
                 disabled={isReadOnly}
@@ -386,7 +302,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 ))}
               </select>
               <select
-                style={{ ...inputStyle, width: "70px" }}
+                className={clsx(sh.input, sh.w70)}
                 value={eff.effect}
                 onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
                 disabled={isReadOnly}
@@ -395,7 +311,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 <option value={EffectDirection.DECREASE}>{t("trait.decrease")}</option>
               </select>
               <select
-                style={{ ...inputStyle, width: "70px" }}
+                className={clsx(sh.input, sh.w70)}
                 value={eff.magnitudeType}
                 onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
                 disabled={isReadOnly}
@@ -405,47 +321,25 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               </select>
               <input
                 type="number"
-                style={{ ...inputStyle, width: "60px" }}
+                className={clsx(sh.input, sh.w60)}
                 value={eff.value}
                 onChange={(e) => updateEffect(idx, { value: Number(e.target.value) })}
                 disabled={isReadOnly}
               />
               {eff.magnitudeType === MagnitudeType.PERCENTAGE && (
-                <span style={{ color: T.textDim, fontSize: "11px", width: "50px", flexShrink: 0 }}>
+                <span className={s.pctHint}>
                   {pctHint(eff.value, eff.effect)}
                 </span>
               )}
               {!isReadOnly && (
-                <button
-                  onClick={() => removeEffect(idx)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: T.danger,
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    padding: "0 4px",
-                  }}
-                >
+                <button className={s.deleteBtn} onClick={() => removeEffect(idx)}>
                   x
                 </button>
               )}
             </div>
           ))}
           {!isReadOnly && (
-            <button
-              onClick={addEffect}
-              style={{
-                marginTop: "6px",
-                padding: "3px 10px",
-                backgroundColor: T.bg2,
-                color: T.successDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-              }}
-            >
+            <button className={s.addEffectBtn} onClick={addEffect}>
               [{t("btn.addEffect")}]
             </button>
           )}
@@ -453,12 +347,12 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <div className={s.actionBar}>
         {!isReadOnly && (
           <button
+            className={btnClass("create")}
             onClick={handleSave}
             disabled={saving}
-            style={{ ...btn("create"), ...(saving && { cursor: "not-allowed" }) }}
           >
             [{t("btn.confirm")}]
           </button>
@@ -474,18 +368,18 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
         )}
         {!isReadOnly && !isNew && (
           <button
+            className={btnClass("danger")}
             onClick={handleDelete}
             disabled={saving}
-            style={{ ...btn("danger"), ...(saving && { cursor: "not-allowed" }) }}
           >
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={btn("neutral")}>
+        <button className={btnClass("neutral")} onClick={onBack}>
           [{t("btn.back")}]
         </button>
         {message && (
-          <span style={{ color: message === t("status.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span className={message === t("status.saved") ? s.msgSuccess : s.msgError}>{message}</span>
         )}
       </div>
     </div>

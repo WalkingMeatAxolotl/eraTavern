@@ -3,6 +3,8 @@ import T from "../../theme";
 import { t } from "../../i18n/ui";
 import ColorPicker from "../shared/ColorPicker";
 import { Section, Row, BgImagePicker, HelpTip } from "./MapEditor";
+import s from "./CellEditor.module.css";
+import me from "./MapEditor.module.css";
 
 interface CellEditorProps {
   cell: MapCell;
@@ -85,34 +87,14 @@ export default function CellEditor({
       <Row label={t("field.tags")}>
         <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
           {(cell.tags ?? []).map((tag, i) => (
-            <span
-              key={i}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "3px",
-                padding: "1px 6px",
-                fontSize: "11px",
-                backgroundColor: "#1a3a2a",
-                border: "1px solid #3a6a3a",
-                borderRadius: "3px",
-                color: "#8f8",
-              }}
-            >
+            <span key={i} className={s.cellTag}>
               {tag}
               <button
                 onClick={() => {
                   const next = (cell.tags ?? []).filter((_, j) => j !== i);
                   onChange({ ...cell, tags: next });
                 }}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: T.danger,
-                  cursor: "pointer",
-                  padding: 0,
-                  fontSize: "11px",
-                }}
+                className={s.cellTagRemove}
               >
                 ×
               </button>
@@ -135,23 +117,13 @@ export default function CellEditor({
       </Row>
 
       {/* Connections */}
-      <div style={{ marginTop: "4px", borderTop: `1px solid ${T.borderDim}`, paddingTop: "6px" }}>
-        <div style={{ color: T.textSub, marginBottom: "4px", fontWeight: "bold" }}>{t("section.connections")}</div>
+      <div className={s.connSection}>
+        <div className={s.connTitle}>{t("section.connections")}</div>
         {cell.connections.map((conn, i) => {
           const targetMapId = conn.targetMap ?? currentMapId;
           const targetMapCells = targetMapId === currentMapId ? mapData.cells : [];
           return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                gap: "6px",
-                alignItems: "center",
-                marginBottom: "4px",
-                paddingLeft: "4px",
-                borderLeft: `2px solid ${T.border}`,
-              }}
-            >
+            <div key={i} className={s.connRow}>
               <select
                 value={targetMapId}
                 onChange={(e) => {
@@ -267,7 +239,7 @@ export default function CellEditor({
                 style={{ ...inputStyle, width: "50px" }}
               />
               <span style={{ color: T.textDim, fontSize: "11px" }}>{t("ui.minutes")}</span>
-              <label style={{ display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" }}>
+              <label className={s.connLabel}>
                 <input
                   type="checkbox"
                   checked={!conn.senseBlocked}
@@ -279,9 +251,9 @@ export default function CellEditor({
                   }}
                   style={{ margin: 0 }}
                 />
-                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>{t("map.canSense")}</span>
+                <span className={s.connLabelText}>{t("map.canSense")}</span>
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" }}>
+              <label className={s.connLabel}>
                 <input
                   type="checkbox"
                   checked={!!conn.senseOnly}
@@ -296,7 +268,7 @@ export default function CellEditor({
                   }}
                   style={{ margin: 0 }}
                 />
-                <span style={{ color: T.textSub, fontSize: "11px", whiteSpace: "nowrap" }}>{t("map.senseOnly")}</span>
+                <span className={s.connLabelText}>{t("map.senseOnly")}</span>
               </label>
               <HelpTip text={t("map.senseHelp")} />
               <button
@@ -304,14 +276,15 @@ export default function CellEditor({
                   const newConns = cell.connections.filter((_, j) => j !== i);
                   onChange({ ...cell, connections: newConns });
                 }}
-                style={{ ...btnStyle, color: T.danger, borderColor: `${T.danger}66`, padding: "2px 6px" }}
+                className={me.editorBtnSm}
+                style={{ color: T.danger, borderColor: `${T.danger}66` }}
               >
                 x
               </button>
             </div>
           );
         })}
-        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+        <div className={s.connBtnRow}>
           <button
             onClick={() => {
               onChange({
@@ -319,7 +292,8 @@ export default function CellEditor({
                 connections: [...cell.connections, { targetCell: -1 }],
               });
             }}
-            style={{ ...btnStyle, padding: "2px 8px", color: T.successDim, borderColor: T.successDim }}
+            className={me.editorBtnSm}
+            style={{ color: T.successDim, borderColor: T.successDim }}
           >
             [{t("btn.addOneWayConn")}]
           </button>
@@ -330,7 +304,8 @@ export default function CellEditor({
                 connections: [...cell.connections, { targetCell: -1, _bidirectional: true } as any],
               });
             }}
-            style={{ ...btnStyle, padding: "2px 8px", color: T.accent, borderColor: T.accentDim }}
+            className={me.editorBtnSm}
+            style={{ color: T.accent, borderColor: T.accentDim }}
           >
             [{t("btn.addTwoWayConn")}]
           </button>
@@ -338,19 +313,11 @@ export default function CellEditor({
       </div>
 
       {/* Cell action bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          marginTop: "6px",
-          paddingTop: "6px",
-          borderTop: `1px solid ${T.borderDim}`,
-        }}
-      >
-        <button onClick={onDelete} style={{ ...btnStyle, color: T.danger }}>
+      <div className={s.cellActions}>
+        <button onClick={onDelete} className={me.editorBtn} style={{ color: T.danger }}>
           [{t("btn.deleteCell")}]
         </button>
-        <button onClick={onClose} style={{ ...btnStyle, color: T.textSub }}>
+        <button onClick={onClose} className={me.editorBtn} style={{ color: T.textSub }}>
           [{t("btn.close")}]
         </button>
       </div>

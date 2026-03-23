@@ -23,11 +23,11 @@
 }
 
 /* Width utilities */
-.w55 { width: 55px; }
-.w60 { width: 60px; }
-.w80 { width: 80px; }
-.wAuto { width: auto; }
-.fs11 { font-size: 11px; }
+.w55 { composes: w55 from "../shared/shared.module.css"; }
+.w60 { composes: w60 from "../shared/shared.module.css"; }
+.w80 { composes: w80 from "../shared/shared.module.css"; }
+.wAuto { composes: wAuto from "../shared/shared.module.css"; }
+.fs11 { composes: fs11 from "../shared/shared.module.css"; }
 
 /* "per" label spans */
 .perSpan {

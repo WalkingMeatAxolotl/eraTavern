@@ -1,11 +1,13 @@
-import T from "../../theme";
 import { useState, useCallback } from "react";
+import clsx from "clsx";
+import T from "../../theme";
 import { t } from "../../i18n/ui";
 import type { GameDefinitions, RawCharacterData } from "../../types/game";
 import { fetchDefinitions, fetchCharacterConfigs, patchCharacter } from "../../api/client";
 import CharacterEditor from "./CharacterEditor";
 import { useManagerState, isReadOnly } from "../shared/useManagerState";
-import { btn } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
+import s from "./CharacterManager.module.css";
 
 export default function CharacterManager({
   selectedAddon,
@@ -49,7 +51,7 @@ export default function CharacterManager({
   };
 
   if (loading || !definitions) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+    return <div className={s.loading}>{t("status.loading")}</div>;
   }
 
   // Editor view
@@ -95,57 +97,31 @@ export default function CharacterManager({
 
   // List view
   return (
-    <div
-      style={{
-        fontSize: "13px",
-        color: T.text,
-        padding: "12px 0",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.charList")} ==</span>
+    <div className={s.wrapper}>
+      <div className={s.header}>
+        <span className={s.title}>== {t("header.charList")} ==</span>
         {!readOnly && (
-          <button onClick={handleNew} style={btn("create", "md")}>
+          <button onClick={handleNew} className={btnClass("create", "md")}>
             [{t("btn.newChar")}]
           </button>
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+      <div className={s.list}>
         {filteredCharacters.map((char) => {
           const isActive = char.active !== false;
           return (
             <div
               key={char.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "7px 12px",
-                backgroundColor: T.bg1,
-                borderRadius: "4px",
-                opacity: isActive ? 1 : 0.45,
-              }}
+              className={clsx(s.charRow, !isActive && s.charRowInactive)}
             >
               {/* Name — click to edit */}
-              <button
-                onClick={() => handleEdit(char.id)}
-                style={{
-                  flex: 1,
-                  background: "none",
-                  border: "none",
-                  color: T.text,
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  textAlign: "left",
-                  padding: 0,
-                }}
-              >
+              <button onClick={() => handleEdit(char.id)} className={s.nameBtn}>
                 {char.basicInfo?.name || char.id}
               </button>
 
               {/* Right-side toggles */}
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+              <div className={s.toggleArea}>
                 <ToggleSwitch
                   on={isActive}
                   onColor="#e89a19"
@@ -193,7 +169,7 @@ function ToggleSwitch({
 
   return (
     <div
-      style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}
+      className={s.toggleWrap}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
@@ -215,7 +191,7 @@ function ToggleSwitch({
         {/* Thumb */}
         <circle cx={cx} cy={h / 2} r={r} fill={on ? "#fff" : T.textSub} />
       </svg>
-      <span style={{ fontSize: "11px", color: on ? "#ccc" : T.borderLight, userSelect: "none" }}>{label}</span>
+      <span className={clsx(s.toggleLabel, on ? s.toggleLabelOn : s.toggleLabelOff)}>{label}</span>
     </div>
   );
 }

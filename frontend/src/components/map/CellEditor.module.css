@@ -1,0 +1,76 @@
+/* ── CellEditor ── */
+
+/* ── Tags ── */
+
+.cellTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  font-size: 11px;
+  background-color: #1a3a2a;
+  border: 1px solid #3a6a3a;
+  border-radius: 3px;
+  color: #8f8;
+}
+
+.cellTagRemove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0;
+  font-size: 11px;
+}
+
+/* ── Connections ── */
+
+.connSection {
+  margin-top: 4px;
+  border-top: 1px solid var(--border-dim);
+  padding-top: 6px;
+}
+
+.connTitle {
+  color: var(--text-sub);
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.connRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+  padding-left: 4px;
+  border-left: 2px solid var(--border);
+}
+
+.connLabel {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.connLabelText {
+  color: var(--text-sub);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.connBtnRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ── Cell actions ── */
+
+.cellActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-dim);
+}

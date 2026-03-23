@@ -1,4 +1,3 @@
-import T from "../../theme";
 import { useState, useCallback, useMemo } from "react";
 import { t } from "../../i18n/ui";
 import type { VariableDefinition, GameDefinitions } from "../../types/game";
@@ -17,15 +16,9 @@ import { SectionDivider } from "../shared/SectionDivider";
 import { useManagerState, isReadOnly } from "../shared/useManagerState";
 import { useTagSystem } from "../shared/useTagSystem";
 import { TagManagerPanel } from "../shared/TagManagerPanel";
-import { createHoverStyles, btn } from "../shared/styles";
-
-const hoverStyles = createHoverStyles("vm", [
-  ["cat-btn", "color"],
-  ["item", "border"],
-  ["tag-chip", "border"],
-  ["action-btn", "border"],
-  ["view-tab", "simple"],
-]);
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
+import s from "./VariableManager.module.css";
 
 // ── Main ──────────────────────────────────────────────
 
@@ -77,7 +70,7 @@ export default function VariableManager({
   });
 
   if (loading) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+    return <div className={s.loading}>{t("status.loading")}</div>;
   }
 
   if (showJson && selectedAddon) {
@@ -110,24 +103,21 @@ export default function VariableManager({
   }
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-      <style>{hoverStyles}</style>
+    <div className={s.wrapper}>
 
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.derivedVars")} ==</span>
+      <div className={s.header}>
+        <div className={s.headerLeft}>
+          <span className={sh.editorTitle}>== {t("header.derivedVars")} ==</span>
           {/* View toggle */}
-          <div style={{ display: "flex", gap: "2px" }}>
+          <div className={s.viewTabs}>
             <button
-              className="vm-view-tab"
               onClick={() => setViewMode("byTag")}
               style={viewTabStyle(viewMode === "byTag")}
             >
               {t("btn.byTagView")}
             </button>
             <button
-              className="vm-view-tab"
               onClick={() => setViewMode("byEntity")}
               style={viewTabStyle(viewMode === "byEntity")}
             >
@@ -135,23 +125,22 @@ export default function VariableManager({
             </button>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "6px" }}>
+        <div className={s.btnRow}>
           {!readOnly && (
-            <button className="vm-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
+            <button onClick={() => setShowJson(true)} className={btnClass("neutral", "md")}>
               [JSON]
             </button>
           )}
           {!readOnly && (
             <button
-              className="vm-action-btn"
               onClick={() => setShowTagManager((v) => !v)}
-              style={btn(showTagManager ? "primary" : "neutral", "md")}
+              className={btnClass(showTagManager ? "primary" : "neutral", "md")}
             >
               [{t("btn.tagMgmt")}]
             </button>
           )}
           {!readOnly && (
-            <button className="vm-action-btn" onClick={handleNew} style={btn("create", "md")}>
+            <button onClick={handleNew} className={btnClass("create", "md")}>
               [{t("btn.newVar")}]
             </button>
           )}
@@ -167,7 +156,6 @@ export default function VariableManager({
           setNewTagInput={setNewTagInput}
           onAddTag={handleAddTag}
           onDeleteTag={handleDeleteTag}
-          btnClassName="vm-action-btn"
           poolLabel={t("var.tagPool")}
           placeholderLabel={t("var.newTagPlaceholder")}
         />
@@ -176,7 +164,7 @@ export default function VariableManager({
       {/* Single-direction variables */}
       <SectionDivider label={t("section.uniVars")} margin="8px 0 4px" />
       {singleVars.length === 0 ? (
-        <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>{t("empty.uniVars")}</div>
+        <div className={s.emptyMsg}>{t("empty.uniVars")}</div>
       ) : viewMode === "byTag" ? (
         <ByTagView
           visibleTags={visibleTags}
@@ -195,7 +183,7 @@ export default function VariableManager({
       {/* Bidirectional variables */}
       <SectionDivider label={t("section.biVars")} margin="12px 0 4px" />
       {biVars.length === 0 ? (
-        <div style={{ color: T.textDim, fontSize: "12px", padding: "4px 0" }}>{t("empty.biVars")}</div>
+        <div className={s.emptyMsg}>{t("empty.biVars")}</div>
       ) : viewMode === "byTag" ? (
         <ByTagView
           visibleTags={visibleTags}
@@ -247,7 +235,7 @@ function ByTagView({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+    <div className={s.tagContainer}>
       {tooltipInfo && <Tooltip text={tooltipInfo.text} anchorRef={tooltipInfo.el} />}
       {visibleTags.map((tag) => {
         const tagVars = (tagGrouped[tag] ?? []).filter((v) => !filterFn || filterFn(v));
@@ -256,46 +244,24 @@ function ByTagView({
         return (
           <div key={tag}>
             <button
-              className="vm-cat-btn"
+              className={s.catBtn}
               onClick={() => onToggleCollapse(`tag:${tag}`)}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "5px 12px",
-                backgroundColor: T.bg2,
-                color: T.textSub,
-                border: "none",
-                cursor: "pointer",
-                fontSize: "13px",
-                borderRadius: "3px",
-                transition: "background-color 0.1s, color 0.1s",
-              }}
             >
-              <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+              <span className={s.catArrow}>
                 {isCollapsed ? "\u25B6" : "\u25BC"}
               </span>{" "}
               {tag}
-              <span style={{ color: T.textDim, marginLeft: "4px", fontSize: "11px" }}>({tagVars.length})</span>
+              <span className={s.catCount}>({tagVars.length})</span>
             </button>
             {!isCollapsed && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "6px 8px" }}>
+              <div className={s.itemGrid}>
                 {tagVars.map((v) => (
                   <button
-                    className="vm-item"
+                    className={s.item}
                     key={v.id}
                     onClick={() => onEditVar(v.id)}
                     onMouseEnter={(e) => showVarTooltip(v, e.currentTarget)}
                     onMouseLeave={() => setTooltipInfo(null)}
-                    style={{
-                      padding: "4px 10px",
-                      backgroundColor: T.bg1,
-                      color: T.text,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      transition: "background-color 0.15s, border-color 0.15s",
-                    }}
                   >
                     {v.name || v.id}
                   </button>
@@ -310,48 +276,26 @@ function ByTagView({
       {untagged.filter((v) => !filterFn || filterFn(v)).length > 0 && (
         <div>
           <button
-            className="vm-cat-btn"
+            className={s.catBtnDim}
             onClick={() => onToggleCollapse("tag:__untagged__")}
-            style={{
-              width: "100%",
-              textAlign: "left",
-              padding: "5px 12px",
-              backgroundColor: T.bg2,
-              color: T.textDim,
-              border: "none",
-              cursor: "pointer",
-              fontSize: "13px",
-              borderRadius: "3px",
-              transition: "background-color 0.1s, color 0.1s",
-            }}
           >
-            <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+            <span className={s.catArrow}>
               {(collapsed["tag:__untagged__"] ?? false) ? "\u25B6" : "\u25BC"}
             </span>{" "}
             {t("label.uncategorized")}
-            <span style={{ color: T.textDim, marginLeft: "4px", fontSize: "11px" }}>
+            <span className={s.catCount}>
               ({untagged.filter((v) => !filterFn || filterFn(v)).length})
             </span>
           </button>
           {!(collapsed["tag:__untagged__"] ?? false) && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "6px 8px" }}>
+            <div className={s.itemGrid}>
               {untagged
                 .filter((v) => !filterFn || filterFn(v))
                 .map((v) => (
                   <button
-                    className="vm-item"
+                    className={s.item}
                     key={v.id}
                     onClick={() => onEditVar(v.id)}
-                    style={{
-                      padding: "4px 10px",
-                      backgroundColor: T.bg1,
-                      color: T.text,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      transition: "background-color 0.15s, border-color 0.15s",
-                    }}
                   >
                     {v.name || v.id}
                   </button>
@@ -399,7 +343,7 @@ function ByVarView({
   }, [filteredVars]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+    <div className={s.itemList}>
       {tooltipInfo && <Tooltip text={tooltipInfo.text} anchorRef={tooltipInfo.el} />}
       {groups.tagged.map((v) => {
         const tags = varTagsMap[v.id] ?? [];
@@ -418,18 +362,9 @@ function ByVarView({
       {/* Untagged variables */}
       {groups.untagged.length > 0 && (
         <>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              margin: "6px 0 2px",
-              fontSize: "11px",
-              color: T.textDim,
-            }}
-          >
+          <div className={s.uncatHeader}>
             <span>{t("label.uncategorized")}</span>
-            <span style={{ flex: 1, height: "1px", backgroundColor: T.borderDim }} />
+            <span className={s.uncatLine} />
           </div>
           {groups.untagged.map((v) => (
             <VarRow
@@ -463,51 +398,22 @@ function VarRow({
   onTagHover: (tag: string, el: HTMLElement) => void;
   onTagLeave: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       onClick={onEdit}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        width: "100%",
-        padding: "5px 10px 5px 14px",
-        backgroundColor: hovered ? T.bg2 : T.bg1,
-        border: "none",
-        borderRadius: "2px",
-        cursor: "pointer",
-        fontSize: "12px",
-        textAlign: "left",
-        transition: "background-color 0.1s",
-      }}
+      className={s.itemRow}
     >
       {/* Left accent bar */}
-      <span
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: "3px",
-          backgroundColor: hovered ? T.accent : T.accentDim,
-          borderRadius: "2px 0 0 2px",
-          transition: "background-color 0.1s",
-        }}
-      />
-      <span style={{ color: T.text, whiteSpace: "nowrap" }}>{variable.name || variable.id}</span>
+      <span className={s.accentBar} />
+      <span className={s.itemName}>{variable.name || variable.id}</span>
       {tags.length > 0 && (
         <>
-          <span style={{ color: T.textDim }}>:</span>
-          <span style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+          <span className={s.tagSep}>:</span>
+          <span className={s.tagChips}>
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="vm-tag-chip"
+                className={s.tagChip}
                 onMouseEnter={(e) => {
                   e.stopPropagation();
                   onTagHover(tag, e.currentTarget);
@@ -515,15 +421,6 @@ function VarRow({
                 onMouseLeave={(e) => {
                   e.stopPropagation();
                   onTagLeave();
-                }}
-                style={{
-                  padding: "1px 7px",
-                  backgroundColor: hovered ? T.bg3 : T.bg2,
-                  color: T.textSub,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: "3px",
-                  fontSize: "11px",
-                  transition: "background-color 0.15s, border-color 0.15s",
                 }}
               >
                 {tag}

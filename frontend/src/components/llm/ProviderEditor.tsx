@@ -1,10 +1,11 @@
 import { useState } from "react";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import type { LLMProvider } from "../../types/game";
 import { fetchLLMModels, testLLMConnection } from "../../api/client";
-import { inputStyle, sectionStyle } from "./LLMPresetManager";
-import { btn, labelStyle } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
+import clsx from "clsx";
+import s from "./ProviderEditor.module.css";
+import sh from "../shared/shared.module.css";
 
 export default function ProviderEditor({
   provider,
@@ -77,50 +78,50 @@ export default function ProviderEditor({
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={s.title}>
           == {isNew ? t("editor.newApiService") : t("editor.editApiService")} ==
         </span>
-        <button onClick={onBack} style={btn("neutral")}>
+        <button onClick={onBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
+      <div className={s.section}>
+        <div className={s.flexRow}>
+          <div className={s.flex1}>
+            <div className={sh.label}>ID</div>
             <input
-              style={{ ...inputStyle, ...(isNew ? {} : { color: T.textDim }) }}
+              className={clsx(s.inputFull, !isNew && s.inputDisabled)}
               value={prov.id}
               onChange={(e) => setProv((p) => ({ ...p, id: e.target.value }))}
               disabled={!isNew}
             />
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.name")}</div>
+          <div className={s.flex1}>
+            <div className={sh.label}>{t("field.name")}</div>
             <input
-              style={inputStyle}
+              className={s.inputFull}
               value={prov.name}
               onChange={(e) => setProv((p) => ({ ...p, name: e.target.value }))}
             />
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div style={{ flex: 2 }}>
-            <div style={labelStyle}>API URL</div>
+        <div className={s.flexRow}>
+          <div className={s.flex2}>
+            <div className={sh.label}>API URL</div>
             <input
-              style={inputStyle}
+              className={s.inputFull}
               value={prov.baseUrl}
               onChange={(e) => setProv((p) => ({ ...p, baseUrl: e.target.value }))}
               placeholder="http://127.0.0.1:8317/v1"
             />
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>API Key</div>
+          <div className={s.flex1}>
+            <div className={sh.label}>API Key</div>
             <input
-              style={inputStyle}
+              className={s.inputFull}
               type="password"
               value={prov.apiKey}
               onChange={(e) => setProv((p) => ({ ...p, apiKey: e.target.value }))}
@@ -129,72 +130,68 @@ export default function ProviderEditor({
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "12px", alignItems: "flex-end", marginBottom: "6px" }}>
-          <div style={{ flex: 2 }}>
-            <div style={labelStyle}>{t("llm.model")}</div>
+        <div className={s.modelRow}>
+          <div className={s.flex2}>
+            <div className={sh.label}>{t("llm.model")}</div>
             {modelList.length > 0 ? (
               <select
-                style={inputStyle}
+                className={s.inputFull}
                 value={prov.model}
                 onChange={(e) => setProv((p) => ({ ...p, model: e.target.value }))}
               >
                 <option value="">{t("llm.selectModel")}</option>
                 {modelList.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
+                  <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             ) : (
               <input
-                style={inputStyle}
+                className={s.inputFull}
                 value={prov.model}
                 onChange={(e) => setProv((p) => ({ ...p, model: e.target.value }))}
                 placeholder={t("llm.modelPlaceholder")}
               />
             )}
           </div>
-          <button onClick={handleFetchModels} disabled={modelLoading} style={btn("neutral")}>
+          <button onClick={handleFetchModels} disabled={modelLoading} className={btnClass("neutral")}>
             {modelLoading ? `[${t("btn.fetchingModels")}]` : `[${t("btn.fetchModels")}]`}
           </button>
-          <button onClick={handleTestConnection} style={btn("neutral")}>
+          <button onClick={handleTestConnection} className={btnClass("neutral")}>
             [{t("btn.testConnection")}]
           </button>
         </div>
         {testResult && (
-          <div
-            style={{ color: testResult.includes("✓") ? T.success : T.danger, fontSize: "12px", marginBottom: "6px" }}
-          >
+          <div className={s.testResult} style={{ color: testResult.includes("✓") ? "var(--success)" : "var(--danger)" }}>
             {testResult}
           </div>
         )}
 
         <div>
-          <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "4px" }}>
+          <label className={clsx(sh.label, s.checkRow)}>
             <input
               type="checkbox"
               checked={prov.streaming}
               onChange={(e) => setProv((p) => ({ ...p, streaming: e.target.checked }))}
-              style={{ accentColor: T.accent }}
+              style={{ accentColor: "var(--accent)" }}
             />
             {t("llm.streaming")}
           </label>
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <button onClick={handleSave} style={btn("create")}>
+      <div className={s.actionsRow}>
+        <button onClick={handleSave} className={btnClass("create")}>
           [{t("btn.save")}]
         </button>
         {!isNew && (
-          <button onClick={onDelete} style={btn("danger")}>
+          <button onClick={onDelete} className={btnClass("danger")}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={btn("neutral")}>
+        <button onClick={onBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
-        {message && <span style={{ color: T.danger, fontSize: "12px" }}>{message}</span>}
+        {message && <span className={s.inlineError}>{message}</span>}
       </div>
     </div>
   );

@@ -1,0 +1,109 @@
+/* ── CompactCharacterInfo ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  background-color: var(--bg1);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+/* ── Tab bar ── */
+
+.tabBar {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  display: flex;
+}
+
+.tab {
+  padding: 4px 10px;
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--text-sub);
+}
+
+.tabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: bold;
+}
+
+.tabDetail {
+  margin-left: auto;
+}
+
+/* ── Basic info ── */
+
+.basicRow {
+  margin-bottom: 6px;
+}
+
+.infoSpan {
+  margin-right: 10px;
+}
+
+.infoValue {
+  color: var(--text);
+}
+
+/* ── Resource bar ── */
+
+.resRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.resLabel {
+  min-width: 32px;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.resTrack {
+  flex: 1;
+  height: 10px;
+  background-color: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.resFill {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.resValue {
+  font-size: 11px;
+  color: var(--text-sub);
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ── Clothing ── */
+
+.clothingSlot {
+  font-size: 12px;
+}
+
+.clothingOccluded {
+  color: var(--text-faint);
+}
+
+.clothingEquipped {
+  color: var(--text);
+}
+
+.clothingEmpty {
+  color: var(--text-dim);
+}
+
+.stateDanger {
+  color: var(--danger);
+}

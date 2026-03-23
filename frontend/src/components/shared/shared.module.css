@@ -27,3 +27,64 @@
 .listRowEven {
   background-color: var(--bg2);
 }
+
+/* ── Width utilities ── */
+.w45 { width: 45px; }
+.w50 { width: 50px; }
+.w55 { width: 55px; }
+.w60 { width: 60px; }
+.w70 { width: 70px; }
+.w80 { width: 80px; }
+.wAuto { width: auto; }
+.flex1 { flex: 1; }
+.fs11 { font-size: 11px; }
+
+/* ── Text utilities ── */
+.textDim { color: var(--text-dim); font-size: 11px; }
+.textSub { color: var(--text-sub); font-size: 11px; }
+.errorText { color: var(--danger); font-size: 12px; }
+
+/* ── Title patterns ── */
+.editorTitle { color: var(--accent); font-weight: bold; font-size: 14px; }
+.modalTitle { color: var(--text); font-size: 14px; font-weight: bold; }
+
+/* ── Layout utilities ── */
+.actionsRow { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ── Input variants ── */
+.fieldInput {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  background-color: var(--bg1);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+  background-color: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  outline: none;
+}
+
+/* ── Panel patterns ── */
+.subPanel {
+  padding-left: 8px;
+  border-left: 2px solid #333;
+  background-color: var(--bg1);
+  border-radius: 0 3px 3px 0;
+}
+
+.accentPanel {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}

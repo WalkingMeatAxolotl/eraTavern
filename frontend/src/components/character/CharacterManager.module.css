@@ -1,0 +1,87 @@
+/* ── CharacterManager ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.charRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background-color: var(--bg1);
+  border-radius: 4px;
+}
+
+.charRowInactive {
+  opacity: 0.45;
+}
+
+.nameBtn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  padding: 0;
+}
+
+.toggleArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── ToggleSwitch ── */
+
+.toggleWrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.toggleLabel {
+  font-size: 11px;
+  user-select: none;
+}
+
+.toggleLabelOn {
+  color: #ccc;
+}
+
+.toggleLabelOff {
+  color: var(--border-light);
+}
+
+/* ── Loading ── */
+
+.loading {
+  color: var(--text-dim);
+  padding: 20px;
+  text-align: center;
+}

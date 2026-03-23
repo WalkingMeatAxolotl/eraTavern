@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { GameMap, MapGrid } from "../../types/game";
 import { t } from "../../i18n/ui";
+import s from "./MapView.module.css";
 
 interface MapViewProps {
   map: GameMap;
@@ -50,21 +51,17 @@ export default function MapView({ map, playerCellId, onCellClick }: MapViewProps
 
   return (
     <div
+      className={s.wrapper}
       style={{
-        fontSize: "14px",
         backgroundColor:
           map.defaultColor +
           Math.round((map.mapOverlayOpacity ?? 0.7) * 255)
             .toString(16)
             .padStart(2, "0"),
-        padding: "12px",
-        borderRadius: "4px",
-        overflowX: "auto",
-        whiteSpace: "nowrap",
       }}
     >
       {map.grid.map((row, rowIdx) => (
-        <div key={rowIdx} style={{ display: "flex" }}>
+        <div key={rowIdx} className={s.row}>
           {row.map((cell, colIdx) => renderCell(cell, rowIdx, colIdx))}
         </div>
       ))}

@@ -1,0 +1,161 @@
+/* ── CharacterPanel ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  background-color: var(--bg1);
+  padding: 12px;
+  border-radius: 4px;
+  overflow-y: auto;
+}
+
+/* ── Tab bar ── */
+
+.tabBar {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+  display: flex;
+}
+
+.tab {
+  padding: 4px 10px;
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--text-sub);
+}
+
+.tabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: bold;
+}
+
+.closeBtn {
+  margin-left: auto;
+  color: var(--text-sub);
+  border-bottom-color: transparent;
+}
+
+/* ── Section ── */
+
+.section {
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+  font-weight: bold;
+}
+
+/* ── Resources ── */
+
+.resRow {
+  margin-bottom: 4px;
+}
+
+.resTrack {
+  width: 100%;
+  height: 12px;
+  background-color: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.resFill {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+/* ── Clothing ── */
+
+.clothingOccluded {
+  color: var(--text-faint);
+}
+
+.clothingEquipped {
+  color: var(--text);
+}
+
+.clothingEmpty {
+  color: var(--text-dim);
+}
+
+.stateDanger {
+  color: var(--danger);
+}
+
+/* ── Abilities grid ── */
+
+.abilityGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px 12px;
+}
+
+.abilityExp {
+  color: var(--text-sub);
+}
+
+/* ── Experience ── */
+
+.expEntry {
+  margin-bottom: 6px;
+}
+
+.expCount {
+  color: var(--accent);
+}
+
+.expDetail {
+  color: var(--text-sub);
+  font-size: 11px;
+  padding-left: 12px;
+}
+
+/* ── Social / Favorability ── */
+
+.favRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.favName {
+  min-width: 60px;
+}
+
+.favTrack {
+  flex: 1;
+  height: 12px;
+  background-color: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.favFill {
+  height: 100%;
+  background-color: var(--text-sub);
+  transition: width 0.3s;
+}
+
+.favValue {
+  color: var(--text-sub);
+  font-size: 12px;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* ── Empty states ── */
+
+.emptyText {
+  color: var(--text-dim);
+}

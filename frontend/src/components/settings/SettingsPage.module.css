@@ -1,0 +1,151 @@
+/* ── SettingsPage ── */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.sectionTitle {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* ── Create save ── */
+
+.createRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.createInputRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Input ── */
+
+.input {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 4px 6px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* ── Save list ── */
+
+.saveList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saveRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background-color: var(--bg1);
+  border-radius: 3px;
+}
+
+.saveInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.saveName {
+  font-size: 13px;
+}
+
+.saveMeta {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.metaDot {
+  margin: 0 4px;
+  color: var(--text-faint);
+}
+
+.mismatchBadge {
+  color: var(--danger);
+  margin-left: 6px;
+}
+
+.renameRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.actionBtns {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.emptyText {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 4px 0;
+}
+
+/* ── LLM preset row ── */
+
+.presetRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.presetLabel {
+  font-size: 12px;
+  color: var(--text-sub);
+  min-width: 90px;
+}
+
+.presetHint {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.inputW200 {
+  width: 200px;
+}
+
+/* ── Danger zone ── */
+
+.dangerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dangerHint {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ── Button overrides ── */
+
+.maxSlotsHint {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.deleteSaveBtn {
+  color: var(--danger);
+  border-color: rgba(var(--danger), 0.4);
+}

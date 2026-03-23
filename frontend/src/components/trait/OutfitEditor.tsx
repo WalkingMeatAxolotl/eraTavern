@@ -1,10 +1,11 @@
 import { useState } from "react";
+import clsx from "clsx";
 import type { GameDefinitions, OutfitType } from "../../types/game";
 import { saveOutfitTypes } from "../../api/client";
-import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
-import { inputStyle, labelStyle } from "../shared/styles";
+import sh from "../shared/shared.module.css";
+import s from "./OutfitEditor.module.css";
 
 interface Props {
   outfit: OutfitType;
@@ -30,14 +31,14 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
   const clothingBySlot: Record<string, { id: string; name: string }[]> = {};
   for (const c of Object.values(definitions.clothingDefs)) {
     const cslots = c.slots ?? (c.slot ? [c.slot] : []);
-    for (const s of cslots) {
-      if (!clothingBySlot[s]) clothingBySlot[s] = [];
-      clothingBySlot[s].push({ id: c.id, name: c.name });
+    for (const sl of cslots) {
+      if (!clothingBySlot[sl]) clothingBySlot[sl] = [];
+      clothingBySlot[sl].push({ id: c.id, name: c.name });
     }
   }
   const accessoryItems = clothingBySlot["accessory"] ?? [];
-  for (const s of ["accessory1", "accessory2", "accessory3"]) {
-    clothingBySlot[s] = [...(clothingBySlot[s] ?? []), ...accessoryItems];
+  for (const sl of ["accessory1", "accessory2", "accessory3"]) {
+    clothingBySlot[sl] = [...(clothingBySlot[sl] ?? []), ...accessoryItems];
   }
 
   const handleSave = async () => {
@@ -89,31 +90,31 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
   };
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>
           == {isNew ? t("editor.newOutfit") : t("editor.editOutfit")} ==
         </span>
       </div>
 
       {/* Basic info */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
+      <div className={s.formGroup}>
+        <div className={s.row2}>
+          <div className={s.col}>
+            <div className={sh.label}>ID</div>
             <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+              className={clsx(sh.input, s.fullWidth)}
               value={id}
               onChange={(e) => setId(e.target.value)}
               disabled={!isNew}
               placeholder={t("ph.idPlaceholder")}
             />
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.name")}</div>
+          <div className={s.col}>
+            <div className={sh.label}>{t("field.name")}</div>
             <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+              className={clsx(sh.input, s.fullWidth)}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("ph.displayName")}
@@ -121,25 +122,16 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
           </div>
         </div>
         <div>
-          <div style={labelStyle}>{t("field.description")}</div>
+          <div className={sh.label}>{t("field.description")}</div>
           <textarea
-            style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
+            className={clsx(sh.input, s.textarea)}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t("ph.optionalDesc")}
           />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              cursor: "pointer",
-              color: T.textSub,
-              fontSize: "12px",
-            }}
-          >
+        <div className={s.checkRow}>
+          <label className={s.checkLabel}>
             <input type="checkbox" checked={copyDefault} onChange={() => setCopyDefault(!copyDefault)} />
             {t("outfit.copyDefault")}
           </label>
@@ -157,43 +149,25 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
 
       {/* Slots editor (only when copyDefault is off) */}
       {!copyDefault && (
-        <div style={{ marginBottom: "16px" }}>
-          <div
-            style={{
-              color: T.accent,
-              borderBottom: `1px solid ${T.border}`,
-              marginBottom: "6px",
-              paddingBottom: "2px",
-              fontWeight: "bold",
-            }}
-          >
+        <div className={s.sectionBlock}>
+          <div className={s.slotsHeader}>
             == {t("outfit.defaultSlotContent")} ==
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <div className={s.slotsColumn}>
             {clothingSlots.map((slot) => {
               const items = slots[slot] ?? [];
               const options = clothingBySlot[slot] ?? [];
               return (
-                <div
-                  key={slot}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "2px" }}
-                >
-                  <span style={{ minWidth: "100px", color: T.textSub }}>{SLOT_LABELS[slot] ?? slot}:</span>
-                  {items.length === 0 && <span style={{ color: T.textDim }}>{t("empty.slot")}</span>}
+                <div key={slot} className={s.slotRow}>
+                  <span className={s.slotLabel}>{SLOT_LABELS[slot] ?? slot}:</span>
+                  {items.length === 0 && <span className={s.slotEmpty}>{t("empty.slot")}</span>}
                   {items.map((itemId, i) => {
                     const def = definitions.clothingDefs[itemId];
                     return (
-                      <span key={i} style={{ color: T.text, display: "inline-flex", alignItems: "center", gap: "2px" }}>
+                      <span key={i} className={s.slotItem}>
                         [{def?.name ?? itemId}]
                         <button
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: T.danger,
-                            cursor: "pointer",
-                            padding: "0 2px",
-                            fontSize: "11px",
-                          }}
+                          className={s.removeBtn}
                           onClick={() => {
                             const newSlots = { ...slots, [slot]: items.filter((_, j) => j !== i) };
                             setSlots(newSlots);
@@ -205,7 +179,8 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
                     );
                   })}
                   <select
-                    style={{ ...inputStyle, cursor: "pointer" }}
+                    className={sh.input}
+                    style={{ cursor: "pointer" }}
                     value=""
                     onChange={(e) => {
                       if (!e.target.value) return;
@@ -229,67 +204,26 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
         </div>
       )}
       {copyDefault && !showHelp && (
-        <div style={{ color: T.textDim, fontSize: "12px", marginBottom: "16px" }}>
+        <div className={s.inheritHint}>
           {t("outfit.inheritHint")}
         </div>
       )}
 
       {/* Actions */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-        <button
-          onClick={onBack}
-          style={{
-            padding: "4px 12px",
-            backgroundColor: "transparent",
-            color: T.textSub,
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontSize: "13px",
-          }}
-        >
+      <div className={s.actionBar}>
+        <button className={s.genBtnSub} onClick={onBack}>
           [{t("btn.return")}]
         </button>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{
-            padding: "4px 12px",
-            backgroundColor: "transparent",
-            color: T.successDim,
-            border: `1px solid ${T.border}`,
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontSize: "13px",
-          }}
-        >
+        <button className={s.genBtnSuccess} onClick={handleSave} disabled={saving}>
           [{t("btn.save")}]
         </button>
         {!isNew && (
-          <button
-            onClick={handleDelete}
-            disabled={saving}
-            style={{
-              padding: "4px 12px",
-              backgroundColor: "transparent",
-              color: T.danger,
-              border: `1px solid ${T.border}`,
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "13px",
-            }}
-          >
+          <button className={s.genBtnDanger} onClick={handleDelete} disabled={saving}>
             [{t("btn.delete")}]
           </button>
         )}
         {message && (
-          <span
-            style={{
-              color:
-                message === t("msg.saved") ? T.successDim : T.danger,
-              fontSize: "12px",
-            }}
-          >
+          <span className={message === t("msg.saved") ? s.msgSuccess : s.msgError}>
             {message}
           </span>
         )}

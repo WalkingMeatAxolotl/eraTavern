@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import type { LLMPreset, LLMPromptEntry, LLMParameters, LLMProvider } from "../../types/game";
 import LLMDebugPanel from "./LLMDebugPanel";
@@ -18,24 +17,12 @@ import {
 } from "../../api/client";
 
 import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
-import { btn, inputStyle as _inputStyle, labelStyle } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
 import PromptEntryRow from "./PromptEntryRow";
 import ProviderEditor from "./ProviderEditor";
-
-// --- Styles ---
-
-export const inputStyle: React.CSSProperties = {
-  ..._inputStyle,
-  width: "100%",
-  boxSizing: "border-box",
-};
-
-export const sectionStyle: React.CSSProperties = {
-  borderLeft: `2px solid ${T.borderLight}`,
-  paddingLeft: "10px",
-  marginBottom: "12px",
-};
-
+import clsx from "clsx";
+import s from "./LLMPresetManager.module.css";
+import sh from "../shared/shared.module.css";
 
 // --- Default objects ---
 
@@ -384,16 +371,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
     <button
       key={key}
       onClick={() => setSubTab(key)}
-      style={{
-        padding: "4px 14px",
-        backgroundColor: subTab === key ? T.bg2 : "transparent",
-        color: subTab === key ? T.accent : T.textSub,
-        border: subTab === key ? `1px solid ${T.border}` : "1px solid transparent",
-        borderRadius: "3px",
-        cursor: "pointer",
-        fontSize: "12px",
-        fontWeight: subTab === key ? "bold" : "normal",
-      }}
+      className={clsx(s.tabBtn, subTab === key && s.tabBtnActive)}
     >
       [{label}]
     </button>
@@ -402,9 +380,9 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
   // --- List / global settings view ---
   if (editingId === null) {
     return (
-      <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+      <div className={s.wrapper}>
         {/* Sub-tabs */}
-        <div style={{ display: "flex", gap: "4px", marginBottom: "12px" }}>
+        <div className={s.tabBar}>
           {subTabBtn("presets", t("llm.tabPresets"))}
           {subTabBtn("providers", t("llm.tabProviders"))}
           {subTabBtn("global", t("llm.tabGlobal"))}
@@ -413,76 +391,37 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
         {subTab === "presets" && (
           <>
-            <div
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}
-            >
-              <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.llmPresets")} ==</span>
-              <button onClick={() => handleNew()} style={btn("create")}>
+            <div className={s.headerMb8}>
+              <span className={s.title}>== {t("header.llmPresets")} ==</span>
+              <button onClick={() => handleNew()} className={btnClass("create")}>
                 [{t("btn.newPresetFull")}]
               </button>
             </div>
 
             {presets.length === 0 && (
-              <div style={{ color: T.textDim, fontSize: "12px", padding: "8px 0" }}>
-                {t("empty.llmPresets")}
-              </div>
+              <div className={s.emptyText}>{t("empty.llmPresets")}</div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div className={s.listCol}>
               {presets.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => handleSelectPreset(p.id)}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "8px 12px",
-                    backgroundColor: T.bg1,
-                    color: T.text,
-                    border: `1px solid ${T.border}`,
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    textAlign: "left",
-                    transition: "border-color 0.15s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = T.borderLight)}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.border)}
+                  className={s.presetBtn}
                 >
                   <span>
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        padding: "1px 4px",
-                        borderRadius: "2px",
-                        marginRight: "6px",
-                        backgroundColor: p.type === "assist" ? T.accent : T.bg3,
-                        color: p.type === "assist" ? T.bg1 : T.textDim,
-                      }}
-                    >
+                    <span className={clsx(s.typeBadge, p.type === "assist" && s.typeBadgeAssist)}>
                       {p.type === "assist" ? t("llm.presetTypeAssist") : t("llm.presetTypeNarrative")}
                     </span>
-                    <span style={{ fontWeight: "bold" }}>{p.name || p.id}</span>
-                    {p.name && <span style={{ color: T.textDim, marginLeft: "8px", fontSize: "11px" }}>{p.id}</span>}
+                    <span className={s.presetName}>{p.name || p.id}</span>
+                    {p.name && <span className={s.presetId}>{p.id}</span>}
                   </span>
-                  <span
-                    style={{
-                      color: T.textDim,
-                      fontSize: "11px",
-                      maxWidth: "40%",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {p.description}
-                  </span>
+                  <span className={s.presetDesc}>{p.description}</span>
                 </button>
               ))}
             </div>
 
-            {message && <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>}
+            {message && <div className={s.msgError}>{message}</div>}
           </>
         )}
 
@@ -501,61 +440,34 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
               />
             ) : (
               <>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.apiServices")} ==</span>
-                  <button onClick={handleNewProvider} style={btn("create")}>
+                <div className={s.headerMb8}>
+                  <span className={s.title}>== {t("header.apiServices")} ==</span>
+                  <button onClick={handleNewProvider} className={btnClass("create")}>
                     [{t("btn.newApiService")}]
                   </button>
                 </div>
 
                 {providers.length === 0 && (
-                  <div style={{ color: T.textDim, fontSize: "12px", padding: "8px 0" }}>
-                    {t("empty.llmApis")}
-                  </div>
+                  <div className={s.emptyText}>{t("empty.llmApis")}</div>
                 )}
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div className={s.listCol}>
                   {providers.map((p) => (
                     <button
                       key={p.id}
                       onClick={() => handleEditProvider(p.id)}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "8px 12px",
-                        backgroundColor: T.bg1,
-                        color: T.text,
-                        border: `1px solid ${T.border}`,
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        textAlign: "left",
-                        transition: "border-color 0.15s",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = T.borderLight)}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.border)}
+                      className={s.presetBtn}
                     >
-                      <span style={{ fontWeight: "bold" }}>{p.name || p.id}</span>
-                      <span style={{ color: T.textDim, fontSize: "11px" }}>{p.id}</span>
+                      <span className={s.presetName}>{p.name || p.id}</span>
+                      <span className={s.presetId} style={{ marginLeft: 0 }}>{p.id}</span>
                     </button>
                   ))}
                 </div>
 
                 {providerMessage && (
                   <div
-                    style={{
-                      color: providerMessage === t("msg.saved") ? T.success : T.danger,
-                      fontSize: "12px",
-                      marginTop: "8px",
-                    }}
+                    className={providerMessage === t("msg.saved") ? s.msgSuccess : s.msgError}
+                    style={{ marginTop: "8px" }}
                   >
                     {providerMessage}
                   </div>
@@ -567,11 +479,11 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
         {subTab === "global" && (
           <>
-            <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.globalSettings")} ==</span>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
-              <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>{t("llm.defaultPreset")}</span>
+            <span className={s.title}>== {t("header.globalSettings")} ==</span>
+            <div className={s.globalRow}>
+              <span className={s.globalLabel}>{t("llm.defaultPreset")}</span>
               <select
-                style={{ ...inputStyle, width: "200px" }}
+                className={clsx(s.inputFull, s.inputW200)}
                 value={globalPreset}
                 onChange={async (e) => {
                   const val = e.target.value;
@@ -583,17 +495,15 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                 {presets
                   .filter((p) => p.type !== "assist")
                   .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name || p.id}
-                    </option>
+                    <option key={p.id} value={p.id}>{p.name || p.id}</option>
                   ))}
               </select>
-              <span style={{ fontSize: "11px", color: T.textDim }}>{t("llm.globalPresetHint")}</span>
+              <span className={s.globalHint}>{t("llm.globalPresetHint")}</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
-              <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>{t("llm.aiAssistPreset")}</span>
+            <div className={s.globalRow}>
+              <span className={s.globalLabel}>{t("llm.aiAssistPreset")}</span>
               <select
-                style={{ ...inputStyle, width: "200px" }}
+                className={clsx(s.inputFull, s.inputW200)}
                 value={aiAssistPreset}
                 onChange={async (e) => {
                   const val = e.target.value;
@@ -605,12 +515,10 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                 {presets
                   .filter((p) => p.type === "assist")
                   .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name || p.id}
-                    </option>
+                    <option key={p.id} value={p.id}>{p.name || p.id}</option>
                   ))}
               </select>
-              <span style={{ fontSize: "11px", color: T.textDim }}>{t("llm.aiAssistPresetHint")}</span>
+              <span className={s.globalHint}>{t("llm.aiAssistPresetHint")}</span>
             </div>
           </>
         )}
@@ -624,49 +532,49 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
   const sortedEntries = [...preset.promptEntries].sort((a, b) => a.position - b.position);
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={s.title}>
           == {isNew ? t("editor.newPreset") : t("editor.editPreset")} ==
         </span>
-        <button onClick={handleBack} style={btn("neutral")}>
+        <button onClick={handleBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
 
       {/* Basic info */}
-      <div style={sectionStyle}>
-        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>{t("section.basicInfo")}</div>
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
+      <div className={s.section}>
+        <div className={s.sectionTitle}>{t("section.basicInfo")}</div>
+        <div className={s.flexRow}>
+          <div className={s.flex1}>
+            <div className={sh.label}>ID</div>
             <input
-              style={{ ...inputStyle, ...(isNew ? {} : { color: T.textDim }) }}
+              className={clsx(s.inputFull, !isNew && s.inputDisabled)}
               value={preset.id}
               onChange={(e) => setPreset((p) => ({ ...p, id: e.target.value }))}
               disabled={!isNew}
             />
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.name")}</div>
+          <div className={s.flex1}>
+            <div className={sh.label}>{t("field.name")}</div>
             <input
-              style={inputStyle}
+              className={s.inputFull}
               value={preset.name}
               onChange={(e) => setPreset((p) => ({ ...p, name: e.target.value }))}
             />
           </div>
         </div>
-        <div style={{ marginBottom: "6px" }}>
-          <div style={labelStyle}>{t("field.description")}</div>
+        <div className={s.mb6}>
+          <div className={sh.label}>{t("field.description")}</div>
           <input
-            style={inputStyle}
+            className={s.inputFull}
             value={preset.description}
             onChange={(e) => setPreset((p) => ({ ...p, description: e.target.value }))}
           />
         </div>
         <div>
-          <div style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "6px" }}>
+          <div className={sh.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             {t("llm.presetType")}
             <HelpButton show={showTypeHelp} onToggle={() => setShowTypeHelp((v) => !v)} />
           </div>
@@ -681,7 +589,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
             </HelpPanel>
           )}
           <select
-            style={{ ...inputStyle, width: "200px" }}
+            className={clsx(s.inputFull, s.inputW200)}
             value={preset.type || "narrative"}
             onChange={(e) => {
               const newType = e.target.value as "narrative" | "assist";
@@ -717,30 +625,26 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       </div>
 
       {/* API service + parameters */}
-      <div style={sectionStyle}>
-        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>
-          {t("llm.apiServiceParams")}
-        </div>
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div style={{ flex: 2 }}>
-            <div style={labelStyle}>{t("llm.apiService")}</div>
+      <div className={s.section}>
+        <div className={s.sectionTitle}>{t("llm.apiServiceParams")}</div>
+        <div className={s.flexRow}>
+          <div className={s.flex2}>
+            <div className={sh.label}>{t("llm.apiService")}</div>
             <select
-              style={inputStyle}
+              className={s.inputFull}
               value={preset.providerId}
               onChange={(e) => setPreset((p) => ({ ...p, providerId: e.target.value }))}
             >
               <option value="">{t("llm.selectApiService")}</option>
               {providers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name || p.id}
-                </option>
+                <option key={p.id} value={p.id}>{p.name || p.id}</option>
               ))}
             </select>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("llm.postProcessing")}</div>
+          <div className={s.flex1}>
+            <div className={sh.label}>{t("llm.postProcessing")}</div>
             <select
-              style={inputStyle}
+              className={s.inputFull}
               value={preset.postProcessing}
               onChange={(e) => setPreset((p) => ({ ...p, postProcessing: e.target.value }))}
             >
@@ -750,16 +654,12 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
           </div>
         </div>
         {!preset.providerId && (
-          <div style={{ color: T.danger, fontSize: "11px", marginBottom: "6px" }}>
-            {t("llm.selectApiHint")}
-          </div>
+          <div className={s.warnText}>{t("llm.selectApiHint")}</div>
         )}
 
         {/* Generation parameters */}
-        <div style={{ color: T.textSub, fontSize: "11px", fontWeight: "bold", marginBottom: "4px", marginTop: "8px" }}>
-          {t("llm.genParams")}
-        </div>
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+        <div className={s.sectionTitleSm}>{t("llm.genParams")}</div>
+        <div className={s.paramsRow}>
           {(
             [
               ["temperature", "Temperature", preset.parameters.temperature],
@@ -769,10 +669,10 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
               ["presencePenalty", "Pres Penalty", preset.parameters.presencePenalty],
             ] as [keyof LLMParameters, string, number][]
           ).map(([key, label, val]) => (
-            <div key={key} style={{ width: "120px" }}>
-              <div style={labelStyle}>{label}</div>
+            <div key={key} className={s.paramInput}>
+              <div className={sh.label}>{label}</div>
               <input
-                style={{ ...inputStyle, width: "100%" }}
+                className={s.inputFull}
                 type="number"
                 step={key === "maxTokens" ? 1 : 0.1}
                 value={val}
@@ -787,16 +687,16 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       </div>
 
       {/* Prompt entries */}
-      <div style={sectionStyle}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-          <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold" }}>{t("section.promptEntries")}</div>
-          <button onClick={addEntry} style={btn("create")}>
+      <div className={s.section}>
+        <div className={s.entriesHeader}>
+          <div className={s.sectionTitle} style={{ marginBottom: 0 }}>{t("section.promptEntries")}</div>
+          <button onClick={addEntry} className={btnClass("create")}>
             [{t("btn.newPromptEntry")}]
           </button>
         </div>
 
         {sortedEntries.length === 0 && (
-          <div style={{ color: T.textDim, fontSize: "12px", padding: "8px 0" }}>{t("empty.llmEntries")}</div>
+          <div className={s.emptyText}>{t("empty.llmEntries")}</div>
         )}
 
         {sortedEntries.map((entry, idx) => (
@@ -840,20 +740,20 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
-        <button onClick={handleSave} disabled={saving} style={btn("create")}>
+      <div className={s.actionsRow}>
+        <button onClick={handleSave} disabled={saving} className={btnClass("create")}>
           [{t("btn.savePreset")}]
         </button>
         {!isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btn("danger")}>
+          <button onClick={handleDelete} disabled={saving} className={btnClass("danger")}>
             [{t("btn.deletePreset")}]
           </button>
         )}
-        <button onClick={handleBack} style={btn("neutral")}>
+        <button onClick={handleBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
         {message && (
-          <span style={{ color: message === t("msg.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
+          <span className={s.inlineMsg} style={{ color: message === t("msg.saved") ? "var(--success)" : "var(--danger)" }}>{message}</span>
         )}
       </div>
     </div>

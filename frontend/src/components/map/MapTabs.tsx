@@ -1,5 +1,5 @@
-import T from "../../theme";
 import type { GameMap } from "../../types/game";
+import s from "./MapTabs.module.css";
 
 interface MapTabsProps {
   maps: Record<string, GameMap>;
@@ -23,7 +23,7 @@ export default function MapTabs({
   const mapList = Object.values(maps);
 
   return (
-    <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
+    <div className={s.wrapper}>
       {mapList.map((map) => {
         const isActive = map.id === activeMapId;
         const isCurrent = map.id === playerMapId;
@@ -33,35 +33,15 @@ export default function MapTabs({
           <button
             key={map.id}
             onClick={() => onSelectMap(map.id)}
-            style={{
-              padding: "6px 16px",
-              backgroundColor: isActive ? T.bg2 : T.bg1,
-              color: isActive ? T.accent : T.text,
-              border: `1px solid ${T.border}`,
-              borderBottom: isActive ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
-              cursor: "pointer",
-              fontSize: "13px",
-            }}
+            className={isActive ? s.tabActive : s.tab}
           >
             [{label}]
           </button>
         );
       })}
 
-      <button
-        onClick={onToggleMap}
-        style={{
-          marginLeft: "auto",
-          padding: "4px 10px",
-          backgroundColor: "transparent",
-          color: T.textSub,
-          border: `1px solid ${T.border}`,
-          borderRadius: "4px",
-          cursor: "pointer",
-          fontSize: "12px",
-        }}
-      >
-        {mapExpanded ? "▲" : "▼"}
+      <button onClick={onToggleMap} className={s.toggleBtn}>
+        {mapExpanded ? "\u25B2" : "\u25BC"}
       </button>
     </div>
   );

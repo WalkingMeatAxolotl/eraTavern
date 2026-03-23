@@ -1,6 +1,7 @@
 import { useState } from "react";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
+import clsx from "clsx";
+import s from "./LLMDebugPanel.module.css";
 
 export interface LLMDebugEntry {
   timestamp: string;
@@ -26,107 +27,73 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   return (
-    <div
-      style={{
-        backgroundColor: T.bg0,
-        border: `1px solid ${T.border}`,
-        borderRadius: "4px",
-        fontSize: "11px",
-        fontFamily: T.fontMono,
-        overflow: "hidden",
-      }}
-    >
+    <div className={s.wrapper}>
       {/* Header */}
-      <div
-        onClick={() => setCollapsed((v) => !v)}
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "4px 10px",
-          backgroundColor: T.bg1,
-          cursor: "pointer",
-          userSelect: "none",
-        }}
-      >
-        <span style={{ color: T.accent, fontWeight: "bold" }}>LLM Debug Console ({entries.length})</span>
-        <span style={{ color: T.textDim }}>{collapsed ? "▸" : "▾"}</span>
+      <div onClick={() => setCollapsed((v) => !v)} className={s.header}>
+        <span className={s.headerTitle}>LLM Debug Console ({entries.length})</span>
+        <span className={s.headerArrow}>{collapsed ? "▸" : "▾"}</span>
       </div>
 
       {!collapsed && (
-        <div style={{ padding: "4px 0" }}>
+        <div className={s.body}>
           {entries.length === 0 && (
-            <div style={{ color: T.textDim, padding: "8px 10px" }}>{t("empty.debugLog")}</div>
+            <div className={s.emptyText}>{t("empty.debugLog")}</div>
           )}
           {entries.map((entry, idx) => {
             const isExpanded = expandedIdx === idx;
-            const statusColor = entry.error ? T.danger : T.success;
+            const statusColor = entry.error ? "var(--danger)" : "var(--success)";
             const statusText = entry.error ? "ERROR" : "OK";
 
             return (
-              <div key={idx} style={{ borderBottom: `1px solid ${T.border}` }}>
+              <div key={idx} className={s.entry}>
                 {/* Summary line */}
-                <div
-                  onClick={() => setExpandedIdx(isExpanded ? null : idx)}
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    padding: "4px 10px",
-                    cursor: "pointer",
-                    color: T.textSub,
-                    alignItems: "center",
-                  }}
-                >
-                  <span style={{ color: T.textDim, minWidth: "60px", flexShrink: 0 }}>
-                    {entry.timestamp || "--:--:--"}
-                  </span>
-                  <span style={{ color: statusColor, fontWeight: "bold", minWidth: "40px", flexShrink: 0 }}>
-                    [{statusText}]
-                  </span>
-                  <span style={{ color: T.text, flexShrink: 0 }}>{entry.model || "(unknown)"}</span>
+                <div onClick={() => setExpandedIdx(isExpanded ? null : idx)} className={s.summaryRow}>
+                  <span className={s.timestamp}>{entry.timestamp || "--:--:--"}</span>
+                  <span className={s.statusBadge} style={{ color: statusColor }}>[{statusText}]</span>
+                  <span className={s.modelName}>{entry.model || "(unknown)"}</span>
                   {entry.presetName && (
                     <>
-                      <span style={{ color: T.textDim }}>—</span>
-                      <span style={{ color: T.textSub }}>{entry.presetName}</span>
+                      <span className={s.dash}>—</span>
+                      <span className={s.presetName}>{entry.presetName}</span>
                     </>
                   )}
                   {entry.usage && (
-                    <span style={{ color: T.accent, marginLeft: "auto", flexShrink: 0 }}>
+                    <span className={s.usage}>
                       {entry.usage.prompt_tokens ?? "?"}↑ {entry.usage.completion_tokens ?? "?"}↓
                     </span>
                   )}
-                  <span style={{ color: T.accent, fontSize: "10px", flexShrink: 0 }}>{isExpanded ? "▾" : "▸"}</span>
+                  <span className={s.expandArrow}>{isExpanded ? "▾" : "▸"}</span>
                 </div>
 
                 {/* Expanded detail */}
                 {isExpanded && (
-                  <div style={{ padding: "6px 10px", backgroundColor: T.bg1 }}>
+                  <div className={s.detail}>
                     {/* Request info */}
-                    <div style={{ marginBottom: "6px" }}>
-                      <span style={{ color: T.accent }}>Request</span>
-                      <span style={{ color: T.textDim, marginLeft: "8px" }}>{entry.baseUrl}</span>
+                    <div className={s.detailSection}>
+                      <span className={s.detailLabel}>Request</span>
+                      <span className={s.detailUrl}>{entry.baseUrl}</span>
                     </div>
 
                     {/* Parameters */}
                     {entry.parameters && Object.keys(entry.parameters).length > 0 && (
-                      <div style={{ marginBottom: "6px" }}>
-                        <span style={{ color: T.textDim }}>params: </span>
-                        <span style={{ color: T.text }}>{JSON.stringify(entry.parameters)}</span>
+                      <div className={s.detailSection}>
+                        <span className={s.paramLabel}>params: </span>
+                        <span className={s.paramValue}>{JSON.stringify(entry.parameters)}</span>
                       </div>
                     )}
 
-                    {/* Variables — only those referenced in prompt entries */}
+                    {/* Variables */}
                     {entry.variables && Object.keys(entry.variables).length > 0 && (
-                      <div style={{ marginBottom: "6px" }}>
-                        <div style={{ color: T.accent, marginBottom: "2px" }}>
+                      <div className={s.detailSection}>
+                        <div className={s.detailLabelMb}>
                           Variables ({Object.keys(entry.variables).length})
                         </div>
-                        <div style={{ padding: "4px 8px", backgroundColor: T.bg2, borderRadius: "2px" }}>
+                        <div className={s.varBox}>
                           {Object.entries(entry.variables).map(([k, v]) => (
-                            <div key={k} style={{ marginBottom: "2px" }}>
-                              <span style={{ color: T.accent }}>{`{{${k}}}`}</span>
-                              <span style={{ color: T.textDim }}> = </span>
-                              <span style={{ color: v ? T.text : T.danger }}>{v || "(empty)"}</span>
+                            <div key={k} className={s.varEntry}>
+                              <span className={s.varKey}>{`{{${k}}}`}</span>
+                              <span className={s.varEq}> = </span>
+                              <span className={v ? undefined : s.varEmpty}>{v || "(empty)"}</span>
                             </div>
                           ))}
                         </div>
@@ -134,69 +101,40 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                     )}
 
                     {/* Messages */}
-                    <div style={{ marginBottom: "6px" }}>
-                      <div style={{ color: T.accent, marginBottom: "2px" }}>
+                    <div className={s.detailSection}>
+                      <div className={s.detailLabelMb}>
                         Messages ({entry.messages?.length ?? 0})
                       </div>
                       {(entry.messages || []).map((m, mi) => (
                         <div
                           key={mi}
-                          style={{
-                            marginBottom: "4px",
-                            padding: "4px 8px",
-                            backgroundColor: T.bg2,
-                            borderRadius: "2px",
-                            borderLeft: `2px solid ${m.role === "system" ? T.accentDim : m.role === "assistant" ? T.success : T.accent}`,
-                          }}
+                          className={clsx(
+                            s.msgBlock,
+                            m.role === "system" && s.msgBlockSystem,
+                            m.role === "assistant" && s.msgBlockAssistant,
+                            m.role !== "system" && m.role !== "assistant" && s.msgBlockUser,
+                          )}
                         >
-                          <div style={{ color: T.textDim, marginBottom: "2px" }}>[{m.role}]</div>
-                          <pre
-                            style={{
-                              margin: 0,
-                              whiteSpace: "pre-wrap",
-                              wordBreak: "break-word",
-                              color: T.text,
-                              fontSize: "11px",
-                              maxHeight: "300px",
-                              overflowY: "auto",
-                            }}
-                          >
-                            {m.content}
-                          </pre>
+                          <div className={s.msgRole}>[{m.role}]</div>
+                          <pre className={s.msgContent}>{m.content}</pre>
                         </div>
                       ))}
                     </div>
 
                     {/* Response */}
                     {entry.responseText && (
-                      <div style={{ marginBottom: "6px" }}>
-                        <div style={{ color: T.accent, marginBottom: "2px" }}>Response</div>
-                        <pre
-                          style={{
-                            margin: 0,
-                            padding: "4px 8px",
-                            backgroundColor: T.bg2,
-                            borderRadius: "2px",
-                            borderLeft: `2px solid ${T.success}`,
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                            color: T.text,
-                            fontSize: "11px",
-                            maxHeight: "150px",
-                            overflowY: "auto",
-                          }}
-                        >
-                          {entry.responseText}
-                        </pre>
+                      <div className={s.detailSection}>
+                        <div className={s.detailLabelMb}>Response</div>
+                        <pre className={s.responseBlock}>{entry.responseText}</pre>
                       </div>
                     )}
 
                     {/* Error */}
-                    {entry.error && <div style={{ color: T.danger, marginBottom: "6px" }}>Error: {entry.error}</div>}
+                    {entry.error && <div className={s.errorText}>Error: {entry.error}</div>}
 
                     {/* Usage */}
                     {entry.usage && (
-                      <div style={{ color: T.textDim }}>
+                      <div className={s.tokenLine}>
                         Tokens: {t("llm.tokenInput")} {entry.usage.prompt_tokens ?? "?"} | {t("llm.tokenOutput")} {entry.usage.completion_tokens ?? "?"} |
                         {t("llm.tokenTotal")} {entry.usage.total_tokens ?? "?"}
                       </div>

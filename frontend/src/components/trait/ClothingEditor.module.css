@@ -1,0 +1,171 @@
+/* ── ClothingEditor ── */
+
+.wrapper {
+  font-size: 13px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sourceTag {
+  color: var(--accent);
+  font-size: 12px;
+}
+
+/* ── Form layout ── */
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.row2 {
+  display: flex;
+  gap: 12px;
+}
+
+.col {
+  flex: 1;
+}
+
+.fullWidth {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Section blocks ── */
+
+.sectionBlock {
+  margin-bottom: 16px;
+}
+
+.sectionLabel {
+  color: var(--text-sub);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.sectionLabelFlex {
+  composes: sectionLabel;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Slot/occlusion chip list ── */
+
+.chipList {
+  border-left: 2px solid var(--border-light);
+  padding-left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  background-color: var(--bg2);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.multiSlotTag {
+  color: var(--accent);
+}
+
+.noneText {
+  color: var(--text-dim);
+}
+
+/* ── Effects ── */
+
+.effectList {
+  border-left: 2px solid var(--border-light);
+  padding-left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.effectRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: var(--bg2);
+  border-radius: 3px;
+}
+
+.pctHint {
+  color: var(--text-dim);
+  font-size: 11px;
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.addEffectBtn {
+  margin-top: 6px;
+  padding: 3px 10px;
+  background-color: var(--bg2);
+  color: var(--success-dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.addEffectBtn:hover {
+  background-color: var(--bg3);
+}
+
+/* ── Action bar ── */
+
+.actionBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.msgSuccess {
+  color: var(--success);
+  font-size: 12px;
+}
+
+.msgError {
+  color: var(--danger);
+  font-size: 12px;
+}

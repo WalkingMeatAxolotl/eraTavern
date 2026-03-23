@@ -1,15 +1,7 @@
 /* ── Shared field input (also exported as JS style) ── */
 
 .fieldInput {
-  width: 100%;
-  padding: 4px 6px;
-  font-size: 11px;
-  background-color: var(--bg1);
-  color: var(--text);
-  border: 1px solid var(--border-dim);
-  border-radius: 3px;
-  outline: none;
-  box-sizing: border-box;
+  composes: fieldInput from "../shared/shared.module.css";
 }
 
 /* ── ToggleSwitch ── */
@@ -50,9 +42,7 @@
 /* ── ForkModal ── */
 
 .forkTitle {
-  color: var(--text);
-  font-size: 14px;
-  font-weight: bold;
+  composes: modalTitle from "../shared/shared.module.css";
 }
 
 .forkIntro {
@@ -157,14 +147,7 @@
 /* ── ToggleBtn ── */
 
 .toggleBtn {
-  padding: 4px 10px;
-  font-size: 11px;
-  cursor: pointer;
-  border-radius: 3px;
-  background-color: var(--bg1);
-  color: var(--text-sub);
-  border: 1px solid var(--border-dim);
-  border-bottom: 1px solid var(--border-dim);
+  composes: toggleBtn from "./sidebar-shared.module.css";
 }
 
 .toggleBtn.toggleBtnActive {
@@ -277,63 +260,39 @@
 /* ── Header ── */
 
 .header {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-dim);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  composes: header from "./sidebar-shared.module.css";
 }
 
 .headerTitle {
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: bold;
+  composes: headerTitle from "./sidebar-shared.module.css";
 }
 
 .headerCount {
-  color: var(--text-dim);
-  font-size: 11px;
+  composes: headerCount from "./sidebar-shared.module.css";
 }
 
 .spacer {
-  flex: 1;
+  composes: spacer from "./sidebar-shared.module.css";
 }
 
 .addBtn {
-  background: none;
-  border: 1px solid var(--text-faint);
-  border-radius: 3px;
-  color: var(--text-sub);
-  cursor: pointer;
-  padding: 1px 7px;
-  font-size: 13px;
-  line-height: 1.2;
+  composes: addBtn from "./sidebar-shared.module.css";
 }
 
 /* ── Card list ── */
 
 .cardList {
-  flex: 1;
-  min-height: 0;
-  overflow-y: scroll;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  composes: cardList from "./sidebar-shared.module.css";
 }
 
 .emptyMsg {
-  color: var(--text-dim);
-  font-size: 11px;
-  padding: 16px 8px;
-  text-align: center;
+  composes: emptyMsg from "./sidebar-shared.module.css";
 }
 
 /* ── Addon card ── */
 
 .card {
-  border-radius: 6px;
-  border: 1px solid var(--border-dim);
+  composes: card from "./sidebar-shared.module.css";
 }
 
 .card.cardEnabled {
@@ -343,50 +302,24 @@
 /* ── Card header ── */
 
 .cardHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  background-color: var(--bg1);
-  cursor: pointer;
+  composes: cardHeader from "./sidebar-shared.module.css";
 }
 
 .coverImg {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid var(--border-dim);
-  flex-shrink: 0;
+  composes: coverImg from "./sidebar-shared.module.css";
 }
 
 .coverPlaceholder {
-  width: 64px;
-  height: 64px;
-  border-radius: 4px;
-  border: 1px solid var(--border-dim);
-  flex-shrink: 0;
-  background-color: var(--bg2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: bold;
-  color: var(--text-dim);
+  composes: coverPlaceholder from "./sidebar-shared.module.css";
 }
 
 .cardInfo {
-  flex: 1;
-  min-width: 0;
+  composes: cardInfo from "./sidebar-shared.module.css";
 }
 
 .cardName {
-  font-size: 13px;
+  composes: cardName from "./sidebar-shared.module.css";
   color: var(--text-sub);
-  font-weight: bold;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .cardName.cardNameEnabled {
@@ -394,9 +327,7 @@
 }
 
 .cardId {
-  font-size: 11px;
-  color: var(--text-sub);
-  margin-top: 2px;
+  composes: cardId from "./sidebar-shared.module.css";
 }
 
 .cardVersionRow {
@@ -412,21 +343,13 @@
 }
 
 .chevron {
-  color: var(--text-dim);
-  font-size: 11px;
-  flex-shrink: 0;
+  composes: chevron from "./sidebar-shared.module.css";
 }
 
 /* ── Expanded panel ── */
 
 .expandedPanel {
-  padding: 10px 12px;
-  background-color: var(--bg0);
-  border-top: 1px solid var(--border-dim);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 11px;
+  composes: expandedPanel from "./sidebar-shared.module.css";
 }
 
 .description {
@@ -459,18 +382,11 @@
 /* ── Toggle buttons row ── */
 
 .actionBtns {
-  display: flex;
-  gap: 4px;
+  composes: actionBtns from "./sidebar-shared.module.css";
 }
 
 .deleteBtn {
-  padding: 3px 8px;
-  font-size: 11px;
-  cursor: pointer;
-  background-color: var(--bg2);
-  color: var(--danger);
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  composes: deleteBtn from "./sidebar-shared.module.css";
 }
 
 /* ── Sub-panels (meta / version) ── */

@@ -1,25 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
+import clsx from "clsx";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { LorebookMode } from "../../constants";
 import type { LorebookEntry } from "../../types/game";
 import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLorebookEntry } from "../../api/client";
 import { RawJsonView } from "../shared/RawJsonEditor";
-import { btn, inputStyle as _inputStyle, labelStyle } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
 import CloneButton from "../shared/CloneDialog";
-
-const inputStyle: React.CSSProperties = {
-  ..._inputStyle,
-  width: "100%",
-  boxSizing: "border-box",
-};
-
-const sectionStyle: React.CSSProperties = {
-  borderLeft: `2px solid ${T.borderLight}`,
-  paddingLeft: "10px",
-  marginBottom: "12px",
-};
-
+import sh from "../shared/shared.module.css";
+import s from "./LorebookManager.module.css";
 
 function makeBlankEntry(addonId: string): Omit<LorebookEntry, "source"> {
   return {
@@ -156,65 +146,49 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
   // --- List view ---
   if (editingId === null) {
     return (
-      <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.lorebook")} ==</span>
-          <div style={{ display: "flex", gap: "6px" }}>
+      <div className={s.wrapper}>
+        <div className={s.header}>
+          <span className={sh.editorTitle}>== {t("header.lorebook")} ==</span>
+          <div className={s.btnRow}>
             {selectedAddon !== "__all__" && (
-              <button onClick={() => setShowJson(true)} style={btn("neutral")}>
+              <button onClick={() => setShowJson(true)} className={btnClass("neutral")}>
                 [JSON]
               </button>
             )}
-            <button onClick={handleNew} style={btn("create")}>
+            <button onClick={handleNew} className={btnClass("create")}>
               [{t("btn.newEntry")}]
             </button>
           </div>
         </div>
 
         {filteredEntries.length === 0 && (
-          <div style={{ color: T.textDim, fontSize: "12px", padding: "8px 0" }}>
+          <div className={s.emptyMsg}>
             {t("empty.lorebook")}
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div className={s.listColumn}>
           {filteredEntries.map((e) => (
             <button
               key={e.id}
               onClick={() => handleSelect(e)}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "8px 12px",
-                backgroundColor: T.bg1,
-                color: e.enabled ? T.text : T.textDim,
-                border: `1px solid ${T.border}`,
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "12px",
-                textAlign: "left",
-                opacity: e.enabled ? 1 : 0.6,
-                transition: "border-color 0.15s",
-              }}
-              onMouseEnter={(ev) => (ev.currentTarget.style.borderColor = T.borderLight)}
-              onMouseLeave={(ev) => (ev.currentTarget.style.borderColor = T.border)}
+              className={e.enabled ? s.listItem : s.listItemDisabled}
             >
               <span>
                 <span style={{ fontWeight: "bold" }}>{e.name || e.id}</span>
-                <span style={{ color: T.textDim, marginLeft: "8px", fontSize: "11px" }}>
+                <span className={s.itemMeta}>
                   {e.insertMode === LorebookMode.ALWAYS ? `[${t("lorebook.alwaysOn")}]` : e.keywords.slice(0, 3).join(", ")}
                   {e.keywords.length > 3 ? "..." : ""}
                 </span>
               </span>
-              <span style={{ color: T.textDim, fontSize: "11px" }}>
+              <span className={s.itemStatus}>
                 {e.enabled ? "" : `[${t("lorebook.disabled")}]`} P:{e.priority}
               </span>
             </button>
           ))}
         </div>
 
-        {message && <div style={{ color: T.danger, fontSize: "12px", marginTop: "8px" }}>{message}</div>}
+        {message && <div className={sh.errorText} style={{ marginTop: "8px" }}>{message}</div>}
 
       </div>
     );
@@ -222,33 +196,34 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
 
   // --- Edit view ---
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+    <div className={s.wrapper}>
+      <div className={s.header} style={{ marginBottom: "12px" }}>
+        <span className={sh.editorTitle}>
           == {isNew ? t("editor.newEntry") : t("editor.editEntry")} ==
         </span>
-        <button onClick={handleBack} style={btn("neutral")}>
+        <button onClick={handleBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
       </div>
 
       {/* Basic info */}
-      <div style={sectionStyle}>
-        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>{t("section.basicInfo")}</div>
+      <div className={s.section}>
+        <div className={s.sectionTitle}>{t("section.basicInfo")}</div>
         <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>ID</div>
+            <div className={sh.label}>ID</div>
             <input
-              style={{ ...inputStyle, ...(isNew ? {} : { color: T.textDim }) }}
+              className={s.inputFull}
+              style={isNew ? {} : { color: T.textDim }}
               value={entry.id}
               onChange={(e) => setEntry((prev) => ({ ...prev, id: e.target.value }))}
               disabled={!isNew}
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={labelStyle}>{t("field.name")}</div>
+            <div className={sh.label}>{t("field.name")}</div>
             <input
-              style={inputStyle}
+              className={s.inputFull}
               value={entry.name}
               onChange={(e) => setEntry((prev) => ({ ...prev, name: e.target.value }))}
             />
@@ -256,18 +231,18 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
         </div>
         <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
           <div style={{ width: "120px" }}>
-            <div style={labelStyle}>{t("lorebook.priority")}</div>
+            <div className={sh.label}>{t("lorebook.priority")}</div>
             <input
-              style={inputStyle}
+              className={s.inputFull}
               type="number"
               value={entry.priority}
               onChange={(e) => setEntry((prev) => ({ ...prev, priority: parseInt(e.target.value) || 0 }))}
             />
           </div>
           <div style={{ width: "160px" }}>
-            <div style={labelStyle}>{t("lorebook.triggerMode")}</div>
+            <div className={sh.label}>{t("lorebook.triggerMode")}</div>
             <select
-              style={inputStyle}
+              className={s.inputFull}
               value={entry.insertMode}
               onChange={(e) => setEntry((prev) => ({ ...prev, insertMode: e.target.value as "keyword" | "always" }))}
             >
@@ -276,7 +251,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
             </select>
           </div>
           <div>
-            <div style={labelStyle}>&nbsp;</div>
+            <div className={sh.label}>&nbsp;</div>
             <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: T.textSub }}>
               <input
                 type="checkbox"
@@ -292,44 +267,21 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
 
       {/* Keywords */}
       {entry.insertMode === LorebookMode.KEYWORD && (
-        <div style={sectionStyle}>
-          <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>{t("section.keywords")}</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>
+        <div className={s.section}>
+          <div className={s.sectionTitle}>{t("section.keywords")}</div>
+          <div className={s.keywordChips}>
             {entry.keywords.map((kw) => (
-              <span
-                key={kw}
-                style={{
-                  padding: "2px 8px",
-                  backgroundColor: T.bg2,
-                  color: T.accent,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: "3px",
-                  fontSize: "12px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
+              <span key={kw} className={s.keywordChip}>
                 {kw}
-                <button
-                  onClick={() => removeKeyword(kw)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: T.danger,
-                    cursor: "pointer",
-                    fontSize: "11px",
-                    padding: 0,
-                  }}
-                >
+                <button onClick={() => removeKeyword(kw)} className={s.keywordRemove}>
                   x
                 </button>
               </span>
             ))}
           </div>
-          <div style={{ display: "flex", gap: "6px" }}>
+          <div className={s.keywordInputRow}>
             <input
-              style={{ ...inputStyle, width: "200px" }}
+              className={s.inputW200}
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
               onKeyDown={(e) => {
@@ -340,21 +292,21 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
               }}
               placeholder={t("lorebook.keywordPlaceholder")}
             />
-            <button onClick={addKeyword} style={btn("neutral")}>
+            <button onClick={addKeyword} className={btnClass("neutral")}>
               [{t("effOp.add")}]
             </button>
           </div>
-          <div style={{ color: T.textDim, fontSize: "11px", marginTop: "4px" }}>
+          <div className={s.keywordHelp}>
             {t("lorebook.keywordHelp")}
           </div>
         </div>
       )}
 
       {/* Content */}
-      <div style={sectionStyle}>
-        <div style={{ color: T.textSub, fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>{t("section.content")}</div>
+      <div className={s.section}>
+        <div className={s.sectionTitle}>{t("section.content")}</div>
         <textarea
-          style={{ ...inputStyle, minHeight: "150px", resize: "vertical", fontFamily: T.fontMono }}
+          className={s.contentTextarea}
           value={entry.content}
           onChange={(e) => setEntry((prev) => ({ ...prev, content: e.target.value }))}
           placeholder={t("lorebook.contentPlaceholder")}
@@ -362,8 +314,8 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
-        <button onClick={handleSave} disabled={saving} style={btn("create")}>
+      <div className={s.actionBar}>
+        <button onClick={handleSave} disabled={saving} className={btnClass("create")}>
           [{t("btn.save")}]
         </button>
         {!isNew && addonIds && (
@@ -376,15 +328,15 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
               return createLorebookEntry({ ...d, id: fullId } as unknown as Omit<LorebookEntry, "source">);
             }}
             onSuccess={handleBack}
-            buttonStyle={btnStyle(T.accent)}
+            className={btnClass("neutral")}
           />
         )}
         {!isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btn("danger")}>
+          <button onClick={handleDelete} disabled={saving} className={btnClass("danger")}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={handleBack} style={btn("neutral")}>
+        <button onClick={handleBack} className={btnClass("neutral")}>
           [{t("btn.back")}]
         </button>
         {message && (

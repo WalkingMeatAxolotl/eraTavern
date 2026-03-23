@@ -22,15 +22,7 @@
 }
 
 .fieldInput {
-  width: 100%;
-  padding: 4px 6px;
-  font-size: 11px;
-  background-color: var(--bg1);
-  color: var(--text);
-  border: 1px solid var(--border-dim);
-  border-radius: 3px;
-  outline: none;
-  box-sizing: border-box;
+  composes: fieldInput from "../shared/shared.module.css";
 }
 
 .textarea {

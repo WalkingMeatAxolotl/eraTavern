@@ -172,28 +172,13 @@
 
 /* ── Width overrides for inputs ── */
 
-.w80 {
-  width: 80px;
-}
-.w60 {
-  width: 60px;
-}
-.w50 {
-  width: 50px;
-}
-.w45 {
-  width: 45px;
-}
-.wAuto {
-  width: auto;
-}
-.flex1 {
-  flex: 1;
-}
-
-.fs11 {
-  font-size: 11px;
-}
+.w80 { composes: w80 from "../shared/shared.module.css"; }
+.w60 { composes: w60 from "../shared/shared.module.css"; }
+.w50 { composes: w50 from "../shared/shared.module.css"; }
+.w45 { composes: w45 from "../shared/shared.module.css"; }
+.wAuto { composes: wAuto from "../shared/shared.module.css"; }
+.flex1 { composes: flex1 from "../shared/shared.module.css"; }
+.fs11 { composes: fs11 from "../shared/shared.module.css"; }
 
 /* ── Chain section ── */
 

@@ -21,7 +21,7 @@ export default function ConnectionOverlay({
   const w = gridCols * cellW;
   const h = gridRows * cellH;
 
-  // Build cell position map: id → {row, col}
+  // Build cell position map: id -> {row, col}
   const cellMap = new Map<number, MapCell>();
   for (const c of cells) cellMap.set(c.id, c);
 

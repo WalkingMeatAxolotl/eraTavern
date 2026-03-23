@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import T from "../../theme";
 import { t } from "../../i18n/ui";
 import {
   fetchSaves,
@@ -12,7 +11,10 @@ import {
   updateWorldMeta,
   fetchSession,
 } from "../../api/client";
-import { btn } from "../shared/styles";
+import { btnClass } from "../shared/buttons";
+import T from "../../theme";
+import clsx from "clsx";
+import s from "./SettingsPage.module.css";
 
 const MAX_SLOTS = 10;
 
@@ -20,21 +22,7 @@ interface Props {
   worldId: string;
   addonRefs: { id: string; version: string }[];
   onRestart: () => void;
-  settingsBtnStyle: React.CSSProperties;
 }
-
-const saveBtnBase = btn("default", "sm");
-
-const inputStyle: React.CSSProperties = {
-  background: T.bg3,
-  border: `1px solid ${T.border}`,
-  borderRadius: "2px",
-  padding: "4px 6px",
-  color: T.text,
-  fontSize: "12px",
-  outline: "none",
-  boxSizing: "border-box" as const,
-};
 
 export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
   const [saves, setSaves] = useState<SaveSlotMeta[]>([]);
@@ -127,27 +115,29 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
     const current = new Set(addonRefs.map((a) => `${a.id}@${a.version}`));
     const saved = new Set(saveRefs.map((a) => `${a.id}@${a.version}`));
     if (current.size !== saved.size) return true;
-    for (const s of saved) {
-      if (!current.has(s)) return true;
+    for (const sv of saved) {
+      if (!current.has(sv)) return true;
     }
     return false;
   };
 
+  const saveBtnBase = btnClass("default", "sm");
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: T.text }}>
+    <div className={s.wrapper}>
       {/* Save management */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.saveSlots")} ==</span>
+          <span className={s.sectionTitle}>== {t("header.saveSlots")} ==</span>
 
           {/* Create save */}
           {!creating ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div className={s.createRow}>
               <button
                 onClick={() => setCreating(true)}
                 disabled={loading || saves.length >= MAX_SLOTS}
+                className={saveBtnBase}
                 style={{
-                  ...saveBtnBase,
                   color: saves.length >= MAX_SLOTS ? T.textFaint : T.successDim,
                   borderColor: saves.length >= MAX_SLOTS ? T.border : `${T.success}66`,
                   opacity: saves.length >= MAX_SLOTS ? 0.5 : 1,
@@ -157,11 +147,11 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                 [{t("btn.createSave")}]
               </button>
               {saves.length >= MAX_SLOTS && (
-                <span style={{ fontSize: "11px", color: T.textDim }}>{t("save.maxSlots", { max: MAX_SLOTS })}</span>
+                <span className={s.maxSlotsHint}>{t("save.maxSlots", { max: MAX_SLOTS })}</span>
               )}
             </div>
           ) : (
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div className={s.createInputRow}>
               <input
                 autoFocus
                 value={newName}
@@ -171,21 +161,20 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                   if (e.key === "Escape") setCreating(false);
                 }}
                 placeholder={t("save.namePlaceholder")}
-                style={{ ...inputStyle, flex: 1, maxWidth: 200 }}
+                className={s.input}
+                style={{ flex: 1, maxWidth: 200 }}
               />
               <button
                 onClick={handleCreate}
                 disabled={loading || !newName.trim()}
-                style={{ ...saveBtnBase, opacity: !newName.trim() ? 0.5 : 1 }}
+                className={saveBtnBase}
+                style={{ opacity: !newName.trim() ? 0.5 : 1 }}
               >
                 {t("btn.confirm")}
               </button>
               <button
-                onClick={() => {
-                  setCreating(false);
-                  setNewName("");
-                }}
-                style={saveBtnBase}
+                onClick={() => { setCreating(false); setNewName(""); }}
+                className={saveBtnBase}
               >
                 {t("btn.cancel")}
               </button>
@@ -193,52 +182,43 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
           )}
 
           {/* Save list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            {saves.map((s) => {
-              const mismatch = addonMismatch(s.addonRefs);
-              const isRenaming = renamingId === s.slotId;
+          <div className={s.saveList}>
+            {saves.map((sv) => {
+              const mismatch = addonMismatch(sv.addonRefs);
+              const isRenaming = renamingId === sv.slotId;
               return (
-                <div
-                  key={s.slotId}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "7px 12px",
-                    backgroundColor: T.bg1,
-                    borderRadius: "3px",
-                  }}
-                >
+                <div key={sv.slotId} className={s.saveRow}>
                   {/* Left: name + metadata */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className={s.saveInfo}>
                     {isRenaming ? (
-                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                      <div className={s.renameRow}>
                         <input
                           autoFocus
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") handleRename(s.slotId);
+                            if (e.key === "Enter") handleRename(sv.slotId);
                             if (e.key === "Escape") setRenamingId(null);
                           }}
-                          style={{ ...inputStyle, flex: 1, maxWidth: 180 }}
+                          className={s.input}
+                          style={{ flex: 1, maxWidth: 180 }}
                         />
-                        <button onClick={() => handleRename(s.slotId)} style={saveBtnBase}>
+                        <button onClick={() => handleRename(sv.slotId)} className={saveBtnBase}>
                           {t("btn.confirm")}
                         </button>
-                        <button onClick={() => setRenamingId(null)} style={saveBtnBase}>
+                        <button onClick={() => setRenamingId(null)} className={saveBtnBase}>
                           {t("btn.cancel")}
                         </button>
                       </div>
                     ) : (
                       <>
-                        <div style={{ fontSize: "13px" }}>{s.name}</div>
-                        <div style={{ fontSize: "11px", color: T.textDim, marginTop: "2px" }}>
-                          {s.gameTimeDisplay}
-                          <span style={{ margin: "0 4px", color: T.textFaint }}>&middot;</span>
-                          {s.timestamp?.replace("T", " ")}
+                        <div className={s.saveName}>{sv.name}</div>
+                        <div className={s.saveMeta}>
+                          {sv.gameTimeDisplay}
+                          <span className={s.metaDot}>&middot;</span>
+                          {sv.timestamp?.replace("T", " ")}
                           {mismatch && (
-                            <span style={{ color: T.danger, marginLeft: "6px" }} title={t("save.versionMismatchTip")}>
+                            <span className={s.mismatchBadge} title={t("save.versionMismatchTip")}>
                               [{t("save.versionMismatch")}]
                             </span>
                           )}
@@ -249,22 +229,20 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
 
                   {/* Right: action buttons */}
                   {!isRenaming && (
-                    <div style={{ display: "flex", gap: "4px", marginLeft: "8px", flexShrink: 0 }}>
-                      <button onClick={() => handleLoad(s.slotId)} disabled={loading} style={saveBtnBase}>
+                    <div className={s.actionBtns}>
+                      <button onClick={() => handleLoad(sv.slotId)} disabled={loading} className={saveBtnBase}>
                         [{t("btn.loadSave")}]
                       </button>
                       <button
-                        onClick={() => {
-                          setRenamingId(s.slotId);
-                          setRenameValue(s.name);
-                        }}
-                        style={saveBtnBase}
+                        onClick={() => { setRenamingId(sv.slotId); setRenameValue(sv.name); }}
+                        className={saveBtnBase}
                       >
                         [{t("btn.renameSave")}]
                       </button>
                       <button
-                        onClick={() => handleDelete(s.slotId)}
-                        style={{ ...saveBtnBase, color: T.danger, borderColor: `${T.danger}66` }}
+                        onClick={() => handleDelete(sv.slotId)}
+                        className={saveBtnBase}
+                        style={{ color: T.danger, borderColor: `${T.danger}66` }}
                       >
                         [{t("btn.delete")}]
                       </button>
@@ -273,7 +251,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
                 </div>
               );
             })}
-            {saves.length === 0 && <div style={{ color: T.textDim, fontSize: "11px", padding: "4px 0" }}>{t("empty.saves")}</div>}
+            {saves.length === 0 && <div className={s.emptyText}>{t("empty.saves")}</div>}
           </div>
         </>
       )}
@@ -281,11 +259,11 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
       {/* World-level LLM preset */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.llmPresets")} ==</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "12px", color: T.textSub, minWidth: "90px" }}>{t("world.worldPreset")}</span>
+          <span className={s.sectionTitle}>== {t("header.llmPresets")} ==</span>
+          <div className={s.presetRow}>
+            <span className={s.presetLabel}>{t("world.worldPreset")}</span>
             <select
-              style={{ ...inputStyle, width: "200px" }}
+              className={clsx(s.input, s.inputW200)}
               value={worldPreset}
               onChange={async (e) => {
                 const val = e.target.value;
@@ -295,12 +273,10 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
             >
               <option value="">{t("llm.followGlobal")}</option>
               {presetList.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name || p.id}
-                </option>
+                <option key={p.id} value={p.id}>{p.name || p.id}</option>
               ))}
             </select>
-            <span style={{ fontSize: "11px", color: T.textDim }}>{t("world.overrideGlobal")}</span>
+            <span className={s.presetHint}>{t("world.overrideGlobal")}</span>
           </div>
         </>
       )}
@@ -308,20 +284,16 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
       {/* Restart — destructive, placed last */}
       {worldId && (
         <>
-          <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.dangerZone")} ==</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span className={s.sectionTitle}>== {t("header.dangerZone")} ==</span>
+          <div className={s.dangerRow}>
             <button
               onClick={onRestart}
-              style={{
-                ...saveBtnBase,
-                background: T.dangerBg,
-                color: T.danger,
-                borderColor: `${T.danger}66`,
-              }}
+              className={saveBtnBase}
+              style={{ background: T.dangerBg, color: T.danger, borderColor: `${T.danger}66` }}
             >
               [{t("btn.restartGame")}]
             </button>
-            <span style={{ fontSize: "11px", color: T.textDim }}>{t("save.restartHint")}</span>
+            <span className={s.dangerHint}>{t("save.restartHint")}</span>
           </div>
         </>
       )}

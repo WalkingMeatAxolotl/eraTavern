@@ -1,11 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import clsx from "clsx";
 import type { GameDefinitions, RawCharacterData } from "../../types/game";
 import { saveCharacterConfig, createCharacter, deleteCharacter, uploadAsset } from "../../api/client";
-import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { HelpButton, HelpPanel } from "../shared/HelpToggle";
 import { RawJsonPanel } from "../shared/RawJsonEditor";
 import CloneButton from "../shared/CloneDialog";
+import s from "./CharacterEditor.module.css";
 
 interface Props {
   character: RawCharacterData;
@@ -157,33 +158,24 @@ export default function CharacterEditor({ character, definitions, allCharacters,
   }
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, backgroundColor: T.bg2, padding: "12px", borderRadius: "4px" }}>
+    <div className={s.wrapper}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>
+      <div className={s.header}>
+        <span className={s.title}>
           == {isNew ? t("editor.newChar") : t("editor.editNamed", { name: data.id })} ==
         </span>
-        <button onClick={onBack} style={btnStyle(T.textSub)}>
+        <button onClick={onBack} className={clsx(s.btn, s.btnNeutral)}>
           [{t("btn.back")}]
         </button>
       </div>
 
       {/* Tab bar */}
-      <div style={{ display: "flex", gap: "4px", marginBottom: "12px" }}>
+      <div className={s.tabBar}>
         {TAB_LABELS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            style={{
-              padding: "4px 14px",
-              backgroundColor: tab === t.key ? T.bg3 : "transparent",
-              color: tab === t.key ? T.accent : T.textSub,
-              border: tab === t.key ? `1px solid ${T.border}` : "1px solid transparent",
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "12px",
-              fontWeight: tab === t.key ? "bold" : "normal",
-            }}
+            className={clsx(s.tab, tab === t.key && s.tabActive)}
           >
             [{t.label}]
           </button>
@@ -199,7 +191,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 value={data.id}
                 onChange={(e) => updateField("id", e.target.value)}
                 readOnly={!isNew}
-                style={inputStyle(isNew ? undefined : T.textDim)}
+                className={clsx(s.input, !isNew && s.inputReadonly)}
               />
             </Row>
             <Row label={t("field.portrait")}>
@@ -221,7 +213,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                     const val = field.type === "number" ? Number(e.target.value) : e.target.value;
                     updateField("basicInfo", { ...data.basicInfo, [field.key]: val });
                   }}
-                  style={inputStyle()}
+                  className={s.input}
                 />
               </Row>
             ))}
@@ -232,7 +224,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               const res = data.resources?.[field.key] ?? { value: field.defaultValue, max: field.defaultMax };
               return (
                 <Row key={field.key} label={field.label}>
-                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  <div className={s.resInputRow}>
                     <input
                       type="number"
                       min={0}
@@ -243,9 +235,9 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                           [field.key]: { ...res, value: Math.max(0, Number(e.target.value)) },
                         })
                       }
-                      style={{ ...inputStyle(), width: "80px" }}
+                      className={clsx(s.input, s.w80)}
                     />
-                    <span style={{ color: T.textSub }}>/</span>
+                    <span className={s.subText}>/</span>
                     <input
                       type="number"
                       min={0}
@@ -256,7 +248,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                           [field.key]: { ...res, max: Math.max(0, Number(e.target.value)) },
                         })
                       }
-                      style={{ ...inputStyle(), width: "80px" }}
+                      className={clsx(s.input, s.w80)}
                     />
                   </div>
                 </Row>
@@ -272,7 +264,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   const m = e.target.value;
                   updateField("position", { mapId: m, cellId: maps[m]?.cells[0]?.id ?? 0 });
                 }}
-                style={selectStyle()}
+                className={s.select}
               >
                 {Object.entries(maps).map(([id, m]) => (
                   <option key={id} value={id}>
@@ -285,7 +277,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               <select
                 value={data.position.cellId}
                 onChange={(e) => updateField("position", { mapId: posMapId, cellId: Number(e.target.value) })}
-                style={selectStyle()}
+                className={s.select}
               >
                 {mapCells.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -304,7 +296,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   const m = e.target.value;
                   updateField("restPosition", { mapId: m, cellId: maps[m]?.cells[0]?.id ?? 0 });
                 }}
-                style={selectStyle()}
+                className={s.select}
               >
                 {Object.entries(maps).map(([id, m]) => (
                   <option key={id} value={id}>
@@ -317,7 +309,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               <select
                 value={data.restPosition?.cellId ?? data.position.cellId}
                 onChange={(e) => updateField("restPosition", { mapId: restMapId, cellId: Number(e.target.value) })}
-                style={selectStyle()}
+                className={s.select}
               >
                 {restMapCells.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -373,20 +365,12 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
             return (
               <>
-                <div
-                  style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "6px", alignItems: "center" }}
-                >
+                <div className={s.outfitBtnRow}>
                   {outfitTypeIds.map((id) => (
                     <button
                       key={id}
                       onClick={() => setSelectedOutfit(id)}
-                      style={{
-                        ...btnStyle(activeKey === id ? T.accent : T.textSub),
-                        fontWeight: activeKey === id ? "bold" : "normal",
-                        borderColor: activeKey === id ? T.accent : T.border,
-                        minWidth: "60px",
-                        textAlign: "center",
-                      }}
+                      className={clsx(s.outfitBtn, activeKey === id && s.outfitBtnActive)}
                     >
                       {outfitNameMap[id] ?? id}
                     </button>
@@ -394,12 +378,12 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 </div>
 
                 {activeKey !== "default" && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                  <div className={s.outfitStatusRow}>
                     {hasCustom ? (
                       <>
-                        <span style={{ color: T.textDim, fontSize: "12px" }}>{t("ui.customized")}</span>
+                        <span className={s.outfitStatusLabel}>{t("ui.customized")}</span>
                         <button
-                          style={{ ...btnStyle(T.danger), fontSize: "12px", padding: "2px 8px" }}
+                          className={clsx(s.outfitStatusBtn, s.btnDanger)}
                           onClick={() => {
                             const next = { ...outfits };
                             delete next[activeKey];
@@ -411,9 +395,9 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                       </>
                     ) : (
                       <>
-                        <span style={{ color: T.textDim, fontSize: "12px" }}>{t("ui.inherited")}</span>
+                        <span className={s.outfitStatusLabel}>{t("ui.inherited")}</span>
                         <button
-                          style={{ ...btnStyle(T.accent), fontSize: "12px", padding: "2px 8px" }}
+                          className={clsx(s.outfitStatusBtn, s.btnAccent)}
                           onClick={() => {
                             const typeDef = outfitTypeDefs.find((t) => t.id === activeKey);
                             const source = typeDef?.copyDefault
@@ -435,28 +419,17 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                   const editable = hasCustom || activeKey === "default";
                   return (
                     <div key={slot}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          flexWrap: "wrap",
-                          minHeight: "26px",
-                        }}
-                      >
-                        <span style={{ minWidth: "100px", color: T.textSub }}>{SLOT_LABELS[slot] ?? slot}:</span>
-                        {items.length === 0 && <span style={{ color: T.textDim }}>{t("empty.slot")}</span>}
+                      <div className={s.slotRow}>
+                        <span className={s.slotLabel}>{SLOT_LABELS[slot] ?? slot}:</span>
+                        {items.length === 0 && <span className={s.slotEmpty}>{t("empty.slot")}</span>}
                         {items.map((itemId, i) => {
                           const def = clothingDefs[itemId];
                           return (
-                            <span
-                              key={i}
-                              style={{ color: T.text, display: "inline-flex", alignItems: "center", gap: "2px" }}
-                            >
+                            <span key={i} className={s.slotItem}>
                               [{def?.name ?? itemId}]
                               {editable && (
                                 <button
-                                  style={{ ...btnStyle(T.danger), padding: "0 4px", fontSize: "11px", lineHeight: "1" }}
+                                  className={clsx(s.btnInline, s.btnRemoveItem)}
                                   onClick={() => {
                                     const newItems = items.filter((_, j) => j !== i);
                                     updateOutfits({ ...outfits, [activeKey]: { ...outfit, [slot]: newItems } });
@@ -470,7 +443,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                         })}
                         {editable && (
                           <select
-                            style={selectStyle()}
+                            className={s.select}
                             value=""
                             onChange={(e) => {
                               if (!e.target.value) return;
@@ -505,7 +478,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
         <>
           <Section title={t("section.initialTraits")}>
             {template.traits.filter((f) => f.key !== "ability" && f.key !== "experience").length === 0 && (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noTraitCats")}</div>
+              <div className={s.dimText}>{t("empty.noTraitCats")}</div>
             )}
             {template.traits
               .filter((f) => f.key !== "ability" && f.key !== "experience")
@@ -528,23 +501,11 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
                 return (
                   <Row key={field.key} label={field.label}>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
+                    <div className={s.traitList}>
                       {ids.map((tid) => {
                         const def = traitDefs[tid];
                         return (
-                          <span
-                            key={tid}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "2px",
-                              padding: "1px 6px",
-                              backgroundColor: T.bg2,
-                              border: `1px solid ${T.borderLight}`,
-                              borderRadius: "3px",
-                              fontSize: "12px",
-                            }}
-                          >
+                          <span key={tid} className={s.traitChip}>
                             {def?.name ?? tid}
                             <button
                               onClick={() => {
@@ -552,15 +513,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                                 nt[field.key] = ids.filter((x) => x !== tid);
                                 updateField("traits", nt);
                               }}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                color: T.danger,
-                                cursor: "pointer",
-                                padding: "0 2px",
-                                fontSize: "12px",
-                                lineHeight: 1,
-                              }}
+                              className={s.btnRemoveChip}
                             >
                               x
                             </button>
@@ -593,7 +546,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                               });
                             }
                           }}
-                          style={selectStyle()}
+                          className={s.select}
                         >
                           <option value="">+</option>
                           {groupsNotFullySelected.map((g) => (
@@ -627,7 +580,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                               return n;
                             });
                           }}
-                          style={selectStyle()}
+                          className={s.select}
                         >
                           <option value="">{t("opt.selectEllipsis")}</option>
                           {curPendingGroupDef.traits
@@ -650,20 +603,14 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
           <Section title={t("section.initialAbility")}>
             {(template.abilities ?? []).length === 0 ? (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noAbilityDefs")}</div>
+              <div className={s.dimText}>{t("empty.noAbilityDefs")}</div>
             ) : (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                  gap: "4px 12px",
-                }}
-              >
+              <div className={s.grid}>
                 {template.abilities.map((field) => {
                   const exp = data.abilities[field.key] ?? field.defaultValue;
                   return (
-                    <div key={field.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ minWidth: "80px" }}>{field.label}:</span>
+                    <div key={field.key} className={s.gridItem}>
+                      <span className={s.gridLabel}>{field.label}:</span>
                       <input
                         type="number"
                         min={0}
@@ -674,9 +621,9 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                             [field.key]: Math.max(0, Number(e.target.value)),
                           })
                         }
-                        style={{ ...inputStyle(), width: "70px" }}
+                        className={clsx(s.input, s.w70)}
                       />
-                      <span style={{ color: T.textSub }}>{expToGrade(exp)}</span>
+                      <span className={s.subText}>{expToGrade(exp)}</span>
                     </div>
                   );
                 })}
@@ -686,19 +633,13 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
           <Section title={t("section.initialExp")}>
             {(template.experiences ?? []).length > 0 ? (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                  gap: "4px 12px",
-                }}
-              >
+              <div className={s.grid}>
                 {(template.experiences ?? []).map((field: { key: string; label: string }) => {
                   const expData = data.experiences?.[field.key];
                   const count = expData?.count ?? 0;
                   return (
-                    <div key={field.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ minWidth: "80px" }}>{field.label}:</span>
+                    <div key={field.key} className={s.gridItem}>
+                      <span className={s.gridLabel}>{field.label}:</span>
                       <input
                         type="number"
                         min={0}
@@ -715,14 +656,14 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                           };
                           updateField("experiences", ne);
                         }}
-                        style={{ ...inputStyle(), width: "70px" }}
+                        className={clsx(s.input, s.w70)}
                       />
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noExpDefs")}</div>
+              <div className={s.dimText}>{t("empty.noExpDefs")}</div>
             )}
           </Section>
         </>
@@ -736,8 +677,8 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               const def = itemDefs[entry.itemId];
               const itemName = def?.name ?? entry.itemId;
               return (
-                <div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                  <span style={{ minWidth: "80px", color: T.textSub }}>{itemName}:</span>
+                <div key={idx} className={s.inlineRow}>
+                  <span className={s.inlineLabel}>{itemName}:</span>
                   <input
                     type="number"
                     value={entry.amount}
@@ -748,7 +689,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                       ni[idx] = { ...entry, amount: Math.max(1, Number(e.target.value)) };
                       updateField("inventory", ni);
                     }}
-                    style={{ ...inputStyle(), width: "60px" }}
+                    className={clsx(s.input, s.w60)}
                   />
                   <button
                     onClick={() =>
@@ -757,7 +698,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                         (data.inventory ?? []).filter((_, i) => i !== idx),
                       )
                     }
-                    style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}
+                    className={s.btnInline}
                   >
                     [x]
                   </button>
@@ -775,7 +716,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                     if (!e.target.value) return;
                     updateField("inventory", [...(data.inventory ?? []), { itemId: e.target.value, amount: 1 }]);
                   }}
-                  style={selectStyle()}
+                  className={s.select}
                 >
                   <option value="">{t("btn.addItem")}</option>
                   {available.map((item) => (
@@ -787,7 +728,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               );
             })()}
             {Object.keys(itemDefs).length === 0 && (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noItemDefs")}</div>
+              <div className={s.dimText}>{t("empty.noItemDefs")}</div>
             )}
           </Section>
 
@@ -796,15 +737,15 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               const tc = allCharacters.find((c) => c.id === targetId);
               const tn = tc ? String(tc.basicInfo?.name || targetId) : targetId;
               return (
-                <div key={targetId} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                  <span style={{ minWidth: "80px", color: T.textSub }}>{tn}:</span>
+                <div key={targetId} className={s.inlineRow}>
+                  <span className={s.inlineLabel}>{tn}:</span>
                   <input
                     type="number"
                     value={val}
                     onChange={(e) =>
                       updateField("favorability", { ...data.favorability, [targetId]: Number(e.target.value) })
                     }
-                    style={{ ...inputStyle(), width: "60px" }}
+                    className={clsx(s.input, s.w60)}
                   />
                   <button
                     onClick={() => {
@@ -812,7 +753,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                       delete nf[targetId];
                       updateField("favorability", nf);
                     }}
-                    style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}
+                    className={s.btnInline}
                   >
                     [x]
                   </button>
@@ -830,7 +771,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                     if (!e.target.value) return;
                     updateField("favorability", { ...data.favorability, [e.target.value]: 0 });
                   }}
-                  style={selectStyle()}
+                  className={s.select}
                 >
                   <option value="">{t("btn.addFav")}</option>
                   {available.map((c) => (
@@ -842,7 +783,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               );
             })()}
             {!allCharacters.some((c) => c.id !== data.id) && (
-              <div style={{ color: T.textDim, fontSize: "12px" }}>{t("empty.noOtherChars")}</div>
+              <div className={s.dimText}>{t("empty.noOtherChars")}</div>
             )}
           </Section>
         </>
@@ -857,8 +798,8 @@ export default function CharacterEditor({ character, definitions, allCharacters,
           helpContent={t("help.llmDesc")}
         >
           {Object.entries(data.llm ?? {}).map(([key, val]) => (
-            <div key={key} style={{ marginBottom: "6px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+            <div key={key} className={s.llmFieldRow}>
+              <div className={s.llmKeyRow}>
                 <input
                   value={key}
                   onChange={(e) => {
@@ -871,7 +812,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                     updateField("llm", llm);
                   }}
                   placeholder={t("ph.fieldName")}
-                  style={{ ...inputStyle(), width: "120px", fontSize: "12px" }}
+                  className={clsx(s.input, s.w120)}
                 />
                 <button
                   onClick={() => {
@@ -879,7 +820,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                     delete llm[key];
                     updateField("llm", llm);
                   }}
-                  style={{ background: "none", border: "none", color: T.danger, cursor: "pointer", fontSize: "12px" }}
+                  className={s.btnInline}
                 >
                   [x]
                 </button>
@@ -887,14 +828,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               <textarea
                 value={val}
                 onChange={(e) => updateField("llm", { ...(data.llm ?? {}), [key]: e.target.value })}
-                style={{
-                  ...inputStyle(),
-                  width: "100%",
-                  minHeight: "50px",
-                  resize: "vertical",
-                  fontSize: "12px",
-                  boxSizing: "border-box",
-                }}
+                className={s.textarea}
               />
             </div>
           ))}
@@ -904,7 +838,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               if (!e.target.value) return;
               updateField("llm", { ...(data.llm ?? {}), [e.target.value]: "" });
             }}
-            style={{ ...inputStyle(), width: "auto", fontSize: "12px" }}
+            className={clsx(s.select, s.wAuto)}
           >
             <option value="">{t("btn.addField")}</option>
             {["personality", "appearance", "speech", "background"]
@@ -920,16 +854,8 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       )}
 
       {/* Action bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          marginTop: "12px",
-          borderTop: `1px solid ${T.border}`,
-          paddingTop: "12px",
-        }}
-      >
-        <button onClick={handleSave} disabled={saving} style={btnStyle(T.successDim)}>
+      <div className={s.actionBar}>
+        <button onClick={handleSave} disabled={saving} className={clsx(s.btn, s.btnSuccess)}>
           [{saving ? t("status.submitting") : t("btn.confirm")}]
         </button>
         {!isNew && addonIds && (
@@ -939,27 +865,23 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             getData={() => { const { id: _, source: _s, ...rest } = data; return rest as unknown as Record<string, unknown>; }}
             createFn={(d) => createCharacter(d as RawCharacterData)}
             onSuccess={onBack}
-            buttonStyle={btnStyle(T.accent)}
+            className={clsx(s.btn, s.btnAccent)}
           />
         )}
         {!isNew && (
-          <button onClick={handleDelete} disabled={saving} style={btnStyle(T.danger)}>
+          <button onClick={handleDelete} disabled={saving} className={clsx(s.btn, s.btnDanger)}>
             [{t("btn.delete")}]
           </button>
         )}
-        <button onClick={onBack} style={btnStyle(T.textSub)}>
+        <button onClick={onBack} className={clsx(s.btn, s.btnNeutral)}>
           [{t("btn.back")}]
         </button>
-        <button onClick={() => setJsonMode(true)} style={btnStyle(T.textSub)}>
+        <button onClick={() => setJsonMode(true)} className={clsx(s.btn, s.btnNeutral)}>
           [JSON]
         </button>
         {message && (
           <span
-            style={{
-              color: message.includes("fail") || message.includes("not found") ? T.danger : T.success,
-              marginLeft: "8px",
-              alignSelf: "center",
-            }}
+            className={message.includes("fail") || message.includes("not found") ? s.msgError : s.msgSuccess}
           >
             {message}
           </span>
@@ -969,20 +891,12 @@ export default function CharacterEditor({ character, definitions, allCharacters,
   );
 }
 
-// --- Helper components & styles ---
+// --- Helper components ---
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: "12px" }}>
-      <div
-        style={{
-          color: T.accent,
-          borderBottom: `1px solid ${T.border}`,
-          marginBottom: "6px",
-          paddingBottom: "2px",
-          fontWeight: "bold",
-        }}
-      >
+    <div className={s.section}>
+      <div className={s.sectionTitle}>
         == {title} ==
       </div>
       {children}
@@ -1004,25 +918,14 @@ function SectionWithHelp({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: "12px" }}>
-      <div
-        style={{
-          color: T.accent,
-          borderBottom: `1px solid ${T.border}`,
-          marginBottom: "6px",
-          paddingBottom: "2px",
-          fontWeight: "bold",
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-        }}
-      >
+    <div className={s.section}>
+      <div className={clsx(s.sectionTitle, s.sectionTitleRow)}>
         == {title} ==
         <HelpButton show={showHelp} onToggle={onToggleHelp} />
       </div>
       {showHelp && (
         <HelpPanel>
-          <div style={{ fontSize: "11px" }}>{helpContent}</div>
+          <div className={s.fs11}>{helpContent}</div>
         </HelpPanel>
       )}
       {children}
@@ -1032,48 +935,11 @@ function SectionWithHelp({
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-      <span style={{ minWidth: "100px", color: T.textSub }}>{label}:</span>
+    <div className={s.row}>
+      <span className={s.rowLabel}>{label}:</span>
       {children}
     </div>
   );
-}
-
-function inputStyle(color?: string): React.CSSProperties {
-  return {
-    backgroundColor: T.bg2,
-    color: color ?? T.text,
-    border: `1px solid ${T.borderLight}`,
-    borderRadius: "3px",
-    padding: "3px 6px",
-    fontSize: "13px",
-    outline: "none",
-  };
-}
-
-function selectStyle(): React.CSSProperties {
-  return {
-    backgroundColor: T.bg2,
-    color: T.text,
-    border: `1px solid ${T.borderLight}`,
-    borderRadius: "3px",
-    padding: "3px 6px",
-    fontSize: "13px",
-    outline: "none",
-    cursor: "pointer",
-  };
-}
-
-function btnStyle(color: string): React.CSSProperties {
-  return {
-    padding: "4px 12px",
-    backgroundColor: "transparent",
-    color,
-    border: `1px solid ${T.border}`,
-    borderRadius: "3px",
-    cursor: "pointer",
-    fontSize: "13px",
-  };
 }
 
 function PortraitPicker({
@@ -1101,26 +967,20 @@ function PortraitPicker({
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <div className={s.portraitRow}>
       {portrait && (
         <img
           src={`/assets/characters/${portrait}?t=${cacheBust}`}
           alt=""
-          style={{
-            height: "40px",
-            width: "40px",
-            objectFit: "cover",
-            borderRadius: "3px",
-            border: `1px solid ${T.border}`,
-          }}
+          className={s.portraitImg}
         />
       )}
-      <span style={{ fontSize: "12px", color: T.textSub, minWidth: "60px" }}>{portrait ?? t("ui.none")}</span>
-      <button onClick={() => fileRef.current?.click()} style={btnStyle(T.accent)}>
+      <span className={s.portraitName}>{portrait ?? t("ui.none")}</span>
+      <button onClick={() => fileRef.current?.click()} className={clsx(s.btn, s.btnAccent)}>
         [{t("btn.selectImage")}]
       </button>
       {portrait && (
-        <button onClick={() => onChange(null)} style={btnStyle(T.danger)}>
+        <button onClick={() => onChange(null)} className={clsx(s.btn, s.btnDanger)}>
           [{t("btn.clear")}]
         </button>
       )}

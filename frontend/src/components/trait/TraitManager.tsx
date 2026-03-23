@@ -1,5 +1,5 @@
-import T from "../../theme";
 import { useState, useCallback, useMemo } from "react";
+import clsx from "clsx";
 import { t } from "../../i18n/ui";
 import type { GameDefinitions, TraitDefinition, TraitGroup } from "../../types/game";
 import { fetchDefinitions, fetchTraitDefs, fetchTraitGroups } from "../../api/client";
@@ -9,14 +9,9 @@ import { useCollapsibleGroups } from "../shared/useCollapsibleGroups";
 import { RawJsonView } from "../shared/RawJsonEditor";
 import { SectionDivider } from "../shared/SectionDivider";
 import { useManagerState } from "../shared/useManagerState";
-import { createHoverStyles, btn } from "../shared/styles";
-
-const hoverStyles = createHoverStyles("tm", [
-  ["cat-btn", "color"],
-  ["trait-chip", "border"],
-  ["action-btn", "border"],
-  ["accent-btn", "border"],
-]);
+import { btnClass } from "../shared/buttons";
+import sh from "../shared/shared.module.css";
+import s from "./TraitManager.module.css";
 
 export default function TraitManager({
   selectedAddon,
@@ -60,7 +55,7 @@ export default function TraitManager({
   };
 
   if (loading || !definitions) {
-    return <div style={{ color: T.textDim, padding: "20px", textAlign: "center" }}>{t("status.loading")}</div>;
+    return <div className={s.loading}>{t("status.loading")}</div>;
   }
 
   // Group editor view
@@ -200,33 +195,30 @@ function TraitList({
     );
   };
 
-  // Button styles via shared btn() factory
-
   if (showJson && selectedAddon) {
     return <RawJsonView addonId={selectedAddon} filename="traits.json" onClose={() => setShowJson(false)} />;
   }
 
   return (
-    <div style={{ fontSize: "13px", color: T.text, padding: "12px 0" }}>
-      <style>{hoverStyles}</style>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ color: T.accent, fontWeight: "bold", fontSize: "14px" }}>== {t("header.traitList")} ==</span>
+    <div className={s.wrapper}>
+      <div className={s.header}>
+        <span className={sh.editorTitle}>== {t("header.traitList")} ==</span>
         {!readOnly && (
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button className="tm-action-btn" onClick={() => setShowJson(true)} style={btn("neutral", "md")}>
+          <div className={s.btnRow}>
+            <button className={btnClass("neutral", "md")} onClick={() => setShowJson(true)}>
               [JSON]
             </button>
-            <button className="tm-action-btn" onClick={onNewGroup} style={btn("create", "md")}>
+            <button className={btnClass("create", "md")} onClick={onNewGroup}>
               [{t("btn.newTraitGroup")}]
             </button>
-            <button className="tm-action-btn" onClick={onNewTrait} style={btn("create", "md")}>
+            <button className={btnClass("create", "md")} onClick={onNewTrait}>
               [{t("btn.newTrait")}]
             </button>
           </div>
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      <div className={s.catContainer}>
         {/* ── Ability section ── */}
         {abilityCats.length > 0 && (
           <>
@@ -312,34 +304,19 @@ function CategorySection({
   const countLabel = groupCount > 0 ? `${traitCount} + ${t("trait.groupCountLabel", { count: groupCount })}` : `${traitCount}`;
   return (
     <div>
-      <button
-        className="tm-cat-btn"
-        onClick={onToggle}
-        style={{
-          width: "100%",
-          textAlign: "left",
-          padding: "6px 12px",
-          backgroundColor: T.bg2,
-          color: T.textSub,
-          border: "none",
-          cursor: "pointer",
-          fontSize: "13px",
-          borderRadius: "3px",
-          transition: "background-color 0.1s, color 0.1s",
-        }}
-      >
-        <span style={{ display: "inline-block", width: "1.2em", textAlign: "center", fontSize: "11px" }}>
+      <button className={s.catBtn} onClick={onToggle}>
+        <span className={s.catArrow}>
           {isCollapsed ? "\u25B6" : "\u25BC"}
         </span>{" "}
         {label} ({countLabel})
       </button>
       {!isCollapsed && (
-        <div style={{ padding: "8px 8px", display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div className={s.catContent}>
           {/* Trait groups */}
           {groups.length > 0 && (
             <>
               {expandGroups ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                <div className={s.groupColumn}>
                   {groups.map((g) => (
                     <GroupRow
                       key={g.id}
@@ -349,26 +326,12 @@ function CategorySection({
                       onHoverChange={(hovered) => setHoveredGroupId(hovered ? g.id : null)}
                     />
                   ))}
-                  <button
-                    className="tm-accent-btn"
-                    onClick={() => setExpandGroups(false)}
-                    style={{
-                      alignSelf: "flex-end",
-                      padding: "4px 10px",
-                      backgroundColor: T.bg2,
-                      color: T.accent,
-                      border: `1px solid ${T.accentDim}`,
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      transition: "background-color 0.1s, border-color 0.1s",
-                    }}
-                  >
+                  <button className={s.collapseBtn} onClick={() => setExpandGroups(false)}>
                     [{t("trait.collapseGroups")}]
                   </button>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+                <div className={s.groupChipWrap}>
                   {groups.map((g) => (
                     <GroupChip
                       key={g.id}
@@ -377,30 +340,17 @@ function CategorySection({
                       onHoverChange={(hovered) => setHoveredGroupId(hovered ? g.id : null)}
                     />
                   ))}
-                  <button
-                    className="tm-accent-btn"
-                    onClick={() => setExpandGroups(true)}
-                    style={{
-                      padding: "4px 10px",
-                      backgroundColor: T.bg2,
-                      color: T.accent,
-                      border: `1px solid ${T.accentDim}`,
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      transition: "background-color 0.1s, border-color 0.1s",
-                    }}
-                  >
+                  <button className={s.accentBtn} onClick={() => setExpandGroups(true)}>
                     [{t("trait.expandGroups")}]
                   </button>
                 </div>
               )}
-              {traits.length > 0 && <div style={{ height: "1px", backgroundColor: T.borderDim }} />}
+              {traits.length > 0 && <div className={s.divider} />}
             </>
           )}
           {/* Individual traits */}
           {traits.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            <div className={s.traitGrid}>
               {traits.map((t) => {
                 const isHighlighted = highlightedTraits.has(t.id);
                 const isDimmed = hoveredGroupId !== null && !isHighlighted;
@@ -435,51 +385,19 @@ function GroupRow({
   onEditGroup: () => void;
   onHoverChange: (hovered: boolean) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   const memberNames = group.traits.map((tid) => definitions.traitDefs[tid]?.name ?? tid);
 
   return (
     <button
+      className={s.groupRow}
       onClick={onEditGroup}
-      onMouseEnter={() => {
-        setHovered(true);
-        onHoverChange(true);
-      }}
-      onMouseLeave={() => {
-        setHovered(false);
-        onHoverChange(false);
-      }}
-      style={{
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        gap: "6px",
-        width: "100%",
-        padding: "5px 10px 5px 13px",
-        backgroundColor: hovered ? T.bg2 : T.bg1,
-        border: "none",
-        borderRadius: "2px",
-        cursor: "pointer",
-        fontSize: "12px",
-        textAlign: "left",
-        transition: "background-color 0.1s",
-      }}
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
     >
-      <span
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: "3px",
-          backgroundColor: hovered ? T.accent : T.accentDim,
-          borderRadius: "2px 0 0 2px",
-          transition: "background-color 0.1s",
-        }}
-      />
-      <span style={{ color: T.accent, whiteSpace: "nowrap" }}>{group.name}</span>
-      <span style={{ color: T.textDim }}>:</span>
-      <span style={{ color: hovered ? T.text : T.textSub, flex: 1 }}>{memberNames.join(" | ")}</span>
+      <span className={s.groupRowBar} />
+      <span className={s.groupRowName}>{group.name}</span>
+      <span className={s.groupRowSep}>:</span>
+      <span className={s.groupRowMembers}>{memberNames.join(" | ")}</span>
     </button>
   );
 }
@@ -495,47 +413,18 @@ function GroupChip({
   onEditGroup: () => void;
   onHoverChange: (hovered: boolean) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   const count = group.traits.length;
 
   return (
     <button
+      className={s.groupChip}
       onClick={onEditGroup}
-      onMouseEnter={() => {
-        setHovered(true);
-        onHoverChange(true);
-      }}
-      onMouseLeave={() => {
-        setHovered(false);
-        onHoverChange(false);
-      }}
-      style={{
-        position: "relative",
-        padding: "4px 10px 4px 12px",
-        backgroundColor: hovered ? T.bg2 : T.bg1,
-        color: T.accent,
-        border: `1px solid ${hovered ? T.accent : T.accentDim}`,
-        borderRadius: "3px",
-        cursor: "pointer",
-        fontSize: "12px",
-        transition: "background-color 0.15s, border-color 0.15s",
-      }}
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
     >
-      {/* Left accent bar */}
-      <span
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: "3px",
-          backgroundColor: hovered ? T.accent : T.accentDim,
-          borderRadius: "3px 0 0 3px",
-          transition: "background-color 0.15s",
-        }}
-      />
+      <span className={s.groupChipBar} />
       {group.name}
-      <span style={{ color: T.textDim, marginLeft: "4px" }}>({count})</span>
+      <span className={s.groupChipCount}>({count})</span>
     </button>
   );
 }
@@ -555,24 +444,11 @@ function TraitChip({
 }) {
   return (
     <button
-      className="tm-trait-chip"
+      className={clsx(s.traitChip, highlighted && s.traitChipHighlighted, dimmed && s.traitChipDimmed)}
       onClick={onClick}
-      style={{
-        position: "relative",
-        padding: "4px 10px",
-        backgroundColor: highlighted ? T.bg3 : T.bg1,
-        color: dimmed ? T.textDim : T.text,
-        border: `1px solid ${highlighted ? T.accentDim : T.border}`,
-        borderRadius: "3px",
-        cursor: "pointer",
-        fontSize: "12px",
-        opacity: dimmed ? 0.45 : 1,
-        transition: "background-color 0.15s, border-color 0.15s, opacity 0.15s, color 0.15s",
-      }}
     >
       {trait.name || trait.id}
-      {trait.source && <span style={{ color: T.textDim, fontSize: "11px" }}> [{trait.source}]</span>}
+      {trait.source && <span className={s.traitChipSource}> [{trait.source}]</span>}
     </button>
   );
 }
-

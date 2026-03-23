@@ -1,0 +1,13 @@
+/* ── MapView ── */
+
+.wrapper {
+  font-size: 14px;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.row {
+  display: flex;
+}
