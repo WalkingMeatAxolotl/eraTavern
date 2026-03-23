@@ -660,9 +660,9 @@ function EventEditor({
       </div>
 
       {/* Conditions */}
-      <div className={s.sectionCond}>
-        <div className={s.sectionTitleCond}>
-          <span className={s.sectionLabelCond}>{t("section.conditionsAnd")}</span>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-purple)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.conditionsAnd")}</span>
           <div style={{ display: "flex", gap: "4px" }}>
             <button onClick={addCondition} className={btnClass("add", "sm")}>
               [{t("btn.addCondition")}]
@@ -692,9 +692,9 @@ function EventEditor({
       </div>
 
       {/* Effects */}
-      <div className={s.sectionEff}>
-        <div className={s.sectionTitleEff}>
-          <span className={s.sectionLabelEff}>{t("section.effects")}</span>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-red)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.effects")}</span>
           <button onClick={addEffect} className={btnClass("add", "sm")}>
             [{t("btn.addEffect")}]
           </button>
@@ -718,10 +718,10 @@ function EventEditor({
       </div>
 
       {/* Output template */}
-      <div className={s.sectionTpl}>
-        <div className={s.sectionTitleTpl}>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-green)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span className={s.sectionLabelTpl}>{t("section.outputTpl")}</span>
+            <span className={s.sectionTitleText}>{t("section.outputTpl")}</span>
             <button
               onClick={() => setShowVarHelp((v) => !v)}
               className={btnClass(showVarHelp ? "danger" : "neutral", "sm")}

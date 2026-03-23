@@ -104,7 +104,7 @@ export default function ActionManager({
           const catCollapsed = isCollapsed(cat);
           const displayCat = cat === "__uncategorized__" ? t("label.uncategorized") : cat;
           return (
-            <div key={cat}>
+            <div key={cat} className={s.card}>
               <button
                 className={s.catBtn}
                 onClick={() => toggle(cat)}
@@ -115,17 +115,19 @@ export default function ActionManager({
                 {displayCat} ({catActions.length})
               </button>
               {!catCollapsed && catActions.length > 0 && (
-                <div className={s.itemGrid}>
-                  {catActions.map((action) => (
-                    <button
-                      className={s.item}
-                      key={action.id}
-                      onClick={() => handleEdit(action.id)}
-                    >
-                      {action.name || action.id}
-                      {action.source && <span className={s.sourceSpan}> [{action.source}]</span>}
-                    </button>
-                  ))}
+                <div className={s.cardContent}>
+                  <div className={s.itemGrid}>
+                    {catActions.map((action) => (
+                      <button
+                        className={s.item}
+                        key={action.id}
+                        onClick={() => handleEdit(action.id)}
+                      >
+                        {action.name || action.id}
+                        {action.source && <span className={s.sourceSpan}> [{action.source}]</span>}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

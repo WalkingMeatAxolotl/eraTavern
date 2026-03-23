@@ -135,23 +135,27 @@ export default function ClothingManager({
         {(() => {
           const types = definitions.outfitTypes ?? [];
           return (
-            <div className={s.itemGrid}>
-              {types.length === 0 && <span className={s.emptyMsg}>({t("ui.none")})</span>}
-              {types.map((ot) => (
-                <button
-                  className={s.item}
-                  key={ot.id}
-                  onClick={() => {
-                    setIsNewOutfit(false);
-                    setEditingOutfitId(ot.id);
-                  }}
-                >
-                  {ot.name || ot.id}
-                  <span className={s.presetTag}>
-                    {ot.copyDefault ? `(${t("clothing.inheritTag")})` : `(${t("clothing.slotCountTag", { count: Object.values(ot.slots || {}).filter((v) => v.length > 0).length })})`}
-                  </span>
-                </button>
-              ))}
+            <div className={s.card}>
+              <div className={s.cardContent}>
+                {types.length === 0 && <span className={s.emptyMsg}>({t("ui.none")})</span>}
+                <div className={s.itemGrid}>
+                  {types.map((ot) => (
+                    <button
+                      className={s.item}
+                      key={ot.id}
+                      onClick={() => {
+                        setIsNewOutfit(false);
+                        setEditingOutfitId(ot.id);
+                      }}
+                    >
+                      {ot.name || ot.id}
+                      <span className={s.presetTag}>
+                        {ot.copyDefault ? `(${t("clothing.inheritTag")})` : `(${t("clothing.slotCountTag", { count: Object.values(ot.slots || {}).filter((v) => v.length > 0).length })})`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           );
         })()}
@@ -162,7 +166,7 @@ export default function ClothingManager({
           const items = grouped[slotKey] || [];
           const slotCollapsed = isCollapsed(slotKey);
           return (
-            <div key={slotKey}>
+            <div key={slotKey} className={s.card}>
               <button className={s.catBtn} onClick={() => toggleCollapse(slotKey)}>
                 <span className={s.catArrow}>
                   {slotCollapsed ? "\u25B6" : "\u25BC"}
@@ -170,13 +174,15 @@ export default function ClothingManager({
                 {SLOT_LABELS[slotKey] ?? slotKey} ({items.length})
               </button>
               {!slotCollapsed && items.length > 0 && (
-                <div className={s.itemGrid}>
-                  {items.map((c) => (
-                    <button className={s.item} key={c.id} onClick={() => handleEdit(c.id)}>
-                      {c.name || c.id}
-                      {c.source && <span className={s.sourceSpan}> [{c.source}]</span>}
-                    </button>
-                  ))}
+                <div className={s.cardContent}>
+                  <div className={s.itemGrid}>
+                    {items.map((c) => (
+                      <button className={s.item} key={c.id} onClick={() => handleEdit(c.id)}>
+                        {c.name || c.id}
+                        {c.source && <span className={s.sourceSpan}> [{c.source}]</span>}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -184,7 +190,7 @@ export default function ClothingManager({
         })}
         {/* Uncategorized */}
         {grouped["__other__"] && grouped["__other__"].length > 0 && (
-          <div>
+          <div className={s.card}>
             <button className={s.catBtn} onClick={() => toggleCollapse("__other__")}>
               <span className={s.catArrow}>
                 {isCollapsed("__other__") ? "\u25B6" : "\u25BC"}
@@ -192,13 +198,15 @@ export default function ClothingManager({
               {t("label.uncategorized")} ({grouped["__other__"].length})
             </button>
             {!isCollapsed("__other__") && (
-              <div className={s.itemGrid}>
-                {grouped["__other__"].map((c) => (
-                  <button className={s.item} key={c.id} onClick={() => handleEdit(c.id)}>
-                    {c.name || c.id}
-                    {c.source && <span className={s.sourceSpan}> [{c.source}]</span>}
-                  </button>
-                ))}
+              <div className={s.cardContent}>
+                <div className={s.itemGrid}>
+                  {grouped["__other__"].map((c) => (
+                    <button className={s.item} key={c.id} onClick={() => handleEdit(c.id)}>
+                      {c.name || c.id}
+                      {c.source && <span className={s.sourceSpan}> [{c.source}]</span>}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

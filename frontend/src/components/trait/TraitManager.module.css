@@ -20,13 +20,17 @@
 
 .catArrow { composes: catArrow from "../shared/shared.module.css"; }
 
+/* ── Category card ── */
+
+.card { composes: categoryCard from "../shared/shared.module.css"; }
+
 /* ── Category content ── */
 
 .catContent {
-  padding: 8px;
+  composes: categoryCardContent from "../shared/shared.module.css";
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 /* ── Group rows (expanded mode) ── */
@@ -38,43 +42,29 @@
 }
 
 .groupRow {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 5px 10px 5px 13px;
-  background-color: var(--bg1);
-  border: none;
-  border-radius: 2px;
+  padding: 4px 10px;
+  border-left: 3px solid rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 0 3px 3px 0;
   cursor: pointer;
   font-size: 12px;
   text-align: left;
-  transition: background-color 0.1s;
+  transition: background-color 0.1s, border-color 0.1s;
 }
 
 .groupRow:hover {
-  background-color: var(--bg2);
-}
-
-.groupRowBar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background-color: var(--accent-dim);
-  border-radius: 2px 0 0 2px;
-  transition: background-color 0.1s;
-}
-
-.groupRow:hover .groupRowBar {
-  background-color: var(--accent);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-left-color: rgba(255, 255, 255, 0.25);
 }
 
 .groupRowName {
-  color: var(--accent);
+  color: var(--text);
   white-space: nowrap;
+  font-weight: 600;
 }
 
 .groupRowSep {
@@ -95,40 +85,26 @@
 .groupChipWrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
 }
 
 .groupChip {
-  position: relative;
-  padding: 4px 10px 4px 12px;
-  background-color: var(--bg1);
-  color: var(--accent);
-  border: 1px solid var(--accent-dim);
-  border-radius: 3px;
+  padding: 4px 10px;
+  background-color: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0 3px 3px 0;
   cursor: pointer;
   font-size: 12px;
   transition: background-color 0.15s, border-color 0.15s;
 }
 
 .groupChip:hover {
-  background-color: var(--bg2);
-  border-color: var(--accent);
-}
-
-.groupChipBar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background-color: var(--accent-dim);
-  border-radius: 3px 0 0 3px;
-  transition: background-color 0.15s;
-}
-
-.groupChip:hover .groupChipBar {
-  background-color: var(--accent);
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  border-left-color: rgba(255, 255, 255, 0.25);
 }
 
 .groupChipCount {
@@ -140,9 +116,9 @@
 
 .accentBtn {
   padding: 4px 10px;
-  background-color: var(--bg2);
-  color: var(--accent);
-  border: 1px solid var(--accent-dim);
+  background-color: rgba(255, 255, 255, 0.02);
+  color: var(--text-sub);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 3px;
   cursor: pointer;
   font-size: 12px;
@@ -150,8 +126,8 @@
 }
 
 .accentBtn:hover {
-  background-color: var(--bg3);
-  border-color: var(--accent);
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .collapseBtn {
@@ -162,30 +138,17 @@
 /* ── Trait chips ── */
 
 .traitGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  composes: chipGrid from "../shared/shared.module.css";
 }
 
 .traitChip {
+  composes: entityChip from "../shared/shared.module.css";
   position: relative;
-  padding: 4px 10px;
-  background-color: var(--bg1);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
   transition: background-color 0.15s, border-color 0.15s, opacity 0.15s, color 0.15s;
 }
 
-.traitChip:hover {
-  background-color: var(--bg3);
-  border-color: var(--border-light);
-}
-
 .traitChipHighlighted {
-  background-color: var(--bg3);
+  background-color: rgba(255, 255, 255, 0.08);
   border-color: var(--accent-dim);
 }
 

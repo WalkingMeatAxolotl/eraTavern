@@ -149,10 +149,11 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
 
       {/* Slots editor (only when copyDefault is off) */}
       {!copyDefault && (
-        <div className={s.sectionBlock}>
-          <div className={s.slotsHeader}>
-            == {t("outfit.defaultSlotContent")} ==
+        <div className={s.section} style={{ "--sec-color": "var(--sec-green)" } as React.CSSProperties}>
+          <div className={s.sectionTitle}>
+            <span className={s.sectionTitleText}>{t("outfit.defaultSlotContent")}</span>
           </div>
+          <div className={s.sectionContent}>
           <div className={s.slotsColumn}>
             {clothingSlots.map((slot) => {
               const items = slots[slot] ?? [];
@@ -200,6 +201,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
                 </div>
               );
             })}
+          </div>
           </div>
         </div>
       )}

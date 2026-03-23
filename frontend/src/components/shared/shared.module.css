@@ -1,6 +1,5 @@
 .input {
-  padding: 6px 8px;
-  min-height: 32px;
+  padding: 4px 8px;
   background-color: var(--bg3);
   border: 1px solid var(--border-light);
   border-radius: 3px;
@@ -14,8 +13,7 @@
 }
 
 .listRow {
-  padding: 7px 8px;
-  min-height: 32px;
+  padding: 4px 6px;
   border-radius: 2px;
 }
 .listRowOdd {
@@ -43,7 +41,7 @@
 .errorText { color: var(--danger); font-size: 12px; }
 
 /* ── Title patterns ── */
-.editorTitle { color: var(--accent); font-weight: bold; font-size: var(--font-lg); line-height: 24px; }
+.editorTitle { color: var(--accent); font-weight: bold; font-size: 16px; line-height: 24px; }
 .modalTitle { color: var(--text); font-size: var(--font-md); font-weight: 600; line-height: 20px; }
 
 /* ── Layout utilities ── */
@@ -52,8 +50,7 @@
 /* ── Input variants ── */
 .fieldInput {
   width: 100%;
-  padding: 6px 8px;
-  min-height: 32px;
+  padding: 4px 6px;
   font-size: 11px;
   background-color: var(--bg1);
   border: 1px solid var(--border-dim);
@@ -63,7 +60,6 @@
 .modalInput {
   width: 100%;
   padding: 6px 8px;
-  min-height: 32px;
   font-size: 12px;
   background-color: var(--bg2);
   border: 1px solid var(--border-dim);
@@ -93,22 +89,24 @@
 /* ── Category list patterns ── */
 .catList { display: flex; flex-direction: column; gap: 4px; }
 .catBtn {
-  width: 100%; text-align: left; padding: 6px 12px;
-  background-color: var(--bg2); color: var(--text-sub);
+  width: 100%; text-align: left; padding: 7px 10px;
+  color: var(--text);
   font-size: 13px;
-  border-radius: 3px; transition: background-color 0.1s, color 0.1s;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background-color 0.1s, color 0.1s;
 }
-.catBtn:hover { background-color: var(--bg3); color: var(--text); }
+.catBtn:hover { background-color: rgba(255, 255, 255, 0.03); }
 .catArrow { display: inline-block; width: 1.2em; text-align: center; font-size: 11px; }
 .chipGrid { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; }
 .entityChip {
-  padding: 6px 12px; min-height: 32px;
-  background-color: var(--bg1);
-  border: 1px solid var(--border); border-radius: 3px;
+  padding: 4px 10px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 3px;
   cursor: pointer; font-size: 12px;
   transition: background-color 0.15s, border-color 0.15s;
 }
-.entityChip:hover { background-color: var(--bg3); border-color: var(--border-light); }
+.entityChip:hover { background-color: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); }
 .sourceLabel { color: var(--text-dim); font-size: 11px; }
 
 /* ── Editor patterns ── */
@@ -137,16 +135,14 @@
 .removableChip:hover { background-color: var(--bg3); }
 .chipRemoveBtn {
   color: var(--danger);
-  padding: 0 4px; font-size: 12px; line-height: 1;
-  min-width: 24px; min-height: 24px;
-  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 2px; font-size: 12px; line-height: 1;
 }
 .chipRemoveBtn:hover { color: #ff6666; }
 
 /* ── Tab patterns ── */
 .tabBarUnderline { display: flex; gap: 2px; margin-bottom: 4px; }
 .tabUnderline {
-  padding: 6px 12px; min-height: 32px;
+  padding: 4px 10px;
   border-bottom: 2px solid transparent;
   color: var(--text-sub); font-size: 12px;
 }
@@ -155,7 +151,7 @@
 
 .tabBarPill { display: flex; gap: 2px; margin-bottom: 4px; }
 .tabPill {
-  padding: 6px 14px; min-height: 32px;
+  padding: 4px 14px;
   color: var(--text-sub);
   border: 1px solid transparent; border-radius: 3px;
   font-size: 12px;
@@ -165,14 +161,55 @@
 
 /* ── Section patterns ── */
 .borderSection { border-left: 2px solid var(--border-light); padding-left: 10px; margin-bottom: 12px; }
-.sectionLabel { color: var(--text-sub); font-size: var(--font-md); font-weight: 600; line-height: 20px; margin-bottom: 6px; }
+.sectionLabel { color: var(--text-sub); font-size: 13px; font-weight: 600; margin-bottom: 6px; }
 .sectionTitle {
   color: var(--accent);
-  font-size: var(--font-md);
+  font-size: 13px;
   font-weight: 600;
-  line-height: 20px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 2px;
+}
+
+/* ── Colored section bar (set --sec-color via inline style) ── */
+.coloredSection {
+  margin-bottom: 16px;
+  padding: 0 0 8px 0;
+  border-left: 3px solid var(--sec-color);
+  background-color: color-mix(in srgb, var(--sec-color) 4%, transparent);
+  border-radius: 0 4px 4px 0;
+}
+.coloredSectionTitle {
+  padding: 5px 10px;
+  margin-bottom: 8px;
+  background-color: color-mix(in srgb, var(--sec-color) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--sec-color) 15%, transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.coloredSectionTitleText {
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  color: var(--sec-color);
+}
+.coloredSectionContent {
+  padding: 0 10px;
+}
+
+/* ── Category card (glass container for collapsible groups) ── */
+.categoryCard {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid var(--accent-dim);
+  border-radius: 0 6px 6px 0;
+  overflow: hidden;
+}
+
+.categoryCardContent {
+  padding: 4px 8px 8px;
 }
 
 /* ── List row with accent bar (dual-view) ── */

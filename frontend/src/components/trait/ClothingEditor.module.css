@@ -22,24 +22,17 @@
 
 /* ── Section blocks ── */
 
-.sectionBlock {
-  margin-bottom: 16px;
-}
+.section { composes: coloredSection from "../shared/shared.module.css"; }
 
-.sectionLabel { composes: sectionLabel from "../shared/shared.module.css"; }
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
 
-.sectionLabelFlex {
-  composes: sectionLabel;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
+
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
 
 /* ── Slot/occlusion chip list ── */
 
 .chipList {
-  border-left: 2px solid var(--border-light);
-  padding-left: 10px;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -65,8 +58,6 @@
 /* ── Effects ── */
 
 .effectList {
-  border-left: 2px solid var(--border-light);
-  padding-left: 10px;
   display: flex;
   flex-direction: column;
   gap: 4px;

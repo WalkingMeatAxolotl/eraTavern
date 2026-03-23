@@ -303,7 +303,7 @@ function CategorySection({
 
   const countLabel = groupCount > 0 ? `${traitCount} + ${t("trait.groupCountLabel", { count: groupCount })}` : `${traitCount}`;
   return (
-    <div>
+    <div className={s.card}>
       <button className={s.catBtn} onClick={onToggle}>
         <span className={s.catArrow}>
           {isCollapsed ? "\u25B6" : "\u25BC"}
@@ -394,7 +394,6 @@ function GroupRow({
       onMouseEnter={() => onHoverChange(true)}
       onMouseLeave={() => onHoverChange(false)}
     >
-      <span className={s.groupRowBar} />
       <span className={s.groupRowName}>{group.name}</span>
       <span className={s.groupRowSep}>:</span>
       <span className={s.groupRowMembers}>{memberNames.join(" | ")}</span>
@@ -422,7 +421,6 @@ function GroupChip({
       onMouseEnter={() => onHoverChange(true)}
       onMouseLeave={() => onHoverChange(false)}
     >
-      <span className={s.groupChipBar} />
       {group.name}
       <span className={s.groupChipCount}>({count})</span>
     </button>

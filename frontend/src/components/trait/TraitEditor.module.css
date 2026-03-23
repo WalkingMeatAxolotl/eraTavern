@@ -32,19 +32,16 @@
 
 /* ── Section blocks ── */
 
-.sectionBlock {
-  margin-bottom: 16px;
-}
+.section { composes: coloredSection from "../shared/shared.module.css"; }
 
-.sectionLabel { composes: sectionLabel from "../shared/shared.module.css"; }
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
 
-.borderPanel {
-  border-left: 2px solid var(--border-light);
-  padding-left: 10px;
-}
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
 
-.borderPanelCol {
-  composes: borderPanel;
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
+
+.sectionContentCol {
+  composes: sectionContent;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -53,7 +50,6 @@
 /* ── Hint block ── */
 
 .hintBlock {
-  composes: borderPanel;
   color: var(--text-dim);
   font-size: 12px;
   line-height: 1.5;
@@ -62,7 +58,6 @@
 /* ── Effects ── */
 
 .effectList {
-  composes: borderPanel;
   display: flex;
   flex-direction: column;
   gap: 4px;

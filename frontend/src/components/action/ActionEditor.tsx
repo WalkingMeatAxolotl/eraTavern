@@ -43,15 +43,15 @@ interface Props {
 
 // Color-coded sections for visual distinction
 const SEC = {
-  basic: { color: "#6ec6ff", bg: "#6ec6ff0a" },
-  weight: { color: "#e9a045", bg: "#e9a0450a" },
-  cond: { color: "#c78dff", bg: "#c78dff0a" },
-  outcome: { color: "#e94560", bg: "#e945600a" },
-  template: { color: "#7ecf7e", bg: "#7ecf7e0a" },
+  basic: "var(--sec-blue)",
+  weight: "var(--sec-orange)",
+  cond: "var(--sec-purple)",
+  outcome: "var(--sec-red)",
+  template: "var(--sec-green)",
 };
 
 const secVars = (sec: keyof typeof SEC) =>
-  ({ "--sec-color": SEC[sec].color, "--sec-bg": SEC[sec].bg }) as React.CSSProperties;
+  ({ "--sec-color": SEC[sec] }) as React.CSSProperties;
 
 export default function ActionEditor({ action, isNew, definitions, onBack, addonCrud, addonIds }: Props) {
   const addonPrefix = action.source || "";

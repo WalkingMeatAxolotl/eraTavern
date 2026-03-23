@@ -8,19 +8,16 @@
 
 /* ── Map list ── */
 
-.mapList {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+.mapList { composes: catList from "../shared/shared.module.css"; }
 
 .mapRow {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 7px 12px;
-  background-color: var(--bg1);
-  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
 }
 
 .mapBtn {
@@ -42,13 +39,14 @@
 /* ── Create form ── */
 
 .createForm {
-  background: var(--bg2);
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   max-width: 400px;
-  border-radius: 3px;
+  border-radius: 6px;
 }
 
 .createTitle {
@@ -69,11 +67,12 @@
 }
 
 .formInput {
-  background: var(--bg1);
-  border: 1px solid var(--border);
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text);
   padding: 4px 8px;
   font-size: 13px;
+  border-radius: 3px;
 }
 
 .formInputSm {

@@ -37,15 +37,15 @@
   color: var(--text-sub);
 }
 
-/* ── Slots editor ── */
+/* ── Slots section ── */
 
-.slotsHeader {
-  color: var(--accent);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 6px;
-  padding-bottom: 2px;
-  font-weight: bold;
-}
+.section { composes: coloredSection from "../shared/shared.module.css"; }
+
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
+
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
+
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
 
 .slotsColumn {
   display: flex;
@@ -91,11 +91,7 @@
   margin-bottom: 16px;
 }
 
-/* ── Section block ── */
-
-.sectionBlock {
-  margin-bottom: 16px;
-}
+/* (section block removed — using colored sections) */
 
 /* ── Action bar ── */
 

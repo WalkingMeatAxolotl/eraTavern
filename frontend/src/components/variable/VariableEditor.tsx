@@ -390,9 +390,11 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {/* Steps editor */}
-      <div className={s.fieldBlock}>
-        <div className={sh.label} style={{ marginBottom: "6px" }}>{t("section.computeSteps")}</div>
-        <div className={s.stepsSection}>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-purple)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.computeSteps")}</span>
+        </div>
+        <div className={s.sectionContent}>
           <div className={s.stepsColumn}>
             {steps.map((step, i) => (
               <StepRow

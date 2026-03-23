@@ -1,6 +1,6 @@
 import s from "./SectionDivider.module.css";
 
-/** Horizontal divider with an accent label — used to separate sections in Manager lists. */
+/** Lightweight section label with trailing line — separates top-level sections in Manager lists. */
 export function SectionDivider({ label, margin }: { label: string; margin?: string }) {
   return (
     <div className={s.divider} style={margin ? { margin } : undefined}>

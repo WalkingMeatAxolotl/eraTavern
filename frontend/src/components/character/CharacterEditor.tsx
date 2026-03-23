@@ -219,7 +219,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             ))}
           </Section>
 
-          <Section title={t("section.initialResources")}>
+          <Section title={t("section.initialResources")} color="var(--sec-orange)">
             {template.resources.map((field) => {
               const res = data.resources?.[field.key] ?? { value: field.defaultValue, max: field.defaultMax };
               return (
@@ -256,7 +256,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             })}
           </Section>
 
-          <Section title={t("section.initialPosition")}>
+          <Section title={t("section.initialPosition")} color="var(--sec-green)">
             <Row label={t("field.map")}>
               <select
                 value={posMapId}
@@ -288,7 +288,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             </Row>
           </Section>
 
-          <Section title={t("section.restPosition")}>
+          <Section title={t("section.restPosition")} color="var(--sec-green)">
             <Row label={t("field.map")}>
               <select
                 value={restMapId}
@@ -324,7 +324,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
       {/* === Tab: 服装 === */}
       {tab === "outfit" && (
-        <Section title={t("section.outfitPresets")}>
+        <Section title={t("section.outfitPresets")} color="var(--sec-purple)">
           {(() => {
             const outfits: Record<string, Record<string, string[]>> = data.outfits &&
             Object.keys(data.outfits).length > 0
@@ -476,7 +476,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* === Tab: 特质 === */}
       {tab === "traits" && (
         <>
-          <Section title={t("section.initialTraits")}>
+          <Section title={t("section.initialTraits")} color="var(--sec-purple)">
             {template.traits.filter((f) => f.key !== "ability" && f.key !== "experience").length === 0 && (
               <div className={s.dimText}>{t("empty.noTraitCats")}</div>
             )}
@@ -601,7 +601,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
               })}
           </Section>
 
-          <Section title={t("section.initialAbility")}>
+          <Section title={t("section.initialAbility")} color="var(--sec-orange)">
             {(template.abilities ?? []).length === 0 ? (
               <div className={s.dimText}>{t("empty.noAbilityDefs")}</div>
             ) : (
@@ -631,7 +631,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             )}
           </Section>
 
-          <Section title={t("section.initialExp")}>
+          <Section title={t("section.initialExp")} color="var(--sec-orange)">
             {(template.experiences ?? []).length > 0 ? (
               <div className={s.grid}>
                 {(template.experiences ?? []).map((field: { key: string; label: string }) => {
@@ -672,7 +672,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* === Tab: 物品 === */}
       {tab === "items" && (
         <>
-          <Section title={t("section.initialInventory")}>
+          <Section title={t("section.initialInventory")} color="var(--sec-green)">
             {(data.inventory ?? []).map((entry, idx) => {
               const def = itemDefs[entry.itemId];
               const itemName = def?.name ?? entry.itemId;
@@ -732,7 +732,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             )}
           </Section>
 
-          <Section title={t("section.initialFav")}>
+          <Section title={t("section.initialFav")} color="var(--sec-red)">
             {Object.entries(data.favorability ?? {}).map(([targetId, val]) => {
               const tc = allCharacters.find((c) => c.id === targetId);
               const tn = tc ? String(tc.basicInfo?.name || targetId) : targetId;
@@ -793,6 +793,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {tab === "llm" && (
         <SectionWithHelp
           title={t("section.llmDesc")}
+          color="var(--sec-green)"
           showHelp={showLlmHelp}
           onToggleHelp={() => setShowLlmHelp((v) => !v)}
           helpContent={t("help.llmDesc")}
@@ -893,42 +894,46 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
 // --- Helper components ---
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, color = "var(--sec-blue)", children }: { title: string; color?: string; children: React.ReactNode }) {
   return (
-    <div className={s.section}>
+    <div className={s.section} style={{ "--sec-color": color } as React.CSSProperties}>
       <div className={s.sectionTitle}>
-        == {title} ==
+        <span className={s.sectionTitleText}>{title}</span>
       </div>
-      {children}
+      <div className={s.sectionContent}>{children}</div>
     </div>
   );
 }
 
 function SectionWithHelp({
   title,
+  color = "var(--sec-blue)",
   showHelp,
   onToggleHelp,
   helpContent,
   children,
 }: {
   title: string;
+  color?: string;
   showHelp: boolean;
   onToggleHelp: () => void;
   helpContent: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className={s.section}>
-      <div className={clsx(s.sectionTitle, s.sectionTitleRow)}>
-        == {title} ==
+    <div className={s.section} style={{ "--sec-color": color } as React.CSSProperties}>
+      <div className={s.sectionTitle}>
+        <span className={s.sectionTitleText}>{title}</span>
         <HelpButton show={showHelp} onToggle={onToggleHelp} />
       </div>
-      {showHelp && (
-        <HelpPanel>
-          <div className={s.fs11}>{helpContent}</div>
-        </HelpPanel>
-      )}
-      {children}
+      <div className={s.sectionContent}>
+        {showHelp && (
+          <HelpPanel>
+            <div className={s.fs11}>{helpContent}</div>
+          </HelpPanel>
+        )}
+        {children}
+      </div>
     </div>
   );
 }

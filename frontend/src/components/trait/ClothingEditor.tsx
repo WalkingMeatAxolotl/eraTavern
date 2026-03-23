@@ -171,11 +171,14 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             />
           </div>
         </div>
-        <div>
-          <div className={s.sectionLabelFlex}>
-            {t("clothing.equipSlot")} {selectedSlots.length > 1 && <span className={s.multiSlotTag}>({t("clothing.multiSlot")})</span>}
+        <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+          <div className={s.sectionTitle}>
+            <span className={s.sectionTitleText}>
+              {t("clothing.equipSlot")} {selectedSlots.length > 1 && <span className={s.multiSlotTag}>({t("clothing.multiSlot")})</span>}
+            </span>
             <HelpButton show={showSlotHelp} onToggle={() => setShowSlotHelp((v) => !v)} />
           </div>
+          <div className={s.sectionContent}>
           {showSlotHelp && (
             <HelpPanel>
               <div className={helpStyles.helpP}>{t("clothing.slotHelp")}</div>
@@ -225,15 +228,17 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
                 ) : null;
               })()}
           </div>
+          </div>
         </div>
       </div>
 
       {/* Occlusion */}
-      <div className={s.sectionBlock}>
-        <div className={s.sectionLabelFlex}>
-          {t("clothing.occlusionSlot")}
+      <div className={s.section} style={{ "--sec-color": "var(--sec-purple)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("clothing.occlusionSlot")}</span>
           <HelpButton show={showOcclusionHelp} onToggle={() => setShowOcclusionHelp((v) => !v)} />
         </div>
+        <div className={s.sectionContent}>
         {showOcclusionHelp && (
           <HelpPanel>
             <div className={helpStyles.helpP}>
@@ -277,11 +282,15 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           )}
           {occlusion.length === 0 && <span className={s.noneText}>{t("ui.none")}</span>}
         </div>
+        </div>
       </div>
 
       {/* Effects */}
-      <div className={s.sectionBlock}>
-        <div className={s.sectionLabel}>{t("section.effects")}</div>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-red)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.effects")}</span>
+        </div>
+        <div className={s.sectionContent}>
         <div className={s.effectList}>
           {effects.map((eff, idx) => (
             <div key={idx} className={s.effectRow}>
@@ -343,6 +352,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
               [{t("btn.addEffect")}]
             </button>
           )}
+        </div>
         </div>
       </div>
 

@@ -24,11 +24,6 @@
 
 .header { composes: managerHeader from "../shared/shared.module.css"; }
 
-.headerMb8 {
-  composes: managerHeader from "../shared/shared.module.css";
-  margin-bottom: 8px;
-}
-
 .title { composes: editorTitle from "../shared/shared.module.css"; }
 
 /* ── Preset list ── */
@@ -36,22 +31,11 @@
 .listCol { composes: catList from "../shared/shared.module.css"; }
 
 .presetBtn {
+  composes: entityChip from "../shared/shared.module.css";
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background-color: var(--bg1);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
   text-align: left;
-  transition: border-color 0.15s;
-}
-
-.presetBtn:hover {
-  border-color: var(--border-light);
 }
 
 .typeBadge {

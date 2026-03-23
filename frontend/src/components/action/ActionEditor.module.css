@@ -10,36 +10,15 @@
 
 .source { composes: editorSourceTag from "../shared/shared.module.css"; }
 
-/* ── Section (uses CSS vars --sec-color, --sec-bg) ── */
+/* ── Section ── */
 
-.section {
-  margin-bottom: 16px;
-  padding: 0 0 8px 0;
-  border-left: 3px solid var(--sec-color);
-  background-color: var(--sec-bg);
-  border-radius: 0 4px 4px 0;
-}
+.section { composes: coloredSection from "../shared/shared.module.css"; }
 
-.sectionTitle {
-  padding: 5px 10px;
-  margin-bottom: 8px;
-  background-color: color-mix(in srgb, var(--sec-color) 8%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--sec-color) 15%, transparent);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
 
-.sectionTitleText {
-  font-size: 12px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  color: var(--sec-color);
-}
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
 
-.sectionContent {
-  padding: 0 10px;
-}
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
 
 /* ── Field layout ── */
 

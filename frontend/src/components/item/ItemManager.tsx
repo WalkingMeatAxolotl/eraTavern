@@ -199,25 +199,27 @@ function ByTagView({
         if (tagItems.length === 0) return null;
         const isCollapsed = collapsed[`tag:${tag}`] ?? false;
         return (
-          <div key={tag}>
+          <div key={tag} className={s.card}>
             <button className={s.catBtn} onClick={() => onToggleCollapse(`tag:${tag}`)}>
               <span className={s.catArrow}>{isCollapsed ? "\u25B6" : "\u25BC"}</span>{" "}
               {tag}
               <span className={s.catCount}>({tagItems.length})</span>
             </button>
             {!isCollapsed && (
-              <div className={s.itemGrid}>
-                {tagItems.map((item) => (
-                  <button
-                    className={s.item}
-                    key={item.id}
-                    onClick={() => onEditItem(item.id)}
-                    onMouseEnter={(e) => showItemTooltip(item, e.currentTarget)}
-                    onMouseLeave={() => setTooltipInfo(null)}
-                  >
-                    {item.name || item.id}
-                  </button>
-                ))}
+              <div className={s.cardContent}>
+                <div className={s.itemGrid}>
+                  {tagItems.map((item) => (
+                    <button
+                      className={s.item}
+                      key={item.id}
+                      onClick={() => onEditItem(item.id)}
+                      onMouseEnter={(e) => showItemTooltip(item, e.currentTarget)}
+                      onMouseLeave={() => setTooltipInfo(null)}
+                    >
+                      {item.name || item.id}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -226,7 +228,7 @@ function ByTagView({
 
       {/* Untagged */}
       {untagged.length > 0 && (
-        <div>
+        <div className={s.card}>
           <button className={s.catBtnDim} onClick={() => onToggleCollapse("tag:__untagged__")}>
             <span className={s.catArrow}>
               {(collapsed["tag:__untagged__"] ?? false) ? "\u25B6" : "\u25BC"}
@@ -235,16 +237,18 @@ function ByTagView({
             <span className={s.catCount}>({untagged.length})</span>
           </button>
           {!(collapsed["tag:__untagged__"] ?? false) && (
-            <div className={s.itemGrid}>
-              {untagged.map((item) => (
-                <button
-                  className={s.item}
-                  key={item.id}
-                  onClick={() => onEditItem(item.id)}
-                >
-                  {item.name || item.id}
-                </button>
-              ))}
+            <div className={s.cardContent}>
+              <div className={s.itemGrid}>
+                {untagged.map((item) => (
+                  <button
+                    className={s.item}
+                    key={item.id}
+                    onClick={() => onEditItem(item.id)}
+                  >
+                    {item.name || item.id}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -346,8 +350,6 @@ function ItemRow({
 }) {
   return (
     <button className={s.itemRow} onClick={onEdit}>
-      {/* Left accent bar */}
-      <span className={s.accentBar} />
       <span className={s.itemName}>{item.name || item.id}</span>
       {tags.length > 0 && (
         <>

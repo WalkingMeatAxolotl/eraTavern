@@ -239,21 +239,27 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
       {/* Experience-specific hint */}
       {category === EF.EXPERIENCE && (
-        <div className={s.sectionBlock}>
-          <div className={s.sectionLabel}>{t("trait.expSettings")}</div>
-          <div className={s.hintBlock}>
-            {t("trait.expHint1")}
-            <br />
-            {t("trait.expHint2")}
+        <div className={s.section} style={{ "--sec-color": "var(--sec-orange)" } as React.CSSProperties}>
+          <div className={s.sectionTitle}>
+            <span className={s.sectionTitleText}>{t("trait.expSettings")}</span>
+          </div>
+          <div className={s.sectionContent}>
+            <div className={s.hintBlock}>
+              {t("trait.expHint1")}
+              <br />
+              {t("trait.expHint2")}
+            </div>
           </div>
         </div>
       )}
 
       {/* Ability-specific fields */}
       {category === EF.ABILITY && (
-        <div className={s.sectionBlock}>
-          <div className={s.sectionLabel}>{t("trait.abilitySettings")}</div>
-          <div className={s.borderPanelCol}>
+        <div className={s.section} style={{ "--sec-color": "var(--sec-orange)" } as React.CSSProperties}>
+          <div className={s.sectionTitle}>
+            <span className={s.sectionTitleText}>{t("trait.abilitySettings")}</span>
+          </div>
+          <div className={s.sectionContentCol}>
             <div className={s.row2}>
               <div className={s.col}>
                 <div className={sh.label}>{t("trait.defaultExp")}</div>
@@ -339,8 +345,11 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       )}
 
       {/* Effects */}
-      <div className={s.sectionBlock}>
-        <div className={s.sectionLabel}>{t("section.effects")}</div>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-red)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.effects")}</span>
+        </div>
+        <div className={s.sectionContent}>
         <div className={s.effectList}>
           {effects.map((eff, idx) => (
             <div key={idx} className={s.effectRow}>
@@ -413,6 +422,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
               [{t("btn.addEffect")}]
             </button>
           )}
+        </div>
         </div>
       </div>
 

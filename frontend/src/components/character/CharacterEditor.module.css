@@ -30,20 +30,13 @@
 
 /* ── Section ── */
 
-.section {
-  margin-bottom: 12px;
-}
+.section { composes: coloredSection from "../shared/shared.module.css"; margin-bottom: 12px; }
 
-.sectionTitle {
-  composes: sectionTitle from "../shared/shared.module.css";
-  margin-bottom: 6px;
-}
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
 
-.sectionTitleRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
+
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
 
 /* ── Row ── */
 

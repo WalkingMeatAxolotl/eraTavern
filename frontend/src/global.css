@@ -42,6 +42,13 @@
   --font-sm: 12px;
   --font-xs: 11px;
 
+  /* Section colors — colored-bar sections across editors */
+  --sec-blue: #6ec6ff;
+  --sec-orange: #e9a045;
+  --sec-purple: #c78dff;
+  --sec-red: #e94560;
+  --sec-green: #7ecf7e;
+
   /* Spacing — 4px base grid */
   --sp-1: 4px;
   --sp-2: 8px;

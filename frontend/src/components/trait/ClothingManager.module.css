@@ -14,6 +14,12 @@
 
 .catContainer { composes: catList from "../shared/shared.module.css"; }
 
+/* ── Category card ── */
+
+.card { composes: categoryCard from "../shared/shared.module.css"; }
+
+.cardContent { composes: categoryCardContent from "../shared/shared.module.css"; }
+
 /* ── Category button ── */
 
 .catBtn { composes: catBtn from "../shared/shared.module.css"; }
@@ -22,16 +28,12 @@
 
 /* ── Item chips ── */
 
-.itemGrid { composes: chipGrid from "../shared/shared.module.css"; }
+.itemGrid {
+  composes: chipGrid from "../shared/shared.module.css";
+}
 
 .item {
   composes: entityChip from "../shared/shared.module.css";
-  position: relative;
-}
-
-.item:hover {
-  background-color: var(--bg3);
-  border-color: var(--border-light);
 }
 
 .sourceSpan {

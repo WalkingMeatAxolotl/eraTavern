@@ -242,7 +242,7 @@ function ByTagView({
         if (tagVars.length === 0) return null;
         const isCollapsed = collapsed[`tag:${tag}`] ?? false;
         return (
-          <div key={tag}>
+          <div key={tag} className={s.card}>
             <button
               className={s.catBtn}
               onClick={() => onToggleCollapse(`tag:${tag}`)}
@@ -254,18 +254,20 @@ function ByTagView({
               <span className={s.catCount}>({tagVars.length})</span>
             </button>
             {!isCollapsed && (
-              <div className={s.itemGrid}>
-                {tagVars.map((v) => (
-                  <button
-                    className={s.item}
-                    key={v.id}
-                    onClick={() => onEditVar(v.id)}
-                    onMouseEnter={(e) => showVarTooltip(v, e.currentTarget)}
-                    onMouseLeave={() => setTooltipInfo(null)}
-                  >
-                    {v.name || v.id}
-                  </button>
-                ))}
+              <div className={s.cardContent}>
+                <div className={s.itemGrid}>
+                  {tagVars.map((v) => (
+                    <button
+                      className={s.item}
+                      key={v.id}
+                      onClick={() => onEditVar(v.id)}
+                      onMouseEnter={(e) => showVarTooltip(v, e.currentTarget)}
+                      onMouseLeave={() => setTooltipInfo(null)}
+                    >
+                      {v.name || v.id}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -274,7 +276,7 @@ function ByTagView({
 
       {/* Untagged */}
       {untagged.filter((v) => !filterFn || filterFn(v)).length > 0 && (
-        <div>
+        <div className={s.card}>
           <button
             className={s.catBtnDim}
             onClick={() => onToggleCollapse("tag:__untagged__")}
@@ -288,18 +290,20 @@ function ByTagView({
             </span>
           </button>
           {!(collapsed["tag:__untagged__"] ?? false) && (
-            <div className={s.itemGrid}>
-              {untagged
-                .filter((v) => !filterFn || filterFn(v))
-                .map((v) => (
-                  <button
-                    className={s.item}
-                    key={v.id}
-                    onClick={() => onEditVar(v.id)}
-                  >
-                    {v.name || v.id}
-                  </button>
-                ))}
+            <div className={s.cardContent}>
+              <div className={s.itemGrid}>
+                {untagged
+                  .filter((v) => !filterFn || filterFn(v))
+                  .map((v) => (
+                    <button
+                      className={s.item}
+                      key={v.id}
+                      onClick={() => onEditVar(v.id)}
+                    >
+                      {v.name || v.id}
+                    </button>
+                  ))}
+              </div>
             </div>
           )}
         </div>
@@ -403,8 +407,6 @@ function VarRow({
       onClick={onEdit}
       className={s.itemRow}
     >
-      {/* Left accent bar */}
-      <span className={s.accentBar} />
       <span className={s.itemName}>{variable.name || variable.id}</span>
       {tags.length > 0 && (
         <>

@@ -368,7 +368,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
       </Section>
 
       {/* -- Section: grid editing -- */}
-      <Section title={t("map.gridEdit")}>
+      <Section title={t("map.gridEdit")} color="var(--sec-green)">
         {/* Grid size + view controls */}
         <div className={s.gridControls}>
           <span style={{ color: T.textSub, minWidth: "46px" }}>{t("map.size")}</span>
@@ -594,11 +594,13 @@ export default function MapEditor({ mapId, onBack }: Props) {
 
 // --- Layout helpers ---
 
-export function Section({ title, children }: { title: string; children: React.ReactNode }) {
+export function Section({ title, color = "var(--sec-blue)", children }: { title: string; color?: string; children: React.ReactNode }) {
   return (
-    <div className={s.section}>
-      <div className={s.sectionTitle}>== {title} ==</div>
-      {children}
+    <div className={s.section} style={{ "--sec-color": color } as React.CSSProperties}>
+      <div className={s.sectionTitle}>
+        <span className={s.sectionTitleText}>{title}</span>
+      </div>
+      <div className={s.sectionContent}>{children}</div>
     </div>
   );
 }

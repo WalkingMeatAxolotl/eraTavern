@@ -391,7 +391,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
 
         {subTab === "presets" && (
           <>
-            <div className={s.headerMb8}>
+            <div className={s.header}>
               <span className={s.title}>== {t("header.llmPresets")} ==</span>
               <button onClick={() => handleNew()} className={btnClass("create")}>
                 [{t("btn.newPresetFull")}]
@@ -440,7 +440,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
               />
             ) : (
               <>
-                <div className={s.headerMb8}>
+                <div className={s.header}>
                   <span className={s.title}>== {t("header.apiServices")} ==</span>
                   <button onClick={handleNewProvider} className={btnClass("create")}>
                     [{t("btn.newApiService")}]
