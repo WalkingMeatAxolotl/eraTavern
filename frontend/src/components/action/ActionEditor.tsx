@@ -517,7 +517,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
       <div className={s.actionBar}>
         {!isReadOnly && (
           <button
-            className={btnClass("add")}
+            className={btnClass("create")}
             onClick={handleSave}
             disabled={saving}
           >
@@ -531,12 +531,11 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
             getData={() => buildData()}
             createFn={(d) => createActionDef(d)}
             onSuccess={onBack}
-            className={btnClass()}
           />
         )}
         {!isReadOnly && !isNew && (
           <button
-            className={btnClass("del")}
+            className={btnClass("danger")}
             onClick={handleDelete}
             disabled={saving}
           >

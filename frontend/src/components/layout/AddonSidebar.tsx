@@ -627,7 +627,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
       <div className={s.sidebar}>
         {/* Header */}
         <div className={s.header}>
-          <span className={s.headerTitle}>Add-on</span>
+          <span className={s.headerTitle}>{t("btn.addon")}</span>
           <span className={s.headerCount}>({allAddons.length})</span>
           <span className={s.spacer} />
           <button onClick={() => setShowCreateModal(true)} className={s.addBtn}>

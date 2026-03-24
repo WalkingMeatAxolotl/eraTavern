@@ -13,6 +13,8 @@ import { t } from "../../i18n/ui";
 import { VarStepType, ArithOp } from "../../constants";
 import { btnClass } from "../shared/buttons";
 import CloneButton from "../shared/CloneDialog";
+import PrefixedIdInput from "../shared/PrefixedIdInput";
+import { toLocalId } from "../shared/idUtils";
 import sh from "../shared/shared.module.css";
 import s from "./VariableEditor.module.css";
 
@@ -155,7 +157,8 @@ function stepValueLabel(step: VariableStep, bidirectional?: boolean): string {
 }
 
 export default function VariableEditor({ variable, isNew, allTags, allVariables, definitions, onBack, addonIds }: Props) {
-  const [id, setId] = useState(variable.id);
+  const addonPrefix = variable.source || "";
+  const [id, setId] = useState(isNew ? "" : toLocalId(variable.id));
   const [name, setName] = useState(variable.name);
   const [description, setDescription] = useState(variable.description ?? "");
   const [isBidirectional, setIsBidirectional] = useState(variable.isBidirectional ?? false);
@@ -197,8 +200,9 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
     setSaving(true);
     setMessage("");
     try {
+      const fullId = addonPrefix ? `${addonPrefix}.${id.trim()}` : id.trim();
       const data = {
-        id: id.trim(),
+        id: fullId,
         name: name.trim(),
         description: description.trim(),
         isBidirectional: isBidirectional || undefined,
@@ -318,13 +322,11 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           <div className={s.fieldRow}>
             <div style={{ flex: 1 }}>
               <div className={sh.label}>ID</div>
-              <input
-                className={clsx(sh.input, sh.flex1)}
-                style={{ width: "100%", boxSizing: "border-box" }}
+              <PrefixedIdInput
+                prefix={addonPrefix}
                 value={id}
-                onChange={(e) => setId(e.target.value)}
+                onChange={setId}
                 disabled={!isNew || isReadOnly}
-                placeholder={t("ph.varId")}
               />
             </div>
             <div style={{ flex: 2 }}>

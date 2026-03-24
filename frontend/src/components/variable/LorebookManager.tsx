@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import clsx from "clsx";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { LorebookMode } from "../../constants";
@@ -8,12 +7,14 @@ import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLor
 import { RawJsonView } from "../shared/RawJsonEditor";
 import { btnClass } from "../shared/buttons";
 import CloneButton from "../shared/CloneDialog";
+import PrefixedIdInput from "../shared/PrefixedIdInput";
+import { toLocalId } from "../shared/idUtils";
 import sh from "../shared/shared.module.css";
 import s from "./LorebookManager.module.css";
 
-function makeBlankEntry(addonId: string): Omit<LorebookEntry, "source"> {
+function makeBlankEntry(): Omit<LorebookEntry, "source"> {
   return {
-    id: `${addonId}.`,
+    id: "",
     name: "",
     keywords: [],
     content: "",
@@ -32,7 +33,9 @@ interface Props {
 export default function LorebookManager({ selectedAddon, onEditingChange, addonIds }: Props) {
   const [entries, setEntries] = useState<LorebookEntry[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [entry, setEntry] = useState<Omit<LorebookEntry, "source">>(makeBlankEntry(selectedAddon));
+  const [entry, setEntry] = useState<Omit<LorebookEntry, "source">>(makeBlankEntry());
+  const [localId, setLocalId] = useState("");
+  const [addonPrefix, setAddonPrefix] = useState("");
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -56,6 +59,8 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
   const handleSelect = (e: LorebookEntry) => {
     const { source: _, ...rest } = e;
     setEntry(rest);
+    setLocalId(toLocalId(e.id));
+    setAddonPrefix(e.source || "");
     setEditingId(e.id);
     setIsNew(false);
     setMessage("");
@@ -63,7 +68,10 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
   };
 
   const handleNew = () => {
-    setEntry(makeBlankEntry(selectedAddon === "__all__" ? "" : selectedAddon));
+    const prefix = selectedAddon === "__all__" ? "" : selectedAddon;
+    setEntry(makeBlankEntry());
+    setLocalId("");
+    setAddonPrefix(prefix);
     setEditingId("__new__");
     setIsNew(true);
     setMessage("");
@@ -80,7 +88,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
   };
 
   const handleSave = async () => {
-    if (!entry.id.trim()) {
+    if (!localId.trim()) {
       setMessage(t("val.idRequired"));
       return;
     }
@@ -90,13 +98,15 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
     }
     setSaving(true);
     setMessage("");
+    const fullId = addonPrefix ? `${addonPrefix}.${localId.trim()}` : localId.trim();
+    const saveData = { ...entry, id: fullId };
     try {
-      const result = isNew ? await createLorebookEntry(entry) : await saveLorebookEntry(entry.id, entry);
+      const result = isNew ? await createLorebookEntry(saveData) : await saveLorebookEntry(saveData.id, saveData);
       if (result.success) {
         setMessage(t("msg.saved"));
         if (isNew) {
           setIsNew(false);
-          setEditingId(entry.id);
+          setEditingId(fullId);
         }
         loadEntries();
       } else {
@@ -215,11 +225,10 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
           <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
             <div style={{ flex: 1 }}>
               <div className={sh.label}>ID</div>
-              <input
-                className={s.inputFull}
-                style={isNew ? {} : { color: T.textDim }}
-                value={entry.id}
-                onChange={(e) => setEntry((prev) => ({ ...prev, id: e.target.value }))}
+              <PrefixedIdInput
+                prefix={addonPrefix}
+                value={localId}
+                onChange={setLocalId}
                 disabled={!isNew}
               />
             </div>

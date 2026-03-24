@@ -66,7 +66,7 @@ export default function NavBar({
       <div className={s.barInner} style={{ maxWidth }}>
         {/* Left: world toggle + world name + separator + nav tabs */}
         <div className={s.leftSection}>
-          <button className={clsx(s.sideToggle, leftOpen && s.sideToggleActive)} onClick={onToggleLeft}>
+          <button className={clsx(s.sideToggle, leftOpen && s.sideToggleActive)} onClick={onToggleLeft} data-label={`[${t("btn.world")}]`}>
             [{t("btn.world")}]
           </button>
           {worldName && <span className={s.worldName}>{worldName}</span>}
@@ -76,6 +76,7 @@ export default function NavBar({
               key={item.key}
               className={clsx(s.navBtn, navPage === item.key && s.navBtnActive)}
               onClick={() => onNavChange(navPage === item.key ? null : item.key)}
+              data-label={`[${item.label}]`}
             >
               [{item.label}]
             </button>
@@ -89,15 +90,16 @@ export default function NavBar({
               key={item.key}
               className={clsx(s.navBtn, navPage === item.key && s.navBtnActive)}
               onClick={() => onNavChange(navPage === item.key ? null : item.key)}
+              data-label={`[${item.label}]`}
             >
               [{item.label}]
             </button>
           ))}
           <span className={s.separator}>|</span>
-          <button className={clsx(s.sideToggle, aiOpen && s.sideToggleActive)} onClick={onToggleAi}>
-            [AI]
+          <button className={clsx(s.sideToggle, aiOpen && s.sideToggleActive)} onClick={onToggleAi} data-label={`[${t("btn.ai")}]`}>
+            [{t("btn.ai")}]
           </button>
-          <button className={clsx(s.sideToggle, rightOpen && s.sideToggleActive)} onClick={onToggleRight}>
+          <button className={clsx(s.sideToggle, rightOpen && s.sideToggleActive)} onClick={onToggleRight} data-label={`[${t("btn.addon")}]`}>
             [{t("btn.addon")}]
           </button>
         </div>

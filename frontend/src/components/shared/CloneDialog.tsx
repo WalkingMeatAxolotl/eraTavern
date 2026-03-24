@@ -2,6 +2,7 @@ import { useState } from "react";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
 import { Overlay, modalBtnStyle } from "./Modal";
+import { btnClass } from "./buttons";
 
 /**
  * Self-contained clone button + dialog.
@@ -45,17 +46,9 @@ export default function CloneButton({
   return (
     <>
       <button
-        className={className}
+        className={className ?? btnClass("primary")}
         onClick={() => { setOpen(true); setError(""); }}
-        style={buttonStyle ?? {
-          padding: "5px 16px",
-          backgroundColor: T.bg2,
-          color: T.accent,
-          border: `1px solid ${T.border}`,
-          borderRadius: "3px",
-          cursor: "pointer",
-          fontSize: "13px",
-        }}
+        style={buttonStyle}
       >
         [{t("btn.clone")}]
       </button>

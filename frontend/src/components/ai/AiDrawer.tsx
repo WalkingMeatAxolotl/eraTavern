@@ -305,6 +305,22 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
       {/* Messages */}
       <div className={s.messages}>
 
+        {/* Welcome hints when no messages */}
+        {messages.length === 0 && !isGenerating && (
+          <div className={s.welcome}>
+            <div className={s.welcomeTitle}>{t("ai.welcomeTitle")}</div>
+            {(["ai.example1", "ai.example2", "ai.example3", "ai.example4"] as const).map((key) => (
+              <button
+                key={key}
+                className={s.welcomeExample}
+                onClick={() => { setInputText(t(key)); inputRef.current?.focus(); }}
+              >
+                &ldquo;{t(key)}&rdquo;
+              </button>
+            ))}
+          </div>
+        )}
+
         {messages.map((msg, i) => (
           <div key={i}>
             {/* Role label — skip for empty assistant placeholders */}

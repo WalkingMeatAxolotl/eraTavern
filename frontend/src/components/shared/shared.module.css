@@ -98,7 +98,7 @@
   transition: background-color 0.1s, color 0.1s;
 }
 .catBtn:hover { background-color: color-mix(in srgb, var(--accent) 12%, transparent); }
-.catArrow { display: inline-block; width: 1.2em; text-align: center; font-size: 11px; }
+.catArrow { display: inline-block; width: 1em; text-align: center; font-size: 9px; vertical-align: middle; }
 .chipGrid { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; }
 .entityChip {
   padding: 4px 10px;

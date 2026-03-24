@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { t } from "../../i18n/ui";
 import { fetchMapsRaw, createMap } from "../../api/client";
 import MapEditor from "./MapEditor";
+import { btnClass } from "../shared/buttons";
 import s from "./MapManager.module.css";
 
 export default function MapManager({
@@ -74,7 +75,7 @@ export default function MapManager({
       <div className={s.header}>
         <span className={s.title}>== {t("header.mapMgmt")} ==</span>
         {!readOnly && (
-          <button onClick={() => setCreating(true)} className={s.createBtn}>
+          <button onClick={() => setCreating(true)} className={btnClass("create", "md")}>
             [{t("btn.newMap")}]
           </button>
         )}
@@ -128,11 +129,11 @@ export default function MapManager({
             />
           </div>
           <div className={s.createBtnRow}>
-            <button onClick={handleCreate} className={s.createBtn}>
-              {t("btn.create")}
+            <button onClick={handleCreate} className={btnClass("create")}>
+              [{t("btn.create")}]
             </button>
-            <button onClick={() => setCreating(false)} className={s.cancelBtn}>
-              {t("btn.cancel")}
+            <button onClick={() => setCreating(false)} className={btnClass("neutral")}>
+              [{t("btn.cancel")}]
             </button>
           </div>
         </div>

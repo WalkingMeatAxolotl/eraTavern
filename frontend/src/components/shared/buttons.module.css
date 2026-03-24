@@ -32,19 +32,19 @@
   border: 1px solid var(--border);
 }
 .create {
-  background-color: var(--bg2);
+  background-color: #0a1a0a;
   color: var(--success-dim);
-  border: 1px solid var(--border);
+  border: 1px solid #2a4a2a;
 }
 .danger {
-  background-color: var(--bg2);
+  background-color: #1a0a0a;
   color: var(--danger);
-  border: 1px solid var(--border);
+  border: 1px solid #4a2a2a;
 }
 .primary {
-  background-color: var(--bg2);
+  background-color: #1a1408;
   color: var(--accent);
-  border: 1px solid var(--border);
+  border: 1px solid #4a3a1a;
 }
 .add {
   background-color: #0a1a0a;
@@ -59,15 +59,17 @@
 
 /* Hover states */
 .default:hover,
-.neutral:hover,
-.create:hover,
-.danger:hover,
-.primary:hover {
+.neutral:hover {
   background-color: var(--bg3);
 }
+.primary:hover {
+  background-color: #2a1f0f;
+}
+.create:hover,
 .add:hover {
   background-color: #0f2a0f;
 }
+.danger:hover,
 .del:hover {
   background-color: #2a0f0f;
 }

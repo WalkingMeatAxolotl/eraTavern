@@ -36,6 +36,19 @@
   color: var(--text-sub);
   font-size: 13px;
   font-weight: normal;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+/* Reserve bold width so layout doesn't shift on active */
+.navBtn::after {
+  content: attr(data-label);
+  font-weight: bold;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .navBtnActive {
@@ -50,6 +63,18 @@
   border-radius: 3px;
   font-size: 13px;
   font-weight: normal;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.sideToggle::after {
+  content: attr(data-label);
+  font-weight: bold;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .sideToggleActive {

@@ -85,26 +85,3 @@
   gap: 8px;
 }
 
-.createBtn {
-  background: var(--success-dim);
-  border: 1px solid var(--success);
-  color: #8f8;
-  padding: 4px 12px;
-  cursor: pointer;
-}
-
-.createBtn:hover {
-  filter: brightness(1.15);
-}
-
-.cancelBtn {
-  background: var(--border);
-  border: 1px solid var(--border-light);
-  color: var(--text-sub);
-  padding: 4px 12px;
-  cursor: pointer;
-}
-
-.cancelBtn:hover {
-  filter: brightness(1.15);
-}

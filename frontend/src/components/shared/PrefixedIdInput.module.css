@@ -4,13 +4,14 @@
   width: 100%;
 }
 .prefix {
-  padding: 4px 2px 4px 8px;
+  padding: 4px 8px;
   background-color: var(--bg2);
   color: var(--text-dim);
   border: 1px solid var(--border-light);
   border-right: none;
   border-radius: 3px 0 0 3px;
   font-size: 12px;
+  line-height: 1.4;
   white-space: nowrap;
   user-select: none;
 }
@@ -22,6 +23,7 @@
   border: 1px solid var(--border-light);
   border-radius: 3px;
   font-size: 12px;
+  line-height: 1.4;
   min-width: 0;
 }
 .inputWithPrefix {

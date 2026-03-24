@@ -44,6 +44,40 @@
   padding: 8px 12px;
 }
 
+/* ── Welcome hints ── */
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 4px;
+}
+
+.welcomeTitle {
+  color: var(--text-sub);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.welcomeExample {
+  text-align: left;
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: var(--text-sub);
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.welcomeExample:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
 .roleLabel {
   font-size: 10px;
   color: var(--text-dim);
