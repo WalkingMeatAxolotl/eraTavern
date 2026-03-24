@@ -448,12 +448,8 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           <CloneButton
             addonIds={addonIds}
             defaultAddon={trait.source || ""}
-            getData={() => {
-              const d: Record<string, unknown> = { name, category, description, effects };
-              if (category === EF.ABILITY) { d.defaultValue = defaultValue; d.decay = decayEnabled ? decay : null; }
-              return d;
-            }}
-            createFn={(d) => createTraitDef(d)}
+            entityType="traits"
+            sourceId={trait.id}
             onSuccess={onBack}
           />
         )}

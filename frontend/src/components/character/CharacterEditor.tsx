@@ -863,8 +863,8 @@ export default function CharacterEditor({ character, definitions, allCharacters,
           <CloneButton
             addonIds={addonIds}
             defaultAddon={data.source || ""}
-            getData={() => { const { id: _, source: _s, ...rest } = data; return rest as unknown as Record<string, unknown>; }}
-            createFn={(d) => createCharacter(d as RawCharacterData)}
+            entityType="characters"
+            sourceId={data.id}
             onSuccess={onBack}
             className={clsx(s.btn, s.btnAccent)}
           />

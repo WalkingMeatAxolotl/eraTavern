@@ -279,8 +279,8 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
           <CloneButton
             addonIds={addonIds}
             defaultAddon={item.source || ""}
-            getData={() => ({ name, tags, description, maxStack, sellable, price })}
-            createFn={(d) => createItemDef(d as ItemDefinition)}
+            entityType="items"
+            sourceId={item.id}
             onSuccess={onBack}
           />
         )}

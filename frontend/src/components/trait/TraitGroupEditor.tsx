@@ -209,8 +209,8 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
           <CloneButton
             addonIds={addonIds}
             defaultAddon={group.source || ""}
-            getData={() => ({ name: data.name, category: data.category, traits: data.traits, exclusive: data.exclusive !== false })}
-            createFn={(d) => createTraitGroup(d)}
+            entityType="trait-groups"
+            sourceId={group.id}
             onSuccess={onBack}
             className={s.genBtnAccent}
           />

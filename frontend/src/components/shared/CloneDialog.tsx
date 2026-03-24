@@ -1,6 +1,7 @@
 import { useState } from "react";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
+import { cloneEntity } from "../../api/client";
 import { Overlay, modalBtnStyle } from "./Modal";
 import { btnClass } from "./buttons";
 
@@ -11,8 +12,8 @@ import { btnClass } from "./buttons";
  *   <CloneButton
  *     addonIds={addonIds}
  *     defaultAddon={entity.source}
- *     getData={() => ({ name, tags, ... })}   // current editor fields (no id/source)
- *     createFn={(data) => createItemDef(data)} // API call
+ *     entityType="traits"
+ *     sourceId={entity.id}
  *     onSuccess={onBack}
  *   />
  */
@@ -20,22 +21,20 @@ import { btnClass } from "./buttons";
 interface CloneButtonProps {
   addonIds: string[];
   defaultAddon: string;
-  /** Return current editor data WITHOUT id and source — those come from the dialog. */
-  getData: () => Record<string, unknown>;
-  /** API create function. Receives { ...getData(), id: localId, source: addonId }. */
-  createFn: (data: Record<string, unknown>) => Promise<{ success: boolean; message: string }>;
+  /** Backend entity type key (e.g. "traits", "maps", "characters"). */
+  entityType: string;
+  /** Namespaced source entity ID to clone from. */
+  sourceId: string;
   onSuccess: () => void;
-  /** Optional custom button style */
   buttonStyle?: React.CSSProperties;
-  /** Optional button className */
   className?: string;
 }
 
 export default function CloneButton({
   addonIds,
   defaultAddon,
-  getData,
-  createFn,
+  entityType,
+  sourceId,
   onSuccess,
   buttonStyle,
   className,
@@ -59,8 +58,7 @@ export default function CloneButton({
           error={error}
           onCancel={() => setOpen(false)}
           onConfirm={async (addonId, localId) => {
-            const data = { ...getData(), id: localId, source: addonId };
-            const result = await createFn(data);
+            const result = await cloneEntity(entityType, sourceId, addonId, localId);
             if (result.success) {
               setOpen(false);
               onSuccess();

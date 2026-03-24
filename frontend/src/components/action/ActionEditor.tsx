@@ -528,8 +528,8 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           <CloneButton
             addonIds={addonIds}
             defaultAddon={action.source || ""}
-            getData={() => buildData()}
-            createFn={(d) => createActionDef(d)}
+            entityType="actions"
+            sourceId={action.id}
             onSuccess={onBack}
           />
         )}

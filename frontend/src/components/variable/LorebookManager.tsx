@@ -343,11 +343,8 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
           <CloneButton
             addonIds={addonIds}
             defaultAddon={selectedAddon !== "__all__" ? selectedAddon : (addonIds[0] ?? "")}
-            getData={() => ({ name: entry.name, keywords: entry.keywords, content: entry.content, enabled: entry.enabled, priority: entry.priority, insertMode: entry.insertMode })}
-            createFn={(d) => {
-              const fullId = d.source + "." + d.id;
-              return createLorebookEntry({ ...d, id: fullId } as unknown as Omit<LorebookEntry, "source">);
-            }}
+            entityType="lorebook"
+            sourceId={entry.id}
             onSuccess={handleBack}
             className={btnClass("neutral")}
           />

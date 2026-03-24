@@ -54,6 +54,22 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return data;
 }
 
+// ── Generic clone ──
+
+export async function cloneEntity(
+  entityType: string,
+  sourceId: string,
+  targetAddon: string,
+  newLocalId: string,
+): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/clone`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entityType, sourceId, targetAddon, newLocalId }),
+  });
+  return handleResponse(res);
+}
+
 export interface AppConfig {
   maxWidth: number;
   defaultLlmPreset: string;

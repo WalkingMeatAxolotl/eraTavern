@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import copy
 from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Body
 
 import routes._helpers as _h
-from game.character import get_addon_from_id, to_local_id
+from game.character import get_addon_from_id, namespace_id, to_local_id
 from routes._helpers import _ensure_ns, _mark_dirty, _resp, _validate_id
 
 router = APIRouter()
@@ -35,9 +36,7 @@ def _register_crud(
 
     # --- LIST ---
     @router.get(url_prefix)
-    async def list_entities(
-        _defs_attr=defs_attr, _list_key=list_key, _transform=list_transform
-    ):
+    async def list_entities(_defs_attr=defs_attr, _list_key=list_key, _transform=list_transform):
         defs = _get_defs(_defs_attr)
         items = [_transform(d) if _transform else d for d in defs.values()]
         return {_list_key: items}
@@ -46,9 +45,7 @@ def _register_crud(
 
     # --- CREATE ---
     @router.post(url_prefix)
-    async def create_entity(
-        body: dict = Body(...), _name=entity_name, _defs_attr=defs_attr, _on_create=on_create
-    ):
+    async def create_entity(body: dict = Body(...), _name=entity_name, _defs_attr=defs_attr, _on_create=on_create):
         raw_id = body.get("id", "")
         if err := _validate_id(raw_id):
             return err
@@ -73,9 +70,7 @@ def _register_crud(
 
     # --- UPDATE ---
     @router.put(url_prefix + "/{entity_id:path}")
-    async def update_entity(
-        entity_id: str, body: dict = Body(...), _name=entity_name, _defs_attr=defs_attr
-    ):
+    async def update_entity(entity_id: str, body: dict = Body(...), _name=entity_name, _defs_attr=defs_attr):
         entity_id = _ensure_ns(entity_id)
         defs = _get_defs(_defs_attr)
         existing = defs.get(entity_id)
@@ -94,9 +89,7 @@ def _register_crud(
 
     # --- DELETE ---
     @router.delete(url_prefix + "/{entity_id:path}")
-    async def delete_entity(
-        entity_id: str, _name=entity_name, _defs_attr=defs_attr, _on_delete=on_delete
-    ):
+    async def delete_entity(entity_id: str, _name=entity_name, _defs_attr=defs_attr, _on_delete=on_delete):
         entity_id = _ensure_ns(entity_id)
         defs = _get_defs(_defs_attr)
         if entity_id not in defs:
@@ -150,9 +143,7 @@ def _item_list_transform(d: dict) -> dict:
 
 _register_crud("trait", "trait_defs", "traits", "/api/game/traits", on_delete=_on_delete_trait)
 _register_crud("clothing", "clothing_defs", "clothing", "/api/game/clothing")
-_register_crud(
-    "item", "item_defs", "items", "/api/game/items", list_transform=_item_list_transform
-)
+_register_crud("item", "item_defs", "items", "/api/game/items", list_transform=_item_list_transform)
 _register_crud("action", "action_defs", "actions", "/api/game/actions")
 _register_crud("traitGroup", "trait_groups", "traitGroups", "/api/game/trait-groups")
 _register_crud("variable", "variable_defs", "variables", "/api/game/variables")
@@ -166,6 +157,104 @@ _register_crud(
     on_create=_on_create_world_variable,
     on_delete=_on_delete_world_variable,
 )
+
+
+# ===========================================================================
+# Generic clone endpoint
+# ===========================================================================
+
+# entityType → (game_state attr, source field name)
+_CLONE_TYPE_MAP: dict[str, tuple[str, str]] = {
+    "traits": ("trait_defs", "source"),
+    "clothing": ("clothing_defs", "source"),
+    "items": ("item_defs", "source"),
+    "actions": ("action_defs", "source"),
+    "trait-groups": ("trait_groups", "source"),
+    "variables": ("variable_defs", "source"),
+    "events": ("event_defs", "source"),
+    "lorebook": ("lorebook_defs", "source"),
+    "world-variables": ("world_variable_defs", "source"),
+}
+
+
+@router.post("/api/game/clone")
+async def clone_entity(body: dict = Body(...)):
+    """Clone any entity: deep-copy source in memory, assign new id/source."""
+    entity_type = body.get("entityType", "")
+    source_id = _ensure_ns(body.get("sourceId", ""))
+    target_addon = body.get("targetAddon", "")
+    new_local_id = body.get("newLocalId", "")
+
+    if not all([entity_type, source_id, target_addon, new_local_id]):
+        return _resp(False, "CLONE_MISSING_PARAMS")
+    if err := _validate_id(new_local_id):
+        return err
+
+    new_id = namespace_id(target_addon, new_local_id)
+    gs = _h.game_state
+
+    # ── Map (special: compile_grid + distance_matrix) ──
+    if entity_type == "maps":
+        src = gs.maps.get(source_id)
+        if not src:
+            return _resp(False, "ENTITY_NOT_FOUND", {"entity": "map", "id": source_id})
+        if new_id in gs.maps:
+            return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": "map", "id": new_id})
+        clone = copy.deepcopy(src)
+        clone["id"] = new_id
+        clone["_local_id"] = new_local_id
+        clone["_source"] = target_addon
+        from game.map_engine import build_distance_matrix, compile_grid
+
+        clone["compiled_grid"] = compile_grid(clone)
+        clone["cell_index"] = {c["id"]: c for c in clone.get("cells", [])}
+        gs.maps[new_id] = clone
+        gs.distance_matrix = build_distance_matrix(gs.maps)
+        await _mark_dirty()
+        return _resp(True, "ENTITY_CLONED", {"entity": "map", "id": new_id})
+
+    # ── Character (special: _build_char) ──
+    if entity_type == "characters":
+        src = gs.character_data.get(source_id)
+        if not src:
+            return _resp(False, "ENTITY_NOT_FOUND", {"entity": "character", "id": source_id})
+        if new_id in gs.character_data:
+            return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": "character", "id": new_id})
+        clone = copy.deepcopy(src)
+        clone["id"] = new_id
+        clone["_local_id"] = new_local_id
+        clone["_source"] = target_addon
+        clone["isPlayer"] = False
+        gs.character_data[new_id] = clone
+        gs.characters[new_id] = gs._build_char(new_id)
+        await _mark_dirty()
+        return _resp(True, "ENTITY_CLONED", {"entity": "character", "id": new_id})
+
+    # ── Generic entities ──
+    type_info = _CLONE_TYPE_MAP.get(entity_type)
+    if not type_info:
+        return _resp(False, "CLONE_INVALID_TYPE", {"entityType": entity_type})
+
+    defs_attr, source_field = type_info
+    defs = getattr(gs, defs_attr)
+    src = defs.get(source_id)
+    if not src:
+        return _resp(False, "ENTITY_NOT_FOUND", {"entity": entity_type, "id": source_id})
+    if new_id in defs:
+        return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": entity_type, "id": new_id})
+
+    clone = copy.deepcopy(src)
+    clone["id"] = new_id
+    clone["_local_id"] = new_local_id
+    clone[source_field] = target_addon
+    defs[new_id] = clone
+
+    # on_create hooks
+    if entity_type == "world-variables":
+        gs.world_variables[new_id] = clone.get("default", 0)
+
+    await _mark_dirty()
+    return _resp(True, "ENTITY_CLONED", {"entity": entity_type, "id": new_id})
 
 
 # ===========================================================================

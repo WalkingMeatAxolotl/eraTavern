@@ -72,6 +72,7 @@ export interface RawMapData {
   mapOverlayOpacity?: number;
   grid: RawMapGrid[][];
   cells: MapCell[];
+  _source?: string;
 }
 
 // --- World / Addon types ---

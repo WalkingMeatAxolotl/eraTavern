@@ -534,8 +534,8 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           <CloneButton
             addonIds={addonIds}
             defaultAddon={variable.source || ""}
-            getData={() => ({ name: name.trim(), description: description.trim(), isBidirectional: isBidirectional || undefined, tags, steps })}
-            createFn={(d) => createVariableDef(d)}
+            entityType="variables"
+            sourceId={variable.id}
             onSuccess={onBack}
             className={btnClass("neutral")}
           />

@@ -28,7 +28,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   ENTITY_CREATED: "{entity}已创建",
   ENTITY_UPDATED: "{entity}已更新",
   ENTITY_DELETED: "{entity}已删除",
+  ENTITY_CLONED: "{entity}已克隆",
   ENTITY_MISSING_ID: "缺少{entity} ID",
+  CLONE_MISSING_PARAMS: "克隆参数不完整",
+  CLONE_INVALID_TYPE: "不支持的实体类型: {entityType}",
 
   // --- World ---
   WORLD_NOT_FOUND: "世界 '{id}' 不存在",

@@ -292,8 +292,8 @@ function WorldVarEditor({
             <CloneButton
               addonIds={addonIds}
               defaultAddon={variable.source || ""}
-              getData={() => ({ name, description: description || undefined, type, default: defaultVal })}
-              createFn={(d) => createWorldVariableDef(d)}
+              entityType="world-variables"
+              sourceId={variable.id}
               onSuccess={onBack}
               className={btnClass("neutral")}
             />
@@ -546,12 +546,8 @@ function EventEditor({
             <CloneButton
               addonIds={addonIds}
               defaultAddon={event.source || ""}
-              getData={() => {
-                const d: Record<string, unknown> = { name, description: description || undefined, triggerMode, targetScope, conditions, effects, outputTemplate: outputTemplate || undefined, enabled };
-                if (triggerMode === TriggerMode.WHILE) d.cooldown = cooldown;
-                return d;
-              }}
-              createFn={(d) => createEventDef(d)}
+              entityType="events"
+              sourceId={event.id}
               onSuccess={onBack}
               className={btnClass("neutral")}
             />

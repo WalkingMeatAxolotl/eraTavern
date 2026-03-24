@@ -374,8 +374,8 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           <CloneButton
             addonIds={addonIds}
             defaultAddon={clothing.source || ""}
-            getData={() => ({ name, slots: selectedSlots, occlusion, effects })}
-            createFn={(d) => createClothingDef(d)}
+            entityType="clothing"
+            sourceId={clothing.id}
             onSuccess={onBack}
           />
         )}

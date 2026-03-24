@@ -15,6 +15,7 @@ import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import ConnectionOverlay from "./ConnectionOverlay";
 import PresetEditor from "./PresetEditor";
 import CellEditor from "./CellEditor";
+import CloneButton from "../shared/CloneDialog";
 import s from "./MapEditor.module.css";
 
 type Tool = "none" | "blank" | "cell" | { preset: DecorPreset };
@@ -54,10 +55,11 @@ export function HelpTip({ text }: { text: string }) {
 
 interface Props {
   mapId: string;
+  addonIds?: string[];
   onBack: () => void;
 }
 
-export default function MapEditor({ mapId, onBack }: Props) {
+export default function MapEditor({ mapId, addonIds, onBack }: Props) {
   const [mapData, setMapData] = useState<RawMapData | null>(null);
   const [presets, setPresets] = useState<DecorPreset[]>([]);
   const [allMaps, setAllMaps] = useState<{ id: string; name: string }[]>([]);
@@ -581,6 +583,17 @@ export default function MapEditor({ mapId, onBack }: Props) {
         <button onClick={handleSave} disabled={saving} className={s.editorBtn} style={{ color: T.successDim }}>
           {saving ? `[${t("status.submitting")}]` : `[${t("btn.confirm")}]`}
         </button>
+        {addonIds && mapData && (
+          <CloneButton
+            addonIds={addonIds}
+            defaultAddon={mapData._source || ""}
+            entityType="maps"
+            sourceId={mapId}
+            onSuccess={onBack}
+            className={s.editorBtn}
+            buttonStyle={{ color: T.accent }}
+          />
+        )}
         <button onClick={handleDelete} className={s.editorBtn} style={{ color: T.danger }}>
           [{t("btn.delete")}]
         </button>

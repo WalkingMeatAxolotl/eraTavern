@@ -8,13 +8,12 @@ import s from "./MapManager.module.css";
 export default function MapManager({
   selectedAddon,
   onEditingChange,
-  addonIds: _addonIds,
+  addonIds,
 }: {
   selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
   addonIds?: string[];
 }) {
-  void _addonIds; // reserved for future map clone support
   const [maps, setMaps] = useState<{ id: string; name: string; source?: string }[]>([]);
   const [editingMapId, setEditingMapId] = useState<string | null>(null);
 
@@ -62,6 +61,7 @@ export default function MapManager({
     return (
       <MapEditor
         mapId={editingMapId}
+        addonIds={addonIds}
         onBack={() => {
           setEditingMapId(null);
           loadMaps();
