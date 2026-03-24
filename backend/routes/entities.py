@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+import shutil
+from pathlib import Path
 from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Body
@@ -177,6 +179,38 @@ _CLONE_TYPE_MAP: dict[str, tuple[str, str]] = {
 }
 
 
+def _get_addon_asset_root(addon_id: str) -> Optional[Path]:
+    """Get the addon root directory (parent of version dir) for asset operations."""
+    for aid, apath in _h.game_state.addon_dirs:
+        if aid == addon_id:
+            return apath.parent
+    return None
+
+
+def _copy_assets(
+    source_addon: str,
+    target_addon: str,
+    subfolder: str,
+    filenames: list[str],
+) -> None:
+    """Copy asset files between addon directories. Skips if source == target or file missing."""
+    if source_addon == target_addon or not filenames:
+        return
+    src_root = _get_addon_asset_root(source_addon)
+    dst_root = _get_addon_asset_root(target_addon)
+    if not src_root or not dst_root:
+        return
+    dst_dir = dst_root / "assets" / subfolder
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    for fname in filenames:
+        if not fname:
+            continue
+        src_file = src_root / "assets" / subfolder / fname
+        dst_file = dst_dir / fname
+        if src_file.exists() and not dst_file.exists():
+            shutil.copy2(src_file, dst_file)
+
+
 @router.post("/api/game/clone")
 async def clone_entity(body: dict = Body(...)):
     """Clone any entity: deep-copy source in memory, assign new id/source."""
@@ -210,6 +244,11 @@ async def clone_entity(body: dict = Body(...)):
         clone["cell_index"] = {c["id"]: c for c in clone.get("cells", [])}
         gs.maps[new_id] = clone
         gs.distance_matrix = build_distance_matrix(gs.maps)
+        # Copy background images across addons
+        source_addon = src.get("_source", "")
+        bg_files = [f for f in [clone.get("backgroundImage")] if f]
+        bg_files += [c.get("backgroundImage", "") for c in clone.get("cells", [])]
+        _copy_assets(source_addon, target_addon, "backgrounds", bg_files)
         await _mark_dirty()
         return _resp(True, "ENTITY_CLONED", {"entity": "map", "id": new_id})
 
@@ -227,6 +266,9 @@ async def clone_entity(body: dict = Body(...)):
         clone["isPlayer"] = False
         gs.character_data[new_id] = clone
         gs.characters[new_id] = gs._build_char(new_id)
+        # Copy portrait across addons
+        source_addon = src.get("_source", "")
+        _copy_assets(source_addon, target_addon, "characters", [clone.get("portrait", "")])
         await _mark_dirty()
         return _resp(True, "ENTITY_CLONED", {"entity": "character", "id": new_id})
 
