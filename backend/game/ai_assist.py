@@ -108,7 +108,7 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
             "category": "所属分类 key（必须与组内特质的 category 一致）",
         },
         "optional": {
-            "traits": "特质 ID 数组（完整 ID，如 [\"Base.male\", \"Base.female\"]）",
+            "traits": '特质 ID 数组（完整 ID，如 ["Base.male", "Base.female"]）',
             "exclusive": "是否互斥（布尔值，默认 false）— 互斥组中角色只能拥有一个特质",
         },
         "example": {
@@ -124,10 +124,78 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
         "required": {},
         "optional": {},
     },
+    "outfitType": {
+        "description": "服装预设类型 — 定义角色可切换的服装套装预设",
+        "required": {
+            "id": "英文标识符（如 combat、casual）",
+            "name": "显示名称",
+        },
+        "optional": {
+            "description": "预设描述",
+            "copyDefault": "是否从默认服装复制初始值（布尔值，默认 true）",
+            "slots": "各槽位预设服装：{slotName: [clothingId, ...]}",
+        },
+        "example": {
+            "id": "combat",
+            "name": "战斗装",
+            "copyDefault": True,
+            "slots": {"mainHand": ["iron_sword"], "upperBody": ["leather_armor"]},
+        },
+    },
+    "lorebook": {
+        "description": "知识库条目 — LLM 叙事生成时注入的背景知识",
+        "required": {
+            "id": "英文标识符",
+            "name": "显示名称",
+            "keywords": '触发关键词数组（如 ["酒馆", "tavern"]）',
+            "content": "注入 LLM 的文本内容（背景设定描述）",
+        },
+        "optional": {
+            "enabled": "是否启用（布尔值，默认 true）",
+            "priority": "排序优先级（数字，默认 0，越大越靠前）",
+            "insertMode": "插入模式：keyword（关键词匹配时插入）或 always（始终插入），默认 keyword",
+        },
+        "example": {
+            "id": "red_dragon_inn",
+            "name": "红龙酒馆",
+            "keywords": ["酒馆", "红龙", "tavern"],
+            "content": "红龙酒馆是镇上最热闹的场所，由退役冒险者经营。二楼有住宿，地下室传说通向古代遗迹。",
+            "enabled": True,
+            "priority": 0,
+            "insertMode": "keyword",
+        },
+    },
+    "worldVariable": {
+        "description": "世界变量 — 全局数值/布尔状态（如天气、声望、剧情标记）",
+        "required": {
+            "id": "英文标识符，下划线命名（如 reputation）",
+            "name": "显示名称",
+            "type": "变量类型：number 或 boolean",
+            "default": "初始值（number 类型为数字，boolean 类型用 0 或 1）",
+        },
+        "optional": {
+            "description": "变量描述文本",
+        },
+        "example": {
+            "id": "reputation",
+            "name": "声望",
+            "type": "number",
+            "default": 0,
+            "description": "玩家在镇上的声望值",
+        },
+    },
 }
 
 # Entity types that AI can create/update (subset of ENTITY_SCHEMAS)
-WRITABLE_ENTITY_TYPES = ["item", "trait", "clothing", "traitGroup"]
+WRITABLE_ENTITY_TYPES = [
+    "item",
+    "trait",
+    "clothing",
+    "traitGroup",
+    "outfitType",
+    "lorebook",
+    "worldVariable",
+]
 
 # ---------------------------------------------------------------------------
 # Tool definitions (OpenAI function calling format)
@@ -152,7 +220,7 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
                     },
                     "filter": {
                         "type": "object",
-                        "description": "可选过滤条件（如 {\"category\": \"mentalTrait\"}）",
+                        "description": '可选过滤条件（如 {"category": "mentalTrait"}）',
                     },
                 },
                 "required": ["entityType"],
@@ -193,7 +261,7 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
                     "entityIds": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "要获取的实体完整 ID 数组（如 [\"Base.brave\", \"Base.strong\"]）",
+                        "description": '要获取的实体完整 ID 数组（如 ["Base.brave", "Base.strong"]）',
                     },
                 },
                 "required": ["entityType", "entityIds"],
@@ -334,6 +402,9 @@ def _get_defs(gs: GameState, entity_type: str) -> dict[str, dict]:
         "clothing": gs.clothing_defs,
         "traitGroup": gs.trait_groups,
         "variable": gs.variable_defs,
+        "outfitType": {t["id"]: t for t in gs.outfit_types if isinstance(t, dict)},
+        "lorebook": gs.lorebook_defs,
+        "worldVariable": gs.world_variable_defs,
     }
     return mapping.get(entity_type, {})
 
@@ -362,6 +433,18 @@ def _summarize_entity(entity_type: str, entity: dict) -> dict[str, Any]:
         tags = entity.get("tags")
         if tags:
             summary["tags"] = tags
+    elif entity_type == "outfitType":
+        summary["copyDefault"] = entity.get("copyDefault", True)
+        slots = entity.get("slots", {})
+        if slots:
+            summary["slotCount"] = len(slots)
+    elif entity_type == "lorebook":
+        summary["keywords"] = entity.get("keywords", [])
+        summary["insertMode"] = entity.get("insertMode", "keyword")
+        summary["enabled"] = entity.get("enabled", True)
+    elif entity_type == "worldVariable":
+        summary["type"] = entity.get("type", "number")
+        summary["default"] = entity.get("default", 0)
     return summary
 
 
@@ -390,9 +473,7 @@ def _match_filter(entity: dict, filter_: dict) -> bool:
 _INTERNAL_KEYS = {"_local_id", "source", "_source"}
 
 
-def execute_tool_get_entities(
-    gs: GameState, entity_type: str, entity_ids: list[str]
-) -> str:
+def execute_tool_get_entities(gs: GameState, entity_type: str, entity_ids: list[str]) -> str:
     """Execute get_entities tool — returns full data for requested entities."""
     defs = _get_defs(gs, entity_type)
     results = []
@@ -406,9 +487,7 @@ def execute_tool_get_entities(
     return json.dumps(results, ensure_ascii=False)
 
 
-def execute_tool_list_entities(
-    gs: GameState, entity_type: str, filter_: Optional[dict] = None
-) -> str:
+def execute_tool_list_entities(gs: GameState, entity_type: str, filter_: Optional[dict] = None) -> str:
     """Execute list_entities tool — returns JSON string of entity summaries.
 
     If filter_ is provided, only entities matching all filter fields are returned.
@@ -446,7 +525,7 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
             if trait_cats:
                 cat_list = "\n".join(f"- `{c['key']}` — {c.get('label', '')}" for c in trait_cats)
                 content += f"\n\n## 当前系统的 category 可用值\n\n{cat_list}"
-        elif entity_type == "clothing":
+        elif entity_type in ("clothing", "outfitType"):
             slots = template.get("clothingSlots", [])
             if slots:
                 content += f"\n\n## 当前系统的槽位可用值\n\n{', '.join(slots)}"
@@ -464,14 +543,10 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
 
             # Ability traits (exp system, 1000 per grade)
             if gs.trait_defs:
-                ability_ids = sorted(
-                    tid for tid, t in gs.trait_defs.items() if t.get("category") == "ability"
-                )
+                ability_ids = sorted(tid for tid, t in gs.trait_defs.items() if t.get("category") == "ability")
                 if ability_ids:
                     ids_str = ", ".join(f"`{a}`" for a in ability_ids)
-                    target_lines.append(
-                        f"- 能力特质（经验值，每 1000 = 1 级 G→S）：{ids_str}"
-                    )
+                    target_lines.append(f"- 能力特质（经验值，每 1000 = 1 级 G→S）：{ids_str}")
 
             # BasicInfo number fields
             for field in template.get("basicInfo", []):
@@ -525,6 +600,16 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
     if not source:
         return {"success": False, "error": "No addon available for creating entities"}
 
+    # outfitType: stored as list, no namespacing
+    if entity_type == "outfitType":
+        if any(t.get("id") == raw_id for t in gs.outfit_types if isinstance(t, dict)):
+            return {"success": False, "error": f"Entity '{raw_id}' already exists"}
+        defaults = ENTITY_DEFAULTS.get(entity_type, {})
+        entry = {**defaults, **entity_data}
+        gs.outfit_types.append(entry)
+        gs.dirty = True
+        return {"success": True, "entity": _summarize_entity(entity_type, entry)}
+
     # Namespace the ID
     eid = namespace_id(source, raw_id)
 
@@ -540,15 +625,17 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
     # Store in GameState
     defs[eid] = entry
 
+    # Post-create hooks for specific entity types
+    if entity_type == "worldVariable":
+        gs.world_variables[eid] = entry.get("default", 0)
+
     # Mark dirty so changes will be persisted on save
     gs.dirty = True
 
     return {"success": True, "entity": _summarize_entity(entity_type, entry)}
 
 
-def execute_tool_batch_create(
-    gs: GameState, entity_type: str, entities_data: list[dict]
-) -> dict[str, Any]:
+def execute_tool_batch_create(gs: GameState, entity_type: str, entities_data: list[dict]) -> dict[str, Any]:
     """Execute batch_create tool — create multiple entities at once.
 
     Returns {created: [...summaries], errors: [...messages]}.
@@ -572,6 +659,19 @@ def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, 
     Only the provided fields are updated; others remain unchanged.
     Returns a result dict: {success: bool, error?: str, entity?: dict}
     """
+    # outfitType: find in list by id
+    if entity_type == "outfitType":
+        fields.pop("id", None)
+        val_error = _validate_field_values(gs, entity_type, fields)
+        if val_error:
+            return {"success": False, "error": val_error}
+        for t in gs.outfit_types:
+            if isinstance(t, dict) and t.get("id") == entity_id:
+                t.update(fields)
+                gs.dirty = True
+                return {"success": True, "entity": _summarize_entity(entity_type, t)}
+        return {"success": False, "error": f"Entity '{entity_id}' not found"}
+
     defs = _get_defs(gs, entity_type)
     if entity_id not in defs:
         return {"success": False, "error": f"Entity '{entity_id}' not found"}
@@ -595,9 +695,7 @@ def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, 
     return {"success": True, "entity": _summarize_entity(entity_type, existing)}
 
 
-def execute_tool_batch_update(
-    gs: GameState, entity_type: str, updates: list[dict]
-) -> dict[str, Any]:
+def execute_tool_batch_update(gs: GameState, entity_type: str, updates: list[dict]) -> dict[str, Any]:
     """Execute batch_update tool — update multiple entities at once.
 
     Returns {updated: [...summaries], errors: [...messages]}.
@@ -630,11 +728,17 @@ _REF_RULES: list[tuple[str, str, Any]] = [
     ("clothing", "effects[].target", "effect_targets"),
     ("traitGroup", "category", "template.traits[].key"),
     ("traitGroup", "traits[]", "trait_defs"),
+    ("lorebook", "insertMode", "static:keyword,always"),
+    ("worldVariable", "type", "static:number,boolean"),
 ]
 
 
 def _resolve_valid_values(gs: GameState, resolver: str) -> set[str]:
     """Resolve a set of valid values from game state using a resolver string."""
+    # Static enum: "static:val1,val2,..."
+    if resolver.startswith("static:"):
+        return set(resolver[7:].split(","))
+
     template = getattr(gs, "template", {})
 
     if resolver == "variable_defs":
@@ -791,6 +895,15 @@ ENTITY_DEFAULTS: dict[str, dict[str, Any]] = {
     "trait": {"description": "", "effects": [], "decay": None},
     "clothing": {"occlusion": [], "effects": []},
     "traitGroup": {"traits": [], "exclusive": False},
+    "outfitType": {"description": "", "copyDefault": True, "slots": {}},
+    "lorebook": {
+        "keywords": [],
+        "content": "",
+        "enabled": True,
+        "priority": 0,
+        "insertMode": "keyword",
+    },
+    "worldVariable": {"description": "", "type": "number", "default": 0},
 }
 
 DEFAULT_ASSIST_PROMPT = """\
@@ -860,5 +973,3 @@ def build_assist_messages(
     messages.append({"role": "user", "content": user_message})
 
     return messages
-
-
