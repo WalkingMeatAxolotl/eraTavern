@@ -1,20 +1,24 @@
 /* ── OutcomeEditor ── */
 
 .outcome {
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  padding: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid var(--sec-red);
+  border-radius: 0 4px 4px 0;
+  padding: 0 0 8px 0;
   margin-bottom: 8px;
-  background-color: var(--bg2);
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 .header {
   display: flex;
   gap: 6px;
   align-items: center;
+  padding: 6px 8px;
   margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border);
+  background-color: color-mix(in srgb, var(--sec-red) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--sec-red) 15%, transparent);
 }
 
 .headerMlAuto {
@@ -92,7 +96,8 @@
 
 .modifierPanel {
   composes: subPanel from "../shared/shared.module.css";
-  margin-left: 8px;
+  margin-left: 10px;
+  margin-right: 8px;
   margin-bottom: 8px;
 }
 
@@ -106,6 +111,7 @@
 
 .effectsSection {
   margin-bottom: 8px;
+  padding: 0 8px 0 10px;
 }
 
 .addBtnRow {
@@ -125,7 +131,7 @@
   border-radius: 3px;
   padding: 4px 6px;
   margin-bottom: 4px;
-  background-color: var(--bg3);
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 .targetGroupHeader {
@@ -181,7 +187,8 @@
 }
 
 .chainContent {
-  padding-left: 12px;
+  padding-left: 10px;
+  padding-right: 8px;
 }
 
 .chainEmpty {
@@ -221,5 +228,6 @@
 /* ── Template section ── */
 
 .tplContent {
-  padding-left: 12px;
+  padding-left: 10px;
+  padding-right: 8px;
 }

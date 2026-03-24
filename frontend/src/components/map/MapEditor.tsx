@@ -368,7 +368,7 @@ export default function MapEditor({ mapId, onBack }: Props) {
       </Section>
 
       {/* -- Section: grid editing -- */}
-      <Section title={t("map.gridEdit")} color="var(--sec-green)">
+      <Section title={t("map.gridEdit")} color="var(--sec-purple)">
         {/* Grid size + view controls */}
         <div className={s.gridControls}>
           <span style={{ color: T.textSub, minWidth: "46px" }}>{t("map.size")}</span>

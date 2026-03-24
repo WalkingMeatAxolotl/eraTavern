@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { t } from "../../i18n/ui";
 import type { LLMProvider } from "../../types/game";
 import { fetchLLMModels, testLLMConnection } from "../../api/client";
@@ -87,7 +87,11 @@ export default function ProviderEditor({
         </button>
       </div>
 
-      <div className={s.section}>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("llm.apiService")}</span>
+        </div>
+        <div className={s.sectionContent}>
         <div className={s.flexRow}>
           <div className={s.flex1}>
             <div className={sh.label}>ID</div>
@@ -176,6 +180,7 @@ export default function ProviderEditor({
             />
             {t("llm.streaming")}
           </label>
+        </div>
         </div>
       </div>
 

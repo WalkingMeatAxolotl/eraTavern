@@ -14,6 +14,16 @@
 
 .form { composes: formGroup from "../shared/shared.module.css"; }
 
+/* ── Section blocks ── */
+
+.section { composes: coloredSection from "../shared/shared.module.css"; }
+
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
+
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
+
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
+
 .row2 { composes: formRow from "../shared/shared.module.css"; }
 
 .row3 {

@@ -132,117 +132,138 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
 
       {/* Basic info */}
       <div className={s.form}>
-        <div className={s.row2}>
-          <div className={s.field}>
-            <div className={sh.label}>ID</div>
-            <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
+        <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+          <div className={s.sectionTitle}>
+            <span className={s.sectionTitleText}>基础信息</span>
           </div>
-          <div className={s.field}>
-            <div className={sh.label}>{t("field.name")}</div>
-            <input
-              className={sh.input}
-              style={{ width: "100%", boxSizing: "border-box" }}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isReadOnly}
-            />
+          <div className={s.sectionContent}>
+            <div className={s.row2}>
+              <div className={s.field}>
+                <div className={sh.label}>ID</div>
+                <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
+              </div>
+              <div className={s.field}>
+                <div className={sh.label}>{t("field.name")}</div>
+                <input
+                  className={sh.input}
+                  style={{ width: "100%", boxSizing: "border-box" }}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isReadOnly}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Tags */}
-        <div>
-          <div className={sh.label}>{t("field.tags")}</div>
-          {/* Selected tags */}
-          <div className={s.tagList}>
-            {tags.map((t) => (
-              <span key={t} className={s.tagBadge}>
-                {t}
-                {!isReadOnly && (
-                  <button onClick={() => setTags(tags.filter((x) => x !== t))} className={s.tagRemoveBtn}>
-                    x
-                  </button>
-                )}
-              </span>
-            ))}
-            {tags.length === 0 && <span className={s.tagNone}>{t("ui.none")}</span>}
+        <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+          <div className={s.sectionTitle}>
+            <span className={s.sectionTitleText}>标签</span>
           </div>
-          {/* Available tags from pool (clickable) */}
-          {!isReadOnly && availableTags.length > 0 && (
-            <div className={s.tagList}>
-              {availableTags.map((t) => (
-                <button key={t} onClick={() => addTag(t)} className={s.tagPoolBtn}>
-                  + {t}
-                </button>
-              ))}
+          <div className={s.sectionContent}>
+            <div>
+              {/* Selected tags */}
+              <div className={s.tagList}>
+                {tags.map((t) => (
+                  <span key={t} className={s.tagBadge}>
+                    {t}
+                    {!isReadOnly && (
+                      <button onClick={() => setTags(tags.filter((x) => x !== t))} className={s.tagRemoveBtn}>
+                        x
+                      </button>
+                    )}
+                  </span>
+                ))}
+                {tags.length === 0 && <span className={s.tagNone}>{t("ui.none")}</span>}
+              </div>
+              {/* Available tags from pool (clickable) */}
+              {!isReadOnly && availableTags.length > 0 && (
+                <div className={s.tagList}>
+                  {availableTags.map((t) => (
+                    <button key={t} onClick={() => addTag(t)} className={s.tagPoolBtn}>
+                      + {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Free-form input for new tags */}
+              {!isReadOnly && (
+                <input
+                  className={sh.input}
+                  style={{ width: "120px" }}
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTag(tagInput);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (tagInput.trim()) addTag(tagInput);
+                  }}
+                  placeholder={t("ui.customTag")}
+                />
+              )}
             </div>
-          )}
-          {/* Free-form input for new tags */}
-          {!isReadOnly && (
-            <input
-              className={sh.input}
-              style={{ width: "120px" }}
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTag(tagInput);
-                }
-              }}
-              onBlur={() => {
-                if (tagInput.trim()) addTag(tagInput);
-              }}
-              placeholder={t("ui.customTag")}
-            />
-          )}
-        </div>
-
-        <div>
-          <div className={sh.label}>{t("field.description")}</div>
-          <textarea
-            className={`${sh.input} ${s.textarea}`}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={isReadOnly}
-          />
-        </div>
-
-        <div className={s.row3}>
-          <div className={s.field}>
-            <div className={sh.label}>{t("field.maxStack")}</div>
-            <input
-              type="number"
-              className={sh.input}
-              style={{ width: "100%", boxSizing: "border-box" }}
-              value={maxStack}
-              onChange={(e) => setMaxStack(Math.max(1, Number(e.target.value)))}
-              min={1}
-              disabled={isReadOnly}
-            />
           </div>
-          <div>
-            <div className={sh.label}>{t("field.sellable")}</div>
-            <label className={s.checkLabel} style={{ cursor: isReadOnly ? "default" : "pointer" }}>
-              <input
-                type="checkbox"
-                checked={sellable}
-                onChange={(e) => setSellable(e.target.checked)}
+        </div>
+
+        {/* Attributes */}
+        <div className={s.section} style={{ "--sec-color": "var(--sec-orange)" } as React.CSSProperties}>
+          <div className={s.sectionTitle}>
+            <span className={s.sectionTitleText}>属性</span>
+          </div>
+          <div className={s.sectionContent}>
+            <div>
+              <div className={sh.label}>{t("field.description")}</div>
+              <textarea
+                className={`${sh.input} ${s.textarea}`}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 disabled={isReadOnly}
               />
-              <span className={s.checkText}>{sellable ? t("ui.yes") : t("ui.no")}</span>
-            </label>
-          </div>
-          <div className={s.field}>
-            <div className={sh.label}>{t("field.price")}</div>
-            <input
-              type="number"
-              className={sh.input}
-              style={{ width: "100%", boxSizing: "border-box" }}
-              value={price}
-              onChange={(e) => setPrice(Math.max(0, Number(e.target.value)))}
-              min={0}
-              disabled={isReadOnly}
-            />
+            </div>
+
+            <div className={s.row3}>
+              <div className={s.field}>
+                <div className={sh.label}>{t("field.maxStack")}</div>
+                <input
+                  type="number"
+                  className={sh.input}
+                  style={{ width: "100%", boxSizing: "border-box" }}
+                  value={maxStack}
+                  onChange={(e) => setMaxStack(Math.max(1, Number(e.target.value)))}
+                  min={1}
+                  disabled={isReadOnly}
+                />
+              </div>
+              <div>
+                <div className={sh.label}>{t("field.sellable")}</div>
+                <label className={s.checkLabel} style={{ cursor: isReadOnly ? "default" : "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={sellable}
+                    onChange={(e) => setSellable(e.target.checked)}
+                    disabled={isReadOnly}
+                  />
+                  <span className={s.checkText}>{sellable ? t("ui.yes") : t("ui.no")}</span>
+                </label>
+              </div>
+              <div className={s.field}>
+                <div className={sh.label}>{t("field.price")}</div>
+                <input
+                  type="number"
+                  className={sh.input}
+                  style={{ width: "100%", boxSizing: "border-box" }}
+                  value={price}
+                  onChange={(e) => setPrice(Math.max(0, Number(e.target.value)))}
+                  min={0}
+                  disabled={isReadOnly}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

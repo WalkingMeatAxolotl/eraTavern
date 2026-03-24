@@ -81,9 +81,13 @@
 
 /* ── Section panel ── */
 
-.section { composes: borderSection from "../shared/shared.module.css"; }
+.section { composes: coloredSection from "../shared/shared.module.css"; }
 
-.sectionTitle { composes: sectionLabel from "../shared/shared.module.css"; }
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
+
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
+
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
 
 .sectionTitleSm {
   color: var(--text-sub);
@@ -163,15 +167,6 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-/* ── Prompt entries header ── */
-
-.entriesHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
 }
 
 /* ── Action buttons ── */

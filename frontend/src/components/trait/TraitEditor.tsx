@@ -195,45 +195,52 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
       </div>
 
       {/* Basic info */}
-      <div className={s.formGroup}>
-        <div className={s.row2}>
-          <div className={s.col}>
-            <div className={sh.label}>ID</div>
-            <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
-          </div>
-          <div className={s.col}>
-            <div className={sh.label}>{t("field.name")}</div>
-            <input
-              className={clsx(sh.input, s.fullWidth)}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isReadOnly}
-            />
-          </div>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>基础信息</span>
         </div>
-        <div>
-          <div className={sh.label}>{t("field.category")}</div>
-          <select
-            className={clsx(sh.input, s.selectW200)}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            disabled={isReadOnly}
-          >
-            {definitions.template.traits.map((t) => (
-              <option key={t.key} value={t.key}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <div className={sh.label}>{t("field.description")}</div>
-          <textarea
-            className={clsx(sh.input, s.textarea)}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={isReadOnly}
-          />
+        <div className={s.sectionContent}>
+          <div className={s.formGroup}>
+            <div className={s.row2}>
+              <div className={s.col}>
+                <div className={sh.label}>ID</div>
+                <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew || isReadOnly} />
+              </div>
+              <div className={s.col}>
+                <div className={sh.label}>{t("field.name")}</div>
+                <input
+                  className={clsx(sh.input, s.fullWidth)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isReadOnly}
+                />
+              </div>
+            </div>
+            <div>
+              <div className={sh.label}>{t("field.category")}</div>
+              <select
+                className={clsx(sh.input, s.selectW200)}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                disabled={isReadOnly}
+              >
+                {definitions.template.traits.map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div className={sh.label}>{t("field.description")}</div>
+              <textarea
+                className={clsx(sh.input, s.textarea)}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={isReadOnly}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

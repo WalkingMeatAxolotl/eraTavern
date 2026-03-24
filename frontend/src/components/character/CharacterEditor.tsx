@@ -256,7 +256,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             })}
           </Section>
 
-          <Section title={t("section.initialPosition")} color="var(--sec-green)">
+          <Section title={t("section.initialPosition")} color="var(--sec-purple)">
             <Row label={t("field.map")}>
               <select
                 value={posMapId}
@@ -288,7 +288,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             </Row>
           </Section>
 
-          <Section title={t("section.restPosition")} color="var(--sec-green)">
+          <Section title={t("section.restPosition")} color="var(--sec-purple)">
             <Row label={t("field.map")}>
               <select
                 value={restMapId}
@@ -324,7 +324,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
 
       {/* === Tab: 服装 === */}
       {tab === "outfit" && (
-        <Section title={t("section.outfitPresets")} color="var(--sec-purple)">
+        <Section title={t("section.outfitPresets")}>
           {(() => {
             const outfits: Record<string, Record<string, string[]>> = data.outfits &&
             Object.keys(data.outfits).length > 0
@@ -476,7 +476,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* === Tab: 特质 === */}
       {tab === "traits" && (
         <>
-          <Section title={t("section.initialTraits")} color="var(--sec-purple)">
+          <Section title={t("section.initialTraits")}>
             {template.traits.filter((f) => f.key !== "ability" && f.key !== "experience").length === 0 && (
               <div className={s.dimText}>{t("empty.noTraitCats")}</div>
             )}
@@ -672,7 +672,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
       {/* === Tab: 物品 === */}
       {tab === "items" && (
         <>
-          <Section title={t("section.initialInventory")} color="var(--sec-green)">
+          <Section title={t("section.initialInventory")}>
             {(data.inventory ?? []).map((entry, idx) => {
               const def = itemDefs[entry.itemId];
               const itemName = def?.name ?? entry.itemId;

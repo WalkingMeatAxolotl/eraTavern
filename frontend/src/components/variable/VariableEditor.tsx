@@ -310,74 +310,81 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {/* Basic fields */}
-      <div className={s.fieldRow}>
-        <div style={{ flex: 1 }}>
-          <div className={sh.label}>ID</div>
-          <input
-            className={clsx(sh.input, sh.flex1)}
-            style={{ width: "100%", boxSizing: "border-box" }}
-            value={id}
-            onChange={(e) => setId(e.target.value)}
-            disabled={!isNew || isReadOnly}
-            placeholder={t("ph.varId")}
-          />
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>基础信息</span>
         </div>
-        <div style={{ flex: 2 }}>
-          <div className={sh.label}>{t("field.name")}</div>
-          <input
-            className={sh.input}
-            style={{ width: "100%", boxSizing: "border-box" }}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={isReadOnly}
-            placeholder={t("ph.displayName")}
-          />
-        </div>
-      </div>
+        <div className={s.sectionContent}>
+          <div className={s.fieldRow}>
+            <div style={{ flex: 1 }}>
+              <div className={sh.label}>ID</div>
+              <input
+                className={clsx(sh.input, sh.flex1)}
+                style={{ width: "100%", boxSizing: "border-box" }}
+                value={id}
+                onChange={(e) => setId(e.target.value)}
+                disabled={!isNew || isReadOnly}
+                placeholder={t("ph.varId")}
+              />
+            </div>
+            <div style={{ flex: 2 }}>
+              <div className={sh.label}>{t("field.name")}</div>
+              <input
+                className={sh.input}
+                style={{ width: "100%", boxSizing: "border-box" }}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={isReadOnly}
+                placeholder={t("ph.displayName")}
+              />
+            </div>
+          </div>
 
-      <div className={s.fieldBlock}>
-        <div className={sh.label}>{t("field.description")}</div>
-        <textarea
-          className={sh.input}
-          style={{ width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          disabled={isReadOnly}
-          placeholder={t("ph.optionalDesc")}
-        />
-      </div>
+          <div className={s.fieldBlock}>
+            <div className={sh.label}>{t("field.description")}</div>
+            <textarea
+              className={sh.input}
+              style={{ width: "100%", boxSizing: "border-box", minHeight: "60px", resize: "vertical" }}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={isReadOnly}
+              placeholder={t("ph.optionalDesc")}
+            />
+          </div>
 
-      {/* Bidirectional */}
-      <div className={s.fieldBlock}>
-        <label className={s.checkLabel}>
-          <input
-            type="checkbox"
-            checked={isBidirectional}
-            onChange={(e) => setIsBidirectional(e.target.checked)}
-            disabled={isReadOnly}
-            style={{ accentColor: T.accent }}
-          />
-          {t("var.bidirectional")}
-        </label>
-      </div>
+          {/* Bidirectional */}
+          <div className={s.fieldBlock}>
+            <label className={s.checkLabel}>
+              <input
+                type="checkbox"
+                checked={isBidirectional}
+                onChange={(e) => setIsBidirectional(e.target.checked)}
+                disabled={isReadOnly}
+                style={{ accentColor: T.accent }}
+              />
+              {t("var.bidirectional")}
+            </label>
+          </div>
 
-      {/* Tags */}
-      <div className={s.fieldBlock}>
-        <div className={sh.label}>{t("field.tags")}</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => !isReadOnly && toggleTag(tag)}
-              className={clsx(
-                tags.includes(tag) ? s.tagBtnActive : s.tagBtnInactive,
-                isReadOnly && s.tagBtnReadonly,
-              )}
-            >
-              {tag}
-            </button>
-          ))}
-          {allTags.length === 0 && <span className={sh.textDim}>{t("empty.noAvailTags")}</span>}
+          {/* Tags */}
+          <div className={s.fieldBlock}>
+            <div className={sh.label}>{t("field.tags")}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => !isReadOnly && toggleTag(tag)}
+                  className={clsx(
+                    tags.includes(tag) ? s.tagBtnActive : s.tagBtnInactive,
+                    isReadOnly && s.tagBtnReadonly,
+                  )}
+                >
+                  {tag}
+                </button>
+              ))}
+              {allTags.length === 0 && <span className={sh.textDim}>{t("empty.noAvailTags")}</span>}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -390,7 +397,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
       </div>
 
       {/* Steps editor */}
-      <div className={s.section} style={{ "--sec-color": "var(--sec-purple)" } as React.CSSProperties}>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-orange)" } as React.CSSProperties}>
         <div className={s.sectionTitle}>
           <span className={s.sectionTitleText}>{t("section.computeSteps")}</span>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { t } from "../../i18n/ui";
 import type { LLMPreset, LLMPromptEntry, LLMParameters, LLMProvider } from "../../types/game";
 import LLMDebugPanel from "./LLMDebugPanel";
@@ -544,8 +544,11 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       </div>
 
       {/* Basic info */}
-      <div className={s.section}>
-        <div className={s.sectionTitle}>{t("section.basicInfo")}</div>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.basicInfo")}</span>
+        </div>
+        <div className={s.sectionContent}>
         <div className={s.flexRow}>
           <div className={s.flex1}>
             <div className={sh.label}>ID</div>
@@ -622,11 +625,15 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
             <option value="assist">{t("llm.presetTypeAssist")}</option>
           </select>
         </div>
+        </div>
       </div>
 
       {/* API service + parameters */}
-      <div className={s.section}>
-        <div className={s.sectionTitle}>{t("llm.apiServiceParams")}</div>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-orange)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("llm.apiServiceParams")}</span>
+        </div>
+        <div className={s.sectionContent}>
         <div className={s.flexRow}>
           <div className={s.flex2}>
             <div className={sh.label}>{t("llm.apiService")}</div>
@@ -684,16 +691,18 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
             </div>
           ))}
         </div>
+        </div>
       </div>
 
       {/* Prompt entries */}
-      <div className={s.section}>
-        <div className={s.entriesHeader}>
-          <div className={s.sectionTitle} style={{ marginBottom: 0 }}>{t("section.promptEntries")}</div>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-green)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.promptEntries")}</span>
           <button onClick={addEntry} className={btnClass("create")}>
             [{t("btn.newPromptEntry")}]
           </button>
         </div>
+        <div className={s.sectionContent}>
 
         {sortedEntries.length === 0 && (
           <div className={s.emptyText}>{t("empty.llmEntries")}</div>
@@ -737,6 +746,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
             isAssistPreset={preset.type === "assist"}
           />
         ))}
+        </div>
       </div>
 
       {/* Action buttons */}

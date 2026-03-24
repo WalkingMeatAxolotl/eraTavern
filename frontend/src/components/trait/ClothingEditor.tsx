@@ -155,7 +155,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
       </div>
 
       {/* Basic info */}
-      <div className={s.formGroup}>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}><span className={s.sectionTitleText}>{t("section.basicInfo")}</span></div>
+        <div className={s.sectionContent}>
         <div className={s.row2}>
           <div className={s.col}>
             <div className={sh.label}>ID</div>
@@ -171,7 +173,9 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
             />
           </div>
         </div>
-        <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        </div>
+      </div>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-purple)" } as React.CSSProperties}>
           <div className={s.sectionTitle}>
             <span className={s.sectionTitleText}>
               {t("clothing.equipSlot")} {selectedSlots.length > 1 && <span className={s.multiSlotTag}>({t("clothing.multiSlot")})</span>}
@@ -230,7 +234,6 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           </div>
           </div>
         </div>
-      </div>
 
       {/* Occlusion */}
       <div className={s.section} style={{ "--sec-color": "var(--sec-purple)" } as React.CSSProperties}>

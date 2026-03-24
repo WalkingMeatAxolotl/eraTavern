@@ -1,6 +1,6 @@
 /* ── CharacterEditor ── */
 
-.wrapper { composes: editorWrapperCard from "../shared/shared.module.css"; }
+.wrapper { composes: editorWrapper from "../shared/shared.module.css"; }
 
 /* ── Header ── */
 

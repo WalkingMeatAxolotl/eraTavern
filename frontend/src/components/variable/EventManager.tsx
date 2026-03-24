@@ -310,44 +310,51 @@ function WorldVarEditor({
       </div>
 
       {/* Fields */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <div className={s.fieldRow}>
-          <label className={s.fieldLabel50}>ID</label>
-          <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.basicInfo")}</span>
         </div>
-        <div className={s.fieldRow}>
-          <label className={s.fieldLabel50}>{t("field.name")}</label>
-          <input className={clsx(sh.input, sh.flex1)} value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className={s.fieldRow}>
-          <label className={s.fieldLabel50}>{t("field.note")}</label>
-          <input
-            className={clsx(sh.input, sh.flex1)}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t("ui.optional")}
-          />
-        </div>
-        <div className={s.fieldRow}>
-          <label className={s.fieldLabel50}>{t("field.type")}</label>
-          <select
-            className={sh.input}
-            value={type}
-            onChange={(e) => setType(e.target.value as "number" | "boolean")}
-          >
-            <option value="number">number</option>
-            <option value="boolean">boolean</option>
-          </select>
-        </div>
-        <div className={s.fieldRow}>
-          <label className={s.fieldLabel50}>{t("field.defaultValue")}</label>
-          <input
-            className={clsx(sh.input, sh.w80)}
-            type="number"
-            value={defaultVal}
-            onChange={(e) => setDefaultVal(Number(e.target.value))}
-          />
-          {type === "boolean" && <span className={sh.textDim}>{t("event.boolHelp")}</span>}
+        <div className={s.sectionContent}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div className={s.fieldRow}>
+              <label className={s.fieldLabel50}>ID</label>
+              <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
+            </div>
+            <div className={s.fieldRow}>
+              <label className={s.fieldLabel50}>{t("field.name")}</label>
+              <input className={clsx(sh.input, sh.flex1)} value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className={s.fieldRow}>
+              <label className={s.fieldLabel50}>{t("field.note")}</label>
+              <input
+                className={clsx(sh.input, sh.flex1)}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t("ui.optional")}
+              />
+            </div>
+            <div className={s.fieldRow}>
+              <label className={s.fieldLabel50}>{t("field.type")}</label>
+              <select
+                className={sh.input}
+                value={type}
+                onChange={(e) => setType(e.target.value as "number" | "boolean")}
+              >
+                <option value="number">number</option>
+                <option value="boolean">boolean</option>
+              </select>
+            </div>
+            <div className={s.fieldRow}>
+              <label className={s.fieldLabel50}>{t("field.defaultValue")}</label>
+              <input
+                className={clsx(sh.input, sh.w80)}
+                type="number"
+                value={defaultVal}
+                onChange={(e) => setDefaultVal(Number(e.target.value))}
+              />
+              {type === "boolean" && <span className={sh.textDim}>{t("event.boolHelp")}</span>}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -561,7 +568,12 @@ function EventEditor({
       </div>
 
       {/* Basic fields */}
-      <div className={s.fieldsColumn}>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.basicInfo")}</span>
+        </div>
+        <div className={s.sectionContent}>
+        <div className={s.fieldsColumn}>
         <div className={s.fieldRow}>
           <label className={s.fieldLabel}>ID</label>
           <PrefixedIdInput prefix={addonPrefix} value={id} onChange={setId} disabled={!isNew} />
@@ -656,6 +668,8 @@ function EventEditor({
         <div className={s.fieldRow}>
           <label className={s.fieldLabel}>{t("field.enabled")}</label>
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+        </div>
+      </div>
         </div>
       </div>
 

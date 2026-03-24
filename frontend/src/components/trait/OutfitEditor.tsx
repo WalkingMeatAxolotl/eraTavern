@@ -99,7 +99,11 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
       </div>
 
       {/* Basic info */}
-      <div className={s.formGroup}>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>基础信息</span>
+        </div>
+        <div className={s.sectionContent}>
         <div className={s.row2}>
           <div className={s.col}>
             <div className={sh.label}>ID</div>
@@ -145,11 +149,12 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
             <div className={helpStyles.helpP}>{t("outfit.helpOffDesc")}</div>
           </HelpPanel>
         )}
+        </div>
       </div>
 
       {/* Slots editor (only when copyDefault is off) */}
       {!copyDefault && (
-        <div className={s.section} style={{ "--sec-color": "var(--sec-green)" } as React.CSSProperties}>
+        <div className={s.section} style={{ "--sec-color": "var(--sec-purple)" } as React.CSSProperties}>
           <div className={s.sectionTitle}>
             <span className={s.sectionTitleText}>{t("outfit.defaultSlotContent")}</span>
           </div>

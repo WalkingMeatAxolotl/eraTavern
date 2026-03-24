@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import clsx from "clsx";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
@@ -207,110 +207,122 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
       </div>
 
       {/* Basic info */}
-      <div className={s.section}>
-        <div className={s.sectionTitle}>{t("section.basicInfo")}</div>
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div style={{ flex: 1 }}>
-            <div className={sh.label}>ID</div>
-            <input
-              className={s.inputFull}
-              style={isNew ? {} : { color: T.textDim }}
-              value={entry.id}
-              onChange={(e) => setEntry((prev) => ({ ...prev, id: e.target.value }))}
-              disabled={!isNew}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div className={sh.label}>{t("field.name")}</div>
-            <input
-              className={s.inputFull}
-              value={entry.name}
-              onChange={(e) => setEntry((prev) => ({ ...prev, name: e.target.value }))}
-            />
-          </div>
+      <div className={s.section} style={{ "--sec-color": "var(--sec-blue)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.basicInfo")}</span>
         </div>
-        <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-          <div style={{ width: "120px" }}>
-            <div className={sh.label}>{t("lorebook.priority")}</div>
-            <input
-              className={s.inputFull}
-              type="number"
-              value={entry.priority}
-              onChange={(e) => setEntry((prev) => ({ ...prev, priority: parseInt(e.target.value) || 0 }))}
-            />
-          </div>
-          <div style={{ width: "160px" }}>
-            <div className={sh.label}>{t("lorebook.triggerMode")}</div>
-            <select
-              className={s.inputFull}
-              value={entry.insertMode}
-              onChange={(e) => setEntry((prev) => ({ ...prev, insertMode: e.target.value as "keyword" | "always" }))}
-            >
-              <option value={LorebookMode.KEYWORD}>{t("lorebook.keywordTrigger")}</option>
-              <option value={LorebookMode.ALWAYS}>{t("lorebook.alwaysInject")}</option>
-            </select>
-          </div>
-          <div>
-            <div className={sh.label}>&nbsp;</div>
-            <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: T.textSub }}>
+        <div className={s.sectionContent}>
+          <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
+            <div style={{ flex: 1 }}>
+              <div className={sh.label}>ID</div>
               <input
-                type="checkbox"
-                checked={entry.enabled}
-                onChange={(e) => setEntry((prev) => ({ ...prev, enabled: e.target.checked }))}
-                style={{ accentColor: T.accent }}
+                className={s.inputFull}
+                style={isNew ? {} : { color: T.textDim }}
+                value={entry.id}
+                onChange={(e) => setEntry((prev) => ({ ...prev, id: e.target.value }))}
+                disabled={!isNew}
               />
-              {t("field.enabled")}
-            </label>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className={sh.label}>{t("field.name")}</div>
+              <input
+                className={s.inputFull}
+                value={entry.name}
+                onChange={(e) => setEntry((prev) => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
+            <div style={{ width: "120px" }}>
+              <div className={sh.label}>{t("lorebook.priority")}</div>
+              <input
+                className={s.inputFull}
+                type="number"
+                value={entry.priority}
+                onChange={(e) => setEntry((prev) => ({ ...prev, priority: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+            <div style={{ width: "160px" }}>
+              <div className={sh.label}>{t("lorebook.triggerMode")}</div>
+              <select
+                className={s.inputFull}
+                value={entry.insertMode}
+                onChange={(e) => setEntry((prev) => ({ ...prev, insertMode: e.target.value as "keyword" | "always" }))}
+              >
+                <option value={LorebookMode.KEYWORD}>{t("lorebook.keywordTrigger")}</option>
+                <option value={LorebookMode.ALWAYS}>{t("lorebook.alwaysInject")}</option>
+              </select>
+            </div>
+            <div>
+              <div className={sh.label}>&nbsp;</div>
+              <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: T.textSub }}>
+                <input
+                  type="checkbox"
+                  checked={entry.enabled}
+                  onChange={(e) => setEntry((prev) => ({ ...prev, enabled: e.target.checked }))}
+                  style={{ accentColor: T.accent }}
+                />
+                {t("field.enabled")}
+              </label>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Keywords */}
       {entry.insertMode === LorebookMode.KEYWORD && (
-        <div className={s.section}>
-          <div className={s.sectionTitle}>{t("section.keywords")}</div>
-          <div className={s.keywordChips}>
-            {entry.keywords.map((kw) => (
-              <span key={kw} className={s.keywordChip}>
-                {kw}
-                <button onClick={() => removeKeyword(kw)} className={s.keywordRemove}>
-                  x
-                </button>
-              </span>
-            ))}
+        <div className={s.section} style={{ "--sec-color": "var(--sec-purple)" } as React.CSSProperties}>
+          <div className={s.sectionTitle}>
+            <span className={s.sectionTitleText}>{t("section.keywords")}</span>
           </div>
-          <div className={s.keywordInputRow}>
-            <input
-              className={s.inputW200}
-              value={keywordInput}
-              onChange={(e) => setKeywordInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addKeyword();
-                }
-              }}
-              placeholder={t("lorebook.keywordPlaceholder")}
-            />
-            <button onClick={addKeyword} className={btnClass("neutral")}>
-              [{t("effOp.add")}]
-            </button>
-          </div>
-          <div className={s.keywordHelp}>
-            {t("lorebook.keywordHelp")}
+          <div className={s.sectionContent}>
+            <div className={s.keywordChips}>
+              {entry.keywords.map((kw) => (
+                <span key={kw} className={s.keywordChip}>
+                  {kw}
+                  <button onClick={() => removeKeyword(kw)} className={s.keywordRemove}>
+                    x
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className={s.keywordInputRow}>
+              <input
+                className={s.inputW200}
+                value={keywordInput}
+                onChange={(e) => setKeywordInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addKeyword();
+                  }
+                }}
+                placeholder={t("lorebook.keywordPlaceholder")}
+              />
+              <button onClick={addKeyword} className={btnClass("neutral")}>
+                [{t("effOp.add")}]
+              </button>
+            </div>
+            <div className={s.keywordHelp}>
+              {t("lorebook.keywordHelp")}
+            </div>
           </div>
         </div>
       )}
 
       {/* Content */}
-      <div className={s.section}>
-        <div className={s.sectionTitle}>{t("section.content")}</div>
-        <textarea
-          className={s.contentTextarea}
-          value={entry.content}
-          onChange={(e) => setEntry((prev) => ({ ...prev, content: e.target.value }))}
-          placeholder={t("lorebook.contentPlaceholder")}
-        />
+      <div className={s.section} style={{ "--sec-color": "var(--sec-green)" } as React.CSSProperties}>
+        <div className={s.sectionTitle}>
+          <span className={s.sectionTitleText}>{t("section.content")}</span>
+        </div>
+        <div className={s.sectionContent}>
+          <textarea
+            className={s.contentTextarea}
+            value={entry.content}
+            onChange={(e) => setEntry((prev) => ({ ...prev, content: e.target.value }))}
+            placeholder={t("lorebook.contentPlaceholder")}
+          />
+        </div>
       </div>
 
       {/* Action buttons */}

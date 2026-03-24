@@ -37,11 +37,15 @@
   font-size: 11px;
 }
 
-/* ── Editor section ── */
+/* ── Editor section (colored) ── */
 
-.section { composes: borderSection from "../shared/shared.module.css"; }
+.section { composes: coloredSection from "../shared/shared.module.css"; }
 
-.sectionTitle { composes: sectionLabel from "../shared/shared.module.css"; }
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
+
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
+
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
 
 /* ── Keywords ── */
 

@@ -9,11 +9,13 @@
 
 .title { composes: editorTitle from "../shared/shared.module.css"; }
 
-.section {
-  border-left: 2px solid var(--border-light);
-  padding-left: 10px;
-  margin-bottom: 12px;
-}
+.section { composes: coloredSection from "../shared/shared.module.css"; }
+
+.sectionTitle { composes: coloredSectionTitle from "../shared/shared.module.css"; }
+
+.sectionTitleText { composes: coloredSectionTitleText from "../shared/shared.module.css"; }
+
+.sectionContent { composes: coloredSectionContent from "../shared/shared.module.css"; }
 
 .flexRow {
   display: flex;
