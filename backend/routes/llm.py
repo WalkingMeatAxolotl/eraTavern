@@ -3,7 +3,11 @@ from __future__ import annotations
 """LLM preset, provider, and generation API routes."""
 
 import json
+import logging
 import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
@@ -272,16 +276,77 @@ async def llm_generate(request: Request):
 # ---------------------------------------------------------------------------
 
 
+_ASSIST_LOG_DIR = Path(__file__).resolve().parent.parent.parent / "logs" / "ai_assist"
+_logger = logging.getLogger(__name__)
+
+
 class AssistSession:
     """In-memory session for an AI Assist conversation."""
 
-    __slots__ = ("messages", "pending_tool_call", "mode", "read_cache")
+    __slots__ = ("messages", "pending_tool_call", "mode", "read_cache", "log_path", "_logged_count")
 
     def __init__(self) -> None:
         self.messages: list[dict] = []
         self.pending_tool_call: dict | None = None
         self.mode: str = "chat"  # "chat" | "executing"
         self.read_cache: dict[str, str] = {}  # session-level read tool cache
+        self.log_path: Optional[Path] = None
+        self._logged_count: int = 0  # how many messages already flushed
+
+    def _ensure_log_file(self) -> Path:
+        """Ensure log file exists and return its path."""
+        if self.log_path is None:
+            _ASSIST_LOG_DIR.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+            self.log_path = _ASSIST_LOG_DIR / f"{ts}.jsonl"
+        return self.log_path
+
+    def flush_log(self) -> None:
+        """Append new messages to the log file (JSON Lines format)."""
+        if not self.messages:
+            return
+        try:
+            self._ensure_log_file()
+            new_msgs = self.messages[self._logged_count :]
+            if not new_msgs:
+                return
+            with open(self.log_path, "a", encoding="utf-8") as f:
+                for msg in new_msgs:
+                    f.write(json.dumps(msg, ensure_ascii=False) + "\n")
+            self._logged_count = len(self.messages)
+        except Exception:
+            _logger.exception("Failed to flush assist session log")
+
+    def log_llm_request(self, loop_index: int, messages: list[dict]) -> None:
+        """Log the full assembled messages sent to LLM for a given loop iteration."""
+        try:
+            self._ensure_log_file()
+            entry = {
+                "_type": "llm_request",
+                "_loop": loop_index,
+                "_timestamp": datetime.now().isoformat(),
+                "_message_count": len(messages),
+                "messages": messages,
+            }
+            with open(self.log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception:
+            _logger.exception("Failed to log LLM request")
+
+    def log_llm_usage(self, loop_index: int, usage: dict) -> None:
+        """Log token usage for a given loop iteration."""
+        try:
+            self._ensure_log_file()
+            entry = {
+                "_type": "llm_usage",
+                "_loop": loop_index,
+                "_timestamp": datetime.now().isoformat(),
+                **usage,
+            }
+            with open(self.log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception:
+            _logger.exception("Failed to log LLM usage")
 
 
 # Module-level session store (not persisted). Cleaned up only on explicit delete.
@@ -439,6 +504,7 @@ async def _run_agent_loop(
         full_text = ""
         tool_calls = None
 
+        session.log_llm_request(loop_i, messages)
         yield _format_sse(
             "llm_debug",
             {
@@ -463,6 +529,7 @@ async def _run_agent_loop(
                 return
             elif event_type == "llm_done":
                 if event_data.get("usage"):
+                    session.log_llm_usage(loop_i, event_data["usage"])
                     yield _format_sse("llm_usage", event_data["usage"])
 
         # Build assistant message
@@ -477,6 +544,7 @@ async def _run_agent_loop(
             if session.mode == "executing":
                 session.mode = "chat"
                 yield _format_sse("mode_change", {"mode": "chat"})
+            session.flush_log()
             return
 
         # Parse and classify tool calls
@@ -525,6 +593,7 @@ async def _run_agent_loop(
                     if session.mode == "executing":
                         session.mode = "chat"
                         yield _format_sse("mode_change", {"mode": "chat"})
+                    session.flush_log()
                     return
 
                 # 1st failure — return error to LLM as auto-execute result
@@ -560,11 +629,13 @@ async def _run_agent_loop(
                 skip_id = parsed[i][0]
                 skip_msg = {"role": "tool", "tool_call_id": skip_id, "content": '{"skipped": true}'}
                 session.messages.append(skip_msg)
+            session.flush_log()
             return
 
         # All tools were read-only — loop back
 
     # max_loops exhausted
+    session.flush_log()
     yield _format_sse(
         "llm_error",
         {
@@ -593,6 +664,7 @@ async def assist_chat(request: Request):
 
     session = _get_or_create_session(session_id)
     session.messages.append({"role": "user", "content": user_message})
+    session.flush_log()
 
     return _make_sse_response(_run_agent_loop(session, api_config, preset, _h.game_state))
 
@@ -640,6 +712,7 @@ async def assist_confirm_tool(request: Request):
 
     tool_msg = {"role": "tool", "tool_call_id": call_id, "content": result}
     session.messages.append(tool_msg)
+    session.flush_log()
 
     # Auto-continue after approved confirm — LLM decides whether to make
     # more tool calls or output a summary and stop.

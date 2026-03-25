@@ -12,6 +12,7 @@ frontend/dist-ssr/
 # Logs
 *.log
 npm-debug.log*
+logs/
 
 # Environment
 .env
