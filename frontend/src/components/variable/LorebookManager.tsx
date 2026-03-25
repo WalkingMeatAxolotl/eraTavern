@@ -25,7 +25,7 @@ function makeBlankEntry(): Omit<LorebookEntry, "source"> {
 }
 
 interface Props {
-  selectedAddon: string;
+  selectedAddon: string | null;
   onEditingChange?: (editing: boolean) => void;
   addonIds?: string[];
 }
@@ -54,7 +54,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
     loadEntries();
   }, [loadEntries]);
 
-  const filteredEntries = selectedAddon === "__all__" ? entries : entries.filter((e) => e.source === selectedAddon);
+  const filteredEntries = selectedAddon ? entries.filter((e) => e.source === selectedAddon) : entries;
 
   const handleSelect = (e: LorebookEntry) => {
     const { source: _, ...rest } = e;
@@ -68,7 +68,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
   };
 
   const handleNew = () => {
-    const prefix = selectedAddon === "__all__" ? "" : selectedAddon;
+    const prefix = selectedAddon ?? "";
     setEntry(makeBlankEntry());
     setLocalId("");
     setAddonPrefix(prefix);
@@ -149,7 +149,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
 
   const [showJson, setShowJson] = useState(false);
 
-  if (showJson && selectedAddon !== "__all__") {
+  if (showJson && selectedAddon) {
     return <RawJsonView addonId={selectedAddon} filename="lorebook.json" onClose={() => setShowJson(false)} />;
   }
 
@@ -160,7 +160,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
         <div className={s.header}>
           <span className={sh.editorTitle}>== {t("header.lorebook")} ==</span>
           <div className={s.btnRow}>
-            {selectedAddon !== "__all__" && (
+            {selectedAddon && (
               <button onClick={() => setShowJson(true)} className={btnClass("neutral")}>
                 [JSON]
               </button>
@@ -342,11 +342,10 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
         {!isNew && addonIds && (
           <CloneButton
             addonIds={addonIds}
-            defaultAddon={selectedAddon !== "__all__" ? selectedAddon : (addonIds[0] ?? "")}
-            entityType="lorebook"
+            defaultAddon={selectedAddon || (addonIds[0] ?? "")}
+            entityType="lorebooks"
             sourceId={entry.id}
             onSuccess={handleBack}
-            className={btnClass("neutral")}
           />
         )}
         {!isNew && (

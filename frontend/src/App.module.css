@@ -19,6 +19,8 @@
   min-width: 0;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+  z-index: 300;
 }
 
 .sidebarInner {

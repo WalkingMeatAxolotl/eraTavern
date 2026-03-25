@@ -174,7 +174,7 @@ _CLONE_TYPE_MAP: dict[str, tuple[str, str]] = {
     "trait-groups": ("trait_groups", "source"),
     "variables": ("variable_defs", "source"),
     "events": ("event_defs", "source"),
-    "lorebook": ("lorebook_defs", "source"),
+    "lorebooks": ("lorebook_defs", "source"),
     "world-variables": ("world_variable_defs", "source"),
 }
 
