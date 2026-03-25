@@ -660,8 +660,8 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
                 item_ids = sorted(gs.item_defs.keys())[:30]
                 content += f"\n\n## 已有物品 ID\n\n{', '.join(item_ids)}"
 
-            if gs.map_defs:
-                map_ids = sorted(gs.map_defs.keys())
+            if gs.maps:
+                map_ids = sorted(gs.maps.keys())
                 content += f"\n\n## 已有地图 ID\n\n{', '.join(map_ids)}"
 
     return content
@@ -972,8 +972,8 @@ def _validate_character_refs(gs: GameState, data: dict) -> Optional[str]:
         pos = data.get(field)
         if isinstance(pos, dict) and pos.get("mapId"):
             map_id = pos["mapId"]
-            if gs.map_defs and map_id not in gs.map_defs:
-                valid_maps = ", ".join(list(gs.map_defs.keys())[:10])
+            if gs.maps and map_id not in gs.maps:
+                valid_maps = ", ".join(list(gs.maps.keys())[:10])
                 return f"{field}.mapId '{map_id}' not found. Available: {valid_maps}"
 
     return None
@@ -1192,14 +1192,13 @@ def _compress_history(history: list[dict]) -> list[dict]:
     for i, msg in enumerate(older):
         if msg.get("role") != "tool":
             continue
-        content = msg.get("content", "")
         tool_call_id = msg.get("tool_call_id", "")
 
-        # Detect tool type from the corresponding assistant tool_call
-        tool_name = _find_tool_name_for_call(older, i, tool_call_id)
+        # Detect tool type and args from the corresponding assistant tool_call
+        tool_name, tool_args = _find_tool_info_for_call(older, i, tool_call_id)
 
         if tool_name == "get_schema":
-            etype = _extract_entity_type_from_result(content)
+            etype = tool_args.get("entityType", "")
             latest_schema[etype] = i
         elif tool_name == "list_entities":
             latest_list.append(i)
@@ -1243,8 +1242,12 @@ def _strip_think_all(messages: list[dict]) -> list[dict]:
     return [_strip_think(m) if m.get("role") == "assistant" else m for m in messages]
 
 
-def _find_tool_name_for_call(messages: list[dict], tool_msg_idx: int, tool_call_id: str) -> str:
-    """Find the tool name for a given tool_call_id by scanning preceding assistant messages."""
+def _find_tool_info_for_call(messages: list[dict], tool_msg_idx: int, tool_call_id: str) -> tuple[str, dict]:
+    """Find tool name and parsed arguments for a given tool_call_id.
+
+    Scans preceding assistant messages for the matching tool call.
+    Returns (tool_name, parsed_args).
+    """
     for i in range(tool_msg_idx - 1, -1, -1):
         msg = messages[i]
         if msg.get("role") != "assistant":
@@ -1252,51 +1255,50 @@ def _find_tool_name_for_call(messages: list[dict], tool_msg_idx: int, tool_call_
         for tc in msg.get("tool_calls", []):
             fn = tc.get("function", {})
             if tc.get("id") == tool_call_id:
-                return fn.get("name", "")
+                name = fn.get("name", "")
+                try:
+                    args = json.loads(fn.get("arguments", "{}"))
+                except (json.JSONDecodeError, TypeError):
+                    args = {}
+                return name, args
         break  # Only check the nearest assistant message
-    return ""
-
-
-def _extract_entity_type_from_result(content: str) -> str:
-    """Extract entityType from a tool result JSON string."""
-    try:
-        data = json.loads(content)
-        if isinstance(data, dict):
-            return data.get("entityType", "")
-    except (json.JSONDecodeError, TypeError):
-        pass
-    return ""
+    return "", {}
 
 
 def _summarize_tool_result(msg: dict, messages: list[dict], idx: int) -> dict:
     """Replace a tool result with a compact summary, preserving tool_call_id."""
     tool_call_id = msg.get("tool_call_id", "")
     content = msg.get("content", "")
-    tool_name = _find_tool_name_for_call(messages, idx, tool_call_id)
+    tool_name, tool_args = _find_tool_info_for_call(messages, idx, tool_call_id)
 
-    summary = _make_tool_summary(tool_name, content)
+    summary = _make_tool_summary(tool_name, tool_args, content)
     return {"role": "tool", "tool_call_id": tool_call_id, "content": summary}
 
 
-def _make_tool_summary(tool_name: str, content: str) -> str:
-    """Generate a short summary string for a tool result."""
+def _make_tool_summary(tool_name: str, tool_args: dict, content: str) -> str:
+    """Generate a short summary string for a tool result.
+
+    Uses tool_args (from the call) for entityType — more reliable than parsing
+    result content (e.g. get_schema returns markdown, not JSON).
+    """
+    etype = tool_args.get("entityType", "unknown")
+
+    if tool_name == "get_schema":
+        return f"[已获取 {etype} schema]"
+
+    # For other tools, try to parse result JSON for extra info
     try:
         data = json.loads(content)
     except (json.JSONDecodeError, TypeError):
-        return f"[{tool_name} result]"
+        return f"[{tool_name} {etype} result]"
 
     if not isinstance(data, dict):
-        return f"[{tool_name} result]"
+        return f"[{tool_name} {etype} result]"
 
-    if tool_name == "get_schema":
-        etype = data.get("entityType", "unknown")
-        return f"[已获取 {etype} schema]"
     if tool_name == "list_entities":
-        etype = data.get("entityType", "unknown")
         count = data.get("total", len(data.get("entities", [])))
         return f"[列出了 {count} 个 {etype}]"
     if tool_name == "get_entities":
-        etype = data.get("entityType", "unknown")
         ids = list(data.get("entities", {}).keys())
         return f"[已获取 {etype}: {', '.join(ids[:5])}]"
     if tool_name == "create_entity":

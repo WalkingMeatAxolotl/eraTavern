@@ -14,7 +14,13 @@ export interface LLMDebugEntry {
   variables?: Record<string, string>;
   responseText?: string;
   error?: string;
-  usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    prompt_tokens_details?: { cached_tokens?: number };
+    [key: string]: unknown;
+  };
 }
 
 interface Props {
@@ -57,11 +63,17 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                       <span className={s.presetName}>{entry.presetName}</span>
                     </>
                   )}
-                  {entry.usage && (
-                    <span className={s.usage}>
-                      {entry.usage.prompt_tokens ?? "?"}↑ {entry.usage.completion_tokens ?? "?"}↓
-                    </span>
-                  )}
+                  {entry.usage && (() => {
+                    const cached = entry.usage.prompt_tokens_details?.cached_tokens;
+                    const prompt = entry.usage.prompt_tokens ?? 0;
+                    const total_in = cached ? prompt + cached : prompt;
+                    return (
+                      <span className={s.usage}>
+                        {total_in}↑ {entry.usage.completion_tokens ?? "?"}↓
+                        {cached ? ` (${cached} cached)` : ""}
+                      </span>
+                    );
+                  })()}
                   <span className={s.expandArrow}>{isExpanded ? "▾" : "▸"}</span>
                 </div>
 
@@ -133,12 +145,16 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                     {entry.error && <div className={s.errorText}>Error: {entry.error}</div>}
 
                     {/* Usage */}
-                    {entry.usage && (
-                      <div className={s.tokenLine}>
-                        Tokens: {t("llm.tokenInput")} {entry.usage.prompt_tokens ?? "?"} | {t("llm.tokenOutput")} {entry.usage.completion_tokens ?? "?"} |
-                        {t("llm.tokenTotal")} {entry.usage.total_tokens ?? "?"}
-                      </div>
-                    )}
+                    {entry.usage && (() => {
+                      const cached = entry.usage.prompt_tokens_details?.cached_tokens;
+                      const prompt = entry.usage.prompt_tokens ?? 0;
+                      const total_in = cached ? prompt + cached : prompt;
+                      return (
+                        <div className={s.tokenLine}>
+                          Tokens: {t("llm.tokenInput")} {total_in}{cached ? ` (${prompt} new + ${cached} cached)` : ""} | {t("llm.tokenOutput")} {entry.usage.completion_tokens ?? "?"}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

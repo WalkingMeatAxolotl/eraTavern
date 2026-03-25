@@ -429,7 +429,6 @@ async def _run_agent_loop(
     )
     from game.llm_engine import call_llm_streaming
 
-    write_types_this_request: set[str] = set()
     repair_counts: dict[str, int] = {}
 
     for loop_i in range(max_loops):
@@ -542,11 +541,8 @@ async def _run_agent_loop(
                     session.messages.append(skip_msg)
                 continue  # Loop back for LLM to fix
 
-            # Track write entity types for auto mode switch
-            write_etype = fn_args.get("entityType", "")
-            if write_etype:
-                write_types_this_request.add(write_etype)
-            if session.mode == "chat" and len(write_types_this_request) >= 2:
+            # First write tool → switch to executing mode
+            if session.mode == "chat":
                 session.mode = "executing"
                 yield _format_sse("mode_change", {"mode": "executing"})
 
@@ -605,9 +601,10 @@ async def assist_chat(request: Request):
 async def assist_confirm_tool(request: Request):
     """Confirm or reject a pending write tool call.
 
-    In "executing" mode (plan execution), after confirmation this endpoint
-    returns an SSE stream that auto-continues the agent loop.
-    In "chat" mode, it returns a JSON response (existing behavior).
+    Standard agent loop: after approval, this endpoint returns an SSE stream
+    that auto-continues the agent loop.  The LLM decides whether to make more
+    tool calls or output a summary and stop.
+    On rejection, returns JSON and switches mode back to chat.
     """
     from game.ai_assist import execute_tool
 
@@ -644,8 +641,9 @@ async def assist_confirm_tool(request: Request):
     tool_msg = {"role": "tool", "tool_call_id": call_id, "content": result}
     session.messages.append(tool_msg)
 
-    # Auto-continue in executing mode
-    if session.mode == "executing" and approved:
+    # Auto-continue after approved confirm — LLM decides whether to make
+    # more tool calls or output a summary and stop.
+    if approved:
         preset, api_config, error = _resolve_assist_preset()
         if error:
             return _resp(False, error)

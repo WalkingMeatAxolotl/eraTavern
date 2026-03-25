@@ -254,8 +254,8 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
   const handleToolConfirm = useCallback(
     async (callId: string, approved: boolean, overrideArgs?: Record<string, unknown>) => {
       const callbacks = buildCallbacks();
-      // In executing mode, add an empty assistant placeholder for the continuation
-      if (agentMode === "executing" && approved) {
+      // After approved confirm, auto-continue — add assistant placeholder for SSE stream
+      if (approved) {
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
         setIsGenerating(true);
       }
@@ -289,7 +289,7 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
         }
       }
     },
-    [sessionId, onEntityChanged, buildCallbacks, agentMode],
+    [sessionId, onEntityChanged, buildCallbacks],
   );
 
   // Stop generation
