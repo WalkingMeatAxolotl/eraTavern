@@ -431,6 +431,21 @@ def _enrich_tool_args(game_state, fn_name: str, fn_args: dict) -> dict:
     return fn_args
 
 
+def _extract_cached_schema_types(read_cache: dict[str, str]) -> list[str]:
+    """Extract entity types for which get_schema results are cached."""
+    types: list[str] = []
+    for key in read_cache:
+        if key.startswith("get_schema:"):
+            try:
+                args = json.loads(key[len("get_schema:") :])
+                etype = args.get("entityType", "")
+                if etype:
+                    types.append(etype)
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return sorted(set(types))
+
+
 def _parse_tool_call(tc: dict) -> tuple[str, str, str, dict]:
     """Parse a tool call dict into (call_id, fn_name, fn_args_str, fn_args)."""
     fn_name = tc.get("function", {}).get("name", "")
@@ -449,7 +464,7 @@ def _pre_validate_write(game_state, fn_name: str, fn_args: dict) -> tuple[bool, 
     Returns (ok, error_result).  When ok is False, error_result is a JSON
     string that should be returned to the LLM as an auto-execute tool result.
     """
-    from game.ai_assist import _validate_field_values
+    from game.ai_assist_handlers import _validate_field_values
 
     entity_type = fn_args.get("entityType", "")
 
@@ -499,7 +514,9 @@ async def _run_agent_loop(
     for loop_i in range(max_loops):
         # Rebuild messages each iteration (history may have grown)
         context_text = collect_assist_context(game_state)
-        messages = build_assist_messages(preset, context_text, session.messages, "")
+        # Extract cached schema types from read_cache keys
+        cached_schemas = _extract_cached_schema_types(session.read_cache)
+        messages = build_assist_messages(preset, context_text, session.messages, "", cached_schemas=cached_schemas)
 
         full_text = ""
         tool_calls = None

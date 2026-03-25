@@ -29,6 +29,7 @@
 - 修改前先用 list_entities + filter 筛选目标实体（如 `filter: {"category": "ability"}`），不要获取全部再手动挑选
 - 需要查看实体完整数据（如 effects 详情）时，用 get_entities 批量获取
 - 创建前可以用 list_entities 查看已有实体，避免 id 重复
+- 需要多个信息时，在同一轮中并行调用多个工具（如同时调 list_entities 和 get_schema），不要分多轮逐个调用
 
 ## 复杂任务处理
 
