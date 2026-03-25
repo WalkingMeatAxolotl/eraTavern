@@ -350,7 +350,7 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "update_entity",
-            "description": "修改已有实体。只传要改的字段。entityId 用完整ID（如 Base.koakuma）",
+            "description": "修改已有实体。只传要改的字段（数组字段是整体替换，不是追加——需先 get_entities 获取当前值再构建完整数组）。entityId 用完整ID（如 Base.koakuma）",
             "parameters": {
                 "type": "object",
                 "properties": {
