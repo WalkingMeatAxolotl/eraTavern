@@ -77,7 +77,22 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
   if (entityType === "item" && Array.isArray(entity.tags) && (entity.tags as string[]).length > 0) {
     keyFields.push({ label: "tags", value: (entity.tags as string[]).join(", ") });
   }
-  const desc = entity.description ? String(entity.description) : "";
+  if (entityType === "character") {
+    if (entity.isPlayer) keyFields.push({ label: "isPlayer", value: "true" });
+    const pos = entity.position as Record<string, unknown> | undefined;
+    if (pos?.mapId) keyFields.push({ label: "position", value: `${pos.mapId}#${pos.cellId ?? 0}` });
+    const traits = entity.traits as Record<string, unknown[]> | undefined;
+    if (traits) {
+      const count = Object.values(traits).reduce((s, v) => s + (Array.isArray(v) ? v.length : 0), 0);
+      if (count > 0) keyFields.push({ label: "traits", value: String(count) });
+    }
+  }
+  const llm = entity.llm as Record<string, unknown> | undefined;
+  const desc = entity.description
+    ? String(entity.description)
+    : llm?.personality
+      ? String(llm.personality)
+      : "";
 
   return (
     <div className={s.card}>

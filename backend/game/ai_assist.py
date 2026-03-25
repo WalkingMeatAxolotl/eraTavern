@@ -184,6 +184,37 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
             "description": "玩家在镇上的声望值",
         },
     },
+    "character": {
+        "description": "角色定义 — 游戏中的 NPC 或玩家角色",
+        "required": {
+            "id": "英文标识符，下划线命名（如 shopkeeper）",
+            "name": "角色显示名（同时写入 basicInfo.name）",
+        },
+        "optional": {
+            "active": "是否参与游戏（布尔值，默认 true）",
+            "isPlayer": "是否玩家角色（布尔值，默认 false）",
+            "portrait": "立绘文件名",
+            "traits": '特质分配：{category: [traitId, ...]}（如 {"race": ["human"], "mentalTrait": ["brave"]}）',
+            "clothing": "穿戴服装：{slot: {itemId, state}}（state: worn/half_worn/off）",
+            "inventory": "背包物品：[{itemId, amount}]",
+            "abilities": "能力经验值：{abilityTraitId: expValue}（每 1000 = 1 级）",
+            "position": "当前位置：{mapId, cellId}",
+            "restPosition": "休息位置：{mapId, cellId}",
+            "favorability": "好感度：{charId: value}（-100 ~ 100）",
+            "llm": "LLM 人格描述：{personality: 文本}",
+        },
+        "example": {
+            "id": "shopkeeper",
+            "name": "杂货店老板",
+            "active": True,
+            "isPlayer": False,
+            "traits": {"race": ["human"], "mentalTrait": ["brave"]},
+            "clothing": {"upperBody": {"itemId": "cotton_shirt", "state": "worn"}},
+            "inventory": [{"itemId": "health_potion", "amount": 3}],
+            "position": {"mapId": "town", "cellId": 1},
+            "llm": {"personality": "热情的杂货店老板，喜欢和冒险者聊天。"},
+        },
+    },
 }
 
 # Entity types that AI can create/update (subset of ENTITY_SCHEMAS)
@@ -195,6 +226,7 @@ WRITABLE_ENTITY_TYPES = [
     "outfitType",
     "lorebook",
     "worldVariable",
+    "character",
 ]
 
 # ---------------------------------------------------------------------------
@@ -405,6 +437,7 @@ def _get_defs(gs: GameState, entity_type: str) -> dict[str, dict]:
         "outfitType": {t["id"]: t for t in gs.outfit_types if isinstance(t, dict)},
         "lorebook": gs.lorebook_defs,
         "worldVariable": gs.world_variable_defs,
+        "character": gs.character_data,
     }
     return mapping.get(entity_type, {})
 
@@ -445,6 +478,16 @@ def _summarize_entity(entity_type: str, entity: dict) -> dict[str, Any]:
     elif entity_type == "worldVariable":
         summary["type"] = entity.get("type", "number")
         summary["default"] = entity.get("default", 0)
+    elif entity_type == "character":
+        summary["active"] = entity.get("active", True)
+        summary["isPlayer"] = entity.get("isPlayer", False)
+        pos = entity.get("position")
+        if pos:
+            summary["position"] = pos
+        traits = entity.get("traits", {})
+        trait_count = sum(len(v) for v in traits.values() if isinstance(v, list))
+        if trait_count:
+            summary["traitCount"] = trait_count
     return summary
 
 
@@ -564,6 +607,62 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
             if target_lines:
                 content += "\n\n## effects.target 可用值\n\n" + "\n".join(target_lines)
 
+        # Character: inject template info + available references
+        if entity_type == "character":
+            # Trait categories
+            trait_cats = template.get("traits", [])
+            if trait_cats:
+                cat_list = "\n".join(f"- `{c['key']}` — {c.get('label', '')}" for c in trait_cats)
+                content += f"\n\n## traits 可用的 category\n\n{cat_list}"
+
+            # Clothing slots
+            slots = template.get("clothingSlots", [])
+            if slots:
+                content += f"\n\n## clothing 可用的槽位\n\n{', '.join(slots)}"
+
+            # BasicInfo fields
+            bi_fields = template.get("basicInfo", [])
+            if bi_fields:
+                bi_list = "\n".join(
+                    f"- `{f['key']}` — {f.get('label', '')}"
+                    f"（{f.get('type', 'string')}，默认 {f.get('defaultValue', '')}）"
+                    for f in bi_fields
+                )
+                content += f"\n\n## basicInfo 字段（由模板定义）\n\n{bi_list}"
+
+            # Resources
+            res_fields = template.get("resources", [])
+            if res_fields:
+                res_list = "\n".join(
+                    f"- `{f['key']}` — {f.get('label', '')}"
+                    f"（默认值 {f.get('defaultValue', 0)}，上限 {f.get('defaultMax', 0)}）"
+                    for f in res_fields
+                )
+                content += f"\n\n## resources 字段（由模板定义）\n\n{res_list}"
+
+            # Available trait/clothing/item/map IDs for reference
+            ref_parts: list[str] = []
+            if gs.trait_defs:
+                for cat_def in trait_cats:
+                    cat_key = cat_def.get("key", "")
+                    cat_traits = sorted(tid for tid, t in gs.trait_defs.items() if t.get("category") == cat_key)
+                    if cat_traits:
+                        ref_parts.append(f"- {cat_key}: {', '.join(cat_traits)}")
+            if ref_parts:
+                content += "\n\n## 已有特质（按 category）\n\n" + "\n".join(ref_parts)
+
+            if gs.clothing_defs:
+                clothing_ids = sorted(gs.clothing_defs.keys())[:30]
+                content += f"\n\n## 已有服装 ID\n\n{', '.join(clothing_ids)}"
+
+            if gs.item_defs:
+                item_ids = sorted(gs.item_defs.keys())[:30]
+                content += f"\n\n## 已有物品 ID\n\n{', '.join(item_ids)}"
+
+            if gs.map_defs:
+                map_ids = sorted(gs.map_defs.keys())
+                content += f"\n\n## 已有地图 ID\n\n{', '.join(map_ids)}"
+
     return content
 
 
@@ -628,6 +727,10 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
     # Post-create hooks for specific entity types
     if entity_type == "worldVariable":
         gs.world_variables[eid] = entry.get("default", 0)
+    elif entity_type == "character":
+        _init_character_entry(gs, entry)
+        if entry.get("active", True) is not False:
+            gs.characters[eid] = gs._build_char(eid)
 
     # Mark dirty so changes will be persisted on save
     gs.dirty = True
@@ -688,7 +791,19 @@ def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, 
 
     # Merge fields into existing entity
     existing = defs[entity_id]
+    # Character: sync basicInfo.name if name is updated
+    if entity_type == "character" and "name" in fields:
+        bi = existing.get("basicInfo", {})
+        bi["name"] = fields["name"]
+        existing["basicInfo"] = bi
     existing.update(fields)
+
+    # Post-update hooks
+    if entity_type == "character":
+        if existing.get("active", True) is not False:
+            gs.characters[entity_id] = gs._build_char(entity_id)
+        elif entity_id in gs.characters:
+            del gs.characters[entity_id]
 
     gs.dirty = True
 
@@ -730,6 +845,7 @@ _REF_RULES: list[tuple[str, str, Any]] = [
     ("traitGroup", "traits[]", "trait_defs"),
     ("lorebook", "insertMode", "static:keyword,always"),
     ("worldVariable", "type", "static:number,boolean"),
+    ("character", "clothing.*.state", "static:worn,half_worn,off"),
 ]
 
 
@@ -776,18 +892,29 @@ def _validate_field_values(gs: GameState, entity_type: str, data: dict) -> Optio
         if not valid:
             continue
 
-        # Parse field path: "field", "field[]", "field[].subfield"
-        parts = field_path.split("[]")
-        top_field = parts[0]
-        sub_field = parts[1].lstrip(".") if len(parts) > 1 else ""
+        # Parse field path: "field", "field[]", "field[].subfield", "field.*.subfield"
+        if ".*." in field_path:
+            top_field, sub_field = field_path.split(".*.", 1)
+        else:
+            parts = field_path.split("[]")
+            top_field = parts[0]
+            sub_field = parts[1].lstrip(".") if len(parts) > 1 else ""
 
         value = data.get(top_field)
         if value is None:
             continue
 
         if sub_field:
-            # Array of objects: check each element's subfield
-            if isinstance(value, list):
+            # "field.*.subfield" — dict of objects: check each value's subfield
+            if ".*." in field_path and isinstance(value, dict):
+                for key, item in value.items():
+                    if isinstance(item, dict):
+                        v = item.get(sub_field, "")
+                        if v and v not in valid:
+                            hint = ", ".join(sorted(valid))
+                            return f"{top_field}.{key}.{sub_field} '{v}' is invalid. Valid: {hint}"
+            # "field[].subfield" — array of objects: check each element's subfield
+            elif isinstance(value, list):
                 for i, item in enumerate(value):
                     if isinstance(item, dict):
                         v = item.get(sub_field, "")
@@ -806,7 +933,85 @@ def _validate_field_values(gs: GameState, entity_type: str, data: dict) -> Optio
                 hint = ", ".join(sorted(valid))
                 return f"{top_field} '{value}' is invalid. Valid: {hint}"
 
+    # Character-specific validation
+    if entity_type == "character":
+        err = _validate_character_refs(gs, data)
+        if err:
+            return err
+
     return None
+
+
+def _validate_character_refs(gs: GameState, data: dict) -> Optional[str]:
+    """Validate character-specific cross-entity references."""
+    template = getattr(gs, "template", {})
+
+    # Validate traits: keys must be valid categories
+    traits = data.get("traits")
+    if isinstance(traits, dict):
+        valid_cats = {c["key"] for c in template.get("traits", [])}
+        if valid_cats:
+            invalid = [k for k in traits if k not in valid_cats]
+            if invalid:
+                hint = ", ".join(sorted(valid_cats))
+                return f"traits contains invalid categories: {invalid}. Valid: {hint}"
+
+    # Validate clothing: keys must be valid slots
+    clothing = data.get("clothing")
+    if isinstance(clothing, dict):
+        valid_slots = set(template.get("clothingSlots", []))
+        if valid_slots:
+            invalid = [k for k in clothing if k not in valid_slots]
+            if invalid:
+                hint = ", ".join(sorted(valid_slots))
+                return f"clothing contains invalid slots: {invalid}. Valid: {hint}"
+
+    # Validate position/restPosition mapId
+    for field in ("position", "restPosition"):
+        pos = data.get(field)
+        if isinstance(pos, dict) and pos.get("mapId"):
+            map_id = pos["mapId"]
+            if gs.map_defs and map_id not in gs.map_defs:
+                valid_maps = ", ".join(list(gs.map_defs.keys())[:10])
+                return f"{field}.mapId '{map_id}' not found. Available: {valid_maps}"
+
+    return None
+
+
+def _init_character_entry(gs: GameState, entry: dict) -> None:
+    """Initialize a new character entry with template defaults.
+
+    Ensures basicInfo, resources, and _source are properly set so that
+    _build_char() can process the character immediately after creation.
+    """
+    template = getattr(gs, "template", {})
+    source = entry.get("source", "")
+
+    # Sync basicInfo.name from top-level name
+    bi = entry.get("basicInfo", {})
+    if "name" not in bi:
+        bi["name"] = entry.get("name", "")
+    # Fill in template defaults for missing basicInfo fields
+    for field in template.get("basicInfo", []):
+        key = field.get("key", "")
+        if key and key not in bi:
+            bi[key] = field.get("defaultValue", "" if field.get("type") == "string" else 0)
+    entry["basicInfo"] = bi
+
+    # Initialize resources from template defaults
+    if "resources" not in entry:
+        resources = {}
+        for field in template.get("resources", []):
+            key = field.get("key", "")
+            if key:
+                resources[key] = {
+                    "value": field.get("defaultValue", 0),
+                    "max": field.get("defaultMax", 0),
+                }
+        entry["resources"] = resources
+
+    # Set _source for addon file organization
+    entry["_source"] = source
 
 
 def _resolve_source_addon(gs: GameState) -> str:
@@ -904,6 +1109,17 @@ ENTITY_DEFAULTS: dict[str, dict[str, Any]] = {
         "insertMode": "keyword",
     },
     "worldVariable": {"description": "", "type": "number", "default": 0},
+    "character": {
+        "active": True,
+        "isPlayer": False,
+        "traits": {},
+        "clothing": {},
+        "inventory": [],
+        "abilities": {},
+        "outfits": {},
+        "favorability": {},
+        "llm": {},
+    },
 }
 
 DEFAULT_ASSIST_PROMPT = """\

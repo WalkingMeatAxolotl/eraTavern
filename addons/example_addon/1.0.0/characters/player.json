@@ -72,14 +72,31 @@
       "value": 2000
     },
     "stamina": {
-      "max": 7400,
+      "max": 9800,
       "value": 2900
     }
   },
   "abilities": {
-    "power": 9200,
-    "speed": 22100,
-    "wisdom": 36200
+    "Base.agility": 2000,
+    "Base.charisma": 2000,
+    "Base.combat": 2000,
+    "Base.cooking": 2000,
+    "Base.crafting": 2000,
+    "Base.deception": 2000,
+    "Base.healing": 2000,
+    "Base.intelligence": 2000,
+    "Base.investigation": 2000,
+    "Base.luck": 2000,
+    "Base.negotiation": 2000,
+    "Base.perception": 2000,
+    "Base.performance": 2000,
+    "Base.seduction": 2000,
+    "Base.stealth": 2000,
+    "Base.strength": 2000,
+    "Base.willpower": 2000,
+    "power": 12800,
+    "speed": 31700,
+    "wisdom": 51800
   },
   "position": {
     "cellId": 2,
