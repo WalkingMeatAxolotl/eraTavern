@@ -42,6 +42,8 @@ export interface AssistCallbacks {
   onError: (msg: string) => void;
   onDebug?: (entry: AssistDebugEntry) => void;
   onUsage?: (usage: Record<string, unknown>) => void;
+  onModeChange?: (mode: string) => void;
+  onToolConfirmResult?: (data: { callId: string; result: string; approved: boolean }) => void;
 }
 
 // --- SSE parser (shared between chat and confirm) ---
@@ -112,6 +114,12 @@ async function readSSEStream(
             case "llm_usage":
               callbacks.onUsage?.(data);
               break;
+            case "mode_change":
+              callbacks.onModeChange?.(data.mode ?? "chat");
+              break;
+            case "tool_confirm_result":
+              callbacks.onToolConfirmResult?.(data);
+              break;
           }
         } catch {
           // skip malformed JSON
@@ -152,22 +160,42 @@ export function streamAssistChat(
 
 /**
  * Confirm or reject a pending tool call.
- * Does NOT auto-continue the Agent Loop — user sends next message manually.
+ *
+ * In "executing" mode the backend returns an SSE stream (auto-continues the
+ * agent loop).  In "chat" mode it returns JSON (existing behaviour).
+ *
+ * When `callbacks` is provided and the response is SSE, the stream is read
+ * with the same parser used by `streamAssistChat`.  The returned
+ * AbortController can cancel the stream.
  */
-export async function confirmToolCall(
+export function confirmToolCall(
   sessionId: string,
   callId: string,
   approved: boolean,
   overrideArgs?: Record<string, unknown>,
-): Promise<{ success: boolean; result?: string }> {
+  callbacks?: AssistCallbacks,
+): { promise: Promise<{ success: boolean; result?: string }>; abort: AbortController } {
+  const controller = new AbortController();
   const body: Record<string, unknown> = { sessionId, callId, approved };
   if (overrideArgs) body.overrideArgs = overrideArgs;
-  const resp = await fetch("/api/llm/assist-confirm-tool", {
+
+  const promise = fetch("/api/llm/assist-confirm-tool", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal: controller.signal,
+  }).then(async (resp) => {
+    const ct = resp.headers.get("content-type") || "";
+    if (ct.includes("text/event-stream") && callbacks) {
+      // Executing mode — backend returns SSE stream
+      await readSSEStream(resp, callbacks);
+      return { success: true };
+    }
+    // Chat mode — plain JSON response
+    return resp.json();
   });
-  return resp.json();
+
+  return { promise, abort: controller };
 }
 
 /**

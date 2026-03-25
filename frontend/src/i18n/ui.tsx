@@ -951,6 +951,7 @@ export const UI: Record<string, string> = {
   "ai.toolRejected": "已拒绝",
   "ai.noPreset": "未配置 AI 辅助预设，请在 LLM 设置中配置",
   "ai.newSession": "新建会话",
+  "ai.executingHint": "正在执行创建计划，请等待确认...",
   "ai.thinking": "思考中...",
   "ai.thinkingBlock": "思考过程",
   "ai.jsonInvalid": "JSON 格式错误",

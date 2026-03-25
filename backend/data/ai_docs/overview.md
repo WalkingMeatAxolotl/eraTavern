@@ -28,3 +28,25 @@
 - 修改前先用 list_entities + filter 筛选目标实体（如 `filter: {"category": "ability"}`），不要获取全部再手动挑选
 - 需要查看实体完整数据（如 effects 详情）时，用 get_entities 批量获取
 - 创建前可以用 list_entities 查看已有实体，避免 id 重复
+
+## 复杂任务处理
+
+当用户请求涉及以下情况时，**先输出设计方案（plan）**，等用户确认后再开始创建：
+- 需要创建多种互相引用的实体（如角色 + 特质 + 服装）
+- 涉及 action 或 event 创建
+- 批量创建需要保持一致性的实体（8个以上）
+
+### Plan 格式
+
+1. **设计概述**：一段话说明整体构思和角色关系
+2. **实体清单**：按类型分组，每个实体列出 id / name / 一句话说明
+3. **引用关系**：自然语言描述（如"酒保穿围裙+皮靴，持有啤酒"）
+
+Plan 中的 id 使用英文下划线命名（如 `tavern_keeper`）。不需要写完整 JSON。
+
+输出 plan 后问"需要调整吗？确认后开始创建。"
+
+用户确认后，按依赖顺序分批创建：
+`lorebook/worldVariable → trait → item/clothing → character → event → action`
+
+每批使用 batch_create 一次提交，不要逐个创建。

@@ -8,6 +8,7 @@ operates within the context of the current game state.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Optional
 
@@ -1136,9 +1137,188 @@ DEFAULT_ASSIST_PROMPT = """\
 - 修改前先用 list_entities + filter 筛选目标实体（如 {"category": "ability"}），不要获取全部再手动挑选
 - 需要查看实体的完整数据（如 effects 详情）时，用 get_entities 获取
 - 如果不确定字段格式或可用值，先用 get_schema 查看完整文档
-- 不要重复调用相同参数的工具，之前的结果已在对话历史中"""
+- 不要重复调用相同参数的工具，之前的结果已在对话历史中
+
+## 复杂任务处理
+当用户请求涉及以下情况时，先输出设计方案（plan），等用户确认后再创建：
+- 需要创建多种互相引用的实体（如角色 + 特质 + 服装）
+- 涉及 action 或 event 创建
+- 批量创建需要保持一致性的实体（8个以上）
+
+### Plan 格式
+1. **设计概述**：一段话说明整体构思
+2. **实体清单**：按类型分组，每个实体列出 id / name / 一句话说明
+3. **引用关系**：自然语言描述（如"酒保穿围裙+皮靴，持有啤酒"）
+
+输出 plan 后问"需要调整吗？确认后开始创建。"
+用户确认后，按依赖顺序分批创建：
+lorebook/worldVariable → trait → item/clothing → character → event → action"""
 
 BUILTIN_CONTEXT_ENTRY_ID = "__assist_context__"
+
+
+_RE_THINK_BLOCK = re.compile(r"<think>[\s\S]*?</think>")
+
+
+def _compress_history(history: list[dict]) -> list[dict]:
+    """Create a compressed copy of conversation history for LLM context.
+
+    Rules:
+    - Strip <think> blocks from all assistant messages.
+    - Keep the most recent 4 messages (2 rounds) fully intact.
+    - For older tool results:
+      - get_schema: keep last per entityType, summarize earlier ones.
+      - list_entities: keep last 2, summarize earlier.
+      - get_entities: keep last 1, summarize earlier.
+      - create/batch_create/update/batch_update results: keep last 2 rounds,
+        summarize earlier.
+    - Never remove tool_call_id (API requires tool results match tool_calls).
+    """
+    if len(history) <= 4:
+        # Short history — only strip think blocks
+        return _strip_think_all(history)
+
+    # Split: older messages to compress, recent to keep intact
+    older = history[:-4]
+    recent = history[-4:]
+
+    # Track latest occurrence index of each tool type per entityType
+    # Scan older messages in reverse to find "latest" indices
+    latest_schema: dict[str, int] = {}  # entityType -> msg index
+    latest_list: list[int] = []  # indices of list_entities results
+    latest_get: list[int] = []  # indices of get_entities results
+    latest_write: list[int] = []  # indices of write tool results
+
+    for i, msg in enumerate(older):
+        if msg.get("role") != "tool":
+            continue
+        content = msg.get("content", "")
+        tool_call_id = msg.get("tool_call_id", "")
+
+        # Detect tool type from the corresponding assistant tool_call
+        tool_name = _find_tool_name_for_call(older, i, tool_call_id)
+
+        if tool_name == "get_schema":
+            etype = _extract_entity_type_from_result(content)
+            latest_schema[etype] = i
+        elif tool_name == "list_entities":
+            latest_list.append(i)
+        elif tool_name == "get_entities":
+            latest_get.append(i)
+        elif tool_name in ("create_entity", "batch_create", "update_entity", "batch_update"):
+            latest_write.append(i)
+
+    # Build set of indices that should keep full content
+    keep_full: set[int] = set()
+    keep_full.update(latest_schema.values())
+    for lst, keep_n in [(latest_list, 2), (latest_get, 1), (latest_write, 2)]:
+        keep_full.update(lst[-keep_n:] if len(lst) >= keep_n else lst)
+
+    compressed: list[dict] = []
+    for i, msg in enumerate(older):
+        if msg.get("role") == "assistant":
+            compressed.append(_strip_think(msg))
+        elif msg.get("role") == "tool" and i not in keep_full:
+            compressed.append(_summarize_tool_result(msg, older, i))
+        else:
+            compressed.append(msg)
+
+    compressed.extend(_strip_think_all(recent))
+    return compressed
+
+
+def _strip_think(msg: dict) -> dict:
+    """Return a copy of an assistant message with <think> blocks removed."""
+    content = msg.get("content", "")
+    if not content or "<think>" not in content:
+        return msg
+    cleaned = _RE_THINK_BLOCK.sub("", content).strip()
+    copy = dict(msg)
+    copy["content"] = cleaned or None
+    return copy
+
+
+def _strip_think_all(messages: list[dict]) -> list[dict]:
+    """Strip think blocks from assistant messages in a list."""
+    return [_strip_think(m) if m.get("role") == "assistant" else m for m in messages]
+
+
+def _find_tool_name_for_call(messages: list[dict], tool_msg_idx: int, tool_call_id: str) -> str:
+    """Find the tool name for a given tool_call_id by scanning preceding assistant messages."""
+    for i in range(tool_msg_idx - 1, -1, -1):
+        msg = messages[i]
+        if msg.get("role") != "assistant":
+            continue
+        for tc in msg.get("tool_calls", []):
+            fn = tc.get("function", {})
+            if tc.get("id") == tool_call_id:
+                return fn.get("name", "")
+        break  # Only check the nearest assistant message
+    return ""
+
+
+def _extract_entity_type_from_result(content: str) -> str:
+    """Extract entityType from a tool result JSON string."""
+    try:
+        data = json.loads(content)
+        if isinstance(data, dict):
+            return data.get("entityType", "")
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return ""
+
+
+def _summarize_tool_result(msg: dict, messages: list[dict], idx: int) -> dict:
+    """Replace a tool result with a compact summary, preserving tool_call_id."""
+    tool_call_id = msg.get("tool_call_id", "")
+    content = msg.get("content", "")
+    tool_name = _find_tool_name_for_call(messages, idx, tool_call_id)
+
+    summary = _make_tool_summary(tool_name, content)
+    return {"role": "tool", "tool_call_id": tool_call_id, "content": summary}
+
+
+def _make_tool_summary(tool_name: str, content: str) -> str:
+    """Generate a short summary string for a tool result."""
+    try:
+        data = json.loads(content)
+    except (json.JSONDecodeError, TypeError):
+        return f"[{tool_name} result]"
+
+    if not isinstance(data, dict):
+        return f"[{tool_name} result]"
+
+    if tool_name == "get_schema":
+        etype = data.get("entityType", "unknown")
+        return f"[已获取 {etype} schema]"
+    if tool_name == "list_entities":
+        etype = data.get("entityType", "unknown")
+        count = data.get("total", len(data.get("entities", [])))
+        return f"[列出了 {count} 个 {etype}]"
+    if tool_name == "get_entities":
+        etype = data.get("entityType", "unknown")
+        ids = list(data.get("entities", {}).keys())
+        return f"[已获取 {etype}: {', '.join(ids[:5])}]"
+    if tool_name == "create_entity":
+        ent = data.get("entity", {})
+        eid = ent.get("id", "?")
+        ok = "成功" if data.get("success") else "失败"
+        return f"[创建 {ok}: {eid}]"
+    if tool_name == "batch_create":
+        total = data.get("total", 0)
+        errs = len(data.get("errors", []))
+        return f"[批量创建 {total} 个，{errs} 个失败]"
+    if tool_name == "update_entity":
+        ent = data.get("entity", {})
+        eid = ent.get("id", "?")
+        ok = "成功" if data.get("success") else "失败"
+        return f"[更新 {ok}: {eid}]"
+    if tool_name == "batch_update":
+        total = data.get("total", 0)
+        errs = len(data.get("errors", []))
+        return f"[批量更新 {total} 个，{errs} 个失败]"
+
+    return f"[{tool_name} result]"
 
 
 def build_assist_messages(
@@ -1151,7 +1331,7 @@ def build_assist_messages(
 
     Structure:
     1. Preset promptEntries (sorted by position, with builtin context injected)
-    2. Conversation history
+    2. Compressed conversation history
     3. New user message
     """
     messages: list[dict] = []
@@ -1182,10 +1362,11 @@ def build_assist_messages(
             }
         )
 
-    # 2. Conversation history (user / assistant / tool messages)
-    messages.extend(history)
+    # 2. Compressed conversation history
+    messages.extend(_compress_history(history))
 
     # 3. New user message
-    messages.append({"role": "user", "content": user_message})
+    if user_message:
+        messages.append({"role": "user", "content": user_message})
 
     return messages

@@ -271,14 +271,17 @@ async def llm_generate(request: Request):
 # AI Assist Agent — session management & endpoints
 # ---------------------------------------------------------------------------
 
+
 class AssistSession:
     """In-memory session for an AI Assist conversation."""
 
-    __slots__ = ("messages", "pending_tool_call")
+    __slots__ = ("messages", "pending_tool_call", "mode", "read_cache")
 
     def __init__(self) -> None:
         self.messages: list[dict] = []
         self.pending_tool_call: dict | None = None
+        self.mode: str = "chat"  # "chat" | "executing"
+        self.read_cache: dict[str, str] = {}  # session-level read tool cache
 
 
 # Module-level session store (not persisted). Cleaned up only on explicit delete.
@@ -375,21 +378,47 @@ def _parse_tool_call(tc: dict) -> tuple[str, str, str, dict]:
     return call_id, fn_name, fn_args_str, fn_args
 
 
-@router.post("/api/llm/assist-chat")
-async def assist_chat(request: Request):
-    """AI Assist Agent — send a message and get a streamed response.
+def _pre_validate_write(game_state, fn_name: str, fn_args: dict) -> tuple[bool, str]:
+    """Pre-validate a write tool call before entering pending state.
 
-    This endpoint implements the Agent Loop:
-    1. Assemble messages (system prompt + history + user message + tools)
-    2. Call LLM API with streaming
-    3. If AI returns tool_calls:
-       a. Read-only tools → auto-execute → append result → call LLM again (loop)
-       b. Write tools → send tool_call_pending event → pause and return
-    4. If AI returns pure text → stream it → done
+    Returns (ok, error_result).  When ok is False, error_result is a JSON
+    string that should be returned to the LLM as an auto-execute tool result.
+    """
+    from game.ai_assist import _validate_field_values
 
-    The loop (step 3a) runs within this single request — multiple LLM round-
-    trips can happen transparently.  Write operations break the loop and wait
-    for the confirm-tool endpoint.
+    entity_type = fn_args.get("entityType", "")
+
+    if fn_name in ("create_entity", "update_entity"):
+        data = fn_args.get("entity", {}) if fn_name == "create_entity" else fn_args.get("fields", {})
+        if data and entity_type:
+            err = _validate_field_values(game_state, entity_type, data)
+            if err:
+                return False, json.dumps({"error": "VALIDATION_FAILED", "detail": err}, ensure_ascii=False)
+    elif fn_name == "batch_create":
+        entities = fn_args.get("entities", [])
+        for i, ent in enumerate(entities):
+            err = _validate_field_values(game_state, entity_type, ent)
+            if err:
+                eid = ent.get("id", f"#{i}")
+                return False, json.dumps(
+                    {"error": "VALIDATION_FAILED", "entity": eid, "detail": err},
+                    ensure_ascii=False,
+                )
+
+    return True, ""
+
+
+async def _run_agent_loop(
+    session: AssistSession,
+    api_config: dict,
+    preset: dict,
+    game_state,
+    max_loops: int = 10,
+):
+    """Core Agent Loop generator — shared by assist_chat and assist_confirm_tool.
+
+    Yields SSE events.  Pauses (returns) when a write tool needs confirmation
+    or when the LLM finishes with pure text.
     """
     from game.ai_assist import (
         ASSIST_TOOLS,
@@ -400,41 +429,20 @@ async def assist_chat(request: Request):
     )
     from game.llm_engine import call_llm_streaming
 
-    data = await request.json()
-    session_id = data.get("sessionId", "")
-    user_message = data.get("message", "")
+    write_types_this_request: set[str] = set()
+    repair_counts: dict[str, int] = {}
 
-    if not session_id or not user_message:
-        return _resp(False, "AI_ASSIST_SESSION_ERROR")
+    for loop_i in range(max_loops):
+        # Rebuild messages each iteration (history may have grown)
+        context_text = collect_assist_context(game_state)
+        messages = build_assist_messages(preset, context_text, session.messages, "")
 
-    # Resolve preset & provider
-    preset, api_config, error = _resolve_assist_preset()
-    if error:
-        return _resp(False, error)
+        full_text = ""
+        tool_calls = None
 
-    session = _get_or_create_session(session_id)
-
-    # Collect context and build messages (no entity type — AI decides from conversation)
-    context_text = collect_assist_context(_h.game_state)
-    messages = build_assist_messages(preset, context_text, session.messages, user_message)
-
-    # Append user message to session history
-    session.messages.append({"role": "user", "content": user_message})
-
-    async def agent_stream():
-        """The Agent Loop — streams events to the frontend."""
-        nonlocal messages
-
-        max_loops = 10  # Safety limit to prevent infinite tool-call loops
-        # Cache read tool results to avoid duplicate calls within same request
-        read_cache: dict[str, str] = {}
-
-        for loop_i in range(max_loops):
-            full_text = ""
-            tool_calls = None
-
-            # Send debug info before each LLM call
-            yield _format_sse("llm_debug", {
+        yield _format_sse(
+            "llm_debug",
+            {
                 "source": "ai_assist",
                 "loop": loop_i,
                 "model": api_config.get("model", ""),
@@ -442,109 +450,164 @@ async def assist_chat(request: Request):
                 "parameters": api_config.get("parameters", {}),
                 "messageCount": len(messages),
                 "messages": messages,
-            })
+            },
+        )
 
-            async for event_type, event_data in call_llm_streaming(api_config, messages, tools=ASSIST_TOOLS):
-                if event_type == "llm_chunk":
-                    full_text += event_data.get("text", "")
-                    yield _format_sse("llm_chunk", event_data)
-                elif event_type == "tool_calls":
-                    tool_calls = event_data  # list of tool call dicts
-                elif event_type == "llm_error":
-                    yield _format_sse("llm_error", event_data)
-                    return
-                elif event_type == "llm_done":
-                    # Forward usage info for debug tracking
-                    if event_data.get("usage"):
-                        yield _format_sse("llm_usage", event_data["usage"])
-
-            # Build the assistant message for history
-            # When only tool_calls with no text, content must be null (not "")
-            # for proper tool result association in OpenAI-compatible APIs
-            assistant_msg: dict = {"role": "assistant", "content": full_text or None}
-            if tool_calls:
-                assistant_msg["tool_calls"] = tool_calls
-            session.messages.append(assistant_msg)
-            messages.append(assistant_msg)
-
-            # No tool calls → we're done
-            if not tool_calls:
-                yield _format_sse("llm_done", {"fullText": full_text})
+        async for event_type, event_data in call_llm_streaming(api_config, messages, tools=ASSIST_TOOLS):
+            if event_type == "llm_chunk":
+                full_text += event_data.get("text", "")
+                yield _format_sse("llm_chunk", event_data)
+            elif event_type == "tool_calls":
+                tool_calls = event_data
+            elif event_type == "llm_error":
+                yield _format_sse("llm_error", event_data)
                 return
+            elif event_type == "llm_done":
+                if event_data.get("usage"):
+                    yield _format_sse("llm_usage", event_data["usage"])
 
-            # Process tool calls: execute all read-only first, then handle first write
-            parsed = [_parse_tool_call(tc) for tc in tool_calls]
-            write_idx = None
-            for i, (_, fn_name, _, _) in enumerate(parsed):
-                if TOOL_SAFETY.get(fn_name, "write") == "write":
-                    write_idx = i
-                    break
+        # Build assistant message
+        assistant_msg: dict = {"role": "assistant", "content": full_text or None}
+        if tool_calls:
+            assistant_msg["tool_calls"] = tool_calls
+        session.messages.append(assistant_msg)
 
-            # Execute all read-only tools (all if no write, or up to write_idx)
-            read_end = len(parsed) if write_idx is None else write_idx
-            for i in range(read_end):
-                call_id, fn_name, _, fn_args = parsed[i]
-                cache_key = f"{fn_name}:{json.dumps(fn_args, sort_keys=True)}"
-                if cache_key in read_cache:
-                    result = read_cache[cache_key]
-                else:
-                    result = execute_tool(_h.game_state, fn_name, fn_args)
-                    read_cache[cache_key] = result
+        # No tool calls → done
+        if not tool_calls:
+            yield _format_sse("llm_done", {"fullText": full_text})
+            if session.mode == "executing":
+                session.mode = "chat"
+                yield _format_sse("mode_change", {"mode": "chat"})
+            return
+
+        # Parse and classify tool calls
+        parsed = [_parse_tool_call(tc) for tc in tool_calls]
+        write_idx = None
+        for i, (_, fn_name, _, _) in enumerate(parsed):
+            if TOOL_SAFETY.get(fn_name, "write") == "write":
+                write_idx = i
+                break
+
+        # Execute read-only tools
+        read_end = len(parsed) if write_idx is None else write_idx
+        for i in range(read_end):
+            call_id, fn_name, _, fn_args = parsed[i]
+            cache_key = f"{fn_name}:{json.dumps(fn_args, sort_keys=True)}"
+            if cache_key in session.read_cache:
+                result = session.read_cache[cache_key]
+            else:
+                result = execute_tool(game_state, fn_name, fn_args)
+                session.read_cache[cache_key] = result
+            yield _format_sse(
+                "tool_call_result",
+                {"callId": call_id, "name": fn_name, "arguments": fn_args, "result": result, "auto": True},
+            )
+            tool_msg = {"role": "tool", "tool_call_id": call_id, "content": result}
+            session.messages.append(tool_msg)
+
+        if write_idx is not None:
+            call_id, fn_name, _, fn_args = parsed[write_idx]
+
+            # Pre-validate before entering pending
+            ok, err_result = _pre_validate_write(game_state, fn_name, fn_args)
+            if not ok:
+                repair_key = f"{fn_name}:{fn_args.get('entityType', '')}:{fn_args.get('entity', {}).get('id', '')}"
+                repair_counts[repair_key] = repair_counts.get(repair_key, 0) + 1
+                if repair_counts[repair_key] > 1:
+                    # 2nd failure — stop, show error to user
+                    yield _format_sse("llm_done", {"fullText": full_text})
+                    yield _format_sse(
+                        "llm_error",
+                        {
+                            "error": "VALIDATION_FAILED_TWICE",
+                            "detail": err_result,
+                        },
+                    )
+                    if session.mode == "executing":
+                        session.mode = "chat"
+                        yield _format_sse("mode_change", {"mode": "chat"})
+                    return
+
+                # 1st failure — return error to LLM as auto-execute result
                 yield _format_sse(
                     "tool_call_result",
-                    {"callId": call_id, "name": fn_name, "arguments": fn_args, "result": result, "auto": True},
+                    {"callId": call_id, "name": fn_name, "arguments": fn_args, "result": err_result, "auto": True},
                 )
-                tool_msg = {"role": "tool", "tool_call_id": call_id, "content": result}
+                tool_msg = {"role": "tool", "tool_call_id": call_id, "content": err_result}
                 session.messages.append(tool_msg)
-                messages.append(tool_msg)
-
-            if write_idx is not None:
-                # Send llm_done first so frontend can finalize the assistant message
-                yield _format_sse("llm_done", {"fullText": full_text})
-
-                # Handle the write tool — pause for user confirmation
-                call_id, fn_name, _, fn_args = parsed[write_idx]
-                # Enrich update_entity args with current entity name for frontend display
-                enriched_args = _enrich_tool_args(_h.game_state, fn_name, fn_args)
-                session.pending_tool_call = {"callId": call_id, "name": fn_name, "arguments": fn_args}
-                yield _format_sse(
-                    "tool_call_pending",
-                    {"callId": call_id, "name": fn_name, "arguments": enriched_args},
-                )
-
-                # For any remaining tool_calls after the write one, add skip results
-                # so the message history stays valid (every tool_use needs a tool_result)
+                # Skip remaining tools after the failed write
                 for i in range(write_idx + 1, len(parsed)):
                     skip_id = parsed[i][0]
                     skip_msg = {"role": "tool", "tool_call_id": skip_id, "content": '{"skipped": true}'}
                     session.messages.append(skip_msg)
-                    messages.append(skip_msg)
-                return
+                continue  # Loop back for LLM to fix
 
-            # All tools were read-only — loop back to call LLM again with results
+            # Track write entity types for auto mode switch
+            write_etype = fn_args.get("entityType", "")
+            if write_etype:
+                write_types_this_request.add(write_etype)
+            if session.mode == "chat" and len(write_types_this_request) >= 2:
+                session.mode = "executing"
+                yield _format_sse("mode_change", {"mode": "executing"})
 
-        # max_loops exhausted
-        yield _format_sse(
-            "llm_error",
-            {
-                "error": "AI_ASSIST_SESSION_ERROR",
-                "detail": "Too many tool call rounds",
-            },
-        )
+            # Validation passed — enter pending
+            yield _format_sse("llm_done", {"fullText": full_text})
+            enriched_args = _enrich_tool_args(game_state, fn_name, fn_args)
+            session.pending_tool_call = {"callId": call_id, "name": fn_name, "arguments": fn_args}
+            yield _format_sse(
+                "tool_call_pending",
+                {"callId": call_id, "name": fn_name, "arguments": enriched_args},
+            )
 
-    return _make_sse_response(agent_stream())
+            # Skip remaining tool_calls after the write one
+            for i in range(write_idx + 1, len(parsed)):
+                skip_id = parsed[i][0]
+                skip_msg = {"role": "tool", "tool_call_id": skip_id, "content": '{"skipped": true}'}
+                session.messages.append(skip_msg)
+            return
+
+        # All tools were read-only — loop back
+
+    # max_loops exhausted
+    yield _format_sse(
+        "llm_error",
+        {
+            "error": "AI_ASSIST_SESSION_ERROR",
+            "detail": "Too many tool call rounds",
+        },
+    )
+
+
+@router.post("/api/llm/assist-chat")
+async def assist_chat(request: Request):
+    """AI Assist Agent — send a message and get a streamed response.
+
+    This endpoint starts/continues the Agent Loop via _run_agent_loop.
+    """
+    data = await request.json()
+    session_id = data.get("sessionId", "")
+    user_message = data.get("message", "")
+
+    if not session_id or not user_message:
+        return _resp(False, "AI_ASSIST_SESSION_ERROR")
+
+    preset, api_config, error = _resolve_assist_preset()
+    if error:
+        return _resp(False, error)
+
+    session = _get_or_create_session(session_id)
+    session.messages.append({"role": "user", "content": user_message})
+
+    return _make_sse_response(_run_agent_loop(session, api_config, preset, _h.game_state))
 
 
 @router.post("/api/llm/assist-confirm-tool")
 async def assist_confirm_tool(request: Request):
     """Confirm or reject a pending write tool call.
 
-    After the user confirms/rejects, this endpoint:
-    1. Executes the tool (if confirmed) or records rejection
-    2. Appends the result to session history
-    3. Returns the result — does NOT auto-continue the Agent Loop
-
-    The user decides the next step by sending a new chat message.
+    In "executing" mode (plan execution), after confirmation this endpoint
+    returns an SSE stream that auto-continues the agent loop.
+    In "chat" mode, it returns a JSON response (existing behavior).
     """
     from game.ai_assist import execute_tool
 
@@ -563,20 +626,39 @@ async def assist_confirm_tool(request: Request):
 
     session.pending_tool_call = None
 
-    # Execute or reject (frontend may override arguments if user edited JSON)
+    # Execute or reject
     override_args = data.get("overrideArgs")
     tool_args = override_args if override_args else pending["arguments"]
     if approved:
         result = execute_tool(_h.game_state, pending["name"], tool_args)
-        # Broadcast dirty state to frontend
+        # Clear read cache — write may have changed game state
+        session.read_cache.clear()
         if _h.game_state.dirty:
             await _h.manager.broadcast("dirty_update", {"dirty": True})
     else:
         result = json.dumps({"rejected": True, "reason": "User rejected this operation"})
+        # Rejection breaks execution mode
+        if session.mode == "executing":
+            session.mode = "chat"
 
-    # Append tool result to session history (AI will see it in the next chat message)
     tool_msg = {"role": "tool", "tool_call_id": call_id, "content": result}
     session.messages.append(tool_msg)
+
+    # Auto-continue in executing mode
+    if session.mode == "executing" and approved:
+        preset, api_config, error = _resolve_assist_preset()
+        if error:
+            return _resp(False, error)
+
+        async def continue_stream():
+            yield _format_sse(
+                "tool_confirm_result",
+                {"callId": call_id, "result": result, "approved": True},
+            )
+            async for event in _run_agent_loop(session, api_config, preset, _h.game_state):
+                yield event
+
+        return _make_sse_response(continue_stream())
 
     return _resp(True, "", result=result)
 

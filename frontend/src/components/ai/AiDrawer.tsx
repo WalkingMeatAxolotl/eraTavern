@@ -16,7 +16,7 @@ import {
   confirmToolCall,
   deleteAssistSession,
 } from "../../api/aiAssist";
-import type { ToolCallInfo, ToolCallResult } from "../../api/aiAssist";
+import type { AssistCallbacks, ToolCallInfo, ToolCallResult } from "../../api/aiAssist";
 import ToolCallMessage from "./ToolCallMessage";
 import type { ToolCallStatus } from "./ToolCallMessage";
 import clsx from "clsx";
@@ -85,6 +85,7 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
   const [inputText, setInputText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingText, setStreamingText] = useState("");
+  const [agentMode, setAgentMode] = useState<"chat" | "executing">("chat");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -119,7 +120,7 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
   );
 
   // Build SSE callbacks. All events update the LAST assistant message in-place.
-  const buildCallbacks = useCallback(() => {
+  const buildCallbacks = useCallback((): AssistCallbacks => {
     let accumulated = "";
 
     return {
@@ -173,6 +174,7 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
       },
       onDone: (fullText: string) => {
         const text = fullText || accumulated;
+        accumulated = "";
         // Finalize: move streaming text into the assistant message
         setStreamingText("");
         updateLastAssistant((msg) => ({ ...msg, content: text }));
@@ -206,8 +208,28 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
           lastDebugRef.current = null;
         }
       },
+      onModeChange: (mode: string) => {
+        setAgentMode(mode as "chat" | "executing");
+      },
+      onToolConfirmResult: (data: { callId: string; result: string; approved: boolean }) => {
+        // Update existing pending tool call with confirm result (from SSE stream)
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (!msg.toolCalls) return msg;
+            return {
+              ...msg,
+              toolCalls: msg.toolCalls.map((tc) =>
+                tc.callId === data.callId
+                  ? { ...tc, status: (data.approved ? "confirmed" : "rejected") as ToolCallStatus, result: data.result }
+                  : tc,
+              ),
+            };
+          }),
+        );
+        if (data.approved) onEntityChanged?.();
+      },
     };
-  }, [scrollToBottom, updateLastAssistant, onDebugEntry]);
+  }, [scrollToBottom, updateLastAssistant, onDebugEntry, onEntityChanged]);
 
   // Send a message
   const handleSend = useCallback(() => {
@@ -231,28 +253,43 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
   // Confirm/reject a tool call
   const handleToolConfirm = useCallback(
     async (callId: string, approved: boolean, overrideArgs?: Record<string, unknown>) => {
-      // Call backend to execute/reject the tool (with optional user-edited args)
-      const resp = await confirmToolCall(sessionId, callId, approved, overrideArgs);
+      const callbacks = buildCallbacks();
+      // In executing mode, add an empty assistant placeholder for the continuation
+      if (agentMode === "executing" && approved) {
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+        setIsGenerating(true);
+      }
 
-      // Update the tool call status + result in the existing message
-      setMessages((prev) =>
-        prev.map((msg) => {
-          if (!msg.toolCalls) return msg;
-          return {
-            ...msg,
-            toolCalls: msg.toolCalls.map((tc) =>
-              tc.callId === callId
-                ? { ...tc, status: (approved ? "confirmed" : "rejected") as ToolCallStatus, result: resp.result }
-                : tc,
-            ),
-          };
-        }),
-      );
-      // Notify parent that an entity was created/updated (so manager can reload list)
-      if (approved && resp.success) onEntityChanged?.();
-      // User can now type feedback or "继续"
+      const { promise, abort } = confirmToolCall(sessionId, callId, approved, overrideArgs, callbacks);
+      abortRef.current = abort;
+
+      try {
+        const resp = await promise;
+        // If SSE mode, callbacks already handled everything (including tool status update).
+        // If JSON mode, update manually:
+        if (resp.result !== undefined) {
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (!msg.toolCalls) return msg;
+              return {
+                ...msg,
+                toolCalls: msg.toolCalls.map((tc) =>
+                  tc.callId === callId
+                    ? { ...tc, status: (approved ? "confirmed" : "rejected") as ToolCallStatus, result: resp.result }
+                    : tc,
+                ),
+              };
+            }),
+          );
+          if (approved && resp.success) onEntityChanged?.();
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          callbacks.onError(err.message || "Network error");
+        }
+      }
     },
-    [sessionId, onEntityChanged],
+    [sessionId, onEntityChanged, buildCallbacks, agentMode],
   );
 
   // Stop generation
@@ -294,6 +331,7 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
             setStreamingText("");
             setIsGenerating(false);
             setInputText("");
+            setAgentMode("chat");
           }}
           title={t("ai.newSession")}
           className={s.newSessionBtn}
@@ -395,11 +433,11 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
         <textarea
           ref={inputRef}
           className={s.inputTextarea}
-          placeholder={t("ai.inputPlaceholder")}
+          placeholder={agentMode === "executing" && isGenerating ? t("ai.executingHint") : t("ai.inputPlaceholder")}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={hasPending}
+          disabled={hasPending || (agentMode === "executing" && isGenerating)}
         />
         {isGenerating ? (
           <button onClick={handleStop} className={s.stopBtn}>
