@@ -356,8 +356,8 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
                     },
                     "mode": {
                         "type": "string",
-                        "enum": ["simple", "template", "ir"],
-                        "description": "生成模式（默认 simple）。action/event 推荐用 template 或 ir",
+                        "enum": ["simple", "template", "ir", "clone"],
+                        "description": "生成模式。action/event 推荐 template/ir，clone 可用于所有类型",
                     },
                     "payload": {
                         "type": "object",
@@ -779,6 +779,112 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
     return "\n".join(parts)
 
 
+def _apply_patch(obj: dict, patch: dict) -> list[dict[str, Any]]:
+    """Apply a patch dict to an object, returning a diff list.
+
+    Patch keys use dot-separated paths with bracket array indices:
+      "outcomes[0].effects[0].itemId" → obj["outcomes"][0]["effects"][0]["itemId"]
+
+    Returns list of {path, old, new} diffs.
+    """
+    import re as _re
+
+    _PATH_TOKEN = _re.compile(r"([^\.\[\]]+)|\[(\d+)\]")
+
+    diffs: list[dict[str, Any]] = []
+    for path_str, new_val in patch.items():
+        tokens = _PATH_TOKEN.findall(path_str)
+        if not tokens:
+            continue
+
+        # Navigate to parent
+        current: Any = obj
+        parsed_keys: list = []
+        for name, idx in tokens[:-1]:
+            key: Any = name if name else int(idx)
+            parsed_keys.append(key)
+            try:
+                current = current[key]
+            except (KeyError, IndexError, TypeError):
+                break
+
+        # Apply final key
+        last_name, last_idx = tokens[-1]
+        final_key: Any = last_name if last_name else int(last_idx)
+        try:
+            old_val = current[final_key]
+        except (KeyError, IndexError, TypeError):
+            old_val = None
+
+        try:
+            current[final_key] = new_val
+        except (KeyError, IndexError, TypeError):
+            pass
+
+        if old_val != new_val:
+            diffs.append({"path": path_str, "old": old_val, "new": new_val})
+
+    return diffs
+
+
+def _compile_clone(gs: GameState, entity_type: str, payload: dict) -> tuple[dict, list[str], list[dict[str, Any]]]:
+    """Clone an existing entity and apply patches.
+
+    Returns (new_entity, warnings, diffs).
+    On error, new_entity has "_compile_error" key.
+    """
+    import copy
+
+    source_id = payload.get("sourceId", "")
+    if not source_id:
+        return (
+            {"_compile_error": True, "error": "MISSING_SOURCE", "message": "sourceId is required"},
+            [],
+            [],
+        )
+
+    defs = _get_defs(gs, entity_type)
+    source = defs.get(source_id)
+    if not source:
+        return (
+            {"_compile_error": True, "error": "SOURCE_NOT_FOUND", "message": f"'{source_id}' not found"},
+            [],
+            [],
+        )
+
+    # Deep copy, strip internal keys
+    cloned = copy.deepcopy(source)
+    for k in ("_local_id", "source", "_source"):
+        cloned.pop(k, None)
+
+    # Override id and name
+    new_id = payload.get("id", "")
+    new_name = payload.get("name", "")
+    if new_id:
+        cloned["id"] = new_id
+    if new_name:
+        cloned["name"] = new_name
+
+    # Apply patch
+    patch = payload.get("patch", {})
+    diffs = _apply_patch(cloned, patch) if patch else []
+
+    # Add id/name to diffs if changed
+    if new_id and new_id != source.get("id", ""):
+        diffs.insert(0, {"path": "id", "old": source.get("id", ""), "new": new_id})
+    if new_name and new_name != source.get("name", ""):
+        diffs.insert(
+            1 if diffs else 0,
+            {"path": "name", "old": source.get("name", ""), "new": new_name},
+        )
+
+    warnings: list[str] = []
+    if not diffs:
+        warnings.append("Clone produced no changes from source")
+
+    return cloned, warnings, diffs
+
+
 def _compile_action_payload(entity_type: str, mode: str, payload: dict) -> tuple[dict, list[str]]:
     """Compile template/ir payload into full action/event JSON.
 
@@ -838,17 +944,30 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
     if tool_name == "create_entity":
         payload = arguments.get("payload", {})
         mode = arguments.get("mode", "simple")
+
+        # Clone mode — works for all entity types
+        if mode == "clone":
+            cloned, clone_warns, diffs = _compile_clone(gs, entity_type, payload)
+            if isinstance(cloned, dict) and cloned.get("_compile_error"):
+                return json.dumps(cloned, ensure_ascii=False)
+            payload = cloned
+            arguments["_compile_warnings"] = clone_warns
+            arguments["_clone_diffs"] = diffs
+
         # Compile template/ir modes for action/event
-        if entity_type in ("action", "event") and mode in ("template", "ir"):
+        elif entity_type in ("action", "event") and mode in ("template", "ir"):
             payload, compile_warnings = _compile_action_payload(entity_type, mode, payload)
             if isinstance(payload, dict) and payload.get("_compile_error"):
                 return json.dumps(payload, ensure_ascii=False)
             if compile_warnings:
-                # Attach warnings to result later
                 arguments["_compile_warnings"] = compile_warnings
+
         result = execute_tool_create_entity(gs, entity_type, payload)
         if arguments.get("_compile_warnings"):
             result["compileWarnings"] = arguments["_compile_warnings"]
+        if arguments.get("_clone_diffs"):
+            result["cloneDiffs"] = arguments["_clone_diffs"]
+            result["sourceId"] = arguments.get("payload", {}).get("sourceId", "")
         return json.dumps(result, ensure_ascii=False)
 
     if tool_name == "batch_create":
@@ -957,7 +1076,13 @@ lorebook/worldVariable → trait → item/clothing → character → event → a
 - mode="template": 常见模式（trade/conversation/skill_check），只需关键参数
 - mode="ir": 自定义逻辑，使用简写子句（如 "resource stamina >= 100"）
 - mode="simple": 仅用于非常简单的行动
-详细语法见 get_schema("action") 和 get_schema("event")。"""
+详细语法见 get_schema("action") 和 get_schema("event")。
+
+## Clone 模式
+所有实体类型支持 mode="clone"，基于已有实体创建变体：
+- sourceId: 要克隆的实体完整 ID
+- patch: 路径语法修改字段（如 "costs[0].amount": 20）
+适合创建与已有实体相似的新实体。"""
 
 BUILTIN_CONTEXT_ENTRY_ID = "__assist_context__"
 

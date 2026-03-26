@@ -428,6 +428,14 @@ def _enrich_tool_args(game_state, fn_name: str, fn_args: dict) -> dict:
             else:
                 enriched.append(item)
         return {**fn_args, "updates": enriched}
+    elif fn_name == "create_entity" and fn_args.get("mode") == "clone":
+        from game.ai_assist import _compile_clone
+
+        entity_type = fn_args.get("entityType", "")
+        payload = fn_args.get("payload", {})
+        cloned, _warns, diffs = _compile_clone(game_state, entity_type, payload)
+        if not cloned.get("_compile_error"):
+            return {**fn_args, "payload": cloned, "_cloneDiffs": diffs}
     return fn_args
 
 

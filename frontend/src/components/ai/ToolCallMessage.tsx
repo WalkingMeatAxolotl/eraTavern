@@ -36,6 +36,13 @@ const ENTITY_LABELS: Record<string, string> = {
   worldVariable: "世界变量",
 };
 
+function formatDiffValue(v: unknown): string {
+  if (v === null || v === undefined) return "null";
+  if (typeof v === "string") return v.length > 40 ? v.slice(0, 40) + "..." : v;
+  if (typeof v === "object") return JSON.stringify(v).slice(0, 50);
+  return String(v);
+}
+
 export default function ToolCallMessage({ name, arguments: args, status, result, onConfirm, onReject, disabled }: Props) {
   const entityType = (args.entityType as string) || "";
   const entityLabel = ENTITY_LABELS[entityType] || entityType;
@@ -100,11 +107,17 @@ function SingleEntityToolCall({ name, args, entityLabel, entityType, status, res
   onConfirm?: (overrideArgs?: Record<string, unknown>) => void; onReject?: () => void; disabled?: boolean;
 }) {
     const isUpdate = name === "update_entity";
+    const isClone = (args.mode as string) === "clone";
     const initialEntity = name === "create_entity"
       ? (args.payload as Record<string, unknown>) || {}
       : { id: args.entityId as string, name: (args._displayName as string) || "", ...(args.fields as Record<string, unknown> || {}) };
     const [editedEntity, setEditedEntity] = useState(initialEntity);
     const updateFieldNames = isUpdate ? Object.keys((args.fields as object) || {}) : [];
+
+    // Clone diffs from enriched args (computed at pending time)
+    const cloneDiffs = isClone && Array.isArray(args._cloneDiffs)
+      ? (args._cloneDiffs as Array<{ path: string; old: unknown; new: unknown }>)
+      : [];
 
     // Status indicator
     const statusBadge = () => {
@@ -131,10 +144,26 @@ function SingleEntityToolCall({ name, args, entityLabel, entityType, status, res
 
     return (
       <div className={s.wrap}>
+        {isClone && (
+          <div className={s.autoRowMb}>
+            <span>📋 Clone: {String((args.payload as Record<string, unknown>)?.sourceId || "")}</span>
+          </div>
+        )}
         {isUpdate && (
           <div className={s.autoRowMb}>
             <span>✏️ {t("ai.toolUpdateTarget", { id: String(args.entityId || "") })}: {updateFieldNames.join(", ")}</span>
           </div>
+        )}
+        {cloneDiffs.length > 0 && (
+          <ul className={s.diffList}>
+            {cloneDiffs.map((d, i) => (
+              <li key={i} className={s.diffItem}>
+                <span className={s.diffPath}>{d.path}:</span>
+                <span className={s.diffOld}>{formatDiffValue(d.old)}</span>
+                <span className={s.diffNew}>{formatDiffValue(d.new)}</span>
+              </li>
+            ))}
+          </ul>
         )}
         <EntityCard
           entityType={entityType}

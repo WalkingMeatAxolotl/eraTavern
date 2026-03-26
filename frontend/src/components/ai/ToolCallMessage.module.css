@@ -78,3 +78,35 @@
   margin-top: 10px;
   accent-color: var(--accent);
 }
+
+/* ── Clone diff ── */
+
+.diffList {
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10px;
+  font-family: monospace;
+}
+
+.diffItem {
+  padding: 2px 6px;
+  border-left: 2px solid var(--accent);
+  margin-bottom: 1px;
+  background-color: var(--bg3);
+}
+
+.diffPath {
+  color: var(--text-dim);
+  margin-right: 6px;
+}
+
+.diffOld {
+  color: var(--danger);
+  text-decoration: line-through;
+  margin-right: 4px;
+}
+
+.diffNew {
+  color: var(--success);
+}
