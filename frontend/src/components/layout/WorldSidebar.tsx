@@ -117,6 +117,9 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
 
   const refresh = useCallback(() => {
     fetchWorlds().then(setWorlds);
+  }, []);
+  // Fetch addon names once on mount (for display only)
+  useEffect(() => {
     fetchAddons().then((addons) => {
       const map: Record<string, string> = {};
       for (const a of addons) map[a.id] = a.name;
@@ -124,6 +127,7 @@ export default function WorldSidebar({ currentWorldId, onWorldChanged }: WorldSi
     });
   }, []);
   useEffect(() => {
+    if (!currentWorldId) return;
     refresh();
   }, [currentWorldId, refresh]);
 

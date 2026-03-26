@@ -287,9 +287,13 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
   // Track pending version switch while dep prompt is shown
   const pendingVersionSwitch = useRef<{ addonId: string; newVersion: string } | null>(null);
 
+  const enabledAddonsRef = useRef(enabledAddons);
+  enabledAddonsRef.current = enabledAddons;
+
   const refresh = useCallback(() => {
     fetchAddons().then((addons) => {
-      const enabledMap = new Map(enabledAddons.map((a) => [a.id, a.version]));
+      const cur = enabledAddonsRef.current;
+      const enabledMap = new Map(cur.map((a) => [a.id, a.version]));
       const byId = new Map<string, AddonInfo>();
       for (const addon of addons) {
         const existing = byId.get(addon.id);
@@ -309,7 +313,7 @@ export default function AddonSidebar({ enabledAddons, stagedAddons, onStagedChan
       }
       setAllAddons(Array.from(byId.values()));
     });
-  }, [enabledAddons]);
+  }, []);
 
   useEffect(() => {
     refresh();
