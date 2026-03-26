@@ -469,13 +469,13 @@ def _pre_validate_write(game_state, fn_name: str, fn_args: dict) -> tuple[bool, 
     entity_type = fn_args.get("entityType", "")
 
     if fn_name in ("create_entity", "update_entity"):
-        data = fn_args.get("entity", {}) if fn_name == "create_entity" else fn_args.get("fields", {})
+        data = fn_args.get("payload", {}) if fn_name == "create_entity" else fn_args.get("fields", {})
         if data and entity_type:
             err = _validate_field_values(game_state, entity_type, data)
             if err:
                 return False, json.dumps({"error": "VALIDATION_FAILED", "detail": err}, ensure_ascii=False)
     elif fn_name == "batch_create":
-        entities = fn_args.get("entities", [])
+        entities = fn_args.get("payload", [])
         for i, ent in enumerate(entities):
             err = _validate_field_values(game_state, entity_type, ent)
             if err:

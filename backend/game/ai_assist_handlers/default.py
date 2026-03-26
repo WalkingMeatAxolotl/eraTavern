@@ -6,10 +6,21 @@ worldVariable post-create) within the unified create/update flow.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Optional
 
 from game.character.namespace import namespace_id
 from game.state import GameState
+
+
+def normalize_entity_id(raw: str) -> str:
+    """Normalize an entity ID: lowercase, replace illegal chars, strip edge underscores."""
+    s = raw.strip().lower()
+    s = re.sub(r"[^a-z0-9_]", "_", s)
+    s = re.sub(r"_+", "_", s)
+    s = s.strip("_")
+    return s
+
 
 # ---------------------------------------------------------------------------
 # Entity defaults — ensures editors don't crash on missing fields
@@ -255,10 +266,11 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
         return {"success": False, "error": val_error}
 
     raw_id = entity_data.get("id", "")
-    if "." in raw_id:
-        return {"success": False, "error": "ID must not contain '.': use underscores instead"}
-    if " " in raw_id:
-        return {"success": False, "error": "ID must not contain spaces: use underscores instead"}
+    normalized = normalize_entity_id(raw_id)
+    if not normalized:
+        return {"success": False, "error": "ID is empty or contains only invalid characters"}
+    # Update entity_data with normalized ID
+    entity_data = {**entity_data, "id": normalized}
 
     source = _resolve_source_addon(gs)
     if not source:
@@ -266,21 +278,21 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
 
     # outfitType: stored as list, no namespacing
     if entity_type == "outfitType":
-        if any(t.get("id") == raw_id for t in gs.outfit_types if isinstance(t, dict)):
-            return {"success": False, "error": f"Entity '{raw_id}' already exists"}
+        if any(t.get("id") == normalized for t in gs.outfit_types if isinstance(t, dict)):
+            return {"success": False, "error": f"Entity '{normalized}' already exists"}
         defaults = ENTITY_DEFAULTS.get(entity_type, {})
         entry = {**defaults, **entity_data}
         gs.outfit_types.append(entry)
         gs.dirty = True
         return {"success": True, "entity": _summarize_entity(entity_type, entry)}
 
-    eid = namespace_id(source, raw_id)
+    eid = namespace_id(source, normalized)
     defs = _get_defs(gs, entity_type)
     if eid in defs:
-        return {"success": False, "error": f"Entity '{raw_id}' already exists"}
+        return {"success": False, "error": f"Entity '{normalized}' already exists"}
 
     defaults = ENTITY_DEFAULTS.get(entity_type, {})
-    entry = {**defaults, **entity_data, "id": eid, "_local_id": raw_id, "source": source}
+    entry = {**defaults, **entity_data, "id": eid, "_local_id": normalized, "source": source}
     defs[eid] = entry
 
     # Post-create hooks
@@ -292,7 +304,10 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
             gs.characters[eid] = gs._build_char(eid)
 
     gs.dirty = True
-    return {"success": True, "entity": _summarize_entity(entity_type, entry)}
+    result: dict[str, Any] = {"success": True, "entity": _summarize_entity(entity_type, entry)}
+    if normalized != raw_id:
+        result["normalizedId"] = normalized
+    return result
 
 
 def execute_tool_batch_create(gs: GameState, entity_type: str, entities_data: list[dict]) -> dict[str, Any]:

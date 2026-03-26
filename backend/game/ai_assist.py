@@ -313,12 +313,12 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
                         "enum": WRITABLE_ENTITY_TYPES,
                         "description": "实体类型",
                     },
-                    "entity": {
+                    "payload": {
                         "type": "object",
                         "description": "实体数据（JSON 对象，至少包含 id 和 name）",
                     },
                 },
-                "required": ["entityType", "entity"],
+                "required": ["entityType", "payload"],
             },
         },
     },
@@ -335,13 +335,13 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
                         "enum": WRITABLE_ENTITY_TYPES,
                         "description": "实体类型",
                     },
-                    "entities": {
+                    "payload": {
                         "type": "array",
                         "items": {"type": "object"},
                         "description": "实体数组，每个至少包含 id 和 name",
                     },
                 },
-                "required": ["entityType", "entities"],
+                "required": ["entityType", "payload"],
             },
         },
     },
@@ -689,13 +689,13 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
         return execute_tool_get_entities(gs, entity_type, entity_ids)
 
     if tool_name == "create_entity":
-        entity_data = arguments.get("entity", {})
-        result = execute_tool_create_entity(gs, entity_type, entity_data)
+        payload = arguments.get("payload", {})
+        result = execute_tool_create_entity(gs, entity_type, payload)
         return json.dumps(result, ensure_ascii=False)
 
     if tool_name == "batch_create":
-        entities_data = arguments.get("entities", [])
-        result = execute_tool_batch_create(gs, entity_type, entities_data)
+        payload = arguments.get("payload", [])
+        result = execute_tool_batch_create(gs, entity_type, payload)
         return json.dumps(result, ensure_ascii=False)
 
     if tool_name == "update_entity":

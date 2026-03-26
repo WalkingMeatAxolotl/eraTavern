@@ -96,7 +96,7 @@ function SingleEntityToolCall({ name, args, entityLabel, entityType, status, res
 }) {
     const isUpdate = name === "update_entity";
     const initialEntity = name === "create_entity"
-      ? (args.entity as Record<string, unknown>) || {}
+      ? (args.payload as Record<string, unknown>) || {}
       : { id: args.entityId as string, name: (args._displayName as string) || "", ...(args.fields as Record<string, unknown> || {}) };
     const [editedEntity, setEditedEntity] = useState(initialEntity);
     const updateFieldNames = isUpdate ? Object.keys((args.fields as object) || {}) : [];
@@ -139,7 +139,7 @@ function SingleEntityToolCall({ name, args, entityLabel, entityType, status, res
           onConfirm={() => {
             // Build overrideArgs with edited entity data
             if (name === "create_entity") {
-              onConfirm?.({ ...args, entity: editedEntity });
+              onConfirm?.({ ...args, payload: editedEntity });
             } else {
               const { id: _id, name: _n, _displayName: _d, ...fields } = editedEntity;
               onConfirm?.({ ...args, fields });
@@ -266,7 +266,7 @@ function BatchCreateToolCall({ args, entityLabel, entityType, status, result, on
   status: ToolCallStatus; result?: string;
   onConfirm?: (overrideArgs?: Record<string, unknown>) => void; onReject?: () => void; disabled?: boolean;
 }) {
-    const originalEntities = (args.entities as Record<string, unknown>[]) || [];
+    const originalEntities = (args.payload as Record<string, unknown>[]) || [];
     const [editedEntities, setEditedEntities] = useState<Record<string, unknown>[]>([...originalEntities]);
     const [selected, setSelected] = useState<Set<number>>(() => new Set(originalEntities.map((_, i) => i)));
 
@@ -334,7 +334,7 @@ function BatchCreateToolCall({ args, entityLabel, entityType, status, result, on
             <button
               onClick={() => {
                 const selectedEntities = editedEntities.filter((_, i) => selected.has(i));
-                onConfirm?.({ ...args, entities: selectedEntities });
+                onConfirm?.({ ...args, payload: selectedEntities });
               }}
               disabled={disabled || selected.size === 0}
               className={clsx(s.batchConfirmBtn, (disabled || selected.size === 0) && s.batchConfirmBtnDisabled)}
