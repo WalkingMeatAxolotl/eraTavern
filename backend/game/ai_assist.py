@@ -472,22 +472,30 @@ TOOL_SAFETY: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 
+# Entity type → GameState attribute name
+_ENTITY_TYPE_ATTR: dict[str, str] = {
+    "item": "item_defs",
+    "trait": "trait_defs",
+    "clothing": "clothing_defs",
+    "traitGroup": "trait_groups",
+    "variable": "variable_defs",
+    "lorebook": "lorebook_defs",
+    "worldVariable": "world_variable_defs",
+    "character": "character_data",
+    "action": "action_defs",
+    "event": "event_defs",
+}
+
+
 def _get_defs(gs: GameState, entity_type: str) -> dict[str, dict]:
-    """Get the definitions dict for an entity type from GameState."""
-    mapping = {
-        "item": gs.item_defs,
-        "trait": gs.trait_defs,
-        "clothing": gs.clothing_defs,
-        "traitGroup": gs.trait_groups,
-        "variable": gs.variable_defs,
-        "outfitType": {t["id"]: t for t in gs.outfit_types if isinstance(t, dict)},
-        "lorebook": gs.lorebook_defs,
-        "worldVariable": gs.world_variable_defs,
-        "character": gs.character_data,
-        "action": gs.action_defs,
-        "event": gs.event_defs,
-    }
-    return mapping.get(entity_type, {})
+    """Get merged (active + staged) definitions for an entity type."""
+    if entity_type == "outfitType":
+        merged_list = gs.staging.merged_list("outfit_types", gs.outfit_types)
+        return {t["id"]: t for t in merged_list if isinstance(t, dict)}
+    attr = _ENTITY_TYPE_ATTR.get(entity_type)
+    if not attr:
+        return {}
+    return gs.staging.merged_defs(attr, getattr(gs, attr))
 
 
 def _summarize_entity(entity_type: str, entity: dict) -> dict[str, Any]:
@@ -730,7 +738,11 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
 
 
 def _build_action_ref_info(gs: GameState, template: dict) -> str:
-    """Build reference info section for action/event get_schema."""
+    """Build reference info section for action/event get_schema.
+
+    Uses merged (active + staged) data so AI can reference staged entities.
+    """
+    s = gs.staging
     parts: list[str] = []
 
     # Resources
@@ -749,13 +761,14 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
                      "**注意**：金钱（money）是 basicInfo，不是 resource")
 
     # Abilities
-    if gs.trait_defs:
-        ability_ids = sorted(tid for tid, t in gs.trait_defs.items() if t.get("category") == "ability")
+    trait_defs = s.merged_defs("trait_defs", gs.trait_defs)
+    if trait_defs:
+        ability_ids = sorted(tid for tid, t in trait_defs.items() if t.get("category") == "ability")
         if ability_ids:
             parts.append(f"\n## 可用 ability key（能力经验值）\n\n{', '.join(f'`{a}`' for a in ability_ids)}")
 
         # Experiences
-        exp_ids = sorted(tid for tid, t in gs.trait_defs.items() if t.get("category") == "experience")
+        exp_ids = sorted(tid for tid, t in trait_defs.items() if t.get("category") == "experience")
         if exp_ids:
             parts.append(f"\n## 可用 experience key（历史经历计数）\n\n{', '.join(f'`{e}`' for e in exp_ids)}")
         else:
@@ -763,15 +776,17 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
                          "不要在效果中使用不存在的 experience key")
 
     # Items
-    if gs.item_defs:
-        item_ids = sorted(gs.item_defs.keys())[:30]
+    item_defs = s.merged_defs("item_defs", gs.item_defs)
+    if item_defs:
+        item_ids = sorted(item_defs.keys())[:30]
         parts.append(f"\n## 已有物品 ID\n\n{', '.join(item_ids)}")
 
     # Maps with cell info
-    if gs.maps:
+    maps = s.merged_defs("maps", gs.maps)
+    if maps:
         map_lines: list[str] = []
-        for mid in sorted(gs.maps.keys()):
-            m = gs.maps[mid]
+        for mid in sorted(maps.keys()):
+            m = maps[mid]
             cells = m.get("cells", [])
             cell_parts = []
             for c in cells:
@@ -786,14 +801,16 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
         parts.append("\n## 已有地图\n\n" + "\n".join(map_lines))
 
     # NPCs
-    if gs.character_data:
-        npc_ids = sorted(cid for cid, c in gs.character_data.items() if not c.get("isPlayer"))[:20]
+    char_data = s.merged_defs("character_data", gs.character_data)
+    if char_data:
+        npc_ids = sorted(cid for cid, c in char_data.items() if not c.get("isPlayer"))[:20]
         if npc_ids:
             parts.append(f"\n## 已有 NPC ID\n\n{', '.join(npc_ids)}")
 
     # World variables
-    if gs.world_variable_defs:
-        wvar_ids = sorted(gs.world_variable_defs.keys())
+    wvar_defs = s.merged_defs("world_variable_defs", gs.world_variable_defs)
+    if wvar_defs:
+        wvar_ids = sorted(wvar_defs.keys())
         parts.append(f"\n## 已有世界变量 ID\n\n{', '.join(wvar_ids)}")
 
     # Trait categories

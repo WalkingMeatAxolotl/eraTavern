@@ -201,6 +201,16 @@ async def save_session(body: dict = Body({})):
     return _resp(True, "SESSION_SAVED")
 
 
+@router.post("/api/session/discard")
+async def discard_changes():
+    """Discard all staged edits without affecting the active game state."""
+    if not _h.game_state.world_id:
+        return _resp(False, "NO_WORLD_LOADED")
+    _h.game_state.discard_changes()
+    await _h.manager.broadcast("dirty_update", {"dirty": False})
+    return _resp(True, "CHANGES_DISCARDED")
+
+
 @router.post("/api/session/save-as")
 async def save_session_as(body: dict = Body(...)):
     """Create a new world from current in-memory state, fork addons, and save."""

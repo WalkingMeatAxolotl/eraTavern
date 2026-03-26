@@ -100,7 +100,7 @@ class TestActionCRUD:
             },
         )
         assert r.status_code == 200
-        assert "test-a.swim" in gs.action_defs
+        assert "test-a.swim" in gs.staging.merged_defs("action_defs", gs.action_defs)
 
     def test_update_action(self, api_client):
         client, gs = api_client
@@ -120,10 +120,10 @@ class TestActionCRUD:
             },
         )
         assert r.status_code == 200
-        assert gs.action_defs["test-a.rest"]["name"] == "深度休息"
+        assert gs.staging.merged_defs("action_defs", gs.action_defs)["test-a.rest"]["name"] == "深度休息"
 
     def test_delete_action(self, api_client):
         client, gs = api_client
         r = client.delete("/api/game/actions/test-a.rest")
         assert r.status_code == 200
-        assert "test-a.rest" not in gs.action_defs
+        assert "test-a.rest" not in gs.staging.merged_defs("action_defs", gs.action_defs)

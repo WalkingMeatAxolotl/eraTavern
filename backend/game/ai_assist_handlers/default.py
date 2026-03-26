@@ -93,22 +93,30 @@ _REF_RULES: list[tuple[str, str, Any]] = [
 
 
 def _resolve_valid_values(gs: GameState, resolver: str) -> set[str]:
-    """Resolve a set of valid values from game state using a resolver string."""
+    """Resolve a set of valid values from game state using a resolver string.
+
+    Uses merged (active + staged) data so validation accepts staged entities.
+    """
     if resolver.startswith("static:"):
         return set(resolver[7:].split(","))
 
+    s = gs.staging
     template = getattr(gs, "template", {})
 
     if resolver == "variable_defs":
-        return set(gs.variable_defs.keys()) if gs.variable_defs else set()
+        merged = s.merged_defs("variable_defs", gs.variable_defs)
+        return set(merged.keys()) if merged else set()
     if resolver == "trait_defs":
-        return set(gs.trait_defs.keys()) if gs.trait_defs else set()
+        merged = s.merged_defs("trait_defs", gs.trait_defs)
+        return set(merged.keys()) if merged else set()
     if resolver == "effect_targets":
         targets: set[str] = set()
-        if gs.variable_defs:
-            targets.update(gs.variable_defs.keys())
-        if gs.trait_defs:
-            targets.update(tid for tid, t in gs.trait_defs.items() if t.get("category") == "ability")
+        var_defs = s.merged_defs("variable_defs", gs.variable_defs)
+        if var_defs:
+            targets.update(var_defs.keys())
+        trait_defs = s.merged_defs("trait_defs", gs.trait_defs)
+        if trait_defs:
+            targets.update(tid for tid, t in trait_defs.items() if t.get("category") == "ability")
         for field in template.get("resources", []):
             if field.get("key"):
                 targets.add(field["key"])
@@ -313,34 +321,38 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
     if not source:
         return {"success": False, "error": "No addon available for creating entities"}
 
+    from game.ai_assist import _ENTITY_TYPE_ATTR
+
     # outfitType: stored as list, no namespacing
     if entity_type == "outfitType":
-        if any(t.get("id") == normalized for t in gs.outfit_types if isinstance(t, dict)):
+        merged_list = gs.staging.merged_list("outfit_types", gs.outfit_types)
+        if any(t.get("id") == normalized for t in merged_list if isinstance(t, dict)):
             return {"success": False, "error": f"Entity '{normalized}' already exists"}
         defaults = ENTITY_DEFAULTS.get(entity_type, {})
         entry = {**defaults, **entity_data}
-        gs.outfit_types.append(entry)
+        updated = list(merged_list) + [entry]
+        gs.staging.set_list("outfit_types", updated)
         gs.dirty = True
         return {"success": True, "entity": _summarize_entity(entity_type, entry)}
 
     eid = namespace_id(source, normalized)
-    defs = _get_defs(gs, entity_type)
+    defs = _get_defs(gs, entity_type)  # merged view
     if eid in defs:
         return {"success": False, "error": f"Entity '{normalized}' already exists"}
 
+    attr = _ENTITY_TYPE_ATTR.get(entity_type)
+    if not attr:
+        return {"success": False, "error": f"Unknown entity type: {entity_type}"}
+
     defaults = ENTITY_DEFAULTS.get(entity_type, {})
     entry = {**defaults, **entity_data, "id": eid, "_local_id": normalized, "source": source}
-    defs[eid] = entry
 
-    # Post-create hooks
-    if entity_type == "worldVariable":
-        gs.world_variables[eid] = entry.get("default", 0)
-    elif entity_type == "character":
+    # Character-specific pre-processing (namespace refs, init fields)
+    if entity_type == "character":
         _namespace_character_refs(gs, entry)
         _init_character_entry(gs, entry)
-        if entry.get("active", True) is not False:
-            gs.characters[eid] = gs._build_char(eid)
 
+    gs.staging.put(attr, eid, entry)
     gs.dirty = True
     result: dict[str, Any] = {"success": True, "entity": _summarize_entity(entity_type, entry)}
     if normalized != raw_id:
@@ -363,8 +375,8 @@ def execute_tool_batch_create(gs: GameState, entity_type: str, entities_data: li
 
 
 def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, fields: dict) -> dict[str, Any]:
-    """Validate and update fields on an existing entity."""
-    from game.ai_assist import _get_defs, _summarize_entity
+    """Validate and update fields on an existing entity → staging."""
+    from game.ai_assist import _ENTITY_TYPE_ATTR, _get_defs, _summarize_entity
 
     # outfitType: find in list by id
     if entity_type == "outfitType":
@@ -372,16 +384,24 @@ def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, 
         val_error = _validate_field_values(gs, entity_type, fields)
         if val_error:
             return {"success": False, "error": val_error}
-        for t in gs.outfit_types:
+        merged_list = gs.staging.merged_list("outfit_types", gs.outfit_types)
+        for i, t in enumerate(merged_list):
             if isinstance(t, dict) and t.get("id") == entity_id:
-                t.update(fields)
+                updated_entry = {**t, **fields}
+                updated_list = list(merged_list)
+                updated_list[i] = updated_entry
+                gs.staging.set_list("outfit_types", updated_list)
                 gs.dirty = True
-                return {"success": True, "entity": _summarize_entity(entity_type, t)}
+                return {"success": True, "entity": _summarize_entity(entity_type, updated_entry)}
         return {"success": False, "error": f"Entity '{entity_id}' not found"}
 
-    defs = _get_defs(gs, entity_type)
+    defs = _get_defs(gs, entity_type)  # merged view
     if entity_id not in defs:
         return {"success": False, "error": f"Entity '{entity_id}' not found"}
+
+    attr = _ENTITY_TYPE_ATTR.get(entity_type)
+    if not attr:
+        return {"success": False, "error": f"Unknown entity type: {entity_type}"}
 
     fields.pop("id", None)
     fields.pop("_local_id", None)
@@ -391,22 +411,17 @@ def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, 
     if val_error:
         return {"success": False, "error": val_error}
 
-    existing = defs[entity_id]
+    # Merge fields into a copy of existing (don't mutate active data)
+    updated = {**defs[entity_id]}
     if entity_type == "character" and "name" in fields:
-        bi = existing.get("basicInfo", {})
+        bi = {**updated.get("basicInfo", {})}
         bi["name"] = fields["name"]
-        existing["basicInfo"] = bi
-    existing.update(fields)
+        updated["basicInfo"] = bi
+    updated.update(fields)
 
-    # Post-update hooks
-    if entity_type == "character":
-        if existing.get("active", True) is not False:
-            gs.characters[entity_id] = gs._build_char(entity_id)
-        elif entity_id in gs.characters:
-            del gs.characters[entity_id]
-
+    gs.staging.put(attr, entity_id, updated)
     gs.dirty = True
-    return {"success": True, "entity": _summarize_entity(entity_type, existing)}
+    return {"success": True, "entity": _summarize_entity(entity_type, updated)}
 
 
 def execute_tool_batch_update(gs: GameState, entity_type: str, updates: list[dict]) -> dict[str, Any]:

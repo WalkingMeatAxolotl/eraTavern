@@ -128,6 +128,11 @@ class GameState:
         self.no_location_actions: list[dict] = []
         self.time = GameTime()
 
+        # Staging layer for uncommitted editor edits
+        from .staging import StagingLayer
+
+        self.staging = StagingLayer()
+
     # Log retention limits (in game days)
     NPC_LOG_CACHE_DAYS = 60  # runtime buffer
     NPC_LOG_SAVE_DAYS = 30  # persisted to save file
@@ -344,6 +349,7 @@ class GameState:
         self._init_world_variables()
         self.event_state = {}
         self.dirty = False
+        self.staging.clear()
 
     def _persist_entity_files(self) -> None:
         """Write all entities to their respective addon directories (by source)."""
@@ -706,22 +712,46 @@ class GameState:
         self._rebuild_characters(snapshot)
 
     def save_all(self, new_addon_refs: Optional[list[dict[str, str]]] = None) -> None:
-        """Rebuild + persist all entity files to their addon dirs + update world.json + clear dirty."""
-        self.rebuild(new_addon_refs)
+        """Apply staged edits + persist to disk + reload.
+
+        Flow: snapshot runtime → merge staging → persist → load_world → restore runtime.
+        This method is fully synchronous (no await) to ensure atomicity.
+        """
+        # 1. Snapshot current runtime game state (reuse save-slot system)
+        runtime_snapshot = self.snapshot_save_data()
+        saved_llm_preset = self.llm_preset
+
+        # 2. Merge staging into active dicts (for disk write)
+        self.staging.persist_over(self)
+
+        # 3. Handle addon list changes
+        if new_addon_refs is not None:
+            self.addon_refs = new_addon_refs
+
+        # 4. Persist to disk
         self._persist_entity_files()
-        # Restore namespaces stripped by _persist_entity_files (shallow copy issue)
-        self._resolve_namespaces()
         self._update_addon_dependencies()
 
-        # Persist world config
         if self.world_id:
             world_config = load_world_config(self.world_id)
             world_config["addons"] = self.addon_refs
-            world_config.pop("writeTarget", None)  # remove legacy field
-            # Save playerCharacter as local ID in config
+            world_config.pop("writeTarget", None)
             world_config["playerCharacter"] = to_local_id(self.player_character)
             save_world_config(self.world_id, world_config)
 
+        # 5. Full reload from disk (resets everything to definition/initial values)
+        self.load_world(self.world_id)
+
+        # 6. Restore runtime game state (positions, resources, favorability, etc.)
+        self.restore_save_data(runtime_snapshot)
+        self.llm_preset = saved_llm_preset
+
+        # 7. staging.clear() already called inside load_world()
+        self.dirty = False
+
+    def discard_changes(self) -> None:
+        """Discard all staged edits without affecting the active game state."""
+        self.staging.clear()
         self.dirty = False
 
     # Legacy aliases
@@ -838,10 +868,22 @@ class GameState:
                 state["portrait"] = portrait
         return state
 
-    def get_definitions(self) -> dict[str, Any]:
-        """Get template, clothing defs, trait defs, and map summaries for the editor."""
+    def get_definitions(self, merged: bool = False) -> dict[str, Any]:
+        """Get template, clothing defs, trait defs, and map summaries for the editor.
+
+        When merged=True, returns active + staged data (for editor dropdowns).
+        """
+        s = self.staging
+
+        def _defs(attr: str) -> dict:
+            return s.merged_defs(attr, getattr(self, attr)) if merged else getattr(self, attr)
+
+        def _lst(attr: str) -> Any:
+            return s.merged_list(attr, getattr(self, attr)) if merged else getattr(self, attr)
+
+        maps_data = _defs("maps")
         maps_summary: dict[str, Any] = {}
-        for map_id, map_data in self.maps.items():
+        for map_id, map_data in maps_data.items():
             cells = []
             for cell in map_data.get("cells", []):
                 cells.append({"id": cell["id"], "name": cell.get("name"), "tags": cell.get("tags", [])})
@@ -851,32 +893,32 @@ class GameState:
                 "cells": cells,
             }
 
-        # Build NPC list for editors
+        char_data_src = _defs("character_data")
         characters_summary: dict[str, Any] = {}
-        for char_id, char_data in self.character_data.items():
+        for char_id, char_data in char_data_src.items():
             characters_summary[char_id] = {
                 "id": char_id,
                 "name": char_data.get("name", char_id),
                 "isPlayer": char_data.get("isPlayer", False),
             }
 
-        # Inject abilities/experiences derived from trait categories into template
+        trait_defs_src = _defs("trait_defs")
         template_ext = {**self.template}
-        template_ext["abilities"] = get_ability_defs(self.trait_defs)
-        template_ext["experiences"] = get_experience_defs(self.trait_defs)
+        template_ext["abilities"] = get_ability_defs(trait_defs_src)
+        template_ext["experiences"] = get_experience_defs(trait_defs_src)
 
         return {
             "template": template_ext,
-            "clothingDefs": self.clothing_defs,
-            "outfitTypes": self.outfit_types,
-            "itemDefs": self.item_defs,
-            "traitDefs": self.trait_defs,
-            "traitGroups": self.trait_groups,
-            "actionDefs": self.action_defs,
-            "variableDefs": self.variable_defs,
-            "eventDefs": self.event_defs,
-            "lorebookDefs": self.lorebook_defs,
-            "worldVariableDefs": self.world_variable_defs,
+            "clothingDefs": _defs("clothing_defs"),
+            "outfitTypes": _lst("outfit_types"),
+            "itemDefs": _defs("item_defs"),
+            "traitDefs": trait_defs_src,
+            "traitGroups": _defs("trait_groups"),
+            "actionDefs": _defs("action_defs"),
+            "variableDefs": _defs("variable_defs"),
+            "eventDefs": _defs("event_defs"),
+            "lorebookDefs": _defs("lorebook_defs"),
+            "worldVariableDefs": _defs("world_variable_defs"),
             "maps": maps_summary,
             "characters": characters_summary,
         }

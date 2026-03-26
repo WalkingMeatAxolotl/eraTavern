@@ -27,6 +27,8 @@ class AiMockGameState:
     """Minimal mock GameState for AI assist tests."""
 
     def __init__(self):
+        from game.staging import StagingLayer
+
         self.trait_defs: dict = {}
         self.item_defs: dict = {}
         self.clothing_defs: dict = {}
@@ -41,6 +43,8 @@ class AiMockGameState:
         self.character_data: dict = {}
         self.template: dict = {}
         self.addon_refs = [{"id": "Test"}]
+        self.staging = StagingLayer()
+        self.dirty = False
 
 
 @pytest.fixture

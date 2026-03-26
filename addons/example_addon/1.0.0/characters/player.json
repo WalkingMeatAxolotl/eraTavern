@@ -72,7 +72,7 @@
       "value": 2000
     },
     "stamina": {
-      "max": 24800,
+      "max": 25200,
       "value": 2900
     }
   },
@@ -94,9 +94,9 @@
     "Base.stealth": 2000,
     "Base.strength": 2000,
     "Base.willpower": 2000,
-    "power": 3800,
-    "speed": 9890,
-    "wisdom": 2780
+    "power": 4400,
+    "speed": 11490,
+    "wisdom": 5380
   },
   "position": {
     "cellId": 2,

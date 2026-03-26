@@ -11,6 +11,7 @@ import {
   performAction,
   restartGame,
   connectSSE,
+  discardChanges,
 } from "./api/client";
 import type { AppConfig } from "./api/client";
 import LocationHeader from "./components/map/LocationHeader";
@@ -690,7 +691,10 @@ export default function App() {
         stagedAddons={stagedAddons}
         worldId={currentWorldId}
         onApplied={handleWorldChanged}
-        onRevert={() => setStagedAddons(currentAddons)}
+        onRevert={async () => {
+          await discardChanges();
+          setStagedAddons(currentAddons);
+        }}
       />
     </div>
   );

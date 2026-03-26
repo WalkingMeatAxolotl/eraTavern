@@ -163,6 +163,11 @@ export async function saveSession(
   return handleResponse(res);
 }
 
+export async function discardChanges(): Promise<{ success: boolean; message: string }> {
+  const res = await fetch("/api/session/discard", { method: "POST" });
+  return handleResponse(res);
+}
+
 export async function saveSessionAs(id: string, name: string): Promise<{ success: boolean; message: string }> {
   const res = await fetch("/api/session/save-as", {
     method: "POST",

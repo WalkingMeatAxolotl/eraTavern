@@ -10,7 +10,7 @@ interface FloatingActionsProps {
   stagedAddons: { id: string; version: string }[];
   worldId: string;
   onApplied: () => void;
-  onRevert: () => void;
+  onRevert: () => void | Promise<void>;
 }
 
 export default function FloatingActions({
@@ -47,7 +47,16 @@ export default function FloatingActions({
     <div className={s.bar}>
       <span className={s.hint}>{t("ui.unsavedChanges")}</span>
       <button
-        onClick={onRevert}
+        onClick={async () => {
+          if (busy) return;
+          if (!confirm(t("ui.confirmDiscard"))) return;
+          setBusy(true);
+          try {
+            await onRevert();
+          } finally {
+            setBusy(false);
+          }
+        }}
         disabled={busy}
         className={clsx(s.actionBtn, s.revertBtn, busy && s.actionBtnDisabled)}
         title={t("ui.discardTip")}

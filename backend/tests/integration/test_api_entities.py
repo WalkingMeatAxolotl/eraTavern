@@ -1,4 +1,7 @@
-"""API tests: character, trait, item, clothing, map CRUD endpoints."""
+"""API tests: character, trait, item, clothing, map CRUD endpoints.
+
+All CRUD writes go to staging; these tests verify merged (active + staged) views.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +9,11 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
+def _merged(gs, attr: str) -> dict:
+    """Return merged (active + staged) defs for an entity type."""
+    return gs.staging.merged_defs(attr, getattr(gs, attr))
 
 
 class TestCharacterCRUD:
@@ -36,35 +44,35 @@ class TestCharacterCRUD:
             },
         )
         assert r.status_code == 200
-        assert "test-a.npc3" in gs.character_data
+        assert "test-a.npc3" in _merged(gs, "character_data")
 
     def test_update_character(self, api_client):
         client, gs = api_client
         char_id = "test-a.npc1"
         current = gs.character_data[char_id].copy()
-        current["basicInfo"]["name"] = "改名女仆"
+        current["basicInfo"] = {**current.get("basicInfo", {}), "name": "改名女仆"}
         r = client.put(f"/api/game/characters/config/{char_id}", json=current)
         assert r.status_code == 200
-        assert gs.character_data[char_id]["basicInfo"]["name"] == "改名女仆"
+        assert _merged(gs, "character_data")[char_id]["basicInfo"]["name"] == "改名女仆"
 
     def test_delete_character(self, api_client):
         client, gs = api_client
         r = client.delete("/api/game/characters/config/test-a.npc1")
         assert r.status_code == 200
-        assert "test-a.npc1" not in gs.character_data
+        assert "test-a.npc1" not in _merged(gs, "character_data")
 
     def test_patch_character_active(self, api_client):
         client, gs = api_client
         r = client.patch("/api/game/characters/config/test-a.npc1", json={"active": False})
         assert r.status_code == 200
-        assert gs.character_data["test-a.npc1"]["active"] is False
+        assert _merged(gs, "character_data")["test-a.npc1"]["active"] is False
 
     def test_cannot_freeze_player(self, api_client):
         client, gs = api_client
         r = client.patch(f"/api/game/characters/config/{gs.player_character}", json={"active": False})
         assert r.status_code == 200
         # Player should still be active
-        assert gs.character_data[gs.player_character].get("active", True) is True
+        assert _merged(gs, "character_data")[gs.player_character].get("active", True) is True
 
     def test_create_character_rejects_dot_in_local_id(self, api_client):
         """ID with dot in local part should be rejected."""
@@ -101,7 +109,7 @@ class TestTraitCRUD:
             },
         )
         assert r.status_code == 200
-        assert "test-a.brave" in gs.trait_defs
+        assert "test-a.brave" in _merged(gs, "trait_defs")
 
     def test_update_trait(self, api_client):
         client, gs = api_client
@@ -115,13 +123,13 @@ class TestTraitCRUD:
             },
         )
         assert r.status_code == 200
-        assert gs.trait_defs["test-a.human"]["name"] == "人类（改）"
+        assert _merged(gs, "trait_defs")["test-a.human"]["name"] == "人类（改）"
 
     def test_delete_trait(self, api_client):
         client, gs = api_client
         r = client.delete("/api/game/traits/test-a.stealth")
         assert r.status_code == 200
-        assert "test-a.stealth" not in gs.trait_defs
+        assert "test-a.stealth" not in _merged(gs, "trait_defs")
 
 
 class TestItemCRUD:
@@ -144,13 +152,13 @@ class TestItemCRUD:
             },
         )
         assert r.status_code == 200
-        assert "test-a.sword" in gs.item_defs
+        assert "test-a.sword" in _merged(gs, "item_defs")
 
     def test_delete_item(self, api_client):
         client, gs = api_client
         r = client.delete("/api/game/items/test-a.key")
         assert r.status_code == 200
-        assert "test-a.key" not in gs.item_defs
+        assert "test-a.key" not in _merged(gs, "item_defs")
 
 
 class TestClothingCRUD:
@@ -173,13 +181,13 @@ class TestClothingCRUD:
             },
         )
         assert r.status_code == 200
-        assert "test-a.hat" in gs.clothing_defs
+        assert "test-a.hat" in _merged(gs, "clothing_defs")
 
     def test_delete_clothing(self, api_client):
         client, gs = api_client
         r = client.delete("/api/game/clothing/test-a.shirt")
         assert r.status_code == 200
-        assert "test-a.shirt" not in gs.clothing_defs
+        assert "test-a.shirt" not in _merged(gs, "clothing_defs")
 
 
 class TestMapCRUD:
@@ -209,10 +217,10 @@ class TestMapCRUD:
             },
         )
         assert r.status_code == 200
-        assert "test-a.forest" in gs.maps
+        assert "test-a.forest" in _merged(gs, "maps")
 
     def test_delete_map(self, api_client):
         client, gs = api_client
         r = client.delete("/api/game/maps/test-a.tavern")
         assert r.status_code == 200
-        assert "test-a.tavern" not in gs.maps
+        assert "test-a.tavern" not in _merged(gs, "maps")

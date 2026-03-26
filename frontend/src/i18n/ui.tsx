@@ -519,6 +519,7 @@ export const UI: Record<string, string> = {
   "ui.other": "其他",
   "ui.unsavedChanges": "有未保存的配置改动",
   "ui.discardTip": "放弃所有未保存的修改，恢复到上次保存的状态",
+  "ui.confirmDiscard": "确认撤销所有未保存的修改？",
   "ui.saveTip": "保存修改到扩展文件并应用到当前游戏",
   "ui.toggleFixedVar": "切换固定值/变量引用",
   "ui.excludeSelf": "排除执行者",

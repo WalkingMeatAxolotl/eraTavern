@@ -25,6 +25,23 @@ def _get_defs(attr: str) -> dict:
     return getattr(_h.game_state, attr)
 
 
+def _get_merged(attr: str) -> dict:
+    """Return merged (active + staged) defs for an entity type."""
+    return _h.game_state.staging.merged_defs(attr, _get_defs(attr))
+
+
+def _get_entity(attr: str, entity_id: str) -> Optional[dict]:
+    """Lookup a single entity from staging+active. Returns None if not found or deleted."""
+    from game.staging import _DELETED
+
+    staged = _h.game_state.staging.get(attr, entity_id)
+    if staged is _DELETED:
+        return None
+    if staged is not None:
+        return staged
+    return _get_defs(attr).get(entity_id)
+
+
 def _register_crud(
     entity_name: str,
     defs_attr: str,
@@ -34,13 +51,16 @@ def _register_crud(
     on_delete: Optional[Callable[[str], Any]] = None,
     list_transform: Optional[Callable[[dict], dict]] = None,
 ) -> None:
-    """Register standard List / Create / Update / Delete routes for an entity type."""
+    """Register standard List / Create / Update / Delete routes for an entity type.
+
+    All writes go to the staging layer; reads return merged (active + staged) data.
+    """
 
     # --- LIST ---
     @router.get(url_prefix)
     async def list_entities(_defs_attr=defs_attr, _list_key=list_key, _transform=list_transform):
-        defs = _get_defs(_defs_attr)
-        items = [_transform(d) if _transform else d for d in defs.values()]
+        merged = _get_merged(_defs_attr)
+        items = [_transform(d) if _transform else d for d in merged.values()]
         return {_list_key: items}
 
     list_entities.__name__ = f"list_{entity_name}"
@@ -55,14 +75,14 @@ def _register_crud(
         eid = _ensure_ns(raw_id, source)
         if not eid:
             return _resp(False, "ENTITY_MISSING_ID", {"entity": _name})
-        defs = _get_defs(_defs_attr)
-        if eid in defs:
+        # Check merged (active + staged) for duplicates
+        if _get_entity(_defs_attr, eid) is not None:
             return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": _name, "id": eid})
         entry = {k: v for k, v in body.items() if k != "source"}
         entry["id"] = eid
         entry["_local_id"] = to_local_id(eid)
         entry["source"] = source
-        defs[eid] = entry
+        _h.game_state.staging.put(_defs_attr, eid, entry)
         if _on_create:
             _on_create(eid, entry)
         await _mark_dirty()
@@ -74,8 +94,7 @@ def _register_crud(
     @router.put(url_prefix + "/{entity_id:path}")
     async def update_entity(entity_id: str, body: dict = Body(...), _name=entity_name, _defs_attr=defs_attr):
         entity_id = _ensure_ns(entity_id)
-        defs = _get_defs(_defs_attr)
-        existing = defs.get(entity_id)
+        existing = _get_entity(_defs_attr, entity_id)
         if not existing:
             return _resp(False, "ENTITY_NOT_FOUND", {"entity": _name, "id": entity_id})
         source = existing.get("source", "")
@@ -83,7 +102,7 @@ def _register_crud(
         entry["id"] = entity_id
         entry["_local_id"] = to_local_id(entity_id)
         entry["source"] = source
-        defs[entity_id] = entry
+        _h.game_state.staging.put(_defs_attr, entity_id, entry)
         await _mark_dirty()
         return _resp(True, "ENTITY_UPDATED", {"entity": _name})
 
@@ -93,10 +112,9 @@ def _register_crud(
     @router.delete(url_prefix + "/{entity_id:path}")
     async def delete_entity(entity_id: str, _name=entity_name, _defs_attr=defs_attr, _on_delete=on_delete):
         entity_id = _ensure_ns(entity_id)
-        defs = _get_defs(_defs_attr)
-        if entity_id not in defs:
+        if _get_entity(_defs_attr, entity_id) is None:
             return _resp(False, "ENTITY_NOT_FOUND", {"entity": _name, "id": entity_id})
-        del defs[entity_id]
+        _h.game_state.staging.delete(_defs_attr, entity_id)
         if _on_delete:
             _on_delete(entity_id)
         await _mark_dirty()
@@ -111,22 +129,29 @@ def _register_crud(
 
 
 def _on_delete_trait(trait_id: str) -> None:
-    for group in _h.game_state.trait_groups.values():
+    """Remove trait from trait_groups. Operates on staging to avoid touching active data."""
+    staging = _h.game_state.staging
+    merged_groups = _get_merged("trait_groups")
+    for gid, group in merged_groups.items():
         traits_list = group.get("traits", [])
         if trait_id in traits_list:
-            group["traits"] = [t for t in traits_list if t != trait_id]
+            updated = {**group, "traits": [t for t in traits_list if t != trait_id]}
+            staging.put("trait_groups", gid, updated)
 
 
-def _on_delete_event(event_id: str) -> None:
-    _h.game_state.event_state.pop(event_id, None)
+def _on_delete_event(_event_id: str) -> None:
+    """No-op under staging. event_state is runtime data; load_world resets it."""
+    pass
 
 
-def _on_create_world_variable(var_id: str, entry: dict) -> None:
-    _h.game_state.world_variables[var_id] = entry.get("default", 0)
+def _on_create_world_variable(_var_id: str, _entry: dict) -> None:
+    """No-op under staging. world_variables initialized by load_world._init_world_variables."""
+    pass
 
 
-def _on_delete_world_variable(var_id: str) -> None:
-    _h.game_state.world_variables.pop(var_id, None)
+def _on_delete_world_variable(_var_id: str) -> None:
+    """No-op under staging. Variable removed from defs; load_world won't init it."""
+    pass
 
 
 def _item_list_transform(d: dict) -> dict:
@@ -227,23 +252,22 @@ async def clone_entity(body: dict = Body(...)):
     new_id = namespace_id(target_addon, new_local_id)
     gs = _h.game_state
 
-    # ── Map (special: compile_grid + distance_matrix) ──
+    # ── Map → staging (no distance_matrix rebuild) ──
     if entity_type == "maps":
-        src = gs.maps.get(source_id)
+        src = _get_entity("maps", source_id)
         if not src:
             return _resp(False, "ENTITY_NOT_FOUND", {"entity": "map", "id": source_id})
-        if new_id in gs.maps:
+        if _get_entity("maps", new_id) is not None:
             return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": "map", "id": new_id})
         clone = copy.deepcopy(src)
         clone["id"] = new_id
         clone["_local_id"] = new_local_id
         clone["_source"] = target_addon
-        from game.map_engine import build_distance_matrix, compile_grid
+        from game.map_engine import compile_grid
 
         clone["compiled_grid"] = compile_grid(clone)
         clone["cell_index"] = {c["id"]: c for c in clone.get("cells", [])}
-        gs.maps[new_id] = clone
-        gs.distance_matrix = build_distance_matrix(gs.maps)
+        gs.staging.put("maps", new_id, clone)
         # Copy background images across addons
         source_addon = src.get("_source", "")
         bg_files = [f for f in [clone.get("backgroundImage")] if f]
@@ -252,44 +276,42 @@ async def clone_entity(body: dict = Body(...)):
         await _mark_dirty()
         return _resp(True, "ENTITY_CLONED", {"entity": "map", "id": new_id})
 
-    # ── Character (special: _build_char) ──
+    # ── Character → staging (no _build_char) ──
     if entity_type == "characters":
-        src = gs.character_data.get(source_id)
+        src = _get_entity("character_data", source_id)
         if not src:
             return _resp(False, "ENTITY_NOT_FOUND", {"entity": "character", "id": source_id})
-        if new_id in gs.character_data:
+        if _get_entity("character_data", new_id) is not None:
             return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": "character", "id": new_id})
         clone = copy.deepcopy(src)
         clone["id"] = new_id
         clone["_local_id"] = new_local_id
         clone["_source"] = target_addon
         clone["isPlayer"] = False
-        gs.character_data[new_id] = clone
-        gs.characters[new_id] = gs._build_char(new_id)
+        gs.staging.put("character_data", new_id, clone)
         # Copy portrait across addons
         source_addon = src.get("_source", "")
         _copy_assets(source_addon, target_addon, "characters", [clone.get("portrait", "")])
         await _mark_dirty()
         return _resp(True, "ENTITY_CLONED", {"entity": "character", "id": new_id})
 
-    # ── Generic entities ──
+    # ── Generic entities → staging ──
     type_info = _CLONE_TYPE_MAP.get(entity_type)
     if not type_info:
         return _resp(False, "CLONE_INVALID_TYPE", {"entityType": entity_type})
 
     defs_attr, source_field = type_info
-    defs = getattr(gs, defs_attr)
-    src = defs.get(source_id)
+    src = _get_entity(defs_attr, source_id)
     if not src:
         return _resp(False, "ENTITY_NOT_FOUND", {"entity": entity_type, "id": source_id})
-    if new_id in defs:
+    if _get_entity(defs_attr, new_id) is not None:
         return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": entity_type, "id": new_id})
 
     clone = copy.deepcopy(src)
     clone["id"] = new_id
     clone["_local_id"] = new_local_id
     clone[source_field] = target_addon
-    defs[new_id] = clone
+    gs.staging.put(defs_attr, new_id, clone)
 
     # on_create hooks
     if entity_type == "world-variables":
@@ -387,8 +409,8 @@ async def write_raw_file(addon_id: str, filename: str, body: dict = Body(...)):
 
 @router.get("/api/game/definitions")
 async def get_definitions():
-    """Get template, clothing defs, trait defs, and map summaries for the editor."""
-    return _h.game_state.get_definitions()
+    """Get template, clothing defs, trait defs, and map summaries for the editor (merged)."""
+    return _h.game_state.get_definitions(merged=True)
 
 
 # ===========================================================================
@@ -398,15 +420,16 @@ async def get_definitions():
 
 @router.get("/api/game/characters/config")
 async def get_character_configs():
-    """Get all character raw JSON configs."""
-    return {"characters": list(_h.game_state.character_data.values())}
+    """Get all character raw JSON configs (merged: active + staged)."""
+    merged = _get_merged("character_data")
+    return {"characters": list(merged.values())}
 
 
 @router.get("/api/game/characters/config/{character_id:path}")
 async def get_character_config(character_id: str):
-    """Get a single character raw JSON config."""
+    """Get a single character raw JSON config (merged)."""
     character_id = _ensure_ns(character_id)
-    char = _h.game_state.character_data.get(character_id)
+    char = _get_entity("character_data", character_id)
     if not char:
         return _resp(False, "ENTITY_NOT_FOUND", {"entity": "character", "id": character_id})
     return char
@@ -414,23 +437,23 @@ async def get_character_config(character_id: str):
 
 @router.put("/api/game/characters/config/{character_id:path}")
 async def update_character_config(character_id: str, body: dict = Body(...)):
-    """Update a character config (in memory). Rebuilds runtime state."""
+    """Update a character config → staging (no immediate game effect)."""
     character_id = _ensure_ns(character_id)
-    if character_id not in _h.game_state.character_data:
+    existing = _get_entity("character_data", character_id)
+    if not existing:
         return _resp(False, "ENTITY_NOT_FOUND", {"entity": "character", "id": character_id})
-    source = _h.game_state.character_data[character_id].get("_source", "")
+    source = existing.get("_source", "")
     body["id"] = character_id
     body["_local_id"] = to_local_id(character_id)
     body["_source"] = source
-    _h.game_state.character_data[character_id] = body
-    _h.game_state.characters[character_id] = _h.game_state._build_char(character_id)
+    _h.game_state.staging.put("character_data", character_id, body)
     await _mark_dirty()
     return _resp(True, "ENTITY_UPDATED", {"entity": "character"})
 
 
 @router.post("/api/game/characters/config")
 async def create_character_config(body: dict = Body(...)):
-    """Create a new character (in memory). Builds runtime state."""
+    """Create a new character → staging."""
     raw_id = body.get("id", "")
     if err := _validate_id(raw_id):
         return err
@@ -438,61 +461,55 @@ async def create_character_config(body: dict = Body(...)):
     char_id = _ensure_ns(raw_id, source)
     if not char_id:
         return _resp(False, "ENTITY_MISSING_ID", {"entity": "character"})
-    if char_id in _h.game_state.character_data:
+    if _get_entity("character_data", char_id) is not None:
         return _resp(False, "ENTITY_ALREADY_EXISTS", {"entity": "character", "id": char_id})
     body["id"] = char_id
     body["_local_id"] = to_local_id(char_id)
     body["_source"] = source
-    _h.game_state.character_data[char_id] = body
-    _h.game_state.characters[char_id] = _h.game_state._build_char(char_id)
+    _h.game_state.staging.put("character_data", char_id, body)
     await _mark_dirty()
     return _resp(True, "ENTITY_CREATED", {"entity": "character"})
 
 
 @router.patch("/api/game/characters/config/{character_id:path}")
 async def patch_character_config(character_id: str, body: dict = Body(...)):
-    """Partial update: toggle isPlayer, active, etc. (in memory)."""
+    """Partial update: toggle isPlayer, active, etc. → staging."""
     character_id = _ensure_ns(character_id)
-    if character_id not in _h.game_state.character_data:
+    char = _get_entity("character_data", character_id)
+    if not char:
         return _resp(False, "ENTITY_NOT_FOUND", {"entity": "character", "id": character_id})
-    char = _h.game_state.character_data[character_id]
 
-    # isPlayer is exclusive — if setting to True, clear all others
+    # Work on a copy to avoid mutating active or staged data
+    updated = {**char}
+
+    # isPlayer is exclusive — if setting to True, clear all others in merged view
     if body.get("isPlayer") is True:
-        for cid, cd in _h.game_state.character_data.items():
-            if cd.get("isPlayer"):
-                cd["isPlayer"] = False
+        merged = _get_merged("character_data")
+        for cid, cd in merged.items():
+            if cid != character_id and cd.get("isPlayer"):
+                cleared = {**cd, "isPlayer": False}
+                _h.game_state.staging.put("character_data", cid, cleared)
 
     # Prevent freezing the player character
-    if body.get("active") is False and char.get("isPlayer"):
+    if body.get("active") is False and updated.get("isPlayer"):
         return _resp(False, "CHARACTER_CANNOT_FREEZE_PLAYER")
 
     for key in ("isPlayer", "active"):
         if key in body:
-            char[key] = body[key]
+            updated[key] = body[key]
 
-    # Rebuild runtime characters (active only)
-    _h.game_state.characters = {}
-    for cid, cd in _h.game_state.character_data.items():
-        if cd.get("active", True) is False:
-            continue
-        _h.game_state.characters[cid] = _h.game_state._build_char(cid)
+    _h.game_state.staging.put("character_data", character_id, updated)
     await _mark_dirty()
     return _resp(True, "ENTITY_UPDATED", {"entity": "character"})
 
 
 @router.delete("/api/game/characters/config/{character_id:path}")
 async def delete_character_config(character_id: str):
-    """Delete a character (in memory)."""
+    """Delete a character → staging."""
     character_id = _ensure_ns(character_id)
-    if character_id not in _h.game_state.character_data:
+    if _get_entity("character_data", character_id) is None:
         return _resp(False, "ENTITY_NOT_FOUND", {"entity": "character", "id": character_id})
-    del _h.game_state.character_data[character_id]
-    _h.game_state.characters.pop(character_id, None)
-    for cdata in _h.game_state.character_data.values():
-        fav = cdata.get("favorability")
-        if isinstance(fav, dict):
-            fav.pop(character_id, None)
+    _h.game_state.staging.delete("character_data", character_id)
     await _mark_dirty()
     return _resp(True, "ENTITY_DELETED", {"entity": "character"})
 
@@ -505,7 +522,7 @@ async def delete_character_config(character_id: str):
 @router.get("/api/game/outfit-types")
 async def get_outfit_types():
     """Get all outfit type names."""
-    return {"outfitTypes": _h.game_state.outfit_types}
+    return {"outfitTypes": _h.game_state.staging.merged_list("outfit_types", _h.game_state.outfit_types)}
 
 
 @router.put("/api/game/outfit-types")
@@ -530,7 +547,7 @@ async def update_outfit_types(body: dict = Body(...)):
                         "slots": t.get("slots", {}),
                     }
                 )
-    _h.game_state.outfit_types = cleaned
+    _h.game_state.staging.set_list("outfit_types", cleaned)
     await _mark_dirty()
     return _resp(True, "ENTITY_UPDATED", {"entity": "outfitTypes"})
 
@@ -541,11 +558,11 @@ async def update_outfit_types(body: dict = Body(...)):
 
 
 def _register_tag_crud(tag_name: str, attr: str, url_prefix: str) -> None:
-    """Register tag pool CRUD routes."""
+    """Register tag pool CRUD routes — uses staging."""
 
     @router.get(url_prefix)
     async def get_tags(_attr=attr):
-        return {"tags": getattr(_h.game_state, _attr)}
+        return {"tags": _h.game_state.staging.merged_list(_attr, getattr(_h.game_state, _attr))}
 
     get_tags.__name__ = f"get_{tag_name}_tags"
 
@@ -554,10 +571,11 @@ def _register_tag_crud(tag_name: str, attr: str, url_prefix: str) -> None:
         tag = body.get("tag", "").strip()
         if not tag:
             return _resp(False, "TAG_EMPTY")
-        tags = getattr(_h.game_state, _attr)
-        if tag in tags:
+        merged = _h.game_state.staging.merged_list(_attr, getattr(_h.game_state, _attr))
+        if tag in merged:
             return _resp(False, "TAG_ALREADY_EXISTS", {"tag": tag})
-        tags.append(tag)
+        updated = list(merged) + [tag]
+        _h.game_state.staging.set_list(_attr, updated)
         await _mark_dirty()
         return _resp(True, "TAG_ADDED", {"tag": tag})
 
@@ -565,10 +583,11 @@ def _register_tag_crud(tag_name: str, attr: str, url_prefix: str) -> None:
 
     @router.delete(url_prefix + "/{tag}")
     async def delete_tag(tag: str, _attr=attr):
-        tags = getattr(_h.game_state, _attr)
-        if tag not in tags:
+        merged = _h.game_state.staging.merged_list(_attr, getattr(_h.game_state, _attr))
+        if tag not in merged:
             return _resp(False, "TAG_NOT_FOUND", {"tag": tag})
-        tags.remove(tag)
+        updated = [t for t in merged if t != tag]
+        _h.game_state.staging.set_list(_attr, updated)
         await _mark_dirty()
         return _resp(True, "TAG_DELETED", {"tag": tag})
 
