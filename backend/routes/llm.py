@@ -474,6 +474,11 @@ def _pre_validate_write(game_state, fn_name: str, fn_args: dict) -> tuple[bool, 
             err = _validate_field_values(game_state, entity_type, data)
             if err:
                 return False, json.dumps({"error": "VALIDATION_FAILED", "detail": err}, ensure_ascii=False)
+            # Action/event structural validation (error-level only)
+            if entity_type in ("action", "event") and fn_name == "create_entity":
+                verr = _validate_action_event(game_state, entity_type, data)
+                if verr:
+                    return False, json.dumps(verr, ensure_ascii=False)
     elif fn_name == "batch_create":
         entities = fn_args.get("payload", [])
         for i, ent in enumerate(entities):
@@ -486,6 +491,23 @@ def _pre_validate_write(game_state, fn_name: str, fn_args: dict) -> tuple[bool, 
                 )
 
     return True, ""
+
+
+def _validate_action_event(game_state, entity_type: str, data: dict) -> Optional[dict]:
+    """Run action/event validator, return error dict if any error-level issues."""
+    from game.action.validator import validate_action, validate_event
+
+    validator = validate_action if entity_type == "action" else validate_event
+    msgs = validator(data, game_state)
+    errors = [m for m in msgs if m.level == "error"]
+    if errors:
+        detail = "; ".join(f"{e.field}: {e.message}" for e in errors)
+        hints = [e.hint for e in errors if e.hint]
+        result: dict = {"error": "VALIDATION_FAILED", "detail": detail}
+        if hints:
+            result["hints"] = hints
+        return result
+    return None
 
 
 async def _run_agent_loop(

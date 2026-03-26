@@ -87,6 +87,19 @@ export default function EntityCard({ entityType, entity, mode, confirmLabel, onC
       if (count > 0) keyFields.push({ label: "traits", value: String(count) });
     }
   }
+  if (entityType === "action") {
+    if (entity.targetType) keyFields.push({ label: "target", value: String(entity.targetType) });
+    if (entity.category) keyFields.push({ label: "category", value: String(entity.category) });
+    const outcomes = entity.outcomes as unknown[];
+    if (Array.isArray(outcomes)) keyFields.push({ label: "outcomes", value: String(outcomes.length) });
+    if (entity.timeCost) keyFields.push({ label: "time", value: `${entity.timeCost}min` });
+  }
+  if (entityType === "event") {
+    if (entity.triggerMode) keyFields.push({ label: "trigger", value: String(entity.triggerMode) });
+    if (entity.targetScope) keyFields.push({ label: "scope", value: String(entity.targetScope) });
+    const effs = entity.effects as unknown[];
+    if (Array.isArray(effs)) keyFields.push({ label: "effects", value: String(effs.length) });
+  }
   const llm = entity.llm as Record<string, unknown> | undefined;
   const desc = entity.description
     ? String(entity.description)

@@ -6,11 +6,20 @@ External code can continue using:
 
 from __future__ import annotations
 
+from .ai_templates import TEMPLATES as AI_TEMPLATES
+from .ai_templates import expand_template
 from .conditions import _check_costs, _compare, _evaluate_conditions
 from .effects import _apply_costs, _apply_effects, _resolve_effect_targets
 from .events import _should_fire_event, _update_event_state, evaluate_events
 from .execution import execute_action, get_available_actions
 from .helpers import TICK_MINUTES, _snap_to_tick
+from .ir_compiler import (
+    ClauseError,
+    compile_action_ir,
+    compile_condition_clause,
+    compile_effect_clause,
+    compile_event_ir,
+)
 from .modifiers import _calc_modifier_bonus, _roll_outcome
 from .npc import (
     _build_suggest_map,
@@ -58,4 +67,13 @@ __all__ = [
     "validate_action",
     "validate_event",
     "ValidationMessage",
+    # ir compiler
+    "compile_action_ir",
+    "compile_event_ir",
+    "compile_condition_clause",
+    "compile_effect_clause",
+    "ClauseError",
+    # ai templates
+    "expand_template",
+    "AI_TEMPLATES",
 ]

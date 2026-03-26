@@ -215,6 +215,45 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
             "llm": {"personality": "热情的杂货店老板，喜欢和冒险者聊天。"},
         },
     },
+    "action": {
+        "description": "行动定义 — 玩家/NPC 可执行的行动（战斗、交易、对话等）",
+        "required": {
+            "id": "英文标识符，下划线命名（如 buy_ale）",
+            "name": "显示名称",
+        },
+        "optional": {
+            "category": "行动分类名称",
+            "description": "行动描述文本",
+            "targetType": "目标类型：none（无目标）或 npc（需要NPC目标），默认 none",
+            "triggerLLM": "是否触发 LLM 叙事（布尔值，默认 false）",
+            "timeCost": "耗时（分钟，默认 10）",
+            "npcWeight": "NPC 自主选择权重（默认 0 = NPC 不选此行动）",
+            "conditions": "前置条件数组",
+            "costs": "消耗数组",
+            "outcomes": "结果数组（至少一个）",
+        },
+        "modes": ["simple", "template", "ir"],
+        "example": "使用 get_schema('action') 查看完整文档和模板/IR 语法",
+    },
+    "event": {
+        "description": "事件定义 — 条件触发的全局事件（状态变化、剧情推进等）",
+        "required": {
+            "id": "英文标识符，下划线命名（如 rain_starts）",
+            "name": "显示名称",
+        },
+        "optional": {
+            "description": "事件描述文本",
+            "enabled": "是否启用（布尔值，默认 true）",
+            "targetScope": "目标范围：each_character 或 none，默认 each_character",
+            "triggerMode": "触发模式：once / on_change / while，默认 on_change",
+            "priority": "执行优先级（数字，默认 0）",
+            "cooldown": "冷却时间（分钟，仅 while 模式）",
+            "conditions": "触发条件数组",
+            "effects": "效果数组（至少一个）",
+        },
+        "modes": ["simple", "ir"],
+        "example": "使用 get_schema('event') 查看完整文档和 IR 语法",
+    },
 }
 
 # Entity types that AI can create/update (subset of ENTITY_SCHEMAS)
@@ -227,6 +266,8 @@ WRITABLE_ENTITY_TYPES = [
     "lorebook",
     "worldVariable",
     "character",
+    "action",
+    "event",
 ]
 
 # ---------------------------------------------------------------------------
@@ -304,7 +345,7 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "create_entity",
-            "description": "创建一个新的实体。id 使用英文下划线命名，不含命名空间前缀。",
+            "description": "创建一个新的实体。id 使用英文下划线命名。action/event 推荐 mode=template/ir",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -312,6 +353,11 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
                         "type": "string",
                         "enum": WRITABLE_ENTITY_TYPES,
                         "description": "实体类型",
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": ["simple", "template", "ir"],
+                        "description": "生成模式（默认 simple）。action/event 推荐用 template 或 ir",
                     },
                     "payload": {
                         "type": "object",
@@ -349,7 +395,7 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "update_entity",
-            "description": "修改已有实体。只传要改的字段（数组字段是整体替换，不是追加——需先 get_entities 获取当前值再构建完整数组）。entityId 用完整ID（如 Base.koakuma）",
+            "description": "修改已有实体。只传要改的字段（数组字段整体替换）。entityId 用完整ID",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -438,6 +484,8 @@ def _get_defs(gs: GameState, entity_type: str) -> dict[str, dict]:
         "lorebook": gs.lorebook_defs,
         "worldVariable": gs.world_variable_defs,
         "character": gs.character_data,
+        "action": gs.action_defs,
+        "event": gs.event_defs,
     }
     return mapping.get(entity_type, {})
 
@@ -488,6 +536,16 @@ def _summarize_entity(entity_type: str, entity: dict) -> dict[str, Any]:
         trait_count = sum(len(v) for v in traits.values() if isinstance(v, list))
         if trait_count:
             summary["traitCount"] = trait_count
+    elif entity_type == "action":
+        summary["targetType"] = entity.get("targetType", "none")
+        summary["outcomeCount"] = len(entity.get("outcomes", []))
+        cat = entity.get("category")
+        if cat:
+            summary["category"] = cat
+    elif entity_type == "event":
+        summary["triggerMode"] = entity.get("triggerMode", "on_change")
+        summary["targetScope"] = entity.get("targetScope", "each_character")
+        summary["effectCount"] = len(entity.get("effects", []))
     return summary
 
 
@@ -663,7 +721,96 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
                 map_ids = sorted(gs.maps.keys())
                 content += f"\n\n## 已有地图 ID\n\n{', '.join(map_ids)}"
 
+        # Action/Event: inject available entity IDs for conditions/effects
+        if entity_type in ("action", "event"):
+            content += _build_action_ref_info(gs, template)
+
     return content
+
+
+def _build_action_ref_info(gs: GameState, template: dict) -> str:
+    """Build reference info section for action/event get_schema."""
+    parts: list[str] = []
+
+    # Resources
+    res_fields = template.get("resources", [])
+    if res_fields:
+        res_list = ", ".join(f"`{f['key']}`" for f in res_fields if f.get("key"))
+        parts.append(f"\n## 可用 resource key\n\n{res_list}")
+
+    # Abilities
+    if gs.trait_defs:
+        ability_ids = sorted(tid for tid, t in gs.trait_defs.items() if t.get("category") == "ability")
+        if ability_ids:
+            parts.append(f"\n## 可用 ability key\n\n{', '.join(f'`{a}`' for a in ability_ids)}")
+
+    # Items
+    if gs.item_defs:
+        item_ids = sorted(gs.item_defs.keys())[:30]
+        parts.append(f"\n## 已有物品 ID\n\n{', '.join(item_ids)}")
+
+    # Maps
+    if gs.maps:
+        map_ids = sorted(gs.maps.keys())
+        parts.append(f"\n## 已有地图 ID\n\n{', '.join(map_ids)}")
+
+    # NPCs
+    if gs.char_defs:
+        npc_ids = sorted(cid for cid, c in gs.char_defs.items() if not c.get("isPlayer"))[:20]
+        if npc_ids:
+            parts.append(f"\n## 已有 NPC ID\n\n{', '.join(npc_ids)}")
+
+    # World variables
+    if gs.world_variable_defs:
+        wvar_ids = sorted(gs.world_variable_defs.keys())
+        parts.append(f"\n## 已有世界变量 ID\n\n{', '.join(wvar_ids)}")
+
+    # Trait categories
+    trait_cats = template.get("traits", [])
+    if trait_cats:
+        cat_list = ", ".join(f"`{c['key']}`" for c in trait_cats)
+        parts.append(f"\n## 可用 trait category\n\n{cat_list}")
+
+    # Clothing slots
+    slots = template.get("clothingSlots", [])
+    if slots:
+        parts.append(f"\n## 可用 clothing slot\n\n{', '.join(slots)}")
+
+    return "\n".join(parts)
+
+
+def _compile_action_payload(entity_type: str, mode: str, payload: dict) -> tuple[dict, list[str]]:
+    """Compile template/ir payload into full action/event JSON.
+
+    Returns (compiled_payload, warnings).
+    On error, returns ({"_compile_error": ..., ...}, []).
+    """
+    from game.action.ai_templates import expand_template
+    from game.action.ir_compiler import ClauseError, compile_action_ir, compile_event_ir
+
+    try:
+        if mode == "template":
+            template_name = payload.get("template", "")
+            params = payload.get("params", payload)
+            # Ensure id/name propagate from top-level
+            if "id" not in params and "id" in payload:
+                params["id"] = payload["id"]
+            if "name" not in params and "name" in payload:
+                params["name"] = payload["name"]
+            compiled, warnings = expand_template(template_name, params)
+            return compiled, warnings
+        if mode == "ir":
+            if entity_type == "event":
+                compiled, warnings = compile_event_ir(payload)
+            else:
+                compiled, warnings = compile_action_ir(payload)
+            return compiled, warnings
+    except ClauseError as e:
+        return {"_compile_error": True, **e.to_dict()}, []
+    except KeyError as e:
+        return {"_compile_error": True, "error": "TEMPLATE_NOT_FOUND", "message": str(e)}, []
+
+    return payload, []
 
 
 def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
@@ -690,7 +837,18 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
 
     if tool_name == "create_entity":
         payload = arguments.get("payload", {})
+        mode = arguments.get("mode", "simple")
+        # Compile template/ir modes for action/event
+        if entity_type in ("action", "event") and mode in ("template", "ir"):
+            payload, compile_warnings = _compile_action_payload(entity_type, mode, payload)
+            if isinstance(payload, dict) and payload.get("_compile_error"):
+                return json.dumps(payload, ensure_ascii=False)
+            if compile_warnings:
+                # Attach warnings to result later
+                arguments["_compile_warnings"] = compile_warnings
         result = execute_tool_create_entity(gs, entity_type, payload)
+        if arguments.get("_compile_warnings"):
+            result["compileWarnings"] = arguments["_compile_warnings"]
         return json.dumps(result, ensure_ascii=False)
 
     if tool_name == "batch_create":
@@ -792,7 +950,14 @@ DEFAULT_ASSIST_PROMPT = """\
 
 输出 plan 后问"需要调整吗？确认后开始创建。"
 用户确认后，按依赖顺序分批创建：
-lorebook/worldVariable → trait → item/clothing → character → event → action"""
+lorebook/worldVariable → trait → item/clothing → character → event → action
+
+## Action/Event 创建
+创建 action 和 event 时，优先使用 template 或 ir 模式：
+- mode="template": 常见模式（trade/conversation/skill_check），只需关键参数
+- mode="ir": 自定义逻辑，使用简写子句（如 "resource stamina >= 100"）
+- mode="simple": 仅用于非常简单的行动
+详细语法见 get_schema("action") 和 get_schema("event")。"""
 
 BUILTIN_CONTEXT_ENTRY_ID = "__assist_context__"
 

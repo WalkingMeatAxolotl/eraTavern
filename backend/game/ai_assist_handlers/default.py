@@ -51,6 +51,24 @@ ENTITY_DEFAULTS: dict[str, dict[str, Any]] = {
         "favorability": {},
         "llm": {},
     },
+    "action": {
+        "targetType": "none",
+        "triggerLLM": False,
+        "timeCost": 10,
+        "npcWeight": 0,
+        "conditions": [],
+        "costs": [],
+        "outcomes": [],
+        "npcWeightModifiers": [],
+    },
+    "event": {
+        "enabled": True,
+        "targetScope": "each_character",
+        "triggerMode": "on_change",
+        "priority": 0,
+        "conditions": [],
+        "effects": [],
+    },
 }
 
 

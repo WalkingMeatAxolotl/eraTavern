@@ -29,6 +29,11 @@ const ENTITY_LABELS: Record<string, string> = {
   variable: "变量",
   traitGroup: "特质组",
   character: "角色",
+  action: "行动",
+  event: "事件",
+  outfitType: "服装预设",
+  lorebook: "知识库",
+  worldVariable: "世界变量",
 };
 
 export default function ToolCallMessage({ name, arguments: args, status, result, onConfirm, onReject, disabled }: Props) {
