@@ -598,10 +598,30 @@ async def _run_agent_loop(
         if write_idx is not None:
             call_id, fn_name, _, fn_args = parsed[write_idx]
 
+            # Backend guardrail: reject large batch_create without plan
+            if fn_name == "batch_create" and session.mode == "chat":
+                payload = fn_args.get("payload", [])
+                if isinstance(payload, list) and len(payload) >= 8:
+                    err = json.dumps(
+                        {"error": "PLAN_REQUIRED", "detail": "批量创建 8+ 实体需要先输出 plan。请描述整体需求。"},
+                        ensure_ascii=False,
+                    )
+                    yield _format_sse(
+                        "tool_call_result",
+                        {"callId": call_id, "name": fn_name, "arguments": fn_args, "result": err, "auto": True},
+                    )
+                    tool_msg = {"role": "tool", "tool_call_id": call_id, "content": err}
+                    session.messages.append(tool_msg)
+                    for i in range(write_idx + 1, len(parsed)):
+                        skip_id = parsed[i][0]
+                        skip_msg = {"role": "tool", "tool_call_id": skip_id, "content": '{"skipped": true}'}
+                        session.messages.append(skip_msg)
+                    continue
+
             # Pre-validate before entering pending
             ok, err_result = _pre_validate_write(game_state, fn_name, fn_args)
             if not ok:
-                repair_key = f"{fn_name}:{fn_args.get('entityType', '')}:{fn_args.get('entity', {}).get('id', '')}"
+                repair_key = f"{fn_name}:{fn_args.get('entityType', '')}:{fn_args.get('payload', {}).get('id', '')}"
                 repair_counts[repair_key] = repair_counts.get(repair_key, 0) + 1
                 if repair_counts[repair_key] > 1:
                     # 2nd failure — stop, show error to user

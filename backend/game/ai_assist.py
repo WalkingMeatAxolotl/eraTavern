@@ -718,19 +718,42 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
 
 
 def collect_assist_context(gs: GameState) -> str:
-    """Build brief context for the system prompt.
+    """Build schema overview + entity counts for the system prompt.
 
-    Provides a high-level summary of available entity types and counts.
-    AI uses tools (list_entities, get_schema) for details as needed.
+    Provides enough info for the LLM to plan without calling get_schema.
+    For detailed docs and dynamic enums, LLM still uses get_schema.
     """
+    template = getattr(gs, "template", {})
     parts: list[str] = []
 
-    parts.append("## 可操作的实体类型")
+    parts.append("## 实体类型与关键字段\n")
+
     for etype, schema in ENTITY_SCHEMAS.items():
         defs = _get_defs(gs, etype)
-        parts.append(f"- **{etype}**：{schema['description']}（已有 {len(defs)} 个）")
+        req = ", ".join(schema.get("required", {}).keys())
+        opt = ", ".join(schema.get("optional", {}).keys())
+        line = f"### {etype}（{schema['description']}，已有 {len(defs)} 个）"
+        parts.append(line)
+        parts.append(f"必填: {req} | 可选: {opt}")
 
-    parts.append("\n使用 get_schema 工具查看各类型的字段详情和可用枚举值。")
+        # Key enum values for common fields
+        if etype == "trait":
+            cats = [c.get("key", "") for c in template.get("traits", [])]
+            if cats:
+                parts.append(f"category: {', '.join(cats)}")
+        elif etype == "clothing":
+            slots = template.get("clothingSlots", [])
+            if slots:
+                parts.append(f"slots: {', '.join(slots[:12])}")
+        parts.append("")
+
+    parts.append("## 引用关系")
+    parts.append("- character.traits → trait ids（按 category 分组）")
+    parts.append("- character.clothing → clothing ids（按 slot 分配）")
+    parts.append("- character.inventory → item ids")
+    parts.append("- effect.target → variable/ability/resource ids")
+    parts.append("")
+    parts.append("使用 get_schema 工具查看完整字段说明和可用枚举值。")
     parts.append("使用 list_entities 工具查看已有实体列表。")
 
     return "\n".join(parts)
