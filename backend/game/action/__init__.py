@@ -21,6 +21,7 @@ from .npc import (
     simulate_npc_ticks,
 )
 from .templates import _resolve_template, _select_output_template
+from .validator import ValidationMessage, validate_action, validate_event
 
 __all__ = [
     # execution
@@ -53,4 +54,8 @@ __all__ = [
     "evaluate_events",
     "_should_fire_event",
     "_update_event_state",
+    # validator
+    "validate_action",
+    "validate_event",
+    "ValidationMessage",
 ]
