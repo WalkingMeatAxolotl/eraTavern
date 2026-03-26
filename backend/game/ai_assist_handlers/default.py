@@ -248,6 +248,25 @@ def _init_character_entry(gs: GameState, entry: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Character reference namespacing
+# ---------------------------------------------------------------------------
+
+
+def _namespace_character_refs(gs: GameState, entry: dict) -> None:
+    """Namespace cross-references in character data (traits, clothing, inventory, etc.)."""
+    from game.character.namespace import namespace_character_data
+
+    namespace_character_data(
+        entry,
+        gs.trait_defs,
+        gs.item_defs,
+        gs.clothing_defs,
+        gs.character_data,
+        gs.maps,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Source addon resolution
 # ---------------------------------------------------------------------------
 
@@ -317,6 +336,7 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
     if entity_type == "worldVariable":
         gs.world_variables[eid] = entry.get("default", 0)
     elif entity_type == "character":
+        _namespace_character_refs(gs, entry)
         _init_character_entry(gs, entry)
         if entry.get("active", True) is not False:
             gs.characters[eid] = gs._build_char(eid)

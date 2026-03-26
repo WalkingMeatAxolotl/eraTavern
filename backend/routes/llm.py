@@ -483,7 +483,9 @@ def _pre_validate_write(game_state, fn_name: str, fn_args: dict) -> tuple[bool, 
             if err:
                 return False, json.dumps({"error": "VALIDATION_FAILED", "detail": err}, ensure_ascii=False)
             # Action/event structural validation (error-level only)
-            if entity_type in ("action", "event") and fn_name == "create_entity":
+            # Skip for template/ir/clone modes — validation runs after compilation
+            mode = fn_args.get("mode", "simple")
+            if entity_type in ("action", "event") and fn_name == "create_entity" and mode == "simple":
                 verr = _validate_action_event(game_state, entity_type, data)
                 if verr:
                     return False, json.dumps(verr, ensure_ascii=False)

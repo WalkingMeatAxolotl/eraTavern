@@ -962,6 +962,21 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
             if compile_warnings:
                 arguments["_compile_warnings"] = compile_warnings
 
+        # Post-compile validation for action/event
+        if entity_type in ("action", "event") and mode != "simple":
+            from game.action.validator import validate_action, validate_event
+
+            validator = validate_action if entity_type == "action" else validate_event
+            msgs = validator(payload, gs)
+            errors = [m for m in msgs if m.level == "error"]
+            if errors:
+                detail = "; ".join(f"{e.field}: {e.message}" for e in errors)
+                return json.dumps({"success": False, "error": detail}, ensure_ascii=False)
+            warn_msgs = [m for m in msgs if m.level == "warning"]
+            if warn_msgs:
+                arguments.setdefault("_compile_warnings", [])
+                arguments["_compile_warnings"].extend(f"{m.field}: {m.message}" for m in warn_msgs)
+
         result = execute_tool_create_entity(gs, entity_type, payload)
         if arguments.get("_compile_warnings"):
             result["compileWarnings"] = arguments["_compile_warnings"]

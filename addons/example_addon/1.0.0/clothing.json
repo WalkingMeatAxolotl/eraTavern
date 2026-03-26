@@ -9,6 +9,12 @@
           "magnitudeType": "fixed",
           "target": "example_addon.power",
           "value": 500
+        },
+        {
+          "effect": "increase",
+          "magnitudeType": "fixed",
+          "target": "Base.combat",
+          "value": 500
         }
       ],
       "slots": [
