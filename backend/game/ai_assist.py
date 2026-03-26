@@ -755,8 +755,8 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
         parts.append(f"\n## 已有地图 ID\n\n{', '.join(map_ids)}")
 
     # NPCs
-    if gs.char_defs:
-        npc_ids = sorted(cid for cid, c in gs.char_defs.items() if not c.get("isPlayer"))[:20]
+    if gs.character_data:
+        npc_ids = sorted(cid for cid, c in gs.character_data.items() if not c.get("isPlayer"))[:20]
         if npc_ids:
             parts.append(f"\n## 已有 NPC ID\n\n{', '.join(npc_ids)}")
 

@@ -387,7 +387,7 @@ def _check_refs_in_condition(cond: dict, ctype: str, path: str, gs: GameState, m
 
     elif ctype in (ConditionType.NPC_PRESENT, ConditionType.NPC_ABSENT):
         nid = cond.get("npcId", "")
-        if nid and gs.char_defs and nid not in gs.char_defs:
+        if nid and gs.character_data and nid not in gs.character_data:
             msgs.append(ValidationMessage("error", f"{path}.npcId", f"Character '{nid}' not found"))
 
     elif ctype == ConditionType.VARIABLE:

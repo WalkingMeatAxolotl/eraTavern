@@ -31,7 +31,6 @@ class AiMockGameState:
         self.item_defs: dict = {}
         self.clothing_defs: dict = {}
         self.maps: dict = {}
-        self.char_defs: dict = {}
         self.variable_defs: dict = {}
         self.world_variable_defs: dict = {}
         self.action_defs: dict = {}
@@ -59,7 +58,7 @@ def gs():
     g.maps = {
         "Test.tavern": {"id": "Test.tavern", "name": "Tavern"},
     }
-    g.char_defs = {
+    g.character_data = {
         "Test.bartender": {"id": "Test.bartender", "name": "Bartender", "isPlayer": False},
     }
     g.variable_defs = {
