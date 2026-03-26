@@ -709,6 +709,8 @@ class GameState:
         """Rebuild + persist all entity files to their addon dirs + update world.json + clear dirty."""
         self.rebuild(new_addon_refs)
         self._persist_entity_files()
+        # Restore namespaces stripped by _persist_entity_files (shallow copy issue)
+        self._resolve_namespaces()
         self._update_addon_dependencies()
 
         # Persist world config

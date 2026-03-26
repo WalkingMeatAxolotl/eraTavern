@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ..constants import EffectType
+from ..constants import ConditionType, EffectType
 
 # Symbolic references in action conditions/effects — must NOT be namespaced
 SYMBOLIC_REFS = {"self", "{{targetId}}", "{{player}}", ""}
@@ -111,14 +111,35 @@ def namespace_action_refs(
     """Namespace cross-references in action definitions in-place."""
     for action in action_defs.values():
         addon_id = action.get("source", "")
-        for cond in action.get("conditions", []):
-            _ns_cond(cond, trait_defs, item_defs, character_defs, addon_id, map_defs)
-        for cost in action.get("costs", []):
-            if cost.get("itemId") and cost["itemId"] not in SYMBOLIC_REFS:
-                cost["itemId"] = resolve_ref(cost["itemId"], item_defs, addon_id)
-        for outcome in action.get("outcomes", []):
-            for eff in outcome.get("effects", []):
-                _ns_eff(eff, trait_defs, item_defs, clothing_defs, character_defs, map_defs, addon_id)
+        namespace_single_action(action, addon_id, trait_defs, item_defs, clothing_defs, character_defs, map_defs)
+
+
+def namespace_single_action(
+    action: dict,
+    default_addon: str,
+    trait_defs: dict,
+    item_defs: dict,
+    clothing_defs: dict,
+    character_defs: dict,
+    map_defs: dict,
+) -> None:
+    """Namespace cross-references in a single action/event definition in-place."""
+    for cond in action.get("conditions", []):
+        _ns_cond(cond, trait_defs, item_defs, character_defs, default_addon, map_defs)
+    for cost in action.get("costs", []):
+        if cost.get("itemId") and cost["itemId"] not in SYMBOLIC_REFS:
+            cost["itemId"] = resolve_ref(cost["itemId"], item_defs, default_addon)
+    for outcome in action.get("outcomes", []):
+        for eff in outcome.get("effects", []):
+            _ns_eff(eff, trait_defs, item_defs, clothing_defs, character_defs, map_defs, default_addon)
+        for mod in outcome.get("weightModifiers", []):
+            _ns_modifier_key(mod, trait_defs, default_addon)
+    # Event effects (top-level, not in outcomes)
+    for eff in action.get("effects", []):
+        _ns_eff(eff, trait_defs, item_defs, clothing_defs, character_defs, map_defs, default_addon)
+    # NPC weight modifiers
+    for mod in action.get("npcWeightModifiers", []):
+        _ns_modifier_key(mod, trait_defs, default_addon)
 
 
 def _ns_cond(
@@ -140,6 +161,11 @@ def _ns_cond(
         cond["npcId"] = resolve_ref(cond["npcId"], character_defs, default_addon)
     if cond.get("targetId") and cond["targetId"] not in SYMBOLIC_REFS:
         cond["targetId"] = resolve_ref(cond["targetId"], character_defs, default_addon)
+    # ability/experience key = trait ID, needs namespacing
+    ctype = cond.get("type", "")
+    if ctype in (ConditionType.ABILITY, ConditionType.EXPERIENCE) and cond.get("key"):
+        if cond["key"] not in SYMBOLIC_REFS and NS_SEP not in cond["key"]:
+            cond["key"] = resolve_ref(cond["key"], trait_defs, default_addon)
 
 
 def _ns_eff(
@@ -167,6 +193,19 @@ def _ns_eff(
         eff["favTo"] = resolve_ref(eff["favTo"], character_defs, default_addon)
     if eff.get("mapId") and eff["mapId"] not in SYMBOLIC_REFS:
         eff["mapId"] = resolve_ref(eff["mapId"], map_defs, default_addon)
+    # ability/experience key = trait ID, needs namespacing
+    etype = eff.get("type", "")
+    if etype in (EffectType.ABILITY, EffectType.EXPERIENCE) and eff.get("key"):
+        if eff["key"] not in SYMBOLIC_REFS and NS_SEP not in eff["key"]:
+            eff["key"] = resolve_ref(eff["key"], trait_defs, default_addon)
+
+
+def _ns_modifier_key(mod: dict, trait_defs: dict, default_addon: str) -> None:
+    """Namespace ability/experience key in a weight modifier."""
+    mtype = mod.get("type", "")
+    if mtype in (EffectType.ABILITY, EffectType.EXPERIENCE) and mod.get("key"):
+        if mod["key"] not in SYMBOLIC_REFS and NS_SEP not in mod["key"]:
+            mod["key"] = resolve_ref(mod["key"], trait_defs, default_addon)
 
 
 def namespace_character_data(

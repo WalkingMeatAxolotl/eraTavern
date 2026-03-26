@@ -51,6 +51,7 @@ from .namespace import (  # noqa: F401
     namespace_action_refs,
     namespace_character_data,
     namespace_id,
+    namespace_single_action,
     resolve_ref,
     strip_character_namespaces,
     to_local_id,

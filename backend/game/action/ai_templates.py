@@ -19,8 +19,8 @@ def expand_trade(params: dict) -> tuple[dict[str, Any], list[str]]:
     Params:
         id, name:       required
         item:           item ID to buy/sell
-        price:          cost amount (resource key defaults to first resource)
-        priceKey:       resource key for cost (default: first template resource)
+        price:          cost amount (basicInfo key, default: money)
+        priceKey:       basicInfo key for cost (default: money)
         amount:         item quantity (default: 1)
         location:       mapId for location condition (optional)
         seller:         NPC ID for npcPresent condition (optional)
@@ -46,27 +46,31 @@ def expand_trade(params: dict) -> tuple[dict[str, Any], list[str]]:
     if params.get("seller"):
         conditions.append({"type": "npcPresent", "npcId": params["seller"]})
 
-    costs: list[dict[str, Any]] = []
     if price > 0:
-        costs.append({"type": "resource", "key": price_key, "amount": price})
-        # Guard condition
+        # Guard condition — money is a basicInfo field
         conditions.append(
             {
-                "type": "resource",
+                "type": "basicInfo",
                 "key": price_key,
                 "op": ">=",
                 "value": price,
             }
         )
 
-    effects: list[dict[str, Any]] = [
+    effects: list[dict[str, Any]] = []
+    # Deduct price as a basicInfo effect (money is in basicInfo, not resource)
+    if price > 0:
+        effects.append(
+            {"type": "basicInfo", "key": price_key, "op": "add", "target": "self", "value": -price}
+        )
+    effects.append(
         {"type": "item", "itemId": item_id, "op": "add", "target": "self", "amount": amount},
-    ]
+    )
     if params.get("favChange") and params.get("seller"):
         effects.append(
             {
                 "type": "favorability",
-                "favFrom": params["seller"],
+                "favFrom": "{{targetId}}",
                 "favTo": "self",
                 "op": "add",
                 "target": "self",
@@ -92,7 +96,7 @@ def expand_trade(params: dict) -> tuple[dict[str, Any], list[str]]:
         "timeCost": params.get("timeCost", 5),
         "npcWeight": 0,
         "conditions": conditions,
-        "costs": costs,
+        "costs": [],
         "outcomes": [outcome],
     }
     if params.get("category"):

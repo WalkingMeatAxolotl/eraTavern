@@ -720,6 +720,7 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
             if gs.maps:
                 map_ids = sorted(gs.maps.keys())
                 content += f"\n\n## 已有地图 ID\n\n{', '.join(map_ids)}"
+                # Detailed map+cell info is in action/event schema section
 
         # Action/Event: inject available entity IDs for conditions/effects
         if entity_type in ("action", "event"):
@@ -738,21 +739,51 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
         res_list = ", ".join(f"`{f['key']}`" for f in res_fields if f.get("key"))
         parts.append(f"\n## 可用 resource key\n\n{res_list}")
 
+    # BasicInfo fields (including money)
+    bi_fields = template.get("basicInfo", [])
+    if bi_fields:
+        bi_list = ", ".join(
+            f"`{f['key']}` ({f.get('label', f['key'])})" for f in bi_fields if f.get("key")
+        )
+        parts.append(f"\n## 可用 basicInfo key（含金钱）\n\n{bi_list}\n\n"
+                     "**注意**：金钱（money）是 basicInfo，不是 resource")
+
     # Abilities
     if gs.trait_defs:
         ability_ids = sorted(tid for tid, t in gs.trait_defs.items() if t.get("category") == "ability")
         if ability_ids:
-            parts.append(f"\n## 可用 ability key\n\n{', '.join(f'`{a}`' for a in ability_ids)}")
+            parts.append(f"\n## 可用 ability key（能力经验值）\n\n{', '.join(f'`{a}`' for a in ability_ids)}")
+
+        # Experiences
+        exp_ids = sorted(tid for tid, t in gs.trait_defs.items() if t.get("category") == "experience")
+        if exp_ids:
+            parts.append(f"\n## 可用 experience key（历史经历计数）\n\n{', '.join(f'`{e}`' for e in exp_ids)}")
+        else:
+            parts.append("\n## experience（历史经历）\n\n当前无已定义的 experience 特质。"
+                         "不要在效果中使用不存在的 experience key")
 
     # Items
     if gs.item_defs:
         item_ids = sorted(gs.item_defs.keys())[:30]
         parts.append(f"\n## 已有物品 ID\n\n{', '.join(item_ids)}")
 
-    # Maps
+    # Maps with cell info
     if gs.maps:
-        map_ids = sorted(gs.maps.keys())
-        parts.append(f"\n## 已有地图 ID\n\n{', '.join(map_ids)}")
+        map_lines: list[str] = []
+        for mid in sorted(gs.maps.keys()):
+            m = gs.maps[mid]
+            cells = m.get("cells", [])
+            cell_parts = []
+            for c in cells:
+                label = c.get("name") or f"#{c['id']}"
+                tags = c.get("tags", [])
+                tag_str = f" [{','.join(tags)}]" if tags else ""
+                cell_parts.append(f"{c['id']}={label}{tag_str}")
+            cell_info = f"  cells: {', '.join(cell_parts)}" if cell_parts else ""
+            name = m.get("name", mid)
+            line = f"- `{mid}` — {name}\n{cell_info}" if cell_info else f"- `{mid}` — {name}"
+            map_lines.append(line)
+        parts.append("\n## 已有地图\n\n" + "\n".join(map_lines))
 
     # NPCs
     if gs.character_data:
@@ -961,6 +992,16 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
                 return json.dumps(payload, ensure_ascii=False)
             if compile_warnings:
                 arguments["_compile_warnings"] = compile_warnings
+
+            # Namespace bare ID refs (template/ir use bare IDs like docs examples)
+            from game.ai_assist_handlers.default import _resolve_source_addon
+            from game.character.namespace import namespace_single_action
+
+            source = _resolve_source_addon(gs)
+            namespace_single_action(
+                payload, source, gs.trait_defs, gs.item_defs,
+                gs.clothing_defs, gs.character_data, gs.maps,
+            )
 
         # Post-compile validation for action/event
         if entity_type in ("action", "event") and mode != "simple":

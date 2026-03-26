@@ -491,12 +491,18 @@ class TestTemplates:
             "seller": "bartender",
         })
         assert action["targetType"] == "npc"
-        assert len(action["costs"]) == 1
-        assert action["costs"][0]["amount"] == 5
-        # Guard condition: resource >= price
-        res_conds = [c for c in action["conditions"] if c.get("type") == "resource"]
-        assert len(res_conds) == 1
-        assert res_conds[0]["value"] == 5
+        assert action["costs"] == []
+        # Guard condition: basicInfo money >= price
+        bi_conds = [c for c in action["conditions"] if c.get("type") == "basicInfo"]
+        assert len(bi_conds) == 1
+        assert bi_conds[0]["key"] == "money"
+        assert bi_conds[0]["value"] == 5
+        # Price deduction effect (basicInfo, not resource)
+        effects = action["outcomes"][0]["effects"]
+        bi_effs = [e for e in effects if e.get("type") == "basicInfo"]
+        assert len(bi_effs) == 1
+        assert bi_effs[0]["key"] == "money"
+        assert bi_effs[0]["value"] == -5
         # NPC condition
         npc_conds = [c for c in action["conditions"] if c.get("type") == "npcPresent"]
         assert len(npc_conds) == 1
