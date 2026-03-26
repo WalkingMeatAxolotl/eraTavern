@@ -522,19 +522,8 @@ async def _run_agent_loop(
         tool_calls = None
 
         session.log_llm_request(loop_i, messages)
-        yield _format_sse(
-            "llm_debug",
-            {
-                "source": "ai_assist",
-                "loop": loop_i,
-                "model": api_config.get("model", ""),
-                "baseUrl": api_config.get("baseUrl", ""),
-                "parameters": api_config.get("parameters", {}),
-                "messageCount": len(messages),
-                "messages": messages,
-            },
-        )
 
+        usage_data = None
         async for event_type, event_data in call_llm_streaming(api_config, messages, tools=ASSIST_TOOLS):
             if event_type == "llm_chunk":
                 full_text += event_data.get("text", "")
@@ -546,14 +535,31 @@ async def _run_agent_loop(
                 return
             elif event_type == "llm_done":
                 if event_data.get("usage"):
-                    session.log_llm_usage(loop_i, event_data["usage"])
-                    yield _format_sse("llm_usage", event_data["usage"])
+                    usage_data = event_data["usage"]
+                    session.log_llm_usage(loop_i, usage_data)
 
         # Build assistant message
         assistant_msg: dict = {"role": "assistant", "content": full_text or None}
         if tool_calls:
             assistant_msg["tool_calls"] = tool_calls
         session.messages.append(assistant_msg)
+
+        # Complete debug entry: request + response + usage in one event
+        yield _format_sse(
+            "llm_debug",
+            {
+                "source": "ai_assist",
+                "loop": loop_i,
+                "model": api_config.get("model", ""),
+                "baseUrl": api_config.get("baseUrl", ""),
+                "parameters": api_config.get("parameters", {}),
+                "messageCount": len(messages),
+                "messages": messages,
+                "responseText": full_text or "",
+                "responseToolCalls": tool_calls,
+                "usage": usage_data,
+            },
+        )
 
         # No tool calls → done
         if not tool_calls:

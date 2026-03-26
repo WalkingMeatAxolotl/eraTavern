@@ -13,6 +13,7 @@ export interface LLMDebugEntry {
   messages: { role: string; content: string }[];
   variables?: Record<string, string>;
   responseText?: string;
+  responseToolCalls?: unknown[] | null;
   error?: string;
   usage?: {
     prompt_tokens?: number;
@@ -134,10 +135,18 @@ export default function LLMDebugPanel({ entries, defaultExpanded = false }: Prop
                     </div>
 
                     {/* Response */}
-                    {entry.responseText && (
+                    {(entry.responseText || entry.responseToolCalls) && (
                       <div className={s.detailSection}>
                         <div className={s.detailLabelMb}>Response</div>
-                        <pre className={s.responseBlock}>{entry.responseText}</pre>
+                        {entry.responseText && <pre className={s.responseBlock}>{entry.responseText}</pre>}
+                        {entry.responseToolCalls && Array.isArray(entry.responseToolCalls) && (
+                          <pre className={s.responseBlock}>
+                            {"Tool calls: " + entry.responseToolCalls.map((tc: Record<string, unknown>) => {
+                              const fn = tc.function as Record<string, unknown> | undefined;
+                              return fn?.name ?? "?";
+                            }).join(", ")}
+                          </pre>
+                        )}
                       </div>
                     )}
 

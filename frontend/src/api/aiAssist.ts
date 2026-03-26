@@ -44,6 +44,7 @@ export interface AssistCallbacks {
   onUsage?: (usage: Record<string, unknown>) => void;
   onModeChange?: (mode: string) => void;
   onToolConfirmResult?: (data: { callId: string; result: string; approved: boolean }) => void;
+  onLLMResponse?: (data: { loop: number; text: string; toolCalls: unknown[] | null }) => void;
 }
 
 // --- SSE parser (shared between chat and confirm) ---
@@ -116,6 +117,9 @@ async function readSSEStream(
               break;
             case "mode_change":
               callbacks.onModeChange?.(data.mode ?? "chat");
+              break;
+            case "llm_response":
+              callbacks.onLLMResponse?.(data);
               break;
             case "tool_confirm_result":
               callbacks.onToolConfirmResult?.(data);

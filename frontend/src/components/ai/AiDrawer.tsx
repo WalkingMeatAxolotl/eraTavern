@@ -89,7 +89,6 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const lastDebugRef = useRef<Record<string, unknown> | null>(null);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -178,11 +177,6 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
         // Finalize: move streaming text into the assistant message
         setStreamingText("");
         updateLastAssistant((msg) => ({ ...msg, content: text }));
-        // Flush debug entry if usage never arrived
-        if (lastDebugRef.current) {
-          onDebugEntry?.(lastDebugRef.current);
-          lastDebugRef.current = null;
-        }
         // Check if there are pending tool calls
         setMessages((prev) => {
           const last = prev[prev.length - 1];
@@ -199,14 +193,8 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
         scrollToBottom();
       },
       onDebug: (entry: Record<string, unknown>) => {
-        lastDebugRef.current = { ...entry, timestamp: new Date().toLocaleTimeString() };
-      },
-      onUsage: (usage: Record<string, unknown>) => {
-        // Merge usage into the last debug entry instead of creating a separate one
-        if (lastDebugRef.current) {
-          onDebugEntry?.({ ...lastDebugRef.current, usage });
-          lastDebugRef.current = null;
-        }
+        // Complete entry: request + response + usage all in one event
+        onDebugEntry?.({ ...entry, timestamp: new Date().toLocaleTimeString() });
       },
       onModeChange: (mode: string) => {
         setAgentMode(mode as "chat" | "executing");
