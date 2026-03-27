@@ -803,7 +803,10 @@ async def assist_confirm_tool(request: Request):
         # Clear read cache — write may have changed game state
         session.read_cache.clear()
         if _h.game_state.dirty:
-            await _h.manager.broadcast("dirty_update", {"dirty": True})
+            await _h.manager.broadcast(
+                "dirty_update",
+                {"dirty": True, "stagedCount": _h.game_state.staging.staged_count()},
+            )
     else:
         result = json.dumps({"rejected": True, "reason": "User rejected this operation"})
         # Rejection breaks execution mode
