@@ -32,23 +32,23 @@ class TestCollectEffects:
         fd, pm = {}, {}
         _collect_effects(
             [
-                {"target": "stamina", "effect": "increase", "magnitudeType": "percentage", "value": 120},
+                {"target": "stamina", "effect": "increase", "magnitudeType": "percentage", "value": 20},
             ],
             fd,
             pm,
         )
-        assert pm["stamina"] == [1.2]  # 120/100 = 1.2
+        assert pm["stamina"] == [1.2]  # 1.0 + 20/100 = 1.2
 
     def test_percentage_decrease(self):
         fd, pm = {}, {}
         _collect_effects(
             [
-                {"target": "stamina", "effect": "decrease", "magnitudeType": "percentage", "value": 120},
+                {"target": "stamina", "effect": "decrease", "magnitudeType": "percentage", "value": 20},
             ],
             fd,
             pm,
         )
-        assert pm["stamina"] == [0.8]  # 2.0 - 1.2 = 0.8
+        assert pm["stamina"] == [0.8]  # 1.0 - 20/100 = 0.8
 
     def test_multiple_fixed_accumulate(self):
         fd, pm = {}, {}
