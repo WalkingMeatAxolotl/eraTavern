@@ -882,7 +882,7 @@ async def call_llm_streaming(
         payload["presence_penalty"] = params["presencePenalty"]
 
     try:
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=300) as client:
             if streaming:
                 full_text = ""
                 usage = None
