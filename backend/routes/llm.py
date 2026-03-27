@@ -558,18 +558,9 @@ async def _run_agent_loop(
 
     repair_counts: dict[str, int] = {}
 
-    # Filter tools based on plan_mode
-    if session.plan_mode:
-        # Plan mode: include submit_plan, exclude write tools until plan is confirmed
-        if session.mode == "chat":
-            # Before plan confirmed: only read + submit_plan
-            tools = [t for t in ASSIST_TOOLS if TOOL_SAFETY.get(t["function"]["name"], "write") != "write"]
-        else:
-            # After plan confirmed (executing): all tools except submit_plan
-            tools = [t for t in ASSIST_TOOLS if t["function"]["name"] != "submit_plan"]
-    else:
-        # Direct mode: no submit_plan
-        tools = [t for t in ASSIST_TOOLS if t["function"]["name"] != "submit_plan"]
+    # Always send the full tools array — stable prefix for LLM API prompt cache.
+    # Tool availability is controlled by prompt hints, not by filtering.
+    tools = ASSIST_TOOLS
 
     for loop_i in range(max_loops):
         # Rebuild messages each iteration (history may have grown)
@@ -901,29 +892,22 @@ async def assist_confirm_tool(request: Request):
     # --- Standard write tool confirmation ---
     override_args = data.get("overrideArgs")
     tool_args = override_args if override_args else pending["arguments"]
+    _excluded_ids: list[str] = []
     if approved:
         if session.target_addon:
             tool_args["_targetAddon"] = session.target_addon
         # Track if user modified the payload (partial selection in batch_create)
         user_modified = override_args is not None and override_args != pending["arguments"]
         result = execute_tool(_h.game_state, pending["name"], tool_args)
-        # Annotate result with excluded items so AI does not retry them
+        # Track excluded items for user feedback message
         if user_modified and pending["name"] == "batch_create":
             try:
                 orig_payload = pending["arguments"].get("payload", [])
                 used_payload = tool_args.get("payload", [])
                 orig_ids = {e.get("id", "") for e in orig_payload if isinstance(e, dict)}
                 used_ids = {e.get("id", "") for e in used_payload if isinstance(e, dict)}
-                excluded = sorted(orig_ids - used_ids)
-                if excluded:
-                    result_obj = json.loads(result)
-                    result_obj["_userExcluded"] = excluded
-                    result_obj["_note"] = (
-                        f"User excluded {len(excluded)} entities: {', '.join(excluded)}. "
-                        "This is intentional. Do NOT retry or re-create them."
-                    )
-                    result = json.dumps(result_obj, ensure_ascii=False)
-            except (json.JSONDecodeError, TypeError, AttributeError):
+                _excluded_ids = sorted(orig_ids - used_ids)
+            except (TypeError, AttributeError):
                 pass
         # Clear read cache — write may have changed game state
         session.read_cache.clear()
@@ -940,6 +924,15 @@ async def assist_confirm_tool(request: Request):
 
     tool_msg = {"role": "tool", "tool_call_id": call_id, "content": result}
     session.messages.append(tool_msg)
+
+    # Append explicit user feedback for partial batch selection
+    if approved and _excluded_ids:
+        feedback = (
+            f"[系统提示] 用户从批量创建中排除了 {len(_excluded_ids)} 个实体: "
+            f"{', '.join(_excluded_ids)}。这是用户的主动选择，不要重试或重新创建这些实体。"
+        )
+        session.messages.append({"role": "user", "content": feedback})
+
     session.flush_log()
 
     # After approved confirm, check for queued write tools before continuing agent loop

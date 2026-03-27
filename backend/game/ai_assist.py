@@ -1145,10 +1145,9 @@ def collect_assist_context(gs: GameState) -> str:
     parts.append("## 实体类型与关键字段\n")
 
     for etype, schema in ENTITY_SCHEMAS.items():
-        defs = _get_defs(gs, etype)
         req = ", ".join(schema.get("required", {}).keys())
         opt = ", ".join(schema.get("optional", {}).keys())
-        line = f"### {etype}（{schema['description']}，已有 {len(defs)} 个）"
+        line = f"### {etype}（{schema['description']}）"
         parts.append(line)
         parts.append(f"必填: {req} | 可选: {opt}")
 
@@ -1431,27 +1430,24 @@ def build_assist_messages(
             }
         )
 
-    # 1b. Inject plan mode hint
-    if plan_mode:
-        plan_hint = "\n\n**当前模式：规划模式。必须先用 submit_plan 工具提交方案，用户确认后再创建实体。**"
-        for i in range(len(messages) - 1, -1, -1):
-            if messages[i].get("role") == "system":
-                messages[i] = {**messages[i], "content": messages[i]["content"] + plan_hint}
-                break
-
-    # 1c. Inject cached schema hint (reduces redundant get_schema calls)
-    if cached_schemas:
-        hint = "\n\n注意：本会话中已获取过以下类型的 schema，无需再次调用 get_schema：" + ", ".join(cached_schemas)
-        # Append to the last system message
-        for i in range(len(messages) - 1, -1, -1):
-            if messages[i].get("role") == "system":
-                messages[i] = {**messages[i], "content": messages[i]["content"] + hint}
-                break
-
     # 2. Compressed conversation history
     messages.extend(_compress_history(history))
 
-    # 3. New user message
+    # 3. Dynamic hints — placed AFTER history to preserve system prefix for cache
+    hints: list[str] = []
+    if plan_mode:
+        hints.append(
+            "**当前模式：规划模式。必须先用 submit_plan 工具提交方案，"
+            "用户确认后再创建实体。不要直接调用 create/batch_create。**"
+        )
+    else:
+        hints.append("**当前模式：简易模式。不要使用 submit_plan 工具，直接创建实体。**")
+    if cached_schemas:
+        hints.append("本会话中已获取过以下类型的 schema，无需再次调用 get_schema：" + ", ".join(cached_schemas))
+    if hints:
+        messages.append({"role": "system", "content": "\n".join(hints)})
+
+    # 4. New user message
     if user_message:
         messages.append({"role": "user", "content": user_message})
 
