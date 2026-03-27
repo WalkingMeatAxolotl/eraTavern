@@ -71,12 +71,15 @@ class StagingLayer:
         """Check if an entity is staged for deletion."""
         return self._dicts[attr].get(entity_id) is _DELETED
 
-    def merged_defs(self, attr: str, active_defs: dict[str, dict]) -> dict[str, Any]:
+    def merged_defs(
+        self, attr: str, active_defs: dict[str, dict], *, mark_staged: bool = False
+    ) -> dict[str, Any]:
         """Return active + staged merged dict (does NOT modify active).
 
         - Staged creates/updates override active entries.
         - Staged deletions remove active entries.
         - Active entries not in staging pass through unchanged.
+        - If mark_staged=True, staged entries get ``_staged: True`` for UI display.
         """
         staged = self._dicts[attr]
         if not staged:
@@ -85,14 +88,20 @@ class StagingLayer:
         for eid, entry in active_defs.items():
             if eid in staged:
                 if staged[eid] is not _DELETED:
-                    result[eid] = staged[eid]
+                    if mark_staged:
+                        result[eid] = {**staged[eid], "_staged": True}
+                    else:
+                        result[eid] = staged[eid]
                 # else: deleted — omit from result
             else:
                 result[eid] = entry
         # Add staged entries not in active (new creates)
         for eid, entry in staged.items():
             if eid not in active_defs and entry is not _DELETED:
-                result[eid] = entry
+                if mark_staged:
+                    result[eid] = {**entry, "_staged": True}
+                else:
+                    result[eid] = entry
         return result
 
     # ── List operations ──────────────────────────────────

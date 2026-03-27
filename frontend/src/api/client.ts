@@ -974,7 +974,7 @@ export async function fetchAddonVersionsDetail(addonId: string): Promise<AddonVe
 export function connectSSE(
   onStateUpdate: (state: GameState) => void,
   onGameChanged?: (state: GameState) => void,
-  onDirtyUpdate?: (dirty: boolean) => void,
+  onDirtyUpdate?: (dirty: boolean, stagedCount?: number) => void,
 ): EventSource {
   const es = new EventSource("/api/events");
 
@@ -993,7 +993,7 @@ export function connectSSE(
 
   es.addEventListener("dirty_update", (e) => {
     const msg = JSON.parse(e.data);
-    onDirtyUpdate?.(msg.dirty);
+    onDirtyUpdate?.(msg.dirty, msg.stagedCount);
   });
 
   // EventSource auto-reconnects on connection loss

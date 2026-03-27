@@ -25,16 +25,19 @@ def _get_map(map_id: str):
     return _h.game_state.maps.get(map_id)
 
 
-def _merged_maps() -> dict:
-    return _h.game_state.staging.merged_defs("maps", _h.game_state.maps)
+def _merged_maps(*, mark_staged: bool = False) -> dict:
+    return _h.game_state.staging.merged_defs("maps", _h.game_state.maps, mark_staged=mark_staged)
 
 
 @router.get("/api/game/maps/raw")
 async def get_maps_raw():
     """Get list of all maps (id + name only) — merged."""
     result = []
-    for map_id, map_data in _merged_maps().items():
-        result.append({"id": map_data["id"], "name": map_data["name"], "source": map_data.get("_source", "")})
+    for map_id, map_data in _merged_maps(mark_staged=True).items():
+        entry = {"id": map_data["id"], "name": map_data["name"], "source": map_data.get("_source", "")}
+        if map_data.get("_staged"):
+            entry["_staged"] = True
+        result.append(entry)
     return {"maps": result}
 
 

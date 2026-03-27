@@ -83,7 +83,10 @@ def _ensure_ns(entity_id: str, source: str = "") -> str:
 async def _mark_dirty() -> None:
     """Mark session as having unsaved changes and notify clients."""
     game_state.dirty = True
-    await manager.broadcast("dirty_update", {"dirty": True})
+    await manager.broadcast(
+        "dirty_update",
+        {"dirty": True, "stagedCount": game_state.staging.staged_count()},
+    )
 
 
 def _resp(success: bool, error: str, params: Optional[dict] = None, **extra) -> dict:

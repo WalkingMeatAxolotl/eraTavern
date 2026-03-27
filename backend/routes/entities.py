@@ -25,9 +25,9 @@ def _get_defs(attr: str) -> dict:
     return getattr(_h.game_state, attr)
 
 
-def _get_merged(attr: str) -> dict:
+def _get_merged(attr: str, *, mark_staged: bool = False) -> dict:
     """Return merged (active + staged) defs for an entity type."""
-    return _h.game_state.staging.merged_defs(attr, _get_defs(attr))
+    return _h.game_state.staging.merged_defs(attr, _get_defs(attr), mark_staged=mark_staged)
 
 
 def _get_entity(attr: str, entity_id: str) -> Optional[dict]:
@@ -59,7 +59,7 @@ def _register_crud(
     # --- LIST ---
     @router.get(url_prefix)
     async def list_entities(_defs_attr=defs_attr, _list_key=list_key, _transform=list_transform):
-        merged = _get_merged(_defs_attr)
+        merged = _get_merged(_defs_attr, mark_staged=True)
         items = [_transform(d) if _transform else d for d in merged.values()]
         return {_list_key: items}
 
@@ -421,7 +421,7 @@ async def get_definitions():
 @router.get("/api/game/characters/config")
 async def get_character_configs():
     """Get all character raw JSON configs (merged: active + staged)."""
-    merged = _get_merged("character_data")
+    merged = _get_merged("character_data", mark_staged=True)
     return {"characters": list(merged.values())}
 
 

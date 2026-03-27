@@ -6,6 +6,7 @@ import s from "./FloatingActions.module.css";
 
 interface FloatingActionsProps {
   dirty: boolean;
+  stagedCount: number;
   hasAddonChanges: boolean;
   stagedAddons: { id: string; version: string }[];
   worldId: string;
@@ -15,6 +16,7 @@ interface FloatingActionsProps {
 
 export default function FloatingActions({
   dirty,
+  stagedCount,
   hasAddonChanges,
   stagedAddons,
   worldId,
@@ -43,9 +45,12 @@ export default function FloatingActions({
     }
   };
 
+  const hint =
+    stagedCount > 0 ? t("ui.stagedChanges", { count: stagedCount }) : t("ui.unsavedChanges");
+
   return (
     <div className={s.bar}>
-      <span className={s.hint}>{t("ui.unsavedChanges")}</span>
+      <span className={s.hint}>{hint}</span>
       <button
         onClick={async () => {
           if (busy) return;

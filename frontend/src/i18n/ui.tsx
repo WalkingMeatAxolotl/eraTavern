@@ -518,6 +518,7 @@ export const UI: Record<string, string> = {
   "ui.minutes": "分",
   "ui.other": "其他",
   "ui.unsavedChanges": "有未保存的配置改动",
+  "ui.stagedChanges": "{count} 项变更待应用",
   "ui.discardTip": "放弃所有未保存的修改，恢复到上次保存的状态",
   "ui.confirmDiscard": "确认撤销所有未保存的修改？",
   "ui.saveTip": "保存修改到扩展文件并应用到当前游戏",

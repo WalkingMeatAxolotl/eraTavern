@@ -97,6 +97,7 @@ export default function App() {
   const [currentAddons, setCurrentAddons] = useState<{ id: string; version: string }[]>([]);
   const [stagedAddons, setStagedAddons] = useState<{ id: string; version: string }[]>([]);
   const [sessionDirty, setSessionDirty] = useState(false);
+  const [stagedCount, setStagedCount] = useState(0);
   const [sessionKey, setSessionKey] = useState(0);
 
   const [addonListKey] = useState(0);
@@ -176,8 +177,9 @@ export default function App() {
     });
   }, []);
 
-  const handleDirtyUpdate = useCallback((dirty: boolean) => {
+  const handleDirtyUpdate = useCallback((dirty: boolean, count?: number) => {
     setSessionDirty(dirty);
+    setStagedCount(count ?? 0);
   }, []);
 
   // SSE — always connected
@@ -687,6 +689,7 @@ export default function App() {
       {/* Floating apply/save panel */}
       <FloatingActions
         dirty={sessionDirty}
+        stagedCount={stagedCount}
         hasAddonChanges={hasAddonChanges}
         stagedAddons={stagedAddons}
         worldId={currentWorldId}
