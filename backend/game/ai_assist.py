@@ -755,11 +755,10 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
     # BasicInfo fields (including money)
     bi_fields = template.get("basicInfo", [])
     if bi_fields:
-        bi_list = ", ".join(
-            f"`{f['key']}` ({f.get('label', f['key'])})" for f in bi_fields if f.get("key")
+        bi_list = ", ".join(f"`{f['key']}` ({f.get('label', f['key'])})" for f in bi_fields if f.get("key"))
+        parts.append(
+            f"\n## 可用 basicInfo key（含金钱）\n\n{bi_list}\n\n**注意**：金钱（money）是 basicInfo，不是 resource"
         )
-        parts.append(f"\n## 可用 basicInfo key（含金钱）\n\n{bi_list}\n\n"
-                     "**注意**：金钱（money）是 basicInfo，不是 resource")
 
     # Abilities
     trait_defs = s.merged_defs("trait_defs", gs.trait_defs)
@@ -773,8 +772,9 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
         if exp_ids:
             parts.append(f"\n## 可用 experience key（历史经历计数）\n\n{', '.join(f'`{e}`' for e in exp_ids)}")
         else:
-            parts.append("\n## experience（历史经历）\n\n当前无已定义的 experience 特质。"
-                         "不要在效果中使用不存在的 experience key")
+            parts.append(
+                "\n## experience（历史经历）\n\n当前无已定义的 experience 特质。不要在效果中使用不存在的 experience key"
+            )
 
     # Items
     item_defs = s.merged_defs("item_defs", gs.item_defs)
@@ -976,12 +976,7 @@ def _compile_action_payload(entity_type: str, mode: str, payload: dict) -> tuple
 
 def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
     """Dispatch a tool call to the appropriate handler. Returns result as string."""
-    from game.ai_assist_handlers import (
-        execute_tool_batch_create,
-        execute_tool_batch_update,
-        execute_tool_create_entity,
-        execute_tool_update_entity,
-    )
+    from game.ai_assist_handlers import ENTITY_HANDLERS, batch_create, batch_update
 
     # Extract session-level target addon (injected by routes/llm.py)
     target_addon = arguments.pop("_targetAddon", "")
@@ -998,6 +993,10 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
     if tool_name == "get_entities":
         entity_ids = arguments.get("entityIds", [])
         return execute_tool_get_entities(gs, entity_type, entity_ids)
+
+    handler = ENTITY_HANDLERS.get(entity_type)
+    if not handler:
+        return json.dumps({"error": f"Unknown entity type: {entity_type}"}, ensure_ascii=False)
 
     if tool_name == "create_entity":
         payload = arguments.get("payload", {})
@@ -1026,8 +1025,13 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
 
             source = _resolve_source_addon(gs, target_addon)
             namespace_single_action(
-                payload, source, gs.trait_defs, gs.item_defs,
-                gs.clothing_defs, gs.character_data, gs.maps,
+                payload,
+                source,
+                gs.trait_defs,
+                gs.item_defs,
+                gs.clothing_defs,
+                gs.character_data,
+                gs.maps,
             )
 
         # Post-compile validation for action/event
@@ -1045,7 +1049,7 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
                 arguments.setdefault("_compile_warnings", [])
                 arguments["_compile_warnings"].extend(f"{m.field}: {m.message}" for m in warn_msgs)
 
-        result = execute_tool_create_entity(gs, entity_type, payload, target_addon=target_addon)
+        result = handler.create(gs, entity_type, payload, target_addon=target_addon)
         if arguments.get("_compile_warnings"):
             result["compileWarnings"] = arguments["_compile_warnings"]
         if arguments.get("_clone_diffs"):
@@ -1055,18 +1059,18 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
 
     if tool_name == "batch_create":
         payload = arguments.get("payload", [])
-        result = execute_tool_batch_create(gs, entity_type, payload, target_addon=target_addon)
+        result = batch_create(gs, entity_type, payload, target_addon=target_addon)
         return json.dumps(result, ensure_ascii=False)
 
     if tool_name == "update_entity":
         entity_id = arguments.get("entityId", "")
         fields = arguments.get("fields", {})
-        result = execute_tool_update_entity(gs, entity_type, entity_id, fields)
+        result = handler.update(gs, entity_type, entity_id, fields)
         return json.dumps(result, ensure_ascii=False)
 
     if tool_name == "batch_update":
         updates = arguments.get("updates", [])
-        result = execute_tool_batch_update(gs, entity_type, updates)
+        result = batch_update(gs, entity_type, updates)
         return json.dumps(result, ensure_ascii=False)
 
     return json.dumps({"error": f"Unknown tool: {tool_name}"})

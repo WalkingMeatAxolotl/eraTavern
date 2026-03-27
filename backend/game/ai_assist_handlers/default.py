@@ -1,7 +1,7 @@
-"""Default entity handlers — create, update, validate for all entity types.
+"""Default entity handlers — validate, create, update for generic entity types.
 
-Handles type-specific logic (outfitType list storage, character init hooks,
-worldVariable post-create) within the unified create/update flow.
+Also provides outfit_create/outfit_update (list storage) and wvar_create
+(post-create worldVariable hook). Character-specific logic lives in character.py.
 """
 
 from __future__ import annotations
@@ -180,98 +180,13 @@ def _validate_field_values(gs: GameState, entity_type: str, data: dict) -> Optio
                 hint = ", ".join(sorted(valid))
                 return f"{top_field} '{value}' is invalid. Valid: {hint}"
 
-    # Character-specific validation
+    # Character-specific validation delegated to character.py via registry
     if entity_type == "character":
-        err = _validate_character_refs(gs, data)
-        if err:
-            return err
+        from game.ai_assist_handlers.character import char_validate
+
+        return char_validate(gs, data)
 
     return None
-
-
-def _validate_character_refs(gs: GameState, data: dict) -> Optional[str]:
-    """Validate character-specific cross-entity references."""
-    template = getattr(gs, "template", {})
-
-    traits = data.get("traits")
-    if isinstance(traits, dict):
-        valid_cats = {c["key"] for c in template.get("traits", [])}
-        if valid_cats:
-            invalid = [k for k in traits if k not in valid_cats]
-            if invalid:
-                hint = ", ".join(sorted(valid_cats))
-                return f"traits contains invalid categories: {invalid}. Valid: {hint}"
-
-    clothing = data.get("clothing")
-    if isinstance(clothing, dict):
-        valid_slots = set(template.get("clothingSlots", []))
-        if valid_slots:
-            invalid = [k for k in clothing if k not in valid_slots]
-            if invalid:
-                hint = ", ".join(sorted(valid_slots))
-                return f"clothing contains invalid slots: {invalid}. Valid: {hint}"
-
-    for field in ("position", "restPosition"):
-        pos = data.get(field)
-        if isinstance(pos, dict) and pos.get("mapId"):
-            map_id = pos["mapId"]
-            if gs.maps and map_id not in gs.maps:
-                valid_maps = ", ".join(list(gs.maps.keys())[:10])
-                return f"{field}.mapId '{map_id}' not found. Available: {valid_maps}"
-
-    return None
-
-
-# ---------------------------------------------------------------------------
-# Character init
-# ---------------------------------------------------------------------------
-
-
-def _init_character_entry(gs: GameState, entry: dict) -> None:
-    """Initialize a new character entry with template defaults."""
-    template = getattr(gs, "template", {})
-    source = entry.get("source", "")
-
-    bi = entry.get("basicInfo", {})
-    if "name" not in bi:
-        bi["name"] = entry.get("name", "")
-    for field in template.get("basicInfo", []):
-        key = field.get("key", "")
-        if key and key not in bi:
-            bi[key] = field.get("defaultValue", "" if field.get("type") == "string" else 0)
-    entry["basicInfo"] = bi
-
-    if "resources" not in entry:
-        resources = {}
-        for field in template.get("resources", []):
-            key = field.get("key", "")
-            if key:
-                resources[key] = {
-                    "value": field.get("defaultValue", 0),
-                    "max": field.get("defaultMax", 0),
-                }
-        entry["resources"] = resources
-
-    entry["_source"] = source
-
-
-# ---------------------------------------------------------------------------
-# Character reference namespacing
-# ---------------------------------------------------------------------------
-
-
-def _namespace_character_refs(gs: GameState, entry: dict) -> None:
-    """Namespace cross-references in character data (traits, clothing, inventory, etc.)."""
-    from game.character.namespace import namespace_character_data
-
-    namespace_character_data(
-        entry,
-        gs.trait_defs,
-        gs.item_defs,
-        gs.clothing_defs,
-        gs.character_data,
-        gs.maps,
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -280,11 +195,7 @@ def _namespace_character_refs(gs: GameState, entry: dict) -> None:
 
 
 def _resolve_source_addon(gs: GameState, target_addon: str = "") -> str:
-    """Determine which addon to create entities in.
-
-    Uses explicit target_addon if provided (from session UI), otherwise falls
-    back to the first addon in the world's addon list.
-    """
+    """Determine which addon to create entities in."""
     if target_addon:
         return target_addon
     if gs.addon_refs:
@@ -296,15 +207,13 @@ def _resolve_source_addon(gs: GameState, target_addon: str = "") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Create / Update
+# Default create / update (dict-based entity types)
 # ---------------------------------------------------------------------------
 
 
-def execute_tool_create_entity(
-    gs: GameState, entity_type: str, entity_data: dict, *, target_addon: str = ""
-) -> dict[str, Any]:
-    """Validate and create a single entity."""
-    from game.ai_assist import ENTITY_SCHEMAS, _get_defs, _summarize_entity
+def default_create(gs: GameState, entity_type: str, entity_data: dict, *, target_addon: str = "") -> dict[str, Any]:
+    """Validate and create a single dict-based entity."""
+    from game.ai_assist import _ENTITY_TYPE_ATTR, ENTITY_SCHEMAS, _get_defs, _summarize_entity
 
     schema = ENTITY_SCHEMAS.get(entity_type)
     if not schema:
@@ -322,29 +231,14 @@ def execute_tool_create_entity(
     normalized = normalize_entity_id(raw_id)
     if not normalized:
         return {"success": False, "error": "ID is empty or contains only invalid characters"}
-    # Update entity_data with normalized ID
     entity_data = {**entity_data, "id": normalized}
 
     source = _resolve_source_addon(gs, target_addon)
     if not source:
         return {"success": False, "error": "No addon available for creating entities"}
 
-    from game.ai_assist import _ENTITY_TYPE_ATTR
-
-    # outfitType: stored as list, no namespacing
-    if entity_type == "outfitType":
-        merged_list = gs.staging.merged_list("outfit_types", gs.outfit_types)
-        if any(t.get("id") == normalized for t in merged_list if isinstance(t, dict)):
-            return {"success": False, "error": f"Entity '{normalized}' already exists"}
-        defaults = ENTITY_DEFAULTS.get(entity_type, {})
-        entry = {**defaults, **entity_data}
-        updated = list(merged_list) + [entry]
-        gs.staging.set_list("outfit_types", updated)
-        gs.dirty = True
-        return {"success": True, "entity": _summarize_entity(entity_type, entry)}
-
     eid = namespace_id(source, normalized)
-    defs = _get_defs(gs, entity_type)  # merged view
+    defs = _get_defs(gs, entity_type)
     if eid in defs:
         return {"success": False, "error": f"Entity '{normalized}' already exists"}
 
@@ -355,11 +249,6 @@ def execute_tool_create_entity(
     defaults = ENTITY_DEFAULTS.get(entity_type, {})
     entry = {**defaults, **entity_data, "id": eid, "_local_id": normalized, "source": source}
 
-    # Character-specific pre-processing (namespace refs, init fields)
-    if entity_type == "character":
-        _namespace_character_refs(gs, entry)
-        _init_character_entry(gs, entry)
-
     gs.staging.put(attr, eid, entry)
     gs.dirty = True
     result: dict[str, Any] = {"success": True, "entity": _summarize_entity(entity_type, entry)}
@@ -368,44 +257,11 @@ def execute_tool_create_entity(
     return result
 
 
-def execute_tool_batch_create(
-    gs: GameState, entity_type: str, entities_data: list[dict], *, target_addon: str = ""
-) -> dict[str, Any]:
-    """Create multiple entities at once."""
-    created = []
-    errors = []
-    for i, entity_data in enumerate(entities_data):
-        result = execute_tool_create_entity(gs, entity_type, entity_data, target_addon=target_addon)
-        if result.get("success"):
-            created.append(result["entity"])
-        else:
-            label = entity_data.get("id", f"#{i}")
-            errors.append(f"{label}: {result.get('error', 'unknown')}")
-    return {"created": created, "errors": errors, "total": len(created)}
-
-
-def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, fields: dict) -> dict[str, Any]:
-    """Validate and update fields on an existing entity → staging."""
+def default_update(gs: GameState, entity_type: str, entity_id: str, fields: dict) -> dict[str, Any]:
+    """Validate and update fields on an existing dict-based entity."""
     from game.ai_assist import _ENTITY_TYPE_ATTR, _get_defs, _summarize_entity
 
-    # outfitType: find in list by id
-    if entity_type == "outfitType":
-        fields.pop("id", None)
-        val_error = _validate_field_values(gs, entity_type, fields)
-        if val_error:
-            return {"success": False, "error": val_error}
-        merged_list = gs.staging.merged_list("outfit_types", gs.outfit_types)
-        for i, t in enumerate(merged_list):
-            if isinstance(t, dict) and t.get("id") == entity_id:
-                updated_entry = {**t, **fields}
-                updated_list = list(merged_list)
-                updated_list[i] = updated_entry
-                gs.staging.set_list("outfit_types", updated_list)
-                gs.dirty = True
-                return {"success": True, "entity": _summarize_entity(entity_type, updated_entry)}
-        return {"success": False, "error": f"Entity '{entity_id}' not found"}
-
-    defs = _get_defs(gs, entity_type)  # merged view
+    defs = _get_defs(gs, entity_type)
     if entity_id not in defs:
         return {"success": False, "error": f"Entity '{entity_id}' not found"}
 
@@ -421,12 +277,7 @@ def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, 
     if val_error:
         return {"success": False, "error": val_error}
 
-    # Merge fields into a copy of existing (don't mutate active data)
     updated = {**defs[entity_id]}
-    if entity_type == "character" and "name" in fields:
-        bi = {**updated.get("basicInfo", {})}
-        bi["name"] = fields["name"]
-        updated["basicInfo"] = bi
     updated.update(fields)
 
     gs.staging.put(attr, entity_id, updated)
@@ -434,14 +285,125 @@ def execute_tool_update_entity(gs: GameState, entity_type: str, entity_id: str, 
     return {"success": True, "entity": _summarize_entity(entity_type, updated)}
 
 
-def execute_tool_batch_update(gs: GameState, entity_type: str, updates: list[dict]) -> dict[str, Any]:
-    """Update multiple entities at once."""
+# ---------------------------------------------------------------------------
+# Outfit type handlers (list-based storage)
+# ---------------------------------------------------------------------------
+
+
+def outfit_create(gs: GameState, entity_type: str, entity_data: dict, *, target_addon: str = "") -> dict[str, Any]:
+    """Create an outfitType entity (stored as list, no namespacing)."""
+    from game.ai_assist import ENTITY_SCHEMAS, _summarize_entity
+
+    schema = ENTITY_SCHEMAS.get(entity_type)
+    if not schema:
+        return {"success": False, "error": f"Unknown entity type: {entity_type}"}
+
+    for field in schema["required"]:
+        if not entity_data.get(field):
+            return {"success": False, "error": f"Missing required field: {field}"}
+
+    val_error = _validate_field_values(gs, entity_type, entity_data)
+    if val_error:
+        return {"success": False, "error": val_error}
+
+    raw_id = entity_data.get("id", "")
+    normalized = normalize_entity_id(raw_id)
+    if not normalized:
+        return {"success": False, "error": "ID is empty or contains only invalid characters"}
+    entity_data = {**entity_data, "id": normalized}
+
+    merged_list = gs.staging.merged_list("outfit_types", gs.outfit_types)
+    if any(t.get("id") == normalized for t in merged_list if isinstance(t, dict)):
+        return {"success": False, "error": f"Entity '{normalized}' already exists"}
+
+    defaults = ENTITY_DEFAULTS.get(entity_type, {})
+    entry = {**defaults, **entity_data}
+    updated = list(merged_list) + [entry]
+    gs.staging.set_list("outfit_types", updated)
+    gs.dirty = True
+    result: dict[str, Any] = {"success": True, "entity": _summarize_entity(entity_type, entry)}
+    if normalized != raw_id:
+        result["normalizedId"] = normalized
+    return result
+
+
+def outfit_update(gs: GameState, entity_type: str, entity_id: str, fields: dict) -> dict[str, Any]:
+    """Update an outfitType entity (find in list by id)."""
+    from game.ai_assist import _summarize_entity
+
+    fields.pop("id", None)
+    val_error = _validate_field_values(gs, entity_type, fields)
+    if val_error:
+        return {"success": False, "error": val_error}
+
+    merged_list = gs.staging.merged_list("outfit_types", gs.outfit_types)
+    for i, t in enumerate(merged_list):
+        if isinstance(t, dict) and t.get("id") == entity_id:
+            updated_entry = {**t, **fields}
+            updated_list = list(merged_list)
+            updated_list[i] = updated_entry
+            gs.staging.set_list("outfit_types", updated_list)
+            gs.dirty = True
+            return {"success": True, "entity": _summarize_entity(entity_type, updated_entry)}
+    return {"success": False, "error": f"Entity '{entity_id}' not found"}
+
+
+# ---------------------------------------------------------------------------
+# WorldVariable create (post-create hook)
+# ---------------------------------------------------------------------------
+
+
+def wvar_create(gs: GameState, entity_type: str, entity_data: dict, *, target_addon: str = "") -> dict[str, Any]:
+    """Create a worldVariable — uses default_create then applies post-create hook."""
+    return default_create(gs, entity_type, entity_data, target_addon=target_addon)
+
+
+# ---------------------------------------------------------------------------
+# Batch helpers (entity-type-agnostic, dispatch via registry)
+# ---------------------------------------------------------------------------
+
+
+def batch_create(
+    gs: GameState, entity_type: str, entities_data: list[dict], *, target_addon: str = ""
+) -> dict[str, Any]:
+    """Create multiple entities using the registered handler."""
+    from game.ai_assist_handlers import ENTITY_HANDLERS
+
+    handler = ENTITY_HANDLERS.get(entity_type)
+    if not handler:
+        return {"created": [], "errors": [f"Unknown entity type: {entity_type}"], "total": 0}
+
+    created = []
+    errors = []
+    excluded_ids = []
+    for i, entity_data in enumerate(entities_data):
+        result = handler.create(gs, entity_type, entity_data, target_addon=target_addon)
+        if result.get("success"):
+            created.append(result["entity"])
+        else:
+            label = entity_data.get("id", f"#{i}")
+            errors.append(f"{label}: {result.get('error', 'unknown')}")
+            excluded_ids.append(label)
+    out: dict[str, Any] = {"created": created, "errors": errors, "total": len(created)}
+    if excluded_ids:
+        out["excludedIds"] = excluded_ids
+    return out
+
+
+def batch_update(gs: GameState, entity_type: str, updates: list[dict]) -> dict[str, Any]:
+    """Update multiple entities using the registered handler."""
+    from game.ai_assist_handlers import ENTITY_HANDLERS
+
+    handler = ENTITY_HANDLERS.get(entity_type)
+    if not handler:
+        return {"updated": [], "errors": [f"Unknown entity type: {entity_type}"], "total": 0}
+
     updated = []
     errors = []
     for i, item in enumerate(updates):
         entity_id = item.get("entityId", "")
         fields = item.get("fields", {})
-        result = execute_tool_update_entity(gs, entity_type, entity_id, fields)
+        result = handler.update(gs, entity_type, entity_id, fields)
         if result.get("success"):
             updated.append(result["entity"])
         else:
