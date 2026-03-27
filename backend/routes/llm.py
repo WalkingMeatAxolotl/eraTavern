@@ -284,13 +284,14 @@ class AssistSession:
     """In-memory session for an AI Assist conversation."""
 
     __slots__ = (
-        "messages", "pending_tool_call", "mode", "read_cache",
-        "log_path", "_logged_count", "target_addon",
+        "messages", "pending_tool_call", "queued_tool_calls", "mode",
+        "read_cache", "log_path", "_logged_count", "target_addon",
     )
 
     def __init__(self) -> None:
         self.messages: list[dict] = []
         self.pending_tool_call: dict | None = None
+        self.queued_tool_calls: list[dict] = []  # write tools waiting after current pending
         self.mode: str = "chat"  # "chat" | "executing"
         self.read_cache: dict[str, str] = {}  # session-level read tool cache
         self.log_path: Optional[Path] = None
@@ -705,11 +706,21 @@ async def _run_agent_loop(
                 {"callId": call_id, "name": fn_name, "arguments": enriched_args},
             )
 
-            # Skip remaining tool_calls after the write one
+            # Queue remaining write tool_calls (instead of skipping)
+            session.queued_tool_calls = []
             for i in range(write_idx + 1, len(parsed)):
-                skip_id = parsed[i][0]
-                skip_msg = {"role": "tool", "tool_call_id": skip_id, "content": '{"skipped": true}'}
-                session.messages.append(skip_msg)
+                qc_id, qc_name, qc_is_write, qc_args = parsed[i]
+                if qc_is_write:
+                    session.queued_tool_calls.append(
+                        {"callId": qc_id, "name": qc_name, "arguments": qc_args}
+                    )
+                else:
+                    # Execute read tools immediately
+                    if session.target_addon:
+                        qc_args["_targetAddon"] = session.target_addon
+                    qc_result = execute_tool(game_state, qc_name, qc_args)
+                    tool_msg = {"role": "tool", "tool_call_id": qc_id, "content": qc_result}
+                    session.messages.append(tool_msg)
             session.flush_log()
             return
 
@@ -817,9 +828,37 @@ async def assist_confirm_tool(request: Request):
     session.messages.append(tool_msg)
     session.flush_log()
 
-    # Auto-continue after approved confirm — LLM decides whether to make
-    # more tool calls or output a summary and stop.
+    # After approved confirm, check for queued write tools before continuing agent loop
     if approved:
+        # Process next queued write tool if any
+        if session.queued_tool_calls:
+            next_tc = session.queued_tool_calls.pop(0)
+            nc_id, nc_name, nc_args = next_tc["callId"], next_tc["name"], next_tc["arguments"]
+
+            # Pre-validate the queued tool
+            ok, err_result = _pre_validate_write(_h.game_state, nc_name, nc_args)
+            if not ok:
+                # Validation failed — add error result, skip to next or continue loop
+                tool_msg = {"role": "tool", "tool_call_id": nc_id, "content": err_result}
+                session.messages.append(tool_msg)
+                session.flush_log()
+                # Fall through to continue_stream below
+            else:
+                enriched = _enrich_tool_args(_h.game_state, nc_name, nc_args)
+                session.pending_tool_call = {"callId": nc_id, "name": nc_name, "arguments": nc_args}
+
+                async def next_pending_stream():
+                    yield _format_sse(
+                        "tool_confirm_result",
+                        {"callId": call_id, "result": result, "approved": True},
+                    )
+                    yield _format_sse(
+                        "tool_call_pending",
+                        {"callId": nc_id, "name": nc_name, "arguments": enriched},
+                    )
+
+                return _make_sse_response(next_pending_stream())
+
         preset, api_config, error = _resolve_assist_preset()
         if error:
             return _resp(False, error)
@@ -834,6 +873,8 @@ async def assist_confirm_tool(request: Request):
 
         return _make_sse_response(continue_stream())
 
+    # Rejected — clear queued tools too
+    session.queued_tool_calls.clear()
     return _resp(True, "", result=result)
 
 
