@@ -194,6 +194,20 @@ export default function CharacterEditor({ character, definitions, allCharacters,
                 className={clsx(s.input, !isNew && s.inputReadonly)}
               />
             </Row>
+            {template.basicInfo
+              .filter((f) => f.type !== "number")
+              .map((field) => (
+                <Row key={field.key} label={field.label}>
+                  <input
+                    type="text"
+                    value={data.basicInfo[field.key] ?? field.defaultValue}
+                    onChange={(e) =>
+                      updateField("basicInfo", { ...data.basicInfo, [field.key]: e.target.value })
+                    }
+                    className={s.input}
+                  />
+                </Row>
+              ))}
             <Row label={t("field.portrait")}>
               <PortraitPicker
                 portrait={data.portrait ?? null}
@@ -203,23 +217,21 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             </Row>
           </Section>
 
-          <Section title={t("section.basicInfo")}>
-            {template.basicInfo.map((field) => (
-              <Row key={field.key} label={field.label}>
-                <input
-                  type={field.type === "number" ? "number" : "text"}
-                  value={data.basicInfo[field.key] ?? field.defaultValue}
-                  onChange={(e) => {
-                    const val = field.type === "number" ? Number(e.target.value) : e.target.value;
-                    updateField("basicInfo", { ...data.basicInfo, [field.key]: val });
-                  }}
-                  className={s.input}
-                />
-              </Row>
-            ))}
-          </Section>
-
           <Section title={t("section.initialResources")} color="var(--sec-orange)">
+            {template.basicInfo
+              .filter((f) => f.type === "number")
+              .map((field) => (
+                <Row key={field.key} label={`${t("label.initial")}${field.label}`}>
+                  <input
+                    type="number"
+                    value={data.basicInfo[field.key] ?? field.defaultValue}
+                    onChange={(e) =>
+                      updateField("basicInfo", { ...data.basicInfo, [field.key]: Number(e.target.value) })
+                    }
+                    className={s.input}
+                  />
+                </Row>
+              ))}
             {template.resources.map((field) => {
               const res = data.resources?.[field.key] ?? { value: field.defaultValue, max: field.defaultMax };
               return (

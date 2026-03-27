@@ -39,6 +39,7 @@ export const UI: Record<string, string> = {
   "label.uncategorized": "未分类",
   "label.defaultOutfit": "默认服装",
   "label.basic": "基本",
+  "label.initial": "初始",
 
   // === Slots ===
   "slot.hat": "帽子",
