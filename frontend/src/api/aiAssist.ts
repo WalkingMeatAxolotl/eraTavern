@@ -35,6 +35,18 @@ export interface AssistDebugEntry {
   usage?: Record<string, unknown>;
 }
 
+export interface PlanEntity {
+  entityType: string;
+  id: string;
+  name: string;
+  note?: string;
+}
+
+export interface PlanData {
+  overview: string;
+  entities: PlanEntity[];
+}
+
 export interface AssistCallbacks {
   onChunk: (text: string) => void;
   onToolCallPending: (tc: ToolCallInfo) => void;
@@ -46,6 +58,7 @@ export interface AssistCallbacks {
   onModeChange?: (mode: string) => void;
   onToolConfirmResult?: (data: { callId: string; result: string; approved: boolean }) => void;
   onLLMResponse?: (data: { loop: number; text: string; toolCalls: unknown[] | null }) => void;
+  onPlanPending?: (plan: PlanData & { callId: string }) => void;
 }
 
 // --- SSE parser (shared between chat and confirm) ---
@@ -124,6 +137,9 @@ async function readSSEStream(
               break;
             case "tool_confirm_result":
               callbacks.onToolConfirmResult?.(data);
+              break;
+            case "plan_pending":
+              callbacks.onPlanPending?.(data as PlanData);
               break;
           }
         } catch {

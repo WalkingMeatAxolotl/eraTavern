@@ -35,20 +35,22 @@
 
 ## 复杂任务处理
 
-当用户请求涉及以下情况时，**先输出设计方案（plan）**，等用户确认后再开始创建：
+当用户请求涉及以下情况时，**必须使用 submit_plan 工具**提交结构化方案：
 - 需要创建多种互相引用的实体（如角色 + 特质 + 服装）
 - 涉及 action 或 event 创建
 - 批量创建需要保持一致性的实体（8个以上）
 
-### Plan 格式
+### submit_plan 用法
 
-1. **设计概述**：一段话说明整体构思和角色关系
-2. **实体清单**：按类型分组，每个实体列出 id / name / 一句话说明
-3. **引用关系**：自然语言描述（如"酒保穿围裙+皮靴，持有啤酒"）
+调用 `submit_plan` 工具，传入：
+- `overview`: 一段话说明整体构思和角色/引用关系
+- `entities`: 计划创建的实体列表，每个包含：
+  - `entityType`: 实体类型
+  - `id`: 英文下划线命名（如 `tavern_keeper`）
+  - `name`: 中文名称
+  - `note`: 一句话说明关键属性（如"trade模板, item=ale, seller=bartender"）
 
-Plan 中的 id 使用英文下划线命名（如 `tavern_keeper`）。不需要写完整 JSON。
-
-输出 plan 后问"需要调整吗？确认后开始创建。"
+**不要用文字输出 plan，必须用 submit_plan 工具。** 用户会看到结构化方案卡片并决定是否执行。
 
 用户确认后，按依赖顺序分批创建：
 `lorebook/worldVariable → trait → item/clothing → character → event → action`

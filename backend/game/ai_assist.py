@@ -453,9 +453,56 @@ ASSIST_TOOLS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "submit_plan",
+            "description": (
+                "提交结构化创建方案。用于复杂任务（多种互引用实体、action/event、8+实体）。"
+                "提交后用户可查看、修改或确认方案。确认后再按依赖顺序创建。"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "overview": {
+                        "type": "string",
+                        "description": "设计概述：一段话说明整体构思和角色关系",
+                    },
+                    "entities": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "entityType": {
+                                    "type": "string",
+                                    "enum": WRITABLE_ENTITY_TYPES,
+                                    "description": "实体类型",
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "description": "实体 ID（英文下划线命名）",
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "description": "中文显示名称",
+                                },
+                                "note": {
+                                    "type": "string",
+                                    "description": "一句话说明用途/关键属性",
+                                },
+                            },
+                            "required": ["entityType", "id", "name"],
+                        },
+                        "description": "计划创建的实体列表",
+                    },
+                },
+                "required": ["overview", "entities"],
+            },
+        },
+    },
 ]
 
-# Map tool name → safety level: "read" (auto-execute) or "write" (needs confirm)
+# Map tool name → safety level: "read" (auto-execute), "write" (needs confirm), "plan" (special)
 TOOL_SAFETY: dict[str, str] = {
     "list_entities": "read",
     "get_schema": "read",
@@ -464,6 +511,7 @@ TOOL_SAFETY: dict[str, str] = {
     "batch_create": "write",
     "update_entity": "write",
     "batch_update": "write",
+    "submit_plan": "plan",
 }
 
 
@@ -983,6 +1031,10 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
 
     entity_type = arguments.get("entityType", "")
 
+    # submit_plan is handled specially by _run_agent_loop — should not reach here
+    if tool_name == "submit_plan":
+        return json.dumps({"success": True, "status": "plan_submitted"}, ensure_ascii=False)
+
     if tool_name == "list_entities":
         filter_ = arguments.get("filter")
         return execute_tool_list_entities(gs, entity_type, filter_)
@@ -1144,17 +1196,17 @@ DEFAULT_ASSIST_PROMPT = """\
 - 不要重复调用相同参数的工具，之前的结果已在对话历史中
 
 ## 复杂任务处理
-当用户请求涉及以下情况时，先输出设计方案（plan），等用户确认后再创建：
+当用户请求涉及以下情况时，**必须使用 submit_plan 工具**提交结构化方案：
 - 需要创建多种互相引用的实体（如角色 + 特质 + 服装）
 - 涉及 action 或 event 创建
 - 批量创建需要保持一致性的实体（8个以上）
 
-### Plan 格式
-1. **设计概述**：一段话说明整体构思
-2. **实体清单**：按类型分组，每个实体列出 id / name / 一句话说明
-3. **引用关系**：自然语言描述（如"酒保穿围裙+皮靴，持有啤酒"）
+使用 submit_plan 工具时：
+- overview: 一段话说明整体构思和角色/引用关系
+- entities: 实体列表，每个包含 entityType/id/name/note
+- note 中写关键属性和引用（如"trade模板, seller=bartender"）
 
-输出 plan 后问"需要调整吗？确认后开始创建。"
+submit_plan 提交后，用户会看到结构化方案卡片并决定是否执行。
 用户确认后，按依赖顺序分批创建：
 lorebook/worldVariable → trait → item/clothing → character → event → action
 

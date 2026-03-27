@@ -284,19 +284,27 @@ class AssistSession:
     """In-memory session for an AI Assist conversation."""
 
     __slots__ = (
-        "messages", "pending_tool_call", "queued_tool_calls", "mode",
-        "read_cache", "log_path", "_logged_count", "target_addon",
+        "messages",
+        "pending_tool_call",
+        "queued_tool_calls",
+        "mode",
+        "read_cache",
+        "log_path",
+        "_logged_count",
+        "target_addon",
+        "plan",
     )
 
     def __init__(self) -> None:
         self.messages: list[dict] = []
         self.pending_tool_call: dict | None = None
         self.queued_tool_calls: list[dict] = []  # write tools waiting after current pending
-        self.mode: str = "chat"  # "chat" | "executing"
+        self.mode: str = "chat"  # "chat" | "awaiting_plan" | "executing"
         self.read_cache: dict[str, str] = {}  # session-level read tool cache
         self.log_path: Optional[Path] = None
         self._logged_count: int = 0  # how many messages already flushed
         self.target_addon: str = ""  # user-chosen target addon for entity creation
+        self.plan: dict | None = None  # structured plan from submit_plan tool
 
     def _ensure_log_file(self) -> Path:
         """Ensure log file exists and return its path."""
@@ -601,7 +609,7 @@ async def _run_agent_loop(
         # No tool calls → done
         if not tool_calls:
             yield _format_sse("llm_done", {"fullText": full_text})
-            if session.mode == "executing":
+            if session.mode != "chat":
                 session.mode = "chat"
                 yield _format_sse("mode_change", {"mode": "chat"})
             session.flush_log()
@@ -609,6 +617,50 @@ async def _run_agent_loop(
 
         # Parse and classify tool calls
         parsed = [_parse_tool_call(tc) for tc in tool_calls]
+
+        # Check for submit_plan tool (special handling — not read, not write)
+        plan_idx = None
+        for i, (_, fn_name, _, _) in enumerate(parsed):
+            if fn_name == "submit_plan":
+                plan_idx = i
+                break
+
+        if plan_idx is not None:
+            call_id, _, _, fn_args = parsed[plan_idx]
+            # Execute any read tools before the plan
+            for i in range(plan_idx):
+                rc_id, rc_name, _, rc_args = parsed[i]
+                cache_key = f"{rc_name}:{json.dumps(rc_args, sort_keys=True)}"
+                if cache_key in session.read_cache:
+                    result = session.read_cache[cache_key]
+                else:
+                    if session.target_addon:
+                        rc_args["_targetAddon"] = session.target_addon
+                    result = execute_tool(game_state, rc_name, rc_args)
+                    session.read_cache[cache_key] = result
+                yield _format_sse(
+                    "tool_call_result",
+                    {"callId": rc_id, "name": rc_name, "arguments": rc_args, "result": result, "auto": True},
+                )
+                tool_msg = {"role": "tool", "tool_call_id": rc_id, "content": result}
+                session.messages.append(tool_msg)
+
+            # Store plan and switch to awaiting_plan
+            session.plan = fn_args
+            session.pending_tool_call = {"callId": call_id, "name": "submit_plan", "arguments": fn_args}
+            session.mode = "awaiting_plan"
+            yield _format_sse("llm_done", {"fullText": full_text})
+            yield _format_sse("mode_change", {"mode": "awaiting_plan"})
+            yield _format_sse("plan_pending", {**fn_args, "callId": call_id})
+
+            # Skip remaining tools after plan
+            for i in range(plan_idx + 1, len(parsed)):
+                skip_id = parsed[i][0]
+                skip_msg = {"role": "tool", "tool_call_id": skip_id, "content": '{"skipped": true}'}
+                session.messages.append(skip_msg)
+            session.flush_log()
+            return
+
         write_idx = None
         for i, (_, fn_name, _, _) in enumerate(parsed):
             if TOOL_SAFETY.get(fn_name, "write") == "write":
@@ -713,9 +765,7 @@ async def _run_agent_loop(
             for i in range(write_idx + 1, len(parsed)):
                 qc_id, qc_name, qc_is_write, qc_args = parsed[i]
                 if qc_is_write:
-                    session.queued_tool_calls.append(
-                        {"callId": qc_id, "name": qc_name, "arguments": qc_args}
-                    )
+                    session.queued_tool_calls.append({"callId": qc_id, "name": qc_name, "arguments": qc_args})
                 else:
                     # Execute read tools immediately
                     if session.target_addon:
@@ -793,7 +843,58 @@ async def assist_confirm_tool(request: Request):
 
     session.pending_tool_call = None
 
-    # Execute or reject
+    # --- Plan confirmation (submit_plan) ---
+    if pending["name"] == "submit_plan":
+        if approved:
+            entity_count = len(pending["arguments"].get("entities", []))
+            result = json.dumps(
+                {"approved": True, "message": f"用户已确认方案（{entity_count} 个实体），请按依赖顺序开始创建。"},
+                ensure_ascii=False,
+            )
+            session.mode = "executing"
+        else:
+            override = data.get("overrideArgs") or {}
+            feedback = override.get("feedback", "") if isinstance(override, dict) else ""
+            reason = f"用户要求修改方案。{feedback}" if feedback else "用户拒绝了方案，请根据用户反馈调整。"
+            result = json.dumps({"rejected": True, "reason": reason}, ensure_ascii=False)
+            session.plan = None
+            session.mode = "chat"
+
+        tool_msg = {"role": "tool", "tool_call_id": call_id, "content": result}
+        session.messages.append(tool_msg)
+        session.flush_log()
+
+        preset, api_config, error = _resolve_assist_preset()
+        if error:
+            return _resp(False, error)
+
+        if approved:
+
+            async def plan_execute_stream():
+                yield _format_sse("mode_change", {"mode": "executing"})
+                yield _format_sse(
+                    "tool_confirm_result",
+                    {"callId": call_id, "result": result, "approved": True},
+                )
+                async for event in _run_agent_loop(session, api_config, preset, _h.game_state):
+                    yield event
+
+            return _make_sse_response(plan_execute_stream())
+
+        # Rejected plan — continue agent loop so LLM can adjust
+
+        async def plan_reject_stream():
+            yield _format_sse("mode_change", {"mode": "chat"})
+            yield _format_sse(
+                "tool_confirm_result",
+                {"callId": call_id, "result": result, "approved": False},
+            )
+            async for event in _run_agent_loop(session, api_config, preset, _h.game_state):
+                yield event
+
+        return _make_sse_response(plan_reject_stream())
+
+    # --- Standard write tool confirmation ---
     override_args = data.get("overrideArgs")
     tool_args = override_args if override_args else pending["arguments"]
     if approved:
@@ -830,7 +931,7 @@ async def assist_confirm_tool(request: Request):
     else:
         result = json.dumps({"rejected": True, "reason": "User rejected this operation"})
         # Rejection breaks execution mode
-        if session.mode == "executing":
+        if session.mode in ("executing", "awaiting_plan"):
             session.mode = "chat"
 
     tool_msg = {"role": "tool", "tool_call_id": call_id, "content": result}

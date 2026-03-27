@@ -16,9 +16,10 @@ import {
   confirmToolCall,
   deleteAssistSession,
 } from "../../api/aiAssist";
-import type { AssistCallbacks, ToolCallInfo, ToolCallResult } from "../../api/aiAssist";
+import type { AssistCallbacks, ToolCallInfo, ToolCallResult, PlanData } from "../../api/aiAssist";
 import ToolCallMessage from "./ToolCallMessage";
 import type { ToolCallStatus } from "./ToolCallMessage";
+import PlanReview from "./PlanReview";
 import clsx from "clsx";
 import s from "./AiDrawer.module.css";
 
@@ -86,7 +87,8 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
   const [inputText, setInputText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingText, setStreamingText] = useState("");
-  const [agentMode, setAgentMode] = useState<"chat" | "executing">("chat");
+  const [agentMode, setAgentMode] = useState<"chat" | "awaiting_plan" | "executing">("chat");
+  const [pendingPlan, setPendingPlan] = useState<{ plan: PlanData; callId: string } | null>(null);
   const [targetAddon, setTargetAddon] = useState(addonIds[0] ?? "");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -199,7 +201,12 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
         onDebugEntry?.({ ...entry, timestamp: new Date().toLocaleTimeString() });
       },
       onModeChange: (mode: string) => {
-        setAgentMode(mode as "chat" | "executing");
+        setAgentMode(mode as "chat" | "awaiting_plan" | "executing");
+      },
+      onPlanPending: (data) => {
+        setPendingPlan({ plan: { overview: data.overview, entities: data.entities }, callId: data.callId });
+        setIsGenerating(false);
+        scrollToBottom();
       },
       onToolConfirmResult: (data: { callId: string; result: string; approved: boolean }) => {
         // Update existing pending tool call with confirm result (from SSE stream)
@@ -282,6 +289,31 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
     [sessionId, onEntityChanged, buildCallbacks],
   );
 
+  // Confirm/reject a plan
+  const handlePlanConfirm = useCallback(() => {
+    if (!pendingPlan) return;
+    setPendingPlan(null);
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    setIsGenerating(true);
+
+    const callbacks = buildCallbacks();
+    const { abort } = confirmToolCall(sessionId, pendingPlan.callId, true, undefined, callbacks);
+    abortRef.current = abort;
+  }, [pendingPlan, sessionId, buildCallbacks]);
+
+  const handlePlanReject = useCallback((feedback: string) => {
+    if (!pendingPlan) return;
+    const callId = pendingPlan.callId;
+    setPendingPlan(null);
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    setIsGenerating(true);
+
+    const callbacks = buildCallbacks();
+    // Pass feedback as overrideArgs so backend can include it in rejection message
+    const { abort } = confirmToolCall(sessionId, callId, false, { feedback } as Record<string, unknown>, callbacks);
+    abortRef.current = abort;
+  }, [pendingPlan, sessionId, buildCallbacks]);
+
   // Stop generation
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
@@ -305,7 +337,7 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
 
   // --- Render ---
 
-  const hasPending = messages.some((m) => m.toolCalls?.some((tc) => tc.status === "pending"));
+  const hasPending = pendingPlan !== null || messages.some((m) => m.toolCalls?.some((tc) => tc.status === "pending"));
 
   return (
     <div className={s.drawer}>
@@ -322,6 +354,7 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
             setIsGenerating(false);
             setInputText("");
             setAgentMode("chat");
+            setPendingPlan(null);
           }}
           title={t("ai.newSession")}
           className={s.newSessionBtn}
@@ -404,6 +437,19 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
 
           </div>
         ))}
+
+        {/* Pending plan review */}
+        {pendingPlan && (
+          <div>
+            <div className={s.roleLabel}>AI</div>
+            <PlanReview
+              plan={pendingPlan.plan}
+              onConfirm={handlePlanConfirm}
+              onReject={handlePlanReject}
+              disabled={isGenerating}
+            />
+          </div>
+        )}
 
         {/* Thinking indicator — waiting for first token */}
         {isGenerating && !streamingText && (
