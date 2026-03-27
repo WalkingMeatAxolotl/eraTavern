@@ -799,19 +799,26 @@ async def assist_confirm_tool(request: Request):
     if approved:
         if session.target_addon:
             tool_args["_targetAddon"] = session.target_addon
-        # Track if user modified the payload (partial selection)
+        # Track if user modified the payload (partial selection in batch_create)
         user_modified = override_args is not None and override_args != pending["arguments"]
         result = execute_tool(_h.game_state, pending["name"], tool_args)
-        # If user partially selected items, annotate result so AI knows it was intentional
-        if user_modified and pending["name"] in ("batch_create", "create_entity"):
+        # Annotate result with excluded items so AI does not retry them
+        if user_modified and pending["name"] == "batch_create":
             try:
-                result_obj = json.loads(result)
-                result_obj["_userModified"] = True
-                result_obj["_note"] = (
-                    "User deliberately selected a subset. Do not retry excluded ones."
-                )
-                result = json.dumps(result_obj, ensure_ascii=False)
-            except (json.JSONDecodeError, TypeError):
+                orig_payload = pending["arguments"].get("payload", [])
+                used_payload = tool_args.get("payload", [])
+                orig_ids = {e.get("id", "") for e in orig_payload if isinstance(e, dict)}
+                used_ids = {e.get("id", "") for e in used_payload if isinstance(e, dict)}
+                excluded = sorted(orig_ids - used_ids)
+                if excluded:
+                    result_obj = json.loads(result)
+                    result_obj["_userExcluded"] = excluded
+                    result_obj["_note"] = (
+                        f"User excluded {len(excluded)} entities: {', '.join(excluded)}. "
+                        "This is intentional. Do NOT retry or re-create them."
+                    )
+                    result = json.dumps(result_obj, ensure_ascii=False)
+            except (json.JSONDecodeError, TypeError, AttributeError):
                 pass
         # Clear read cache — write may have changed game state
         session.read_cache.clear()
