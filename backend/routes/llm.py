@@ -283,7 +283,10 @@ _logger = logging.getLogger(__name__)
 class AssistSession:
     """In-memory session for an AI Assist conversation."""
 
-    __slots__ = ("messages", "pending_tool_call", "mode", "read_cache", "log_path", "_logged_count")
+    __slots__ = (
+        "messages", "pending_tool_call", "mode", "read_cache",
+        "log_path", "_logged_count", "target_addon",
+    )
 
     def __init__(self) -> None:
         self.messages: list[dict] = []
@@ -292,6 +295,7 @@ class AssistSession:
         self.read_cache: dict[str, str] = {}  # session-level read tool cache
         self.log_path: Optional[Path] = None
         self._logged_count: int = 0  # how many messages already flushed
+        self.target_addon: str = ""  # user-chosen target addon for entity creation
 
     def _ensure_log_file(self) -> Path:
         """Ensure log file exists and return its path."""
@@ -618,6 +622,8 @@ async def _run_agent_loop(
             if cache_key in session.read_cache:
                 result = session.read_cache[cache_key]
             else:
+                if session.target_addon:
+                    fn_args["_targetAddon"] = session.target_addon
                 result = execute_tool(game_state, fn_name, fn_args)
                 session.read_cache[cache_key] = result
             yield _format_sse(
@@ -738,6 +744,10 @@ async def assist_chat(request: Request):
         return _resp(False, error)
 
     session = _get_or_create_session(session_id)
+    # Update target addon if provided (user can change mid-session)
+    target_addon = data.get("targetAddon", "")
+    if target_addon:
+        session.target_addon = target_addon
     session.messages.append({"role": "user", "content": user_message})
     session.flush_log()
 
@@ -774,6 +784,8 @@ async def assist_confirm_tool(request: Request):
     override_args = data.get("overrideArgs")
     tool_args = override_args if override_args else pending["arguments"]
     if approved:
+        if session.target_addon:
+            tool_args["_targetAddon"] = session.target_addon
         result = execute_tool(_h.game_state, pending["name"], tool_args)
         # Clear read cache — write may have changed game state
         session.read_cache.clear()

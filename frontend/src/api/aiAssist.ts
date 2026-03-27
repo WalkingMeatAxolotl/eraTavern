@@ -10,6 +10,7 @@
 export interface AssistChatParams {
   sessionId: string;
   message: string;
+  targetAddon?: string;
 }
 
 export interface ToolCallInfo {

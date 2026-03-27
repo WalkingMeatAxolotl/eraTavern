@@ -645,6 +645,7 @@ export default function App() {
         >
           <div className={s.fullHeight} style={{ display: aiDrawerOpen ? "block" : "none" }}>
             <AiDrawer
+              addonIds={addonIds}
               onEntityChanged={() => setSessionKey((k) => k + 1)}
               onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e as any])}
             />

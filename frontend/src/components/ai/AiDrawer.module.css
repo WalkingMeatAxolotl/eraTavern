@@ -38,6 +38,32 @@
   font-size: 11px;
 }
 
+.addonBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.addonLabel {
+  color: var(--text-sub);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.addonSelect {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 11px;
+}
+
 .messages {
   flex: 1;
   overflow-y: auto;

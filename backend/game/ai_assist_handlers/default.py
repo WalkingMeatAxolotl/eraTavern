@@ -279,8 +279,14 @@ def _namespace_character_refs(gs: GameState, entry: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _resolve_source_addon(gs: GameState) -> str:
-    """Determine which addon to create entities in."""
+def _resolve_source_addon(gs: GameState, target_addon: str = "") -> str:
+    """Determine which addon to create entities in.
+
+    Uses explicit target_addon if provided (from session UI), otherwise falls
+    back to the first addon in the world's addon list.
+    """
+    if target_addon:
+        return target_addon
     if gs.addon_refs:
         first = gs.addon_refs[0]
         addon_id = first.get("id", "")
@@ -294,7 +300,9 @@ def _resolve_source_addon(gs: GameState) -> str:
 # ---------------------------------------------------------------------------
 
 
-def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dict) -> dict[str, Any]:
+def execute_tool_create_entity(
+    gs: GameState, entity_type: str, entity_data: dict, *, target_addon: str = ""
+) -> dict[str, Any]:
     """Validate and create a single entity."""
     from game.ai_assist import ENTITY_SCHEMAS, _get_defs, _summarize_entity
 
@@ -317,7 +325,7 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
     # Update entity_data with normalized ID
     entity_data = {**entity_data, "id": normalized}
 
-    source = _resolve_source_addon(gs)
+    source = _resolve_source_addon(gs, target_addon)
     if not source:
         return {"success": False, "error": "No addon available for creating entities"}
 
@@ -360,12 +368,14 @@ def execute_tool_create_entity(gs: GameState, entity_type: str, entity_data: dic
     return result
 
 
-def execute_tool_batch_create(gs: GameState, entity_type: str, entities_data: list[dict]) -> dict[str, Any]:
+def execute_tool_batch_create(
+    gs: GameState, entity_type: str, entities_data: list[dict], *, target_addon: str = ""
+) -> dict[str, Any]:
     """Create multiple entities at once."""
     created = []
     errors = []
     for i, entity_data in enumerate(entities_data):
-        result = execute_tool_create_entity(gs, entity_type, entity_data)
+        result = execute_tool_create_entity(gs, entity_type, entity_data, target_addon=target_addon)
         if result.get("success"):
             created.append(result["entity"])
         else:

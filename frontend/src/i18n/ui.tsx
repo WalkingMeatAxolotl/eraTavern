@@ -929,6 +929,7 @@ export const UI: Record<string, string> = {
 
   // === AI Assist Agent ===
   "ai.drawerTitle": "创作助手",
+  "ai.targetAddon": "创建到:",
   "ai.welcomeTitle": "你可以这样问我：",
   "ai.example1": "帮我创建一个酒馆老板角色，性格豪爽，喜欢讲故事",
   "ai.example2": "生成 5 个与魔法相关的特质",

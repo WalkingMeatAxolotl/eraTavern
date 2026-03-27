@@ -976,6 +976,9 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
         execute_tool_update_entity,
     )
 
+    # Extract session-level target addon (injected by routes/llm.py)
+    target_addon = arguments.pop("_targetAddon", "")
+
     entity_type = arguments.get("entityType", "")
 
     if tool_name == "list_entities":
@@ -1014,7 +1017,7 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
             from game.ai_assist_handlers.default import _resolve_source_addon
             from game.character.namespace import namespace_single_action
 
-            source = _resolve_source_addon(gs)
+            source = _resolve_source_addon(gs, target_addon)
             namespace_single_action(
                 payload, source, gs.trait_defs, gs.item_defs,
                 gs.clothing_defs, gs.character_data, gs.maps,
@@ -1035,7 +1038,7 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
                 arguments.setdefault("_compile_warnings", [])
                 arguments["_compile_warnings"].extend(f"{m.field}: {m.message}" for m in warn_msgs)
 
-        result = execute_tool_create_entity(gs, entity_type, payload)
+        result = execute_tool_create_entity(gs, entity_type, payload, target_addon=target_addon)
         if arguments.get("_compile_warnings"):
             result["compileWarnings"] = arguments["_compile_warnings"]
         if arguments.get("_clone_diffs"):
@@ -1045,7 +1048,7 @@ def execute_tool(gs: GameState, tool_name: str, arguments: dict) -> str:
 
     if tool_name == "batch_create":
         payload = arguments.get("payload", [])
-        result = execute_tool_batch_create(gs, entity_type, payload)
+        result = execute_tool_batch_create(gs, entity_type, payload, target_addon=target_addon)
         return json.dumps(result, ensure_ascii=False)
 
     if tool_name == "update_entity":

@@ -39,6 +39,7 @@ interface ChatMessage {
 }
 
 export interface AiDrawerProps {
+  addonIds: string[];
   onEntityChanged?: () => void;
   onDebugEntry?: (entry: Record<string, unknown>) => void;
 }
@@ -79,13 +80,14 @@ function ThinkBlock({ content, defaultOpen }: { content: string; defaultOpen: bo
 
 // --- Component ---
 
-export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProps) {
+export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: AiDrawerProps) {
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingText, setStreamingText] = useState("");
   const [agentMode, setAgentMode] = useState<"chat" | "executing">("chat");
+  const [targetAddon, setTargetAddon] = useState(addonIds[0] ?? "");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -233,10 +235,10 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
     scrollToBottom();
 
     abortRef.current = streamAssistChat(
-      { sessionId, message: text },
+      { sessionId, message: text, targetAddon: targetAddon || undefined },
       buildCallbacks(),
     );
-  }, [inputText, isGenerating, sessionId, buildCallbacks, scrollToBottom]);
+  }, [inputText, isGenerating, sessionId, targetAddon, buildCallbacks, scrollToBottom]);
 
   // Confirm/reject a tool call
   const handleToolConfirm = useCallback(
@@ -327,6 +329,22 @@ export default function AiDrawer({ onEntityChanged, onDebugEntry }: AiDrawerProp
           [+]
         </button>
       </div>
+
+      {/* Target addon selector */}
+      {addonIds.length > 0 && (
+        <div className={s.addonBar}>
+          <label className={s.addonLabel}>{t("ai.targetAddon")}</label>
+          <select
+            value={targetAddon}
+            onChange={(e) => setTargetAddon(e.target.value)}
+            className={s.addonSelect}
+          >
+            {addonIds.map((id) => (
+              <option key={id} value={id}>{id}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Messages */}
       <div className={s.messages}>
