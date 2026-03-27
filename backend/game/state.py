@@ -424,14 +424,34 @@ class GameState:
                     save_func(target_dir, src_list, *extra)
 
             # Characters (special: _source key, individual files)
+            # Clean up deleted character files before writing
+            chars_dir = target_dir / "characters"
+            current_char_ids = {
+                cdata.get("_local_id", to_local_id(cid))
+                for cid, cdata in self.character_data.items()
+                if cdata.get("_source") == source
+            }
+            if chars_dir.exists():
+                for f in chars_dir.glob("*.json"):
+                    if f.stem not in current_char_ids:
+                        f.unlink()
             for cid, cdata in self.character_data.items():
                 if cdata.get("_source") == source:
                     save_character(target_dir, cdata, source)
 
             # Maps (special: _source key, individual files + collection index)
             src_maps = {mid: mdata for mid, mdata in self.maps.items() if mdata.get("_source") == source}
+            # Clean up deleted map files before writing
+            maps_dir = target_dir / "maps"
+            current_map_ids = {
+                mdata.get("_local_id", to_local_id(mid)).replace("-", "_")
+                for mid, mdata in src_maps.items()
+            }
+            if maps_dir.exists():
+                for f in maps_dir.glob("*.json"):
+                    if f.stem not in current_map_ids:
+                        f.unlink()
             if src_maps:
-                maps_dir = target_dir / "maps"
                 maps_dir.mkdir(parents=True, exist_ok=True)
                 for mid, mdata in src_maps.items():
                     save_map_file(target_dir, mid, mdata)
