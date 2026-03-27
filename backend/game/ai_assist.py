@@ -665,9 +665,10 @@ def execute_tool_get_schema(entity_type: str, gs: Optional[GameState] = None) ->
                     default_val = field.get("defaultValue", 0)
                     target_lines.append(f"- `{key}` — {label}（数值，默认 {default_val}）")
 
-            # Variables
-            if gs.variable_defs:
-                var_ids = sorted(gs.variable_defs.keys())
+            # Variables (derived)
+            var_defs = gs.staging.merged_defs("variable_defs", gs.variable_defs)
+            if var_defs:
+                var_ids = sorted(var_defs.keys())
                 target_lines.append(f"- 变量：{', '.join(f'`{v}`' for v in var_ids)}")
 
             if target_lines:
@@ -806,6 +807,12 @@ def _build_action_ref_info(gs: GameState, template: dict) -> str:
         npc_ids = sorted(cid for cid, c in char_data.items() if not c.get("isPlayer"))[:20]
         if npc_ids:
             parts.append(f"\n## 已有 NPC ID\n\n{', '.join(npc_ids)}")
+
+    # Derived variables
+    var_defs = s.merged_defs("variable_defs", gs.variable_defs)
+    if var_defs:
+        var_ids = sorted(var_defs.keys())
+        parts.append(f"\n## 已有衍生变量 ID\n\n{', '.join(var_ids)}")
 
     # World variables
     wvar_defs = s.merged_defs("world_variable_defs", gs.world_variable_defs)
