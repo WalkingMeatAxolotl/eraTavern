@@ -786,7 +786,20 @@ async def assist_confirm_tool(request: Request):
     if approved:
         if session.target_addon:
             tool_args["_targetAddon"] = session.target_addon
+        # Track if user modified the payload (partial selection)
+        user_modified = override_args is not None and override_args != pending["arguments"]
         result = execute_tool(_h.game_state, pending["name"], tool_args)
+        # If user partially selected items, annotate result so AI knows it was intentional
+        if user_modified and pending["name"] in ("batch_create", "create_entity"):
+            try:
+                result_obj = json.loads(result)
+                result_obj["_userModified"] = True
+                result_obj["_note"] = (
+                    "User deliberately selected a subset. Do not retry excluded ones."
+                )
+                result = json.dumps(result_obj, ensure_ascii=False)
+            except (json.JSONDecodeError, TypeError):
+                pass
         # Clear read cache — write may have changed game state
         session.read_cache.clear()
         if _h.game_state.dirty:
