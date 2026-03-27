@@ -660,7 +660,9 @@ async def _run_agent_loop(
             # Pre-validate before entering pending
             ok, err_result = _pre_validate_write(game_state, fn_name, fn_args)
             if not ok:
-                repair_key = f"{fn_name}:{fn_args.get('entityType', '')}:{fn_args.get('payload', {}).get('id', '')}"
+                payload = fn_args.get("payload", {})
+                payload_id = payload.get("id", "") if isinstance(payload, dict) else ""
+                repair_key = f"{fn_name}:{fn_args.get('entityType', '')}:{payload_id}"
                 repair_counts[repair_key] = repair_counts.get(repair_key, 0) + 1
                 if repair_counts[repair_key] > 1:
                     # 2nd failure — stop, show error to user
