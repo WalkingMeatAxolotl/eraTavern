@@ -38,50 +38,37 @@
   font-size: 11px;
 }
 
-.addonBar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.addonLabel {
-  color: var(--text-sub);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
 .addonSelect {
-  flex: 1;
   min-width: 0;
+  max-width: 120px;
   background: var(--bg2);
-  color: var(--text);
+  color: var(--text-sub);
   border: 1px solid var(--border);
   border-radius: 3px;
   padding: 2px 4px;
   font-size: 11px;
+  cursor: pointer;
 }
 
 .modeToggle {
-  background: var(--bg2);
-  color: var(--text-dim);
-  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  color: var(--text-sub);
+  border: 1px solid transparent;
   border-radius: 3px;
-  padding: 2px 8px;
+  padding: 2px 6px;
   font-size: 11px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.modeToggle:hover { border-color: var(--accent); }
+.modeToggle:hover { color: var(--text); }
 
 .modeToggleActive {
   color: var(--accent);
-  border-color: var(--accent);
-  background: var(--bg3);
 }
 
 .messages {
@@ -219,10 +206,23 @@
 
 .inputArea {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
   padding: 8px 12px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+.inputToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .inputTextarea {
@@ -239,32 +239,43 @@
 }
 
 .stopBtn {
-  padding: 6px 12px;
-  background-color: var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
   color: var(--danger);
   border: 1px solid var(--danger);
-  border-radius: 3px;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 12px;
   flex-shrink: 0;
 }
 
+.stopBtn:hover { background: var(--bg3); }
+
 .sendBtn {
-  padding: 6px 12px;
-  background-color: var(--bg2);
-  border-radius: 3px;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
 .sendBtnActive {
-  color: var(--accent);
+  color: var(--bg1);
+  background: var(--accent);
   border: 1px solid var(--accent);
   cursor: pointer;
 }
 
+.sendBtnActive:hover { opacity: 0.85; }
+
 .sendBtnDisabled {
-  color: var(--text-dim);
+  color: var(--text-sub);
   border: 1px solid var(--border);
   cursor: default;
 }

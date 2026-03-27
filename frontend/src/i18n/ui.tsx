@@ -929,7 +929,7 @@ export const UI: Record<string, string> = {
 
   // === AI Assist Agent ===
   "ai.drawerTitle": "创作助手",
-  "ai.targetAddon": "作用于:",
+  "ai.targetAddon": "作用 Addon",
   "ai.welcomeTitle": "你可以这样问我：",
   "ai.example1": "帮我创建一个酒馆老板角色，性格豪爽，喜欢讲故事",
   "ai.example2": "生成 5 个与魔法相关的特质",
@@ -968,9 +968,9 @@ export const UI: Record<string, string> = {
   "ai.planReject": "修改方案",
   "ai.planFeedbackHint": "要怎么改？按 Enter 发送",
   "ai.planSendFeedback": "发送",
-  "ai.planModeOn": "规划",
-  "ai.planModeOff": "直接",
-  "ai.planModeHint": "切换模式：规划（先出方案再创建）/ 直接（立即创建）",
+  "ai.planModeOn": "复杂规划",
+  "ai.planModeOff": "简易",
+  "ai.planModeHint": "复杂规划：AI 先出方案，确认后再创建",
   "ai.jsonInvalid": "JSON 格式错误",
   "ai.jsonMustBeObject": "必须是 JSON 对象",
   "ai.jsonMissingFields": "缺少 id 或 name 字段",

@@ -11,6 +11,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from "react";
 import { t } from "../../i18n/ui";
+import { fetchAddons } from "../../api/client";
 import {
   streamAssistChat,
   confirmToolCall,
@@ -90,10 +91,20 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
   const [agentMode, setAgentMode] = useState<"chat" | "awaiting_plan" | "executing">("chat");
   const [pendingPlan, setPendingPlan] = useState<{ plan: PlanData; callId: string } | null>(null);
   const [planMode, setPlanMode] = useState(false);
+  const [addonNames, setAddonNames] = useState<Record<string, string>>({});
   const [targetAddon, setTargetAddon] = useState(addonIds[0] ?? "");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch addon display names
+  useEffect(() => {
+    fetchAddons().then((addons) => {
+      const map: Record<string, string> = {};
+      for (const a of addons) map[a.id] = a.name || a.id;
+      setAddonNames(map);
+    }).catch(() => {});
+  }, []);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -364,29 +375,6 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
         </button>
       </div>
 
-      {/* Target addon selector + plan mode toggle */}
-      {addonIds.length > 0 && (
-        <div className={s.addonBar}>
-          <label className={s.addonLabel}>{t("ai.targetAddon")}</label>
-          <select
-            value={targetAddon}
-            onChange={(e) => setTargetAddon(e.target.value)}
-            className={s.addonSelect}
-          >
-            {addonIds.map((id) => (
-              <option key={id} value={id}>{id}</option>
-            ))}
-          </select>
-          <button
-            className={clsx(s.modeToggle, planMode && s.modeToggleActive)}
-            onClick={() => setPlanMode((v) => !v)}
-            title={t("ai.planModeHint")}
-          >
-            {planMode ? t("ai.planModeOn") : t("ai.planModeOff")}
-          </button>
-        </div>
-      )}
-
       {/* Messages */}
       <div className={s.messages}>
 
@@ -499,19 +487,52 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
           onKeyDown={handleKeyDown}
           disabled={hasPending || (agentMode === "executing" && isGenerating)}
         />
-        {isGenerating ? (
-          <button onClick={handleStop} className={s.stopBtn}>
-            [{t("ai.stop")}]
-          </button>
-        ) : (
-          <button
-            onClick={handleSend}
-            disabled={!inputText.trim() || hasPending}
-            className={clsx(s.sendBtn, inputText.trim() ? s.sendBtnActive : s.sendBtnDisabled)}
-          >
-            [{t("ai.send")}]
-          </button>
-        )}
+        <div className={s.inputToolbar}>
+          <div className={s.toolbarLeft}>
+            {addonIds.length > 0 && (
+              <select
+                value={targetAddon}
+                onChange={(e) => setTargetAddon(e.target.value)}
+                className={s.addonSelect}
+                title={t("ai.targetAddon")}
+              >
+                {addonIds.map((id) => (
+                  <option key={id} value={id}>{addonNames[id] || id}</option>
+                ))}
+              </select>
+            )}
+            <button
+              className={clsx(s.modeToggle, planMode && s.modeToggleActive)}
+              onClick={() => setPlanMode((v) => !v)}
+              title={t("ai.planModeHint")}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                {planMode
+                  ? <path d="M2 2h5v5H2zm7 0h5v2h-3v3h-2zm0 7h2v3h3v2H9zM2 9h5v5H2z"/>
+                  : <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/>}
+              </svg>
+              {planMode ? t("ai.planModeOn") : t("ai.planModeOff")}
+            </button>
+          </div>
+          {isGenerating ? (
+            <button onClick={handleStop} className={s.stopBtn} title={t("ai.stop")}>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <rect x="3" y="3" width="10" height="10" rx="1"/>
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!inputText.trim() || hasPending}
+              className={clsx(s.sendBtn, inputText.trim() ? s.sendBtnActive : s.sendBtnDisabled)}
+              title={t("ai.send")}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M1.5 1.5l13 6.5-13 6.5V9l8-1-8-1z"/>
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
