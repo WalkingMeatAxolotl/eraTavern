@@ -74,6 +74,7 @@ export interface AppConfig {
   maxWidth: number;
   defaultLlmPreset: string;
   aiAssistPresetId: string;
+  aiAssistLogMode: string;
 }
 
 export async function fetchConfig(): Promise<AppConfig> {

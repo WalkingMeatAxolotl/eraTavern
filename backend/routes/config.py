@@ -19,6 +19,7 @@ async def get_config():
         "maxWidth": config.get("maxWidth", 1200),
         "defaultLlmPreset": config.get("defaultLlmPreset", ""),
         "aiAssistPresetId": config.get("aiAssistPresetId", ""),
+        "aiAssistLogMode": config.get("aiAssistLogMode", "off"),
     }
 
 
@@ -26,7 +27,7 @@ async def get_config():
 async def update_config(body: dict = Body(...)):
     """Update frontend-relevant config fields."""
     config = load_config()
-    for key in ("defaultLlmPreset", "aiAssistPresetId"):
+    for key in ("defaultLlmPreset", "aiAssistPresetId", "aiAssistLogMode"):
         if key in body:
             config[key] = body[key]
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:

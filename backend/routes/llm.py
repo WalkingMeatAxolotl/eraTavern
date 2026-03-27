@@ -276,8 +276,19 @@ async def llm_generate(request: Request):
 # ---------------------------------------------------------------------------
 
 
-_ASSIST_LOG_DIR = Path(__file__).resolve().parent.parent.parent / "logs" / "ai_assist"
+_ASSIST_LOG_DIR = Path(__file__).resolve().parent.parent.parent / "user" / "logs" / "ai_assist"
 _logger = logging.getLogger(__name__)
+
+
+def _get_log_mode() -> str:
+    """Read aiAssistLogMode from config. Returns 'off' or 'always'."""
+    try:
+        from routes._helpers import load_config
+
+        config = load_config()
+        return config.get("aiAssistLogMode", "off")
+    except Exception:
+        return "off"
 
 
 class AssistSession:
@@ -291,6 +302,7 @@ class AssistSession:
         "read_cache",
         "log_path",
         "_logged_count",
+        "_log_enabled",
         "target_addon",
         "plan",
         "plan_mode",
@@ -304,12 +316,15 @@ class AssistSession:
         self.read_cache: dict[str, str] = {}  # session-level read tool cache
         self.log_path: Optional[Path] = None
         self._logged_count: int = 0  # how many messages already flushed
+        self._log_enabled: bool = _get_log_mode() == "always"
         self.target_addon: str = ""  # user-chosen target addon for entity creation
         self.plan: dict | None = None  # structured plan from submit_plan tool
         self.plan_mode: bool = False  # user-chosen: True = plan first, False = direct create
 
-    def _ensure_log_file(self) -> Path:
-        """Ensure log file exists and return its path."""
+    def _ensure_log_file(self) -> Optional[Path]:
+        """Ensure log file exists and return its path. Returns None if logging disabled."""
+        if not self._log_enabled:
+            return None
         if self.log_path is None:
             _ASSIST_LOG_DIR.mkdir(parents=True, exist_ok=True)
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
@@ -318,7 +333,7 @@ class AssistSession:
 
     def flush_log(self) -> None:
         """Append new messages to the log file (JSON Lines format)."""
-        if not self.messages:
+        if not self._log_enabled or not self.messages:
             return
         try:
             self._ensure_log_file()
@@ -334,6 +349,8 @@ class AssistSession:
 
     def log_llm_request(self, loop_index: int, messages: list[dict]) -> None:
         """Log the full assembled messages sent to LLM for a given loop iteration."""
+        if not self._log_enabled:
+            return
         try:
             self._ensure_log_file()
             entry = {
@@ -350,6 +367,8 @@ class AssistSession:
 
     def log_llm_usage(self, loop_index: int, usage: dict) -> None:
         """Log token usage for a given loop iteration."""
+        if not self._log_enabled:
+            return
         try:
             self._ensure_log_file()
             entry = {

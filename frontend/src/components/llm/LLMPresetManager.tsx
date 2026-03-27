@@ -163,6 +163,10 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
   const [globalPreset, setGlobalPreset] = useState("");
   const [aiAssistPreset, setAiAssistPreset] = useState("");
+  const [logMode, setLogMode] = useState("off");
+  const [showGlobalPresetHelp, setShowGlobalPresetHelp] = useState(false);
+  const [showAssistPresetHelp, setShowAssistPresetHelp] = useState(false);
+  const [showLogHelp, setShowLogHelp] = useState(false);
   const [subTab, setSubTab] = useState<"presets" | "providers" | "global" | "debug">("presets");
 
   // Provider editor state (within global tab)
@@ -182,6 +186,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
       setProviders(providerList);
       setGlobalPreset(cfg.defaultLlmPreset || "");
       setAiAssistPreset(cfg.aiAssistPresetId || "");
+      setLogMode(cfg.aiAssistLogMode || "off");
     } catch (e) {
       console.error("Failed to load LLM data:", e);
     }
@@ -508,8 +513,13 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                     <option key={p.id} value={p.id}>{p.name || p.id}</option>
                   ))}
               </select>
-              <span className={s.globalHint}>{t("llm.globalPresetHint")}</span>
+              <HelpButton show={showGlobalPresetHelp} onToggle={() => setShowGlobalPresetHelp((v) => !v)} />
             </div>
+            {showGlobalPresetHelp && (
+              <HelpPanel>
+                <p className={helpStyles.helpP}>{t("llm.globalPresetHelpText")}</p>
+              </HelpPanel>
+            )}
             <div className={s.globalRow}>
               <span className={s.globalLabel}>{t("llm.aiAssistPreset")}</span>
               <select
@@ -528,8 +538,34 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
                     <option key={p.id} value={p.id}>{p.name || p.id}</option>
                   ))}
               </select>
-              <span className={s.globalHint}>{t("llm.aiAssistPresetHint")}</span>
+              <HelpButton show={showAssistPresetHelp} onToggle={() => setShowAssistPresetHelp((v) => !v)} />
             </div>
+            {showAssistPresetHelp && (
+              <HelpPanel>
+                <p className={helpStyles.helpP}>{t("llm.aiAssistPresetHelpText")}</p>
+              </HelpPanel>
+            )}
+            <div className={s.globalRow}>
+              <span className={s.globalLabel}>{t("llm.logMode")}</span>
+              <select
+                className={clsx(s.inputFull, s.inputW200)}
+                value={logMode}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setLogMode(val);
+                  await updateConfig({ aiAssistLogMode: val });
+                }}
+              >
+                <option value="off">{t("llm.logOff")}</option>
+                <option value="always">{t("llm.logAlways")}</option>
+              </select>
+              <HelpButton show={showLogHelp} onToggle={() => setShowLogHelp((v) => !v)} />
+            </div>
+            {showLogHelp && (
+              <HelpPanel>
+                <p className={helpStyles.helpP}>{t("llm.logHelpText")}</p>
+              </HelpPanel>
+            )}
           </>
         )}
 
