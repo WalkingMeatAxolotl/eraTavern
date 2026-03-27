@@ -417,11 +417,11 @@ class GameState:
             target_dir.mkdir(parents=True, exist_ok=True)
 
             # Save standard entity defs (table-driven)
+            # Always write even with empty list to overwrite old files on deletion
             for defs_attr, save_func, extra_args_fn in _entity_save_table:
                 src_list = _filter_by_source(getattr(self, defs_attr), source)
-                if src_list:
-                    extra = extra_args_fn(source) if extra_args_fn else ()
-                    save_func(target_dir, src_list, *extra)
+                extra = extra_args_fn(source) if extra_args_fn else ()
+                save_func(target_dir, src_list, *extra)
 
             # Characters (special: _source key, individual files)
             # Clean up deleted character files before writing
