@@ -221,7 +221,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
             {template.basicInfo
               .filter((f) => f.type === "number")
               .map((field) => (
-                <Row key={field.key} label={`${t("label.initial")}${field.label}`}>
+                <Row key={field.key} label={field.label}>
                   <input
                     type="number"
                     value={data.basicInfo[field.key] ?? field.defaultValue}
