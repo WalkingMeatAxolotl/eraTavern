@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { t } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import {
   fetchSaves,
   createSave,
@@ -31,6 +32,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmUI, showConfirm] = useConfirm();
 
   // LLM world-level preset
   const [presetList, setPresetList] = useState<{ id: string; name: string }[]>([]);
@@ -82,24 +84,32 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
     }
   };
 
-  const handleLoad = async (slotId: string) => {
-    if (!confirm(t("confirm.loadSave"))) return;
-    setLoading(true);
-    try {
-      const res = await loadSave(slotId);
-      if (!res.success) {
-        alert(res.message);
-        return;
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleLoad = (slotId: string) => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.loadSave"), confirmLabel: t("btn.load") },
+      async () => {
+        setLoading(true);
+        try {
+          const res = await loadSave(slotId);
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
+        } finally {
+          setLoading(false);
+        }
+      },
+    );
   };
 
-  const handleDelete = async (slotId: string) => {
-    if (!confirm(t("confirm.deleteSave"))) return;
-    await deleteSave(slotId);
-    await refresh();
+  const handleDelete = (slotId: string) => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteSave"), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        await deleteSave(slotId);
+        await refresh();
+      },
+    );
   };
 
   const handleRename = async (slotId: string) => {
@@ -297,6 +307,7 @@ export default function SettingsPage({ worldId, addonRefs, onRestart }: Props) {
           </div>
         </>
       )}
+      {confirmUI}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import { saveSession } from "../../api/client";
 import { t } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import s from "./FloatingActions.module.css";
 
 interface FloatingActionsProps {
@@ -25,6 +26,7 @@ export default function FloatingActions({
 }: FloatingActionsProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmUI, showConfirm] = useConfirm();
 
   const visible = (dirty || hasAddonChanges) && !!worldId;
   if (!visible) return null;
@@ -52,15 +54,19 @@ export default function FloatingActions({
     <div className={s.bar}>
       <span className={s.hint}>{hint}</span>
       <button
-        onClick={async () => {
+        onClick={() => {
           if (busy) return;
-          if (!confirm(t("ui.confirmDiscard"))) return;
-          setBusy(true);
-          try {
-            await onRevert();
-          } finally {
-            setBusy(false);
-          }
+          showConfirm(
+            { title: t("confirm.title"), message: t("confirm.discard"), confirmLabel: t("btn.revert"), danger: true },
+            async () => {
+              setBusy(true);
+              try {
+                await onRevert();
+              } finally {
+                setBusy(false);
+              }
+            },
+          );
         }}
         disabled={busy}
         className={clsx(s.actionBtn, s.revertBtn, busy && s.actionBtnDisabled)}
@@ -79,6 +85,7 @@ export default function FloatingActions({
       {message && (
         <span className={message.includes(t("ui.failedKeyword")) ? s.msgError : s.msgSuccess}>{message}</span>
       )}
+      {confirmUI}
     </div>
   );
 }

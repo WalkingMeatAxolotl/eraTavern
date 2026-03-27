@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import clsx from "clsx";
 import { t } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import { fetchAddonVersionsDetail, overwriteAddonVersion, deleteAddon } from "../../api/client";
 import type { AddonVersionInfo } from "../../api/client";
 import { modalBtnStyle } from "../shared/Modal";
@@ -23,6 +24,7 @@ export default function VersionManagePanel({
   const [copySource, setCopySource] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmUI, showConfirm] = useConfirm();
 
   const loadVersions = useCallback(() => {
     fetchAddonVersionsDetail(addonId).then(setVersions);
@@ -34,19 +36,23 @@ export default function VersionManagePanel({
 
   const grouped = groupVersions(versions);
 
-  const handleCopy = async (target: string) => {
+  const handleCopy = (target: string) => {
     if (!copySource || copySource === target) return;
-    if (!confirm(t("confirm.overwriteAddonVer", { source: copySource, target }))) return;
-    setBusy(true);
-    const result = await overwriteAddonVersion(addonId, copySource, target);
-    setBusy(false);
-    if (!result.success) {
-      alert(result.message);
-      return;
-    }
-    setCopySource(null);
-    loadVersions();
-    onRefresh();
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.overwriteAddonVer", { source: copySource, target }), confirmLabel: t("btn.overwrite"), danger: true },
+      async () => {
+        setBusy(true);
+        const result = await overwriteAddonVersion(addonId, copySource, target);
+        setBusy(false);
+        if (!result.success) {
+          alert(result.message);
+          return;
+        }
+        setCopySource(null);
+        loadVersions();
+        onRefresh();
+      },
+    );
   };
 
   const handleDelete = async (ver: string) => {
@@ -149,6 +155,7 @@ export default function VersionManagePanel({
           </div>
         </div>
       )}
+      {confirmUI}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useConfirm } from "../shared/useConfirm";
 import clsx from "clsx";
 import type { GameDefinitions, RawCharacterData } from "../../types/game";
 import { saveCharacterConfig, createCharacter, deleteCharacter, uploadAsset } from "../../api/client";
@@ -42,6 +43,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
   const [tab, setTab] = useState<CharTab>("basic");
   const [showLlmHelp, setShowLlmHelp] = useState(false);
   const [jsonMode, setJsonMode] = useState(false);
+  const [confirmUI, showConfirm] = useConfirm();
 
   const { template, clothingDefs, itemDefs, traitDefs, traitGroups, maps } = definitions;
 
@@ -129,16 +131,20 @@ export default function CharacterEditor({ character, definitions, allCharacters,
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteChar", { name: data.id }))) return;
-    setSaving(true);
-    try {
-      await deleteCharacter(data.id);
-      onBack();
-    } catch (e: unknown) {
-      setMessage(e instanceof Error ? e.message : "Delete failed");
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteChar", { name: data.id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          await deleteCharacter(data.id);
+          onBack();
+        } catch (e: unknown) {
+          setMessage(e instanceof Error ? e.message : "Delete failed");
+          setSaving(false);
+        }
+      },
+    );
   };
 
   if (jsonMode) {
@@ -900,6 +906,7 @@ export default function CharacterEditor({ character, definitions, allCharacters,
           </span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }

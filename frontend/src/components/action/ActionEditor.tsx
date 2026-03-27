@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useConfirm } from "../shared/useConfirm";
 import clsx from "clsx";
 import type {
   ActionDefinition,
@@ -75,6 +76,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [showVarHelp, setShowVarHelp] = useState(false);
+  const [confirmUI, showConfirm] = useConfirm();
 
   useEffect(() => {
     fetchLLMPresets()
@@ -198,23 +200,27 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteAction", { name: name || id }))) return;
-    setSaving(true);
-    try {
-      if (addonCrud) {
-        await addonCrud.delete(action.id);
-        onBack();
-        return;
-      }
-      const result = await deleteActionDef(action.id);
-      if (result.success) onBack();
-      else setMessage(result.message);
-    } catch (e) {
-      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
-    } finally {
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteAction", { name: name || id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          if (addonCrud) {
+            await addonCrud.delete(action.id);
+            onBack();
+            return;
+          }
+          const result = await deleteActionDef(action.id);
+          if (result.success) onBack();
+          else setMessage(result.message);
+        } catch (e) {
+          setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
+        } finally {
+          setSaving(false);
+        }
+      },
+    );
   };
 
   const editorCtx: EditorContextValue = {
@@ -558,6 +564,7 @@ export default function ActionEditor({ action, isNew, definitions, onBack, addon
           <span className={s.statusMsg} style={{ color: message === t("status.saved") ? T.success : T.danger }}>{message}</span>
         )}
       </div>
+      {confirmUI}
     </div>
     </EditorProvider>
   );

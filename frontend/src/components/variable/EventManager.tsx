@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import clsx from "clsx";
 import T from "../../theme";
 import { t, SLOT_LABELS } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import { EF, EffType, EffectOp, ClothingState, TriggerMode, EventScope, TargetType } from "../../constants";
 import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import type {
@@ -241,6 +242,7 @@ function WorldVarEditor({
   const [type, setType] = useState<"number" | "boolean">(variable.type);
   const [defaultVal, setDefaultVal] = useState(variable.default);
   const [saving, setSaving] = useState(false);
+  const [confirmUI, showConfirm] = useConfirm();
 
   const handleSave = async () => {
     if (!id.trim() || !name.trim()) return;
@@ -267,14 +269,18 @@ function WorldVarEditor({
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteWorldVar"))) return;
-    const res = await deleteWorldVariableDef(variable.id);
-    if (!res.success) {
-      alert(res.message);
-      return;
-    }
-    onBack();
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteWorldVar"), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        const res = await deleteWorldVariableDef(variable.id);
+        if (!res.success) {
+          alert(res.message);
+          return;
+        }
+        onBack();
+      },
+    );
   };
 
   return (
@@ -357,6 +363,7 @@ function WorldVarEditor({
           </div>
         </div>
       </div>
+      {confirmUI}
     </div>
   );
 }
@@ -391,6 +398,7 @@ function EventEditor({
   const [outputTemplate, setOutputTemplate] = useState(event.outputTemplate ?? "");
   const [saving, setSaving] = useState(false);
   const [showVarHelp, setShowVarHelp] = useState(false);
+  const [confirmUI2, showConfirm2] = useConfirm();
   const [showTriggerHelp, setShowTriggerHelp] = useState(false);
   const [showScopeHelp, setShowScopeHelp] = useState(false);
 
@@ -458,14 +466,18 @@ function EventEditor({
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteEvent"))) return;
-    const res = await deleteEventDef(event.id);
-    if (!res.success) {
-      alert(res.message);
-      return;
-    }
-    onBack();
+  const handleDelete = () => {
+    showConfirm2(
+      { title: t("confirm.title"), message: t("confirm.deleteEvent"), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        const res = await deleteEventDef(event.id);
+        if (!res.success) {
+          alert(res.message);
+          return;
+        }
+        onBack();
+      },
+    );
   };
 
   // Condition CRUD
@@ -760,6 +772,7 @@ function EventEditor({
           )}
         </div>
       </div>
+      {confirmUI2}
     </div>
     </EditorProvider>
   );

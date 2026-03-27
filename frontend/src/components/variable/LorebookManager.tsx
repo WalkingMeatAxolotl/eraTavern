@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import T from "../../theme";
 import { t } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import { LorebookMode } from "../../constants";
 import type { LorebookEntry } from "../../types/game";
 import { fetchLorebookEntries, createLorebookEntry, saveLorebookEntry, deleteLorebookEntry } from "../../api/client";
@@ -40,6 +41,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
+  const [confirmUI, showConfirm] = useConfirm();
 
   const loadEntries = useCallback(async () => {
     try {
@@ -119,21 +121,25 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteEntry", { name: entry.name || entry.id }))) return;
-    setSaving(true);
-    try {
-      const result = await deleteLorebookEntry(entry.id);
-      if (result.success) {
-        handleBack();
-      } else {
-        setMessage(result.message || t("msg.deleteFailed", { error: "" }));
-      }
-    } catch (e) {
-      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
-    } finally {
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteEntry", { name: entry.name || entry.id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          const result = await deleteLorebookEntry(entry.id);
+          if (result.success) {
+            handleBack();
+          } else {
+            setMessage(result.message || t("msg.deleteFailed", { error: "" }));
+          }
+        } catch (e) {
+          setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
+        } finally {
+          setSaving(false);
+        }
+      },
+    );
   };
 
   const addKeyword = () => {
@@ -360,6 +366,7 @@ export default function LorebookManager({ selectedAddon, onEditingChange, addonI
           <span style={{ color: message === t("msg.saved") ? T.success : T.danger, fontSize: "12px" }}>{message}</span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }

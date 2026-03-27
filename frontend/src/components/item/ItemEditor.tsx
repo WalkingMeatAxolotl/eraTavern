@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirm } from "../shared/useConfirm";
 import type { ItemDefinition } from "../../types/game";
 import { createItemDef, saveItemDef, deleteItemDef } from "../../api/client";
 import T from "../../theme";
@@ -38,6 +39,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
   const [price, setPrice] = useState(item.price);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmUI, showConfirm] = useConfirm();
 
   const isReadOnly = false; // all addon entities are editable
   const [jsonMode, setJsonMode] = useState(false);
@@ -82,26 +84,30 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteItem", { name: name || id }))) return;
-    setSaving(true);
-    try {
-      if (addonCrud) {
-        await addonCrud.delete(item.id);
-        onBack();
-        return;
-      }
-      const result = await deleteItemDef(item.id);
-      if (result.success) {
-        onBack();
-      } else {
-        setMessage(result.message);
-      }
-    } catch (e) {
-      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
-    } finally {
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteItem", { name: name || id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          if (addonCrud) {
+            await addonCrud.delete(item.id);
+            onBack();
+            return;
+          }
+          const result = await deleteItemDef(item.id);
+          if (result.success) {
+            onBack();
+          } else {
+            setMessage(result.message);
+          }
+        } catch (e) {
+          setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
+        } finally {
+          setSaving(false);
+        }
+      },
+    );
   };
 
   if (jsonMode) {
@@ -299,6 +305,7 @@ export default function ItemEditor({ item, isNew, allTags, onBack, addonCrud, ad
           <span className={message === t("status.saved") ? s.messageOk : s.messageErr}>{message}</span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }

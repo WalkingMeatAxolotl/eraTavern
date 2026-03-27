@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useConfirm } from "../shared/useConfirm";
 import type { DecorPreset, RawMapData, RawMapGrid, MapCell } from "../../types/game";
 import {
   fetchMapRaw,
@@ -70,6 +71,7 @@ export default function MapEditor({ mapId, addonIds, onBack }: Props) {
   const [showPresetEditor, setShowPresetEditor] = useState(false);
   const [showConnections, setShowConnections] = useState(true);
   const [showBgHelp, setShowBgHelp] = useState(false);
+  const [confirmUI, showConfirm] = useConfirm();
   const gridRef = useRef<HTMLDivElement>(null);
 
   const inputStyle: React.CSSProperties = {
@@ -194,14 +196,18 @@ export default function MapEditor({ mapId, addonIds, onBack }: Props) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteMap", { name: mapData?.name ?? "" }))) return;
-    const result = await deleteMap(mapId);
-    if (result.success) {
-      onBack();
-    } else {
-      alert(result.message);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteMap", { name: mapData?.name ?? "" }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        const result = await deleteMap(mapId);
+        if (result.success) {
+          onBack();
+        } else {
+          alert(result.message);
+        }
+      },
+    );
   };
 
   const addRowBottom = () => {
@@ -601,6 +607,7 @@ export default function MapEditor({ mapId, addonIds, onBack }: Props) {
           [{t("btn.back")}]
         </button>
       </div>
+      {confirmUI}
     </div>
   );
 }

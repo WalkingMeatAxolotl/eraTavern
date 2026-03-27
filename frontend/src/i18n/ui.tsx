@@ -28,6 +28,8 @@ export const UI: Record<string, string> = {
   "btn.tagMgmt": "标签管理",
   "btn.saveChanges": "保存变更",
   "btn.revert": "撤销变更",
+  "btn.overwrite": "覆盖",
+  "btn.load": "读取",
 
   // === Status ===
   "status.loading": "加载中...",
@@ -243,6 +245,8 @@ export const UI: Record<string, string> = {
   "llmVar.history": "历史（支持参数 :count=N）",
 
   // === Confirm dialogs ===
+  "confirm.title": "确认",
+  "confirm.discard": "确认撤销所有未保存的修改？",
   "confirm.deleteAction": "确定要删除行动「{name}」吗？",
   "confirm.deleteItem": "确定要删除物品「{name}」吗？",
   "confirm.deleteClothing": "确定要删除服装「{name}」吗？",

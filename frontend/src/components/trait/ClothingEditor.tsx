@@ -3,6 +3,7 @@ import clsx from "clsx";
 import type { GameDefinitions, ClothingDefinition, TraitEffect } from "../../types/game";
 import { createClothingDef, saveClothingDef, deleteClothingDef } from "../../api/client";
 import { t, SLOT_LABELS } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import { EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
@@ -62,6 +63,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
   const [effects, setEffects] = useState<TraitEffect[]>([...(clothing.effects ?? [])]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmUI, showConfirm] = useConfirm();
   const [showSlotHelp, setShowSlotHelp] = useState(false);
   const [showOcclusionHelp, setShowOcclusionHelp] = useState(false);
 
@@ -119,26 +121,30 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteClothing", { name: name || id }))) return;
-    setSaving(true);
-    try {
-      if (addonCrud) {
-        await addonCrud.delete(clothing.id);
-        onBack();
-        return;
-      }
-      const result = await deleteClothingDef(clothing.id);
-      if (result.success) {
-        onBack();
-      } else {
-        setMessage(result.message);
-      }
-    } catch (e) {
-      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
-    } finally {
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteClothing", { name: name || id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          if (addonCrud) {
+            await addonCrud.delete(clothing.id);
+            onBack();
+            return;
+          }
+          const result = await deleteClothingDef(clothing.id);
+          if (result.success) {
+            onBack();
+          } else {
+            setMessage(result.message);
+          }
+        } catch (e) {
+          setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
+        } finally {
+          setSaving(false);
+        }
+      },
+    );
   };
 
   // Available slots for occlusion (exclude the item's own slots)
@@ -395,6 +401,7 @@ export default function ClothingEditor({ clothing, definitions, isNew, onBack, a
           <span className={message === t("status.saved") ? s.msgSuccess : s.msgError}>{message}</span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }

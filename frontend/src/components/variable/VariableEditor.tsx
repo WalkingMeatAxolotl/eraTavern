@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import clsx from "clsx";
+import { useConfirm } from "../shared/useConfirm";
 import type { VariableDefinition, VariableStep, GameDefinitions } from "../../types/game";
 import {
   createVariableDef,
@@ -166,6 +167,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
   const [steps, setSteps] = useState<VariableStep[]>(variable.steps ?? []);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmUI, showConfirm] = useConfirm();
 
   // Test panel state
   const [testOpen, setTestOpen] = useState(false);
@@ -224,11 +226,15 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteVar", { name: name || id }))) return;
-    const result = await deleteVariableDef(variable.id);
-    if (result.success) onBack();
-    else setMessage(result.message);
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteVar", { name: name || id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        const result = await deleteVariableDef(variable.id);
+        if (result.success) onBack();
+        else setMessage(result.message);
+      },
+    );
   };
 
   const handleTest = async () => {
@@ -554,6 +560,7 @@ export default function VariableEditor({ variable, isNew, allTags, allVariables,
           </span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { t } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import type { LLMPreset, LLMPromptEntry, LLMParameters, LLMProvider } from "../../types/game";
 import LLMDebugPanel from "./LLMDebugPanel";
 import type { LLMDebugEntry } from "./LLMDebugPanel";
@@ -168,6 +169,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
   const [editingProvider, setEditingProvider] = useState<LLMProvider | null>(null);
   const [isNewProvider, setIsNewProvider] = useState(false);
   const [providerMessage, setProviderMessage] = useState("");
+  const [confirmUI, showConfirm] = useConfirm();
 
   const loadAll = useCallback(async () => {
     try {
@@ -260,21 +262,25 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deletePreset", { name: preset.name || preset.id }))) return;
-    setSaving(true);
-    try {
-      const result = await deleteLLMPreset(preset.id);
-      if (result.success) {
-        handleBack();
-      } else {
-        setMessage(result.message || t("msg.deleteFailedShort"));
-      }
-    } catch (e) {
-      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
-    } finally {
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deletePreset", { name: preset.name || preset.id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          const result = await deleteLLMPreset(preset.id);
+          if (result.success) {
+            handleBack();
+          } else {
+            setMessage(result.message || t("msg.deleteFailedShort"));
+          }
+        } catch (e) {
+          setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
+        } finally {
+          setSaving(false);
+        }
+      },
+    );
   };
 
   // --- Provider handlers ---
@@ -311,20 +317,24 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
     }
   };
 
-  const handleDeleteProvider = async () => {
+  const handleDeleteProvider = () => {
     if (!editingProvider) return;
-    if (!confirm(t("confirm.deleteProvider", { name: editingProvider.name || editingProvider.id }))) return;
-    try {
-      const result = await deleteLLMProvider(editingProvider.id);
-      if (result.success) {
-        setEditingProvider(null);
-        loadAll();
-      } else {
-        setProviderMessage(result.message || t("msg.deleteFailedShort"));
-      }
-    } catch (e) {
-      setProviderMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
-    }
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteProvider", { name: editingProvider.name || editingProvider.id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        try {
+          const result = await deleteLLMProvider(editingProvider.id);
+          if (result.success) {
+            setEditingProvider(null);
+            loadAll();
+          } else {
+            setProviderMessage(result.message || t("msg.deleteFailedShort"));
+          }
+        } catch (e) {
+          setProviderMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
+        }
+      },
+    );
   };
 
   // --- Preset entry handlers ---
@@ -766,6 +776,7 @@ export default function LLMPresetManager({ debugEntries = [] }: { debugEntries?:
           <span className={s.inlineMsg} style={{ color: message === t("msg.saved") ? "var(--success)" : "var(--danger)" }}>{message}</span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }

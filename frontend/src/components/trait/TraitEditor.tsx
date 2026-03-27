@@ -3,6 +3,7 @@ import clsx from "clsx";
 import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from "../../types/game";
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../../api/client";
 import { t } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import { EF, EffectDirection, MagnitudeType } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
@@ -80,6 +81,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
   const [decay, setDecay] = useState<AbilityDecay>(trait.decay ?? { amount: 0, type: "fixed", intervalMinutes: 60 });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmUI, showConfirm] = useConfirm();
 
   const isReadOnly = false; // all addon entities are editable
   const [jsonMode, setJsonMode] = useState(false);
@@ -133,26 +135,30 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteTrait", { name: name || id }))) return;
-    setSaving(true);
-    try {
-      if (addonCrud) {
-        await addonCrud.delete(trait.id);
-        onBack();
-        return;
-      }
-      const result = await deleteTraitDef(trait.id);
-      if (result.success) {
-        onBack();
-      } else {
-        setMessage(result.message);
-      }
-    } catch (e) {
-      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
-    } finally {
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteTrait", { name: name || id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          if (addonCrud) {
+            await addonCrud.delete(trait.id);
+            onBack();
+            return;
+          }
+          const result = await deleteTraitDef(trait.id);
+          if (result.success) {
+            onBack();
+          } else {
+            setMessage(result.message);
+          }
+        } catch (e) {
+          setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
+        } finally {
+          setSaving(false);
+        }
+      },
+    );
   };
 
   /** Format percentage hint: value=5 increase → "+5%", value=5 decrease → "-5%" */
@@ -472,6 +478,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           <span className={message === t("status.saved") ? s.msgSuccess : s.msgError}>{message}</span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import clsx from "clsx";
 import type { GameDefinitions, OutfitType } from "../../types/game";
 import { saveOutfitTypes } from "../../api/client";
 import { t, SLOT_LABELS } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import sh from "../shared/shared.module.css";
 import s from "./OutfitEditor.module.css";
@@ -23,6 +24,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
   const [slots, setSlots] = useState<Record<string, string[]>>(structuredClone(outfit.slots));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmUI, showConfirm] = useConfirm();
   const [showHelp, setShowHelp] = useState(false);
 
   const clothingSlots = definitions.template.clothingSlots;
@@ -71,22 +73,26 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteOutfit", { name: name || id }))) return;
-    setSaving(true);
-    try {
-      const next = allOutfits.filter((o) => o.id !== outfit.id);
-      const result = await saveOutfitTypes(next);
-      if (result.success) {
-        onBack();
-      } else {
-        setMessage(result.message);
-      }
-    } catch (e) {
-      setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
-    } finally {
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteOutfit", { name: name || id }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          const next = allOutfits.filter((o) => o.id !== outfit.id);
+          const result = await saveOutfitTypes(next);
+          if (result.success) {
+            onBack();
+          } else {
+            setMessage(result.message);
+          }
+        } catch (e) {
+          setMessage(t("msg.deleteFailed", { error: e instanceof Error ? e.message : String(e) }));
+        } finally {
+          setSaving(false);
+        }
+      },
+    );
   };
 
   return (
@@ -235,6 +241,7 @@ export default function OutfitEditor({ outfit, allOutfits, definitions, isNew, o
           </span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }

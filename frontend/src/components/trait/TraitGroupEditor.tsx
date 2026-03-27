@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import type { GameDefinitions, TraitGroup } from "../../types/game";
 import { createTraitGroup, saveTraitGroup, deleteTraitGroup } from "../../api/client";
 import { t } from "../../i18n/ui";
+import { useConfirm } from "../shared/useConfirm";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
 import { toLocalId } from "../shared/idUtils";
 import CloneButton from "../shared/CloneDialog";
@@ -28,6 +29,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
   const [data, setData] = useState<TraitGroup>(() => structuredClone(group));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [confirmUI, showConfirm] = useConfirm();
 
   const isReadOnly = false; // all addon entities are editable
   const categories = definitions.template.traits;
@@ -75,21 +77,25 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("confirm.deleteTraitGroup", { name: data.name }))) return;
-    setSaving(true);
-    try {
-      if (addonCrud) {
-        await addonCrud.delete(data.id);
-        onBack();
-        return;
-      }
-      await deleteTraitGroup(data.id);
-      onBack();
-    } catch (e: unknown) {
-      setMessage(e instanceof Error ? e.message : "Delete failed");
-      setSaving(false);
-    }
+  const handleDelete = () => {
+    showConfirm(
+      { title: t("confirm.title"), message: t("confirm.deleteTraitGroup", { name: data.name }), confirmLabel: t("btn.delete"), danger: true },
+      async () => {
+        setSaving(true);
+        try {
+          if (addonCrud) {
+            await addonCrud.delete(data.id);
+            onBack();
+            return;
+          }
+          await deleteTraitGroup(data.id);
+          onBack();
+        } catch (e: unknown) {
+          setMessage(e instanceof Error ? e.message : "Delete failed");
+          setSaving(false);
+        }
+      },
+    );
   };
 
   return (
@@ -231,6 +237,7 @@ export default function TraitGroupEditor({ group, definitions, isNew, onBack, ad
           </span>
         )}
       </div>
+      {confirmUI}
     </div>
   );
 }
