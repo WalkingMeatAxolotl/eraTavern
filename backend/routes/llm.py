@@ -293,6 +293,7 @@ class AssistSession:
         "_logged_count",
         "target_addon",
         "plan",
+        "plan_mode",
     )
 
     def __init__(self) -> None:
@@ -305,6 +306,7 @@ class AssistSession:
         self._logged_count: int = 0  # how many messages already flushed
         self.target_addon: str = ""  # user-chosen target addon for entity creation
         self.plan: dict | None = None  # structured plan from submit_plan tool
+        self.plan_mode: bool = False  # user-chosen: True = plan first, False = direct create
 
     def _ensure_log_file(self) -> Path:
         """Ensure log file exists and return its path."""
@@ -556,12 +558,32 @@ async def _run_agent_loop(
 
     repair_counts: dict[str, int] = {}
 
+    # Filter tools based on plan_mode
+    if session.plan_mode:
+        # Plan mode: include submit_plan, exclude write tools until plan is confirmed
+        if session.mode == "chat":
+            # Before plan confirmed: only read + submit_plan
+            tools = [t for t in ASSIST_TOOLS if TOOL_SAFETY.get(t["function"]["name"], "write") != "write"]
+        else:
+            # After plan confirmed (executing): all tools except submit_plan
+            tools = [t for t in ASSIST_TOOLS if t["function"]["name"] != "submit_plan"]
+    else:
+        # Direct mode: no submit_plan
+        tools = [t for t in ASSIST_TOOLS if t["function"]["name"] != "submit_plan"]
+
     for loop_i in range(max_loops):
         # Rebuild messages each iteration (history may have grown)
         context_text = collect_assist_context(game_state)
         # Extract cached schema types from read_cache keys
         cached_schemas = _extract_cached_schema_types(session.read_cache)
-        messages = build_assist_messages(preset, context_text, session.messages, "", cached_schemas=cached_schemas)
+        messages = build_assist_messages(
+            preset,
+            context_text,
+            session.messages,
+            "",
+            cached_schemas=cached_schemas,
+            plan_mode=session.plan_mode,
+        )
 
         full_text = ""
         tool_calls = None
@@ -569,7 +591,7 @@ async def _run_agent_loop(
         session.log_llm_request(loop_i, messages)
 
         usage_data = None
-        async for event_type, event_data in call_llm_streaming(api_config, messages, tools=ASSIST_TOOLS):
+        async for event_type, event_data in call_llm_streaming(api_config, messages, tools=tools):
             if event_type == "llm_chunk":
                 full_text += event_data.get("text", "")
                 yield _format_sse("llm_chunk", event_data)
@@ -689,26 +711,6 @@ async def _run_agent_loop(
         if write_idx is not None:
             call_id, fn_name, _, fn_args = parsed[write_idx]
 
-            # Backend guardrail: reject large batch_create without plan
-            if fn_name == "batch_create" and session.mode == "chat":
-                payload = fn_args.get("payload", [])
-                if isinstance(payload, list) and len(payload) >= 8:
-                    err = json.dumps(
-                        {"error": "PLAN_REQUIRED", "detail": "批量创建 8+ 实体需要先输出 plan。请描述整体需求。"},
-                        ensure_ascii=False,
-                    )
-                    yield _format_sse(
-                        "tool_call_result",
-                        {"callId": call_id, "name": fn_name, "arguments": fn_args, "result": err, "auto": True},
-                    )
-                    tool_msg = {"role": "tool", "tool_call_id": call_id, "content": err}
-                    session.messages.append(tool_msg)
-                    for i in range(write_idx + 1, len(parsed)):
-                        skip_id = parsed[i][0]
-                        skip_msg = {"role": "tool", "tool_call_id": skip_id, "content": '{"skipped": true}'}
-                        session.messages.append(skip_msg)
-                    continue
-
             # Pre-validate before entering pending
             ok, err_result = _pre_validate_write(game_state, fn_name, fn_args)
             if not ok:
@@ -811,6 +813,8 @@ async def assist_chat(request: Request):
     target_addon = data.get("targetAddon", "")
     if target_addon:
         session.target_addon = target_addon
+    # Update plan mode from request (user can toggle per-message)
+    session.plan_mode = bool(data.get("planMode", False))
     session.messages.append({"role": "user", "content": user_message})
     session.flush_log()
 

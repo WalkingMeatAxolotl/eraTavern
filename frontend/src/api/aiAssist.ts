@@ -11,6 +11,7 @@ export interface AssistChatParams {
   sessionId: string;
   message: string;
   targetAddon?: string;
+  planMode?: boolean;
 }
 
 export interface ToolCallInfo {

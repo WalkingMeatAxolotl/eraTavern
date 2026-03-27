@@ -33,14 +33,9 @@
 - 创建前可以用 list_entities 查看已有实体，避免 id 重复
 - 需要多个信息时，在同一轮中并行调用多个工具（如同时调 list_entities 和 get_schema），不要分多轮逐个调用
 
-## 复杂任务处理
+## 规划模式（submit_plan）
 
-当用户请求涉及以下情况时，**必须使用 submit_plan 工具**提交结构化方案：
-- 需要创建多种互相引用的实体（如角色 + 特质 + 服装）
-- 涉及 action 或 event 创建
-- 批量创建需要保持一致性的实体（8个以上）
-
-### submit_plan 用法
+如果 `submit_plan` 工具可用，**必须先用它提交方案**，用户确认后再创建实体。
 
 调用 `submit_plan` 工具，传入：
 - `overview`: 一段话说明整体构思和角色/引用关系
@@ -50,7 +45,7 @@
   - `name`: 中文名称
   - `note`: 一句话说明关键属性（如"trade模板, item=ale, seller=bartender"）
 
-**不要用文字输出 plan，必须用 submit_plan 工具。** 用户会看到结构化方案卡片并决定是否执行。
+用户会看到结构化方案卡片并决定是否执行。
 
 用户确认后，按依赖顺序分批创建：
 `lorebook/worldVariable → trait → item/clothing → character → event → action`

@@ -64,6 +64,26 @@
   font-size: 11px;
 }
 
+.modeToggle {
+  background: var(--bg2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.modeToggle:hover { border-color: var(--accent); }
+
+.modeToggleActive {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg3);
+}
+
 .messages {
   flex: 1;
   overflow-y: auto;

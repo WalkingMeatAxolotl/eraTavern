@@ -89,6 +89,7 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
   const [streamingText, setStreamingText] = useState("");
   const [agentMode, setAgentMode] = useState<"chat" | "awaiting_plan" | "executing">("chat");
   const [pendingPlan, setPendingPlan] = useState<{ plan: PlanData; callId: string } | null>(null);
+  const [planMode, setPlanMode] = useState(false);
   const [targetAddon, setTargetAddon] = useState(addonIds[0] ?? "");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -242,10 +243,10 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
     scrollToBottom();
 
     abortRef.current = streamAssistChat(
-      { sessionId, message: text, targetAddon: targetAddon || undefined },
+      { sessionId, message: text, targetAddon: targetAddon || undefined, planMode: planMode || undefined },
       buildCallbacks(),
     );
-  }, [inputText, isGenerating, sessionId, targetAddon, buildCallbacks, scrollToBottom]);
+  }, [inputText, isGenerating, sessionId, targetAddon, planMode, buildCallbacks, scrollToBottom]);
 
   // Confirm/reject a tool call
   const handleToolConfirm = useCallback(
@@ -363,7 +364,7 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
         </button>
       </div>
 
-      {/* Target addon selector */}
+      {/* Target addon selector + plan mode toggle */}
       {addonIds.length > 0 && (
         <div className={s.addonBar}>
           <label className={s.addonLabel}>{t("ai.targetAddon")}</label>
@@ -376,6 +377,13 @@ export default function AiDrawer({ addonIds, onEntityChanged, onDebugEntry }: Ai
               <option key={id} value={id}>{id}</option>
             ))}
           </select>
+          <button
+            className={clsx(s.modeToggle, planMode && s.modeToggleActive)}
+            onClick={() => setPlanMode((v) => !v)}
+            title={t("ai.planModeHint")}
+          >
+            {planMode ? t("ai.planModeOn") : t("ai.planModeOff")}
+          </button>
         </div>
       )}
 

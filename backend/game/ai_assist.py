@@ -1195,18 +1195,10 @@ DEFAULT_ASSIST_PROMPT = """\
 - 如果不确定字段格式或可用值，先用 get_schema 查看完整文档
 - 不要重复调用相同参数的工具，之前的结果已在对话历史中
 
-## 复杂任务处理
-当用户请求涉及以下情况时，**必须使用 submit_plan 工具**提交结构化方案：
-- 需要创建多种互相引用的实体（如角色 + 特质 + 服装）
-- 涉及 action 或 event 创建
-- 批量创建需要保持一致性的实体（8个以上）
-
-使用 submit_plan 工具时：
+## 规划模式
+如果 submit_plan 工具可用，你必须先用它提交方案，用户确认后再创建实体。
 - overview: 一段话说明整体构思和角色/引用关系
 - entities: 实体列表，每个包含 entityType/id/name/note
-- note 中写关键属性和引用（如"trade模板, seller=bartender"）
-
-submit_plan 提交后，用户会看到结构化方案卡片并决定是否执行。
 用户确认后，按依赖顺序分批创建：
 lorebook/worldVariable → trait → item/clothing → character → event → action
 
@@ -1398,6 +1390,7 @@ def build_assist_messages(
     history: list[dict],
     user_message: str,
     cached_schemas: Optional[list[str]] = None,
+    plan_mode: bool = False,
 ) -> list[dict]:
     """Assemble the full messages array for the LLM API call.
 
@@ -1438,7 +1431,15 @@ def build_assist_messages(
             }
         )
 
-    # 1b. Inject cached schema hint (reduces redundant get_schema calls)
+    # 1b. Inject plan mode hint
+    if plan_mode:
+        plan_hint = "\n\n**当前模式：规划模式。必须先用 submit_plan 工具提交方案，用户确认后再创建实体。**"
+        for i in range(len(messages) - 1, -1, -1):
+            if messages[i].get("role") == "system":
+                messages[i] = {**messages[i], "content": messages[i]["content"] + plan_hint}
+                break
+
+    # 1c. Inject cached schema hint (reduces redundant get_schema calls)
     if cached_schemas:
         hint = "\n\n注意：本会话中已获取过以下类型的 schema，无需再次调用 get_schema：" + ", ".join(cached_schemas)
         # Append to the last system message
