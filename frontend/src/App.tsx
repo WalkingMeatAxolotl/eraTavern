@@ -90,6 +90,7 @@ export default function App() {
 
   // AI Assist drawer state
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [rightCrossfading, setRightCrossfading] = useState<"to-ai" | "to-addon" | null>(null);
 
   // Session state (current world + addons)
   const [currentWorldId, setCurrentWorldId] = useState("");
@@ -120,13 +121,21 @@ export default function App() {
 
   const toggleAiDrawer = useCallback(() => {
     if (aiDrawerOpen) {
+      // AI open → close AI
       closeSidebar("right", () => setAiDrawerOpen(false));
+    } else if (rightOpen) {
+      // Addon open → crossfade to AI
+      setRightCrossfading("to-ai");
+      setTimeout(() => {
+        setRightOpen(false);
+        setAiDrawerOpen(true);
+        setRightCrossfading(null);
+      }, 150);
     } else {
-      setRightClosing(false);
-      setRightOpen(false);
+      // Nothing open → open AI
       setAiDrawerOpen(true);
     }
-  }, [aiDrawerOpen, closeSidebar]);
+  }, [aiDrawerOpen, rightOpen, closeSidebar]);
 
   const player = gameState ? (Object.values(gameState.characters).find((c) => c.isPlayer) ?? null) : null;
 
@@ -601,16 +610,17 @@ export default function App() {
         onToggleRight={() => {
           if (rightOpen) {
             closeSidebar("right", () => setRightOpen(false));
+          } else if (aiDrawerOpen) {
+            // AI open → crossfade to addon
+            setRightCrossfading("to-addon");
+            setTimeout(() => {
+              setAiDrawerOpen(false);
+              setRightOpen(true);
+              setRightCrossfading(null);
+            }, 150);
           } else {
             setRightClosing(false);
-            if (aiDrawerOpen) {
-              closeSidebar("right", () => {
-                setAiDrawerOpen(false);
-                setRightOpen(true);
-              });
-            } else {
-              setRightOpen(true);
-            }
+            setRightOpen(true);
           }
         }}
       />
@@ -643,14 +653,28 @@ export default function App() {
           className={clsx(s.sidebarInner, !showRight && s.sidebarHidden)}
           style={{ animation: rightAnim }}
         >
-          <div className={s.fullHeight} style={{ display: aiDrawerOpen ? "block" : "none" }}>
+          <div
+            className={s.fullHeight}
+            style={{
+              display: aiDrawerOpen || rightCrossfading === "to-addon" ? "block" : "none",
+              animation: rightCrossfading === "to-addon" ? "contentFadeOut 0.15s ease-in forwards"
+                : rightCrossfading === null && aiDrawerOpen ? "contentFadeIn 0.15s ease-out" : undefined,
+            }}
+          >
             <AiDrawer
               addonIds={addonIds}
               onEntityChanged={() => setSessionKey((k) => k + 1)}
               onDebugEntry={(e) => setDebugEntries((prev) => [...prev, e as any])}
             />
           </div>
-          <div className={s.fullHeight} style={{ display: !aiDrawerOpen && rightOpen ? "block" : "none" }}>
+          <div
+            className={s.fullHeight}
+            style={{
+              display: (!aiDrawerOpen && rightOpen) || rightCrossfading === "to-ai" ? "block" : "none",
+              animation: rightCrossfading === "to-ai" ? "contentFadeOut 0.15s ease-in forwards"
+                : rightCrossfading === null && rightOpen && !aiDrawerOpen ? "contentFadeIn 0.15s ease-out" : undefined,
+            }}
+          >
             <AddonSidebar
               key={addonListKey}
               enabledAddons={currentAddons}
