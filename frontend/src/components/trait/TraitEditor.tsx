@@ -4,8 +4,9 @@ import type { GameDefinitions, TraitDefinition, TraitEffect, AbilityDecay } from
 import { createTraitDef, saveTraitDef, deleteTraitDef } from "../../api/client";
 import { t } from "../../i18n/ui";
 import { useConfirm } from "../shared/useConfirm";
-import { EF, EffectDirection, MagnitudeType } from "../../constants";
+import { EF } from "../../constants";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
+import TraitEffectListEditor from "../shared/TraitEffectListEditor";
 import { toLocalId } from "../shared/idUtils";
 import { RawJsonPanel } from "../shared/RawJsonEditor";
 import CloneButton from "../shared/CloneDialog";
@@ -28,47 +29,6 @@ interface TraitEditorProps {
   addonIds?: string[];
 }
 
-/** Build effect target options grouped by type. */
-function buildTargetOptions(defs: GameDefinitions) {
-  const groups: { label: string; options: { value: string; label: string }[] }[] = [];
-
-  // Resources → "{label}(最大值)"
-  if (defs.template.resources.length > 0) {
-    groups.push({
-      label: t("trait.groupResource"),
-      options: defs.template.resources.map((r) => ({
-        value: r.key,
-        label: `${r.label}${t("trait.maxValueSuffix")}`,
-      })),
-    });
-  }
-
-  // Abilities
-  if (defs.template.abilities.length > 0) {
-    groups.push({
-      label: t("trait.groupAbility"),
-      options: defs.template.abilities.map((a) => ({
-        value: a.key,
-        label: a.label,
-      })),
-    });
-  }
-
-  // BasicInfo (number type only)
-  const numberFields = defs.template.basicInfo.filter((f) => f.type === "number");
-  if (numberFields.length > 0) {
-    groups.push({
-      label: t("trait.groupBasicInfo"),
-      options: numberFields.map((f) => ({
-        value: f.key,
-        label: f.label,
-      })),
-    });
-  }
-
-  return groups;
-}
-
 export default function TraitEditor({ trait, definitions, isNew, onBack, addonCrud, addonIds }: TraitEditorProps) {
   const addonPrefix = trait.source || "";
   const [id, setId] = useState(isNew ? "" : toLocalId(trait.id));
@@ -85,21 +45,6 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
 
   const isReadOnly = false; // all addon entities are editable
   const [jsonMode, setJsonMode] = useState(false);
-  const targetGroups = buildTargetOptions(definitions);
-  const allTargets = targetGroups.flatMap((g) => g.options);
-
-  const updateEffect = (idx: number, patch: Partial<TraitEffect>) => {
-    setEffects((prev) => prev.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
-  };
-
-  const removeEffect = (idx: number) => {
-    setEffects((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const addEffect = () => {
-    const firstTarget = allTargets[0]?.value ?? "";
-    setEffects((prev) => [...prev, { target: firstTarget, effect: EffectDirection.INCREASE, magnitudeType: MagnitudeType.FIXED, value: 0 }]);
-  };
 
   const handleSave = async () => {
     if (!id.trim() || !name.trim()) {
@@ -159,12 +104,6 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
         }
       },
     );
-  };
-
-  /** Format percentage hint: value=5 increase → "+5%", value=5 decrease → "-5%" */
-  const pctHint = (value: number, direction: string) => {
-    const sign = direction === EffectDirection.INCREASE ? "+" : "-";
-    return `${sign}${value}%`;
   };
 
   const buildData = (): Record<string, unknown> => {
@@ -363,79 +302,7 @@ export default function TraitEditor({ trait, definitions, isNew, onBack, addonCr
           <span className={s.sectionTitleText}>{t("section.effects")}</span>
         </div>
         <div className={s.sectionContent}>
-        <div className={s.effectList}>
-          {effects.map((eff, idx) => (
-            <div key={idx} className={s.effectRow}>
-              {/* Target */}
-              <select
-                className={clsx(sh.input, sh.flex1)}
-                value={eff.target}
-                onChange={(e) => updateEffect(idx, { target: e.target.value })}
-                disabled={isReadOnly}
-              >
-                {targetGroups.map((g) => (
-                  <optgroup key={g.label} label={g.label}>
-                    {g.options.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-
-              {/* Direction */}
-              <select
-                className={clsx(sh.input, sh.w70)}
-                value={eff.effect}
-                onChange={(e) => updateEffect(idx, { effect: e.target.value as "increase" | "decrease" })}
-                disabled={isReadOnly}
-              >
-                <option value={EffectDirection.INCREASE}>{t("trait.increase")}</option>
-                <option value={EffectDirection.DECREASE}>{t("trait.decrease")}</option>
-              </select>
-
-              {/* Magnitude type */}
-              <select
-                className={clsx(sh.input, sh.w70)}
-                value={eff.magnitudeType}
-                onChange={(e) => updateEffect(idx, { magnitudeType: e.target.value as "fixed" | "percentage" })}
-                disabled={isReadOnly}
-              >
-                <option value={MagnitudeType.FIXED}>{t("trait.fixedValue")}</option>
-                <option value={MagnitudeType.PERCENTAGE}>{t("trait.percentage")}</option>
-              </select>
-
-              {/* Value */}
-              <input
-                type="number"
-                className={clsx(sh.input, sh.w60)}
-                value={eff.value}
-                onChange={(e) => updateEffect(idx, { value: Number(e.target.value) })}
-                disabled={isReadOnly}
-              />
-
-              {/* Multiplier hint for percentage */}
-              {eff.magnitudeType === MagnitudeType.PERCENTAGE && (
-                <span className={s.pctHint}>
-                  {pctHint(eff.value, eff.effect)}
-                </span>
-              )}
-
-              {/* Delete button */}
-              {!isReadOnly && (
-                <button className={s.deleteBtn} onClick={() => removeEffect(idx)}>
-                  x
-                </button>
-              )}
-            </div>
-          ))}
-          {!isReadOnly && (
-            <button className={s.addEffectBtn} onClick={addEffect}>
-              [{t("btn.addEffect")}]
-            </button>
-          )}
-        </div>
+          <TraitEffectListEditor effects={effects} onChange={setEffects} definitions={definitions} disabled={isReadOnly} />
         </div>
       </div>
 

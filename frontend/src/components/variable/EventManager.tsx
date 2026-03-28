@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import clsx from "clsx";
 import T from "../../theme";
-import { t, SLOT_LABELS } from "../../i18n/ui";
+import { t } from "../../i18n/ui";
 import { useConfirm } from "../shared/useConfirm";
-import { EF, EffType, EffectOp, ClothingState, TriggerMode, EventScope, TargetType } from "../../constants";
+import { EF, EffectOp, TriggerMode, EventScope, TargetType } from "../../constants";
 import { HelpButton, HelpPanel, helpStyles } from "../shared/HelpToggle";
 import type {
   EventDefinition,
@@ -26,9 +26,10 @@ import {
 } from "../../api/client";
 import { RawJsonView } from "../shared/RawJsonEditor";
 import PrefixedIdInput from "../shared/PrefixedIdInput";
-import { EditorProvider, useEditorContext } from "../shared/EditorContext";
+import { EditorProvider } from "../shared/EditorContext";
 import type { EditorContextValue, KeyLabel } from "../shared/EditorContext";
 import { ConditionItemEditor } from "../shared/ConditionEditor";
+import { EffectEditor } from "../action/EffectEditor";
 import { btnClass } from "../shared/buttons";
 import { toLocalId } from "../shared/idUtils";
 import CloneButton from "../shared/CloneDialog";
@@ -38,19 +39,6 @@ import s from "./EventManager.module.css";
 
 // ── Styles ──────────────────────────────────────────────
 
-const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
-  { value: EffType.RESOURCE, label: t("eff.resource") },
-  { value: EffType.ABILITY, label: t("eff.ability") },
-  { value: EffType.EXPERIENCE, label: t("eff.experience") },
-  { value: EffType.BASIC_INFO, label: t("eff.basicInfo") },
-  { value: EffType.FAVORABILITY, label: t("eff.favorability") },
-  { value: EffType.TRAIT, label: t("eff.trait") },
-  { value: EffType.ITEM, label: t("eff.item") },
-  { value: EffType.CLOTHING, label: t("eff.clothing") },
-  { value: EffType.OUTFIT, label: t("eff.outfit") },
-  { value: EffType.POSITION, label: t("eff.position") },
-  { value: EffType.WORLD_VAR, label: t("eff.worldVar") },
-];
 
 // ── Main ────────────────────────────────────────────────
 
@@ -730,7 +718,7 @@ function EventEditor({
               className={idx % 2 === 0 ? s.condRowOdd : s.condRowEven}
             >
               <div className={s.effectRow}>
-                <EffectFieldEditor effect={eff} onChange={(e) => updateEffect(idx, e)} />
+                <EffectEditor effect={eff} onChange={(e) => updateEffect(idx, e)} disabled={false} />
                 <button onClick={() => removeEffect(idx)} className={btnClass("del", "sm")}>
                   x
                 </button>
@@ -776,274 +764,6 @@ function EventEditor({
       {confirmUI2}
     </div>
     </EditorProvider>
-  );
-}
-
-function EffectFieldEditor({
-  effect,
-  onChange,
-}: {
-  effect: ActionEffect;
-  onChange: (e: ActionEffect) => void;
-}) {
-  const ctx = useEditorContext();
-  const update = (patch: Partial<ActionEffect>) => onChange({ ...effect, ...patch });
-
-  return (
-    <>
-      <select
-        className={clsx(sh.input, sh.fs11)}
-        value={effect.type}
-        onChange={(e) => onChange({ type: e.target.value as ActionEffect["type"], op: EffectOp.ADD })}
-      >
-        {EFFECT_TYPES.map((et) => (
-          <option key={et.value} value={et.value}>
-            {et.label}
-          </option>
-        ))}
-      </select>
-
-      {/* Resource / Ability / BasicInfo */}
-      {(effect.type === EF.RESOURCE || effect.type === EF.ABILITY || effect.type === EF.BASIC_INFO) && (
-        <>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.key ?? ""}
-            onChange={(e) => update({ key: e.target.value })}
-          >
-            <option value="">{t("opt.select")}</option>
-            {(effect.type === EF.RESOURCE
-              ? ctx.resourceKeys
-              : effect.type === EF.ABILITY
-                ? ctx.abilityKeys
-                : ctx.basicInfoNumKeys
-            ).map((k) => (
-              <option key={k.key} value={k.key}>
-                {k.label}
-              </option>
-            ))}
-          </select>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.op}
-            onChange={(e) => update({ op: e.target.value })}
-          >
-            <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
-            <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
-          </select>
-          <input
-            className={clsx(sh.input, sh.w60, sh.fs11)}
-            type="number"
-            value={typeof effect.value === "number" ? effect.value : 0}
-            onChange={(e) => update({ value: Number(e.target.value) })}
-          />
-        </>
-      )}
-
-      {/* Favorability */}
-      {effect.type === EF.FAVORABILITY && (
-        <>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.op}
-            onChange={(e) => update({ op: e.target.value })}
-          >
-            <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
-            <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
-          </select>
-          <input
-            className={clsx(sh.input, sh.w60, sh.fs11)}
-            type="number"
-            value={typeof effect.value === "number" ? effect.value : 0}
-            onChange={(e) => update({ value: Number(e.target.value) })}
-          />
-        </>
-      )}
-
-      {/* Trait */}
-      {effect.type === EF.TRAIT && (
-        <>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.op}
-            onChange={(e) => update({ op: e.target.value })}
-          >
-            <option value={EffectOp.ADD}>{t("effOp.add")}</option>
-            <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
-          </select>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.key ?? ""}
-            onChange={(e) => update({ key: e.target.value })}
-          >
-            <option value="">{t("opt.category")}</option>
-            {ctx.traitCategories.map((c) => (
-              <option key={c.key} value={c.key}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.traitId ?? ""}
-            onChange={(e) => update({ traitId: e.target.value })}
-          >
-            <option value="">{t("opt.selectTrait")}</option>
-            {ctx.traitList
-              .filter((tr) => !effect.key || tr.category === effect.key)
-              .map((tr) => (
-                <option key={tr.id} value={tr.id}>
-                  {tr.name}
-                </option>
-              ))}
-          </select>
-        </>
-      )}
-
-      {/* Item */}
-      {effect.type === EF.ITEM && (
-        <>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.op}
-            onChange={(e) => update({ op: e.target.value })}
-          >
-            <option value={EffectOp.ADD}>{t("effOp.give")}</option>
-            <option value={EffectOp.REMOVE}>{t("effOp.remove")}</option>
-          </select>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.itemId ?? ""}
-            onChange={(e) => update({ itemId: e.target.value })}
-          >
-            <option value="">{t("opt.selectItem")}</option>
-            {ctx.itemList.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-              </option>
-            ))}
-          </select>
-          <input
-            className={clsx(sh.input, sh.fs11)}
-            style={{ width: "40px" }}
-            type="number"
-            value={effect.amount ?? 1}
-            onChange={(e) => update({ amount: Number(e.target.value) })}
-          />
-        </>
-      )}
-
-      {/* Clothing */}
-      {effect.type === EF.CLOTHING && (
-        <>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.slot ?? ""}
-            onChange={(e) => update({ slot: e.target.value })}
-          >
-            <option value="">{t("opt.slot")}</option>
-            {ctx.clothingSlots.map((sl) => (
-              <option key={sl} value={sl}>
-                {SLOT_LABELS[sl] ?? sl}
-              </option>
-            ))}
-          </select>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.state ?? ClothingState.WORN}
-            onChange={(e) => update({ state: e.target.value })}
-          >
-            <option value={ClothingState.WORN}>{t("clothingState.worn")}</option>
-            <option value={ClothingState.HALF_WORN}>{t("clothingState.halfWorn")}</option>
-            <option value={ClothingState.OFF}>{t("clothingState.off")}</option>
-            <option value={ClothingState.EMPTY}>{t("clothingState.empty")}</option>
-          </select>
-        </>
-      )}
-
-      {/* Position */}
-      {effect.type === EffType.POSITION && (
-        <>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.mapId ?? ""}
-            onChange={(e) => update({ mapId: e.target.value })}
-          >
-            <option value="">{t("opt.selectMap")}</option>
-            {ctx.mapList.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-          {effect.mapId && (
-            <select
-              className={clsx(sh.input, sh.fs11)}
-              value={effect.cellId ?? ""}
-              onChange={(e) => update({ cellId: Number(e.target.value) })}
-            >
-              <option value="">{t("opt.selectCell")}</option>
-              {(ctx.mapList.find((m) => m.id === effect.mapId)?.cells ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name || `#${c.id}`}
-                </option>
-              ))}
-            </select>
-          )}
-        </>
-      )}
-
-      {/* Experience */}
-      {effect.type === EF.EXPERIENCE && (
-        <>
-          <input
-            className={clsx(sh.input, sh.w80, sh.fs11)}
-            value={effect.key ?? ""}
-            onChange={(e) => update({ key: e.target.value })}
-            placeholder={t("ph.expKey")}
-          />
-          <input
-            className={clsx(sh.input, sh.fs11)}
-            style={{ width: "40px" }}
-            type="number"
-            value={typeof effect.value === "number" ? effect.value : 1}
-            onChange={(e) => update({ value: Number(e.target.value) })}
-          />
-        </>
-      )}
-
-      {/* WorldVar */}
-      {effect.type === EF.WORLD_VAR && (
-        <>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.key ?? ""}
-            onChange={(e) => update({ key: e.target.value })}
-          >
-            <option value="">{t("opt.selectWorldVar")}</option>
-            {ctx.worldVarList.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className={clsx(sh.input, sh.fs11)}
-            value={effect.op}
-            onChange={(e) => update({ op: e.target.value })}
-          >
-            <option value={EffectOp.SET}>{t("effOp.setTo")}</option>
-            <option value={EffectOp.ADD}>{t("effOp.increase")}</option>
-          </select>
-          <input
-            className={clsx(sh.input, sh.w60, sh.fs11)}
-            type="number"
-            value={typeof effect.value === "number" ? effect.value : 0}
-            onChange={(e) => update({ value: Number(e.target.value) })}
-          />
-        </>
-      )}
-    </>
   );
 }
 

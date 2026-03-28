@@ -1,0 +1,42 @@
+.effectList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.effectRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: var(--bg2);
+  border-radius: 3px;
+}
+
+.pctHint {
+  color: var(--text-dim);
+  font-size: 11px;
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.deleteBtn {
+  color: var(--danger);
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.addEffectBtn {
+  margin-top: 6px;
+  padding: 3px 10px;
+  background-color: var(--bg2);
+  color: var(--success-dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.addEffectBtn:hover {
+  background-color: var(--bg3);
+}
