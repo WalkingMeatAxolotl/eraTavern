@@ -450,24 +450,22 @@ function ConditionLeafEditor({
         <>
           <select
             className={sh.input}
-            value={
-              condition.condTarget === CondTarget.TARGET
-                ? "target_to_self"
-                : condition.targetId === "{{targetId}}"
-                  ? "self_to_target"
-                  : "self_to_target"
-            }
-            onChange={(e) => {
-              if (e.target.value === "target_to_self") {
-                update({ condTarget: CondTarget.TARGET, targetId: CondTarget.SELF });
-              } else {
-                update({ condTarget: CondTarget.SELF, targetId: "{{targetId}}" });
-              }
-            }}
+            value={condition.favFrom ?? CondTarget.SELF}
+            onChange={(e) => update({ favFrom: e.target.value })}
             disabled={disabled}
           >
-            <option value="self_to_target">{t("target.selfToTarget")}</option>
-            <option value="target_to_self">{t("target.targetToSelf")}</option>
+            <option value={CondTarget.SELF}>{t("target.self")}</option>
+            <option value="{{targetId}}">{t("target.target")}</option>
+          </select>
+          <span style={{ color: "#888" }}>→</span>
+          <select
+            className={sh.input}
+            value={condition.favTo ?? "{{targetId}}"}
+            onChange={(e) => update({ favTo: e.target.value })}
+            disabled={disabled}
+          >
+            <option value={CondTarget.SELF}>{t("target.self")}</option>
+            <option value="{{targetId}}">{t("target.target")}</option>
           </select>
           <select
             className={sh.input}

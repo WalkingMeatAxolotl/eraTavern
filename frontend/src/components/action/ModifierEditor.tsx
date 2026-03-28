@@ -307,12 +307,22 @@ export function ModifierListEditor({
             <>
               <select
                 className={sh.input}
-                value={mod.source ?? CondTarget.TARGET}
-                onChange={(e) => update(idx, { ...mod, source: e.target.value })}
+                value={mod.favFrom ?? "{{targetId}}"}
+                onChange={(e) => update(idx, { ...mod, favFrom: e.target.value })}
                 disabled={disabled}
               >
-                <option value={CondTarget.TARGET}>{t("target.targetToSelf")}</option>
-                <option value={CondTarget.SELF}>{t("target.selfToTarget")}</option>
+                <option value={CondTarget.SELF}>{t("target.self")}</option>
+                <option value="{{targetId}}">{t("target.target")}</option>
+              </select>
+              <span style={{ color: "#888" }}>→</span>
+              <select
+                className={sh.input}
+                value={mod.favTo ?? CondTarget.SELF}
+                onChange={(e) => update(idx, { ...mod, favTo: e.target.value })}
+                disabled={disabled}
+              >
+                <option value={CondTarget.SELF}>{t("target.self")}</option>
+                <option value="{{targetId}}">{t("target.target")}</option>
               </select>
               <span className={s.perSpan}>{t("label.per")}</span>
               <input

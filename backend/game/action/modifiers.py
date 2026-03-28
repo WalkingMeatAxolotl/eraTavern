@@ -8,6 +8,15 @@ from typing import Any
 from ..constants import BonusMode, CondTarget, ModifierType
 
 
+def _resolve_mod_fav_id(val: str, char_id: str, target_id: str | None) -> str:
+    """Resolve favorability participant: self → char_id, {{targetId}} → target_id."""
+    if val == "self":
+        return char_id
+    if val == "{{targetId}}":
+        return target_id or ""
+    return val
+
+
 def _calc_modifier_bonus(
     modifiers: list[dict], char: dict, game_state: Any, char_id: str, target_id: str | None
 ) -> tuple[int, float]:
@@ -89,13 +98,22 @@ def _calc_modifier_bonus(
                         raw_bonus = bonus
                     break
         elif mtype == ModifierType.FAVORABILITY:
-            fav_source = mod.get("source", CondTarget.TARGET)
-            if fav_source == CondTarget.TARGET and target_id:
-                npc_data = game_state.character_data.get(target_id, {})
-                fav_val = npc_data.get("favorability", {}).get(char_id, 0)
-            else:
-                own_data = game_state.character_data.get(char_id, {})
-                fav_val = own_data.get("favorability", {}).get(target_id or "", 0)
+            # favFrom/favTo: "self" = actor, "{{targetId}}" = action target
+            fav_from = mod.get("favFrom")
+            fav_to = mod.get("favTo")
+            # Legacy: source field → favFrom/favTo
+            if fav_from is None and fav_to is None:
+                source = mod.get("source", CondTarget.TARGET)
+                if source == CondTarget.TARGET:
+                    fav_from = "{{targetId}}"
+                    fav_to = "self"
+                else:
+                    fav_from = "self"
+                    fav_to = "{{targetId}}"
+            from_id = _resolve_mod_fav_id(fav_from or "self", char_id, target_id)
+            to_id = _resolve_mod_fav_id(fav_to or "{{targetId}}", char_id, target_id)
+            from_data = game_state.character_data.get(from_id, {})
+            fav_val = from_data.get("favorability", {}).get(to_id, 0)
             per = mod.get("per", 1)
             if per > 0:
                 raw_bonus = (fav_val // per) * bonus

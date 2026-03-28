@@ -329,7 +329,9 @@ export interface ActionCondition {
   season?: string;
   weather?: string;
   outfitId?: string;
-  targetId?: string;
+  targetId?: string; // legacy favorability (use favFrom/favTo instead)
+  favFrom?: string; // favorability: whose favorability (self / {{targetId}})
+  favTo?: string; // favorability: toward whom (self / {{targetId}})
   varId?: string;
 }
 
@@ -401,7 +403,9 @@ export interface ValueModifier {
   modTarget?: "self" | "target"; // which character to evaluate against
   key?: string; // resource/basicInfo/ability/experience/worldVar key, or trait category
   value?: string; // trait value to match
-  source?: string; // favorability: "target" (default) or "self"
+  source?: string; // legacy favorability (use favFrom/favTo instead)
+  favFrom?: string; // favorability: whose favorability (self / {{targetId}})
+  favTo?: string; // favorability: toward whom (self / {{targetId}})
   per?: number; // every `per` points → bonus (numeric types)
   bonus: number;
   bonusMode?: "add" | "multiply"; // "add" (default): +bonus, "multiply": *bonus%

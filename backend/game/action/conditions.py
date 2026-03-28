@@ -7,6 +7,22 @@ from typing import Any
 from ..constants import ClothingState, CompareOp, ConditionType, CondTarget, CostType
 
 
+def _resolve_fav_id(
+    val: str, char_id: str, target_id: str | None, game_state: Any
+) -> str:
+    """Resolve a favorability participant ID (self / {{targetId}} / {{player}} / literal)."""
+    if val == "self":
+        return char_id
+    if val == "{{targetId}}":
+        return target_id or ""
+    if val == "{{player}}":
+        for cid, c in game_state.characters.items():
+            if c.get("isPlayer"):
+                return cid
+        return ""
+    return val
+
+
 def _contains_target_dep(item: dict) -> bool:
     """Check if a condition tree contains any condTarget='target' leaf."""
     if "and" in item:
@@ -187,31 +203,30 @@ def _evaluate_leaf(
         return _compare(count, cond.get("op", ">="), cond.get("value", 0))
 
     if ctype == ConditionType.FAVORABILITY:
-        raw_tid = cond.get("targetId", "")
-        # Resolve symbolic target
-        if raw_tid == "self":
-            fav_tid = char_id
-        elif raw_tid == "{{targetId}}":
-            fav_tid = target_id or ""
-        elif raw_tid == "{{player}}":
-            fav_tid = ""
-            for cid, c in game_state.characters.items():
-                if c.get("isPlayer"):
-                    fav_tid = cid
-                    break
-        else:
-            fav_tid = raw_tid
-        fav_data = check_char.get("favorability", [])
+        # favFrom/favTo: "self" = actor, "{{targetId}}" = action target
+        fav_from = cond.get("favFrom", CondTarget.SELF)
+        fav_to = cond.get("favTo", "{{targetId}}")
+        # Legacy: condTarget + targetId → favFrom/favTo
+        if "targetId" in cond and "favFrom" not in cond:
+            ct = cond.get("condTarget", CondTarget.SELF)
+            if ct == CondTarget.TARGET:
+                fav_from = "{{targetId}}"
+                fav_to = CondTarget.SELF
+            else:
+                fav_from = CondTarget.SELF
+                fav_to = cond.get("targetId", "{{targetId}}")
+        from_id = _resolve_fav_id(fav_from, char_id, target_id, game_state)
+        to_id = _resolve_fav_id(fav_to, char_id, target_id, game_state)
+        from_char = game_state.characters.get(from_id, {})
+        fav_data = from_char.get("favorability", [])
         fav_value = 0
         if isinstance(fav_data, list):
-            # Display format: [{id, name, value}, ...]
             for fav in fav_data:
-                if fav["id"] == fav_tid:
+                if fav["id"] == to_id:
                     fav_value = fav["value"]
                     break
         elif isinstance(fav_data, dict):
-            # Raw format: {npcId: value, ...}
-            fav_value = fav_data.get(fav_tid, 0)
+            fav_value = fav_data.get(to_id, 0)
         return _compare(fav_value, cond.get("op", ">="), cond.get("value", 0))
 
     if ctype == ConditionType.OUTFIT:
