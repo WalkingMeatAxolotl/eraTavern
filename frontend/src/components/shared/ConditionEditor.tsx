@@ -55,6 +55,78 @@ export function isNotGroup(item: ConditionItem): item is { not: ConditionItem } 
 const MAX_UI_DEPTH = 6;
 
 // ---------------------------------------------------------------------------
+// CondValueInput — number or variable reference (V toggle)
+// ---------------------------------------------------------------------------
+
+function CondValueInput({
+  value,
+  onChange,
+  disabled,
+  variableList,
+  worldVarList,
+  defaultValue = 0,
+}: {
+  value?: number | { varId: string; multiply?: number };
+  onChange: (v: number | { varId: string; multiply?: number }) => void;
+  disabled: boolean;
+  variableList: { id: string; name: string }[];
+  worldVarList: { id: string; name: string }[];
+  defaultValue?: number;
+}) {
+  const isVarMode = typeof value === "object" && value !== null;
+  const varVal = isVarMode ? (value as { varId: string; multiply?: number }) : null;
+  const allVars = [...variableList, ...worldVarList.map((v) => ({ id: v.id, name: `[W] ${v.name}` }))];
+  return (
+    <>
+      <button
+        type="button"
+        className={clsx(s.toggleBtn, isVarMode && s.toggleActive)}
+        onClick={() => {
+          if (isVarMode) onChange(defaultValue);
+          else onChange({ varId: allVars[0]?.id ?? "", multiply: 1 });
+        }}
+        disabled={disabled}
+        title={t("eff.toggleVarRef")}
+      >
+        V
+      </button>
+      {isVarMode ? (
+        <>
+          <select
+            className={clsx(sh.input, s.input70)}
+            value={varVal?.varId ?? ""}
+            onChange={(e) => onChange({ ...varVal!, varId: e.target.value })}
+            disabled={disabled}
+          >
+            <option value="">{t("opt.selectVar")}</option>
+            {allVars.map((v) => (
+              <option key={v.id} value={v.id}>{v.name}</option>
+            ))}
+          </select>
+          <span style={{ color: "#888" }}>&times;</span>
+          <input
+            type="number"
+            step="0.1"
+            className={clsx(sh.input, s.w55)}
+            value={varVal?.multiply ?? 1}
+            onChange={(e) => onChange({ ...varVal!, multiply: Number(e.target.value) })}
+            disabled={disabled}
+          />
+        </>
+      ) : (
+        <input
+          type="number"
+          className={clsx(sh.input, s.input70)}
+          value={(typeof value === "number" ? value : defaultValue)}
+          onChange={(e) => onChange(Number(e.target.value))}
+          disabled={disabled}
+        />
+      )}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // ConditionItemEditor — top-level recursive dispatcher
 // ---------------------------------------------------------------------------
 
@@ -403,13 +475,7 @@ function ConditionLeafEditor({
               </option>
             ))}
           </select>
-          <input
-            type="number"
-            className={clsx(sh.input, s.input70)}
-            value={condition.value ?? 0}
-            onChange={(e) => update({ value: Number(e.target.value) })}
-            disabled={disabled}
-          />
+          <CondValueInput value={condition.value} onChange={(v) => update({ value: v })} disabled={disabled} variableList={variableList ?? []} worldVarList={worldVarList ?? []} />
         </>
       )}
 
@@ -479,13 +545,7 @@ function ConditionLeafEditor({
               </option>
             ))}
           </select>
-          <input
-            type="number"
-            className={clsx(sh.input, s.input70)}
-            value={condition.value ?? 0}
-            onChange={(e) => update({ value: Number(e.target.value) })}
-            disabled={disabled}
-          />
+          <CondValueInput value={condition.value} onChange={(v) => update({ value: v })} disabled={disabled} variableList={variableList ?? []} worldVarList={worldVarList ?? []} />
         </>
       )}
 
@@ -527,13 +587,7 @@ function ConditionLeafEditor({
             ))}
           </select>
           {condition.op && (
-            <input
-              type="number"
-              className={clsx(sh.input, s.input60)}
-              value={condition.value ?? 1}
-              onChange={(e) => update({ value: Number(e.target.value) })}
-              disabled={disabled}
-            />
+            <CondValueInput value={condition.value} onChange={(v) => update({ value: v })} disabled={disabled} variableList={variableList ?? []} worldVarList={worldVarList ?? []} defaultValue={1} />
           )}
         </>
       )}
@@ -733,13 +787,7 @@ function ConditionLeafEditor({
                   </option>
                 ))}
               </select>
-              <input
-                type="number"
-                className={clsx(sh.input, s.input70)}
-                value={condition.value ?? 0}
-                onChange={(e) => update({ value: Number(e.target.value) })}
-                disabled={disabled}
-              />
+              <CondValueInput value={condition.value} onChange={(v) => update({ value: v })} disabled={disabled} variableList={variableList ?? []} worldVarList={worldVarList ?? []} />
             </>
           );
         })()}
@@ -771,13 +819,7 @@ function ConditionLeafEditor({
               </option>
             ))}
           </select>
-          <input
-            type="number"
-            className={clsx(sh.input, s.input70)}
-            value={condition.value ?? 0}
-            onChange={(e) => update({ value: Number(e.target.value) })}
-            disabled={disabled}
-          />
+          <CondValueInput value={condition.value} onChange={(v) => update({ value: v })} disabled={disabled} variableList={variableList ?? []} worldVarList={worldVarList ?? []} />
         </>
       )}
     </div>

@@ -45,7 +45,7 @@ class EffectType(EF):
 # Modifier types — all values are in EF, kept for semantic clarity
 # ---------------------------------------------------------------------------
 class ModifierType(EF):
-    pass
+    TIME = "time"
 
 
 # ---------------------------------------------------------------------------

@@ -317,7 +317,7 @@ export interface ActionCondition {
   npcId?: string;
   key?: string;
   op?: string;
-  value?: number;
+  value?: number | { varId: string; multiply?: number };
   traitId?: string;
   itemId?: string;
   tag?: string;
@@ -399,7 +399,8 @@ export interface ValueModifier {
     | "outfit"
     | "clothing"
     | "variable"
-    | "worldVar";
+    | "worldVar"
+    | "time";
   modTarget?: "self" | "target"; // which character to evaluate against
   key?: string; // resource/basicInfo/ability/experience/worldVar key, or trait category
   value?: string; // trait value to match
@@ -413,6 +414,12 @@ export interface ValueModifier {
   itemId?: string; // hasItem: item ID
   outfitId?: string; // outfit: outfit type ID
   slot?: string; // clothing: clothing slot
+  // time modifier fields
+  hourMin?: number;
+  hourMax?: number;
+  season?: string;
+  dayOfWeek?: string;
+  weather?: string;
 }
 
 export type WeightModifier = ValueModifier;

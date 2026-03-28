@@ -6,7 +6,7 @@
 import clsx from "clsx";
 import type { ValueModifier } from "../../types/game";
 import { t, SLOT_LABELS } from "../../i18n/ui";
-import { EF, BonusMode, CondTarget, TargetType } from "../../constants";
+import { EF, BonusMode, CondTarget, TargetType, Season, DayOfWeek, Weather } from "../../constants";
 import { useEditorContext } from "../shared/EditorContext";
 import { btnClass } from "../shared/buttons";
 import sh from "../shared/shared.module.css";
@@ -79,6 +79,7 @@ export function ModifierListEditor({
               else if (t === EF.CLOTHING) update(idx, { type: t, slot: clothingSlots[0] ?? "", ...base });
               else if (t === EF.VARIABLE) update(idx, { type: t, varId: variableList[0]?.id ?? "", per: 1, ...base });
               else if (t === EF.WORLD_VAR) update(idx, { type: t, key: worldVarList[0]?.id ?? "", per: 1, ...base });
+              else if (t === "time") update(idx, { type: t, ...base });
               else update(idx, { type: t, source: CondTarget.TARGET, per: 100, ...base });
             }}
             disabled={disabled}
@@ -103,9 +104,10 @@ export function ModifierListEditor({
               {t("modGroup.global")}
             </option>
             <option value={EF.WORLD_VAR}>{t("cond.worldVar")}</option>
+            <option value="time">{t("cond.time")}</option>
           </select>
 
-          {![EF.FAVORABILITY, EF.WORLD_VAR].includes(mod.type) &&
+          {![EF.FAVORABILITY, EF.WORLD_VAR, "time" as string].includes(mod.type) &&
             !(mod.type === EF.VARIABLE && (biVarList ?? []).some((v) => v.id === mod.varId)) && (
               <select
                 className={clsx(sh.input, s.wAuto, s.fs11)}
@@ -410,6 +412,65 @@ export function ModifierListEditor({
                 min={1}
                 disabled={disabled}
               />
+            </>
+          )}
+
+          {mod.type === "time" && (
+            <>
+              <input
+                type="number"
+                className={clsx(sh.input, s.w55)}
+                value={mod.hourMin ?? ""}
+                onChange={(e) => update(idx, { ...mod, hourMin: e.target.value ? Number(e.target.value) : undefined })}
+                min={0}
+                max={23}
+                placeholder="h≥"
+                disabled={disabled}
+              />
+              <span style={{ color: "#888" }}>~</span>
+              <input
+                type="number"
+                className={clsx(sh.input, s.w55)}
+                value={mod.hourMax ?? ""}
+                onChange={(e) => update(idx, { ...mod, hourMax: e.target.value ? Number(e.target.value) : undefined })}
+                min={0}
+                max={23}
+                placeholder="h≤"
+                disabled={disabled}
+              />
+              <select
+                className={clsx(sh.input, s.wAuto, s.fs11)}
+                value={mod.season ?? ""}
+                onChange={(e) => update(idx, { ...mod, season: e.target.value || undefined })}
+                disabled={disabled}
+              >
+                <option value="">{t("opt.anySeason")}</option>
+                {Object.values(Season).map((sv) => (
+                  <option key={sv} value={sv}>{t(`season.${sv}`)}</option>
+                ))}
+              </select>
+              <select
+                className={clsx(sh.input, s.wAuto, s.fs11)}
+                value={mod.dayOfWeek ?? ""}
+                onChange={(e) => update(idx, { ...mod, dayOfWeek: e.target.value || undefined })}
+                disabled={disabled}
+              >
+                <option value="">{t("opt.anyWeekday")}</option>
+                {Object.values(DayOfWeek).map((dv) => (
+                  <option key={dv} value={dv}>{t(`day.${dv}`)}</option>
+                ))}
+              </select>
+              <select
+                className={clsx(sh.input, s.wAuto, s.fs11)}
+                value={mod.weather ?? ""}
+                onChange={(e) => update(idx, { ...mod, weather: e.target.value || undefined })}
+                disabled={disabled}
+              >
+                <option value="">{t("opt.anyWeather")}</option>
+                {Object.values(Weather).map((wv) => (
+                  <option key={wv} value={wv}>{t(`weather.${wv}`)}</option>
+                ))}
+              </select>
             </>
           )}
 

@@ -152,6 +152,34 @@ def _calc_modifier_bonus(
             per = mod.get("per", 1)
             if per > 0:
                 raw_bonus = (int(val) // per) * bonus
+        elif mtype == ModifierType.TIME:
+            # Boolean modifier: match time conditions → +bonus, else 0
+            time_obj = getattr(game_state, "time", None)
+            if time_obj:
+                matched = True
+                hour_min = mod.get("hourMin")
+                hour_max = mod.get("hourMax")
+                if hour_min is not None and hour_max is not None:
+                    if hour_min <= hour_max:
+                        if not (hour_min <= time_obj.hour <= hour_max):
+                            matched = False
+                    else:  # cross-midnight
+                        if not (time_obj.hour >= hour_min or time_obj.hour <= hour_max):
+                            matched = False
+                elif hour_min is not None:
+                    if time_obj.hour < hour_min:
+                        matched = False
+                elif hour_max is not None:
+                    if time_obj.hour > hour_max:
+                        matched = False
+                if mod.get("season") and time_obj.season_name != mod["season"]:
+                    matched = False
+                if mod.get("dayOfWeek") and time_obj.weekday != mod["dayOfWeek"]:
+                    matched = False
+                if mod.get("weather") and time_obj.weather != mod["weather"]:
+                    matched = False
+                if matched:
+                    raw_bonus = bonus
 
         if mode == BonusMode.MULTIPLY:
             mul_total *= 1 + raw_bonus / 100

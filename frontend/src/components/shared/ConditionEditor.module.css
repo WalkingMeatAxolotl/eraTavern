@@ -30,6 +30,11 @@
 .input70 { composes: w70 from "./shared.module.css"; }
 .input80 { composes: w80 from "./shared.module.css"; }
 
+/* V toggle (variable reference) */
+.toggleBtn { composes: input from "./shared.module.css"; cursor: pointer; min-width: 28px; text-align: center; color: var(--text-sub); }
+.toggleActive { color: var(--danger); }
+.w55 { width: 55px; }
+
 /* Option group */
 .optgroupBold { font-weight: bold; }
 

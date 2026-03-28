@@ -81,6 +81,8 @@ def _evaluate_leaf(
 ) -> bool:
     """Evaluate a single leaf condition."""
     ctype = cond.get("type")
+    # Pre-resolve value (number or {varId, multiply} variable ref)
+    cond_value = _resolve_cond_value(cond.get("value"), game_state, char_id, target_id)
 
     # Resolve which character to check
     cond_target = cond.get("condTarget", CondTarget.SELF)
@@ -154,19 +156,19 @@ def _evaluate_leaf(
         res = check_char.get("resources", {}).get(cond.get("key", ""))
         if not res:
             return False
-        return _compare(res["value"], cond.get("op", ">="), cond.get("value", 0))
+        return _compare(res["value"], cond.get("op", ">="), cond_value)
 
     if ctype == ConditionType.ABILITY:
         for ab in check_char.get("abilities", []):
             if ab["key"] == cond.get("key"):
-                return _compare(ab["exp"], cond.get("op", ">="), cond.get("value", 0))
+                return _compare(ab["exp"], cond.get("op", ">="), cond_value)
         return False
 
     if ctype == ConditionType.BASIC_INFO:
         info = check_char.get("basicInfo", {}).get(cond.get("key", ""))
         if not info or info.get("type") != "number":
             return False
-        return _compare(info["value"], cond.get("op", ">="), cond.get("value", 0))
+        return _compare(info["value"], cond.get("op", ">="), cond_value)
 
     if ctype == ConditionType.TRAIT:
         key = cond.get("key", "")
@@ -200,7 +202,7 @@ def _evaluate_leaf(
         char_data = game_state.character_data.get(check_char_id, {})
         exp_data = char_data.get("experiences", {}).get(key, {})
         count = exp_data.get("count", 0) if isinstance(exp_data, dict) else 0
-        return _compare(count, cond.get("op", ">="), cond.get("value", 0))
+        return _compare(count, cond.get("op", ">="), cond_value)
 
     if ctype == ConditionType.FAVORABILITY:
         # favFrom/favTo: "self" = actor, "{{targetId}}" = action target
@@ -227,7 +229,7 @@ def _evaluate_leaf(
                     break
         elif isinstance(fav_data, dict):
             fav_value = fav_data.get(to_id, 0)
-        return _compare(fav_value, cond.get("op", ">="), cond.get("value", 0))
+        return _compare(fav_value, cond.get("op", ">="), cond_value)
 
     if ctype == ConditionType.OUTFIT:
         outfit_id = cond.get("outfitId", "")
@@ -239,7 +241,7 @@ def _evaluate_leaf(
         item_id = cond.get("itemId")
         tag = cond.get("tag")
         has_op = cond.get("op")
-        has_value = cond.get("value")
+        has_value = cond_value if cond.get("value") is not None else None
         total = 0
         for inv in check_char.get("inventory", []):
             match = False
@@ -301,13 +303,13 @@ def _evaluate_leaf(
             char_id=var_self_id,
             target_id=var_target_id,
         )
-        return _compare(var_value, cond.get("op", ">="), cond.get("value", 0))
+        return _compare(var_value, cond.get("op", ">="), cond_value)
 
     if ctype == ConditionType.WORLD_VAR:
         key = cond.get("key", "")
         wv = getattr(game_state, "world_variables", {})
         val = wv.get(key, 0)
-        return _compare(val, cond.get("op", "=="), cond.get("value", 0))
+        return _compare(val, cond.get("op", "=="), cond_value)
 
     # Unknown condition type → pass
     return True
@@ -323,6 +325,30 @@ def _check_npc_present(char: dict, game_state: Any, npc_id: str | None) -> bool:
             if npc_id is None or cid == npc_id:
                 return True
     return False
+
+
+def _resolve_cond_value(
+    raw: Any, game_state: Any, char_id: str, target_id: str | None
+) -> float:
+    """Resolve a condition comparison value — number or {varId, multiply} variable ref."""
+    if isinstance(raw, dict):
+        var_id = raw.get("varId", "")
+        multiply = raw.get("multiply", 1)
+        if var_id and hasattr(game_state, "variable_defs"):
+            var_def = game_state.variable_defs.get(var_id)
+            if var_def:
+                from ..variable_engine import evaluate_variable
+
+                char = game_state.characters.get(char_id, {})
+                target = game_state.characters.get(target_id, {}) if target_id else None
+                val = evaluate_variable(
+                    var_def, char, game_state.variable_defs,
+                    target_state=target, game_state=game_state,
+                    char_id=char_id, target_id=target_id,
+                )
+                return val * multiply
+        return 0.0
+    return float(raw) if raw is not None else 0.0
 
 
 def _compare(left: float, op: str, right: float) -> bool:
