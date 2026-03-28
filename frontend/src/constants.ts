@@ -111,7 +111,19 @@ export const EventScope = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Seasons & days of week (enum values for time conditions)
+// Comparison operators (condition value comparisons)
+// ---------------------------------------------------------------------------
+export const CompareOp = {
+  GTE: ">=",
+  LTE: "<=",
+  GT: ">",
+  LT: "<",
+  EQ: "==",
+  NE: "!=",
+} as const;
+
+// ---------------------------------------------------------------------------
+// Seasons, days of week & weather (enum values for time conditions)
 // ---------------------------------------------------------------------------
 export const Season = {
   SPRING: "spring",
@@ -128,6 +140,13 @@ export const DayOfWeek = {
   FRI: "fri",
   SAT: "sat",
   SUN: "sun",
+} as const;
+
+export const Weather = {
+  SUNNY: "sunny",
+  CLOUDY: "cloudy",
+  RAINY: "rainy",
+  SNOWY: "snowy",
 } as const;
 
 // ---------------------------------------------------------------------------

@@ -224,6 +224,7 @@ export interface OutfitType {
 export interface ClothingDefinition {
   id: string;
   name: string;
+  description?: string;
   slot?: string; // legacy single slot
   slots: string[]; // multi-slot
   occlusion: string[];
@@ -266,7 +267,8 @@ export interface VariableStep {
     | "itemCount"
     | "favorability"
     | "constant"
-    | "variable";
+    | "variable"
+    | "worldVar";
   op?: "add" | "subtract" | "multiply" | "divide" | "min" | "max" | "floor" | "cap";
   source?: "self" | "target";
   key?: string;
@@ -384,14 +386,29 @@ export interface ActionEffect {
 }
 
 export interface ValueModifier {
-  type: "ability" | "trait" | "favorability" | "experience" | "variable" | "worldVar";
-  key?: string; // ability key, trait category key, or experience key
+  type:
+    | "resource"
+    | "basicInfo"
+    | "ability"
+    | "trait"
+    | "favorability"
+    | "experience"
+    | "hasItem"
+    | "outfit"
+    | "clothing"
+    | "variable"
+    | "worldVar";
+  modTarget?: "self" | "target"; // which character to evaluate against
+  key?: string; // resource/basicInfo/ability/experience/worldVar key, or trait category
   value?: string; // trait value to match
   source?: string; // favorability: "target" (default) or "self"
-  per?: number; // every `per` points → bonus (ability/favorability/experience)
+  per?: number; // every `per` points → bonus (numeric types)
   bonus: number;
   bonusMode?: "add" | "multiply"; // "add" (default): +bonus, "multiply": *bonus%
   varId?: string; // variable: derived variable ID
+  itemId?: string; // hasItem: item ID
+  outfitId?: string; // outfit: outfit type ID
+  slot?: string; // clothing: clothing slot
 }
 
 export type WeightModifier = ValueModifier;

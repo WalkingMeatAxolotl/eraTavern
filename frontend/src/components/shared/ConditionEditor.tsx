@@ -7,7 +7,7 @@
 import clsx from "clsx";
 import type { ActionCondition, ConditionItem } from "../../types/game";
 import T from "../../theme";
-import { CondType, EF, CondTarget, TargetType, ClothingState, Season, DayOfWeek } from "../../constants";
+import { CondType, EF, CondTarget, TargetType, ClothingState, Season, DayOfWeek, Weather, CompareOp } from "../../constants";
 import { t, SLOT_LABELS } from "../../i18n/ui";
 import { useEditorContext } from "./EditorContext";
 import type { MapInfo } from "./EditorContext";
@@ -36,7 +36,7 @@ const CONDITION_TYPES: { value: ActionCondition["type"]; label: string; group?: 
   { value: CondType.WORLD_VAR, label: t("cond.worldVar"), group: t("cond.group.global") },
 ];
 
-const OPS = [">=", "<=", ">", "<", "==", "!="];
+const OPS = [CompareOp.GTE, CompareOp.LTE, CompareOp.GT, CompareOp.LT, CompareOp.EQ, CompareOp.NE];
 
 // ---------------------------------------------------------------------------
 // Type guards
@@ -52,7 +52,7 @@ export function isNotGroup(item: ConditionItem): item is { not: ConditionItem } 
   return "not" in item && !("type" in item);
 }
 
-const MAX_UI_DEPTH = 4;
+const MAX_UI_DEPTH = 6;
 
 // ---------------------------------------------------------------------------
 // ConditionItemEditor — top-level recursive dispatcher
@@ -188,9 +188,9 @@ function ConditionGroupEditor({
   const labelColor = type === "and" ? "#6ec6ff" : "#e9a045";
   const borderColor = [T.border, T.borderLight, T.textDim][depth % 3];
 
-  const addLeaf = () => onChange([...items, { type: "location" }]);
-  const addOr = () => onChange([...items, { or: [{ type: "location" }] }]);
-  const addAnd = () => onChange([...items, { and: [{ type: "location" }] }]);
+  const addLeaf = () => onChange([...items, { type: CondType.LOCATION }]);
+  const addOr = () => onChange([...items, { or: [{ type: CondType.LOCATION }] }]);
+  const addAnd = () => onChange([...items, { and: [{ type: CondType.LOCATION }] }]);
   const removeChild = (idx: number) => {
     const next = items.filter((_, i) => i !== idx);
     if (next.length === 0) onRemove();
@@ -678,10 +678,10 @@ function ConditionLeafEditor({
             disabled={disabled}
           >
             <option value="">{t("opt.anyWeather")}</option>
-            <option value="sunny">{t("weather.sunny")}</option>
-            <option value="cloudy">{t("weather.cloudy")}</option>
-            <option value="rainy">{t("weather.rainy")}</option>
-            <option value="snowy">{t("weather.snowy")}</option>
+            <option value={Weather.SUNNY}>{t("weather.sunny")}</option>
+            <option value={Weather.CLOUDY}>{t("weather.cloudy")}</option>
+            <option value={Weather.RAINY}>{t("weather.rainy")}</option>
+            <option value={Weather.SNOWY}>{t("weather.snowy")}</option>
           </select>
         </>
       )}

@@ -103,6 +103,7 @@ export const UI: Record<string, string> = {
   "varStep.favorability": "好感度",
   "varStep.constant": "常量",
   "varStep.variable": "其他变量",
+  "varStep.worldVar": "世界变量",
 
   // === Arithmetic ops ===
   "op.floor": "下限(不低于)",
@@ -321,6 +322,7 @@ export const UI: Record<string, string> = {
   "npc.outputTpl": "行为模板",
 
   // === World sidebar ===
+  "world.newWorld": "新建世界",
   "world.createTitle": "新建世界",
   "world.idLabel": "ID（英文数字、-、_）",
   "world.worlds": "世界",
@@ -756,6 +758,7 @@ export const UI: Record<string, string> = {
   "btn.close": "关闭",
 
   // === Addon sidebar ===
+  "addon.newAddon": "新建扩展",
   "addon.enableTitle": "启用 扩展",
   "addon.enableIntroPre": "首次在此世界启用",
   "addon.enableIntroPost": "，选择源版本：",

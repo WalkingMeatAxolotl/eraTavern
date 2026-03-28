@@ -220,6 +220,15 @@ def _resolve_step_value(step: dict, ctx: _EvalContext) -> float:
             target_id=ctx.target_id,
         )
 
+    if step_type == VarStepType.WORLD_VAR:
+        key = step.get("key", "")
+        if not ctx.game_state:
+            return 0.0
+        wv = ctx.game_state.world_variables.get(key)
+        if wv is None:
+            return 0.0
+        return float(wv.get("value", 0) if isinstance(wv, dict) else wv)
+
     return 0.0
 
 

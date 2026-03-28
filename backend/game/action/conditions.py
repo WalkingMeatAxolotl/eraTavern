@@ -44,7 +44,7 @@ def _evaluate_item(
     depth: int = 0,
 ) -> bool:
     """Recursively evaluate a condition item (leaf, AND, OR, or NOT)."""
-    if depth > 8:
+    if depth > 6:
         return False  # prevent infinite recursion
     if "and" in item:
         return all(_evaluate_item(c, char, game_state, target_id, char_id, depth + 1) for c in item["and"])
@@ -109,10 +109,19 @@ def _evaluate_leaf(
         time = game_state.time
         hour_min = cond.get("hourMin")
         hour_max = cond.get("hourMax")
-        if hour_min is not None and time.hour < hour_min:
-            return False
-        if hour_max is not None and time.hour > hour_max:
-            return False
+        if hour_min is not None and hour_max is not None:
+            if hour_min <= hour_max:
+                if not (hour_min <= time.hour <= hour_max):
+                    return False
+            else:  # cross-midnight: e.g. 22~4 means 22:00–04:00
+                if not (time.hour >= hour_min or time.hour <= hour_max):
+                    return False
+        elif hour_min is not None:
+            if time.hour < hour_min:
+                return False
+        elif hour_max is not None:
+            if time.hour > hour_max:
+                return False
         season = cond.get("season")
         if season is not None and time.season_name != season:
             return False

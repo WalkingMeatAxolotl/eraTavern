@@ -47,6 +47,7 @@ const EFFECT_TYPES: { value: ActionEffect["type"]; label: string }[] = [
   { value: EffType.TRAIT, label: t("eff.trait") },
   { value: EffType.ITEM, label: t("eff.item") },
   { value: EffType.CLOTHING, label: t("eff.clothing") },
+  { value: EffType.OUTFIT, label: t("eff.outfit") },
   { value: EffType.POSITION, label: t("eff.position") },
   { value: EffType.WORLD_VAR, label: t("eff.worldVar") },
 ];

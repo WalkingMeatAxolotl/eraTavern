@@ -51,6 +51,7 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: VarStepType.FAVORABILITY, label: t("varStep.favorability") },
   { value: VarStepType.CONSTANT, label: t("varStep.constant") },
   { value: VarStepType.VARIABLE, label: t("varStep.variable") },
+  { value: VarStepType.WORLD_VAR, label: t("varStep.worldVar") },
 ];
 
 function makeBlankStep(): VariableStep {
@@ -152,6 +153,8 @@ function stepValueLabel(step: VariableStep, bidirectional?: boolean): string {
       return String(step.value ?? 0);
     case VarStepType.VARIABLE:
       return `$${step.varId ?? "?"}`;
+    case VarStepType.WORLD_VAR:
+      return `W.${step.key ?? "?"}`;
     default:
       return "?";
   }
@@ -674,6 +677,12 @@ function StepRow({
             patch.varId = "";
             patch.key = undefined;
             patch.value = undefined;
+          } else if (newType === VarStepType.WORLD_VAR) {
+            patch.key = "";
+            patch.value = undefined;
+            patch.varId = undefined;
+            patch.traitGroup = undefined;
+            patch.traitId = undefined;
           } else if (newType === VarStepType.HAS_TRAIT) {
             patch.traitGroup = "";
             patch.traitId = "";
@@ -702,7 +711,7 @@ function StepRow({
       </select>
 
       {/* Source (self/target) — only for bidirectional variables, not for constant/variable */}
-      {isBidirectional && ![VarStepType.CONSTANT, VarStepType.VARIABLE].includes(step.type) && (
+      {isBidirectional && ![VarStepType.CONSTANT, VarStepType.VARIABLE, VarStepType.WORLD_VAR].includes(step.type) && (
         <select
           className={clsx(s.selectInput, sh.w60)}
           value={step.source ?? "self"}
@@ -895,6 +904,22 @@ function StepRow({
             {varOptions.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name || v.id}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {step.type === VarStepType.WORLD_VAR && (
+          <select
+            className={clsx(s.selectInput, sh.flex1)}
+            value={step.key ?? ""}
+            onChange={(e) => onChange({ key: e.target.value })}
+            disabled={readOnly}
+          >
+            <option value="">{t("opt.selectWorldVar")}</option>
+            {Object.entries(definitions?.worldVariableDefs ?? {}).map(([wvId, wv]) => (
+              <option key={wvId} value={wvId}>
+                {wv.name || wvId}
               </option>
             ))}
           </select>
